@@ -12,7 +12,7 @@ import { ChapterSwipeControl, SavedSetups, FontSizeControl, LanguageColors, Them
 import { Modal } from "./modal";
 import { useReaderState } from "./use-reader-state";
 import { AiButton } from "./ai-window";
-import { SaveOffline } from "./offline";
+import { OfflineDownloadsButton } from "./downloads-dialog";
 import { ListenTopButton } from "./audio-player";
 import { RedLetterToggle } from "./red-letter";
 import { WordModeToggle } from "./word-study";
@@ -111,7 +111,7 @@ export function TopBar({
           <LevelMarksControl />
           <WidthControl />
           <ChapterSwipeControl />
-          <SaveOffline />
+          <OfflineDownloadsButton />
         </TopPopover>
         <TopPopover label="Read together" title="Read together: send a link to this exact spot" icon={<ShareIcon />}>
           <ReadTogether />
@@ -164,7 +164,7 @@ export function TopBar({
             <WidthControl />
             <LanguageColors />
             <ChapterSwipeControl />
-            <SaveOffline />
+            <OfflineDownloadsButton />
             <ReadTogether />
             <div className="space-y-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Versions &amp; languages</h3>

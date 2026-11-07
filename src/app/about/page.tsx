@@ -114,6 +114,10 @@ export default function AboutPage() {
               your browser data deletes them.
             </li>
             <li>
+              Offline downloads (versions and read-along audio you save to read or listen without a signal) are stored only
+              on your device. Downloading them sends nothing about you; you can delete them at any time.
+            </li>
+            <li>
               Progress, goals and badges (reading and listening time, verses and chapters read, streaks) are worked out
               and stored on your device too.
             </li>

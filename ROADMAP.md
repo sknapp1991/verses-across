@@ -17,7 +17,8 @@ Cloudflare Workers + R2 · pushing to `main` deploys · every change reviewed by
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| S | **Stats dashboard** (aggregate only) | scoped | Details below. Needs Skylar to create one read-only Cloudflare API token. |
+| S | **Stats tab in the private hub** (aggregate only) | scoped | The site keeps its own anonymous daily counts; a "Verses Across" tab in Skylar's Tailscale hub (bots-hub, owned by poly-paper) shows them, plus this roadmap rendered from ROADMAP.md. No Cloudflare token or analytics. Details below. |
+| T | **Guided tour** (optional) | scoped | Short coach marks or swipeable cards: read-along, favorites, Ask AI, word tap, sync, streaks, offline downloads. Skip, "don't show again", replay from Settings/Help; keyboard and screen-reader friendly, respects reduced motion; never nags returning users. After offline downloads, so it can include them. |
 | I | **Instagram / shorts assets** | queued | "One word, five languages" clips (love, peace, light); 1080×1350 carousel slides (one language per slide); a 10-second "built this week" clip when offline downloads ship. `scripts/make-shorts.mjs`. Verse-of-the-day clips rendered through Nov 28; next batch before then. |
 | B | Brother's next list | waiting | Whatever he sends next goes here first. |
 
@@ -41,12 +42,12 @@ Cloudflare Workers + R2 · pushing to `main` deploys · every change reviewed by
 - **Privacy:** nothing new is sent anywhere; About stays accurate.
 - **Review:** Fable reviews before it ships; test on a phone-sized screen, offline mode, and a full KJV + audio download.
 
-## Scope: stats dashboard (S)
+## Scope: stats tab (S)
 
-- **What it shows (aggregate only, no personal data, no cookies):** visits and chapter reads per day, top pages, top works and versions, languages being read, countries (as Cloudflare reports them), read-along plays; later Play installs.
-- **How:** the site writes one anonymous data point per chapter view into Cloudflare Workers Analytics Engine (work, book, versions, language; no IP, no IDs). A local dark-mode dashboard (`npm run stats`, like the bots' dashboards on localhost) reads it with a read-only API token that Skylar creates and keeps on his PC. Desktop link in Magnum Opus.
-- **Until then:** Cloudflare's own dashboard already shows requests, countries and top paths for the domain.
-- **Privacy page:** updated before it ships ("we count page views in aggregate, with no personal data").
+- **Counting (on the site):** one anonymous count per chapter view, read-along play and offline download, kept as daily totals per work, version and language in a small database (Cloudflare D1). No IPs, no IDs, no cookies, nothing per person.
+- **Reading the totals:** one read-only JSON endpoint, guarded by a key kept only in a gitignored file on Skylar's PC.
+- **Showing them:** a "Verses Across" tab in the private Tailscale hub (`bots-hub`, owned by poly-paper), dark like the bot dashboards: visits per day, top works, versions and languages, plays, downloads; and the roadmap rendered from this file. No trading-bot code is touched (stock-paper's advice).
+- **Privacy page:** updated in the same release as the counting.
 
 ## Check-ins
 
