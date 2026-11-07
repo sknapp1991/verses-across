@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     description: "Read the world's scriptures side by side, in many languages. Free on phone and desktop.",
   },
   appleWebApp: { title: "Verses Across", capable: true, statusBarStyle: "default" },
-  // Google Search Console ownership (keep: removing it un-verifies the site).
-  verification: { google: "3nW8X3kaJ6HidJ_6O0hgpA9djiA7-qqybFpv6DzR4Ik" },
+  // Google Search Console and Bing Webmaster Tools ownership (keep: removing them un-verifies the site).
+  verification: { google: "3nW8X3kaJ6HidJ_6O0hgpA9djiA7-qqybFpv6DzR4Ik", other: { "msvalidate.01": "3A234127FCC4DA14DFBE86FE4E25CE77" } },
 };
 
 export const viewport: Viewport = {
