@@ -173,9 +173,11 @@ export async function joinGroup(input: string, me: string): Promise<string | nul
   return null;
 }
 
+/** Remove my card from the group, then forget the group here. Throws (and keeps the group) if the card couldn't be removed. */
 export async function leaveGroup(g: MyGroup) {
   const k = await keysFor(g.code);
-  await fetch(`/api/group/${k.id}/${await memberId(g.secret)}`, { method: "DELETE", headers: { "x-member-key": g.secret } }).catch(() => null);
+  const res = await fetch(`/api/group/${k.id}/${await memberId(g.secret)}`, { method: "DELETE", headers: { "x-member-key": g.secret } }).catch(() => null);
+  if (!res || !(res.ok || res.status === 404)) throw new Error(navigator.onLine ? "Couldn’t leave the group right now. Try again." : "You’re offline. Try again when you’re back online.");
   saveGroups(getGroups().filter((x) => x.code !== g.code));
 }
 

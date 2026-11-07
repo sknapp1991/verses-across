@@ -8,6 +8,9 @@
  *   - a tag that fits (number in the verse and about as likely as the best candidate) is kept;
  *   - a tag with a clearly better candidate is moved to it;
  *   - otherwise a tag whose number is in the verse is kept, and one whose number isn't is dropped (the word is then just untagged).
+ * French articles and little grammar words (le, la, de, et, il, qu…) are left untagged, as the KJV leaves "the";
+ * and nothing is moved onto the Greek article (G3588) or the Hebrew object marker (H853), which are in almost
+ * every verse and so look related to every word.
  * Run after `npm run strongs:extract`: tsx scripts/realign-strongs.ts [--dry] [--show jhn:3:16,...]
  */
 import { readdir, readFile, writeFile } from "node:fs/promises";
@@ -39,6 +42,11 @@ function stem(surface: string): string {
   const m = /^(.{3,}?)(aient|ions|iez|ons|ez|ent|ais|ait|ées|és|ée|er|é|es|e|s)$/.exec(w);
   return m ? m[1] : w;
 }
+
+/** Grammar words: untagged (their tags were mostly spill-over from the words next to them). */
+const STOP = new Set("le la les l un une des du de d au aux et a à ont est été il ils elle elles qu que qui se s y en ce c".split(" "));
+/** Strong's numbers in nearly every verse: never a target for a move. */
+const PARTICLES = new Set(["G3588", "H853"]);
 
 async function main() {
 const files = (await readdir(path.join(DATA, TARGET))).filter((f) => f.endsWith(".json"));
@@ -79,13 +87,18 @@ for (const v of verses) {
   const next: Tag[] = [];
   for (const [surface, ...nums] of v.tags) {
     total++;
+    if (STOP.has(surface.toLowerCase())) {
+      dropped++;
+      continue;
+    }
     const w = stem(surface);
     let best = "", bestD = 0;
     for (const n of v.cand) {
+      if (PARTICLES.has(n)) continue;
       const d = dice(w, n);
       if (d > bestD) (best = n), (bestD = d);
     }
-    const src = nums.find((n) => v.cand.has(n));
+    const src = nums.find((n) => v.cand.has(n) && !PARTICLES.has(n));
     const srcD = src ? dice(w, src) : 0;
     if (src && srcD >= 0.6 * bestD) {
       next.push([surface, src]);

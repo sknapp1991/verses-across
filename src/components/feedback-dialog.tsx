@@ -41,8 +41,8 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
     topic,
     message: message.trim(),
     contact: contact.trim(),
-    page: details.page,
-    details: withDetails ? details : req.verse ? { verse: req.verse } : null,
+    page: withDetails ? details.page : "",
+    details: withDetails ? details : null,
   });
 
   const send = async () => {

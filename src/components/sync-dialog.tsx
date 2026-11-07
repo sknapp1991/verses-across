@@ -4,7 +4,7 @@
  * text and as a QR code (a link that joins when opened), and lets you stop or delete the synced copy.
  */
 import { useState, useSyncExternalStore } from "react";
-import { deleteSyncedData, joinSync, syncNow, turnOffSync, turnOnSync, useSync } from "@/lib/sync";
+import { confirmPendingSync, deleteSyncedData, joinSync, syncNow, turnOffSync, turnOnSync, useSync } from "@/lib/sync";
 import { toast } from "@/lib/ui-store";
 import { CloseIcon } from "./icons";
 import { Modal } from "./modal";
@@ -29,10 +29,63 @@ const useOpen = () =>
 
 export function SyncDialog() {
   const isOpen = useOpen();
+  const { pending } = useSync();
+  if (pending)
+    return (
+      <Modal open onClose={() => void confirmPendingSync(false)} variant="card" label="Connect this device to sync?">
+        <ConfirmLink code={pending} />
+      </Modal>
+    );
   return (
     <Modal open={isOpen} onClose={() => setOpen(false)} variant="card" label="Sync across devices">
       {isOpen && <Body />}
     </Modal>
+  );
+}
+
+/** A #sync= link was opened: say what connecting means before doing it. */
+function ConfirmLink({ code }: { code: string }) {
+  const s = useSync();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const btn = "min-h-11 rounded-xl px-4 text-sm";
+  return (
+    <div className="space-y-3 px-4 py-4 text-sm">
+      <h2 className="font-serif text-lg font-semibold">Connect this device to sync?</h2>
+      <p className="font-mono text-ink">{code}</p>
+      <p className="text-muted">
+        Your notes, highlights, favorites, progress, goals and settings on this device will be combined with this code’s and
+        shared with every device that uses it.
+      </p>
+      <p className="rounded-lg bg-accent-soft px-3 py-2 text-xs text-ink">
+        <strong>Only connect if this is your own code</strong>, from your own device. Anyone who has the code can read what’s
+        synced.
+        {s.on ? " This device will stop using its current sync code." : ""}
+      </p>
+      {err && <p role="alert" className="text-ink">{err}</p>}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const e = await confirmPendingSync(true);
+            setBusy(false);
+            if (e) setErr(e);
+            else {
+              toast("This device is now syncing");
+              openSyncDialog();
+            }
+          }}
+          className={`${btn} flex-1 bg-accent font-medium text-accent-ink disabled:opacity-60`}
+        >
+          {busy ? "Connecting…" : "Connect"}
+        </button>
+        <button type="button" onClick={() => void confirmPendingSync(false)} className={`${btn} flex-1 border border-line text-ink hover:bg-raised`}>
+          Not now
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -188,8 +241,8 @@ function Body() {
                   <button
                     type="button"
                     onClick={async () => {
-                      await deleteSyncedData();
-                      toast("Synced copy deleted");
+                      const ok = await deleteSyncedData();
+                      toast(ok ? "Synced copy deleted" : "Sync is off here, but the synced copy couldn’t be deleted (offline?). Try again later from another device.", ok ? 2600 : 7000);
                     }}
                     className={`${btn} bg-ink font-medium text-paper`}
                   >

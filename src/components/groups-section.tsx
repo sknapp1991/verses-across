@@ -329,8 +329,12 @@ function GroupCard({ g }: { g: MyGroup }) {
               <button
                 type="button"
                 onClick={async () => {
-                  await leaveGroup(g);
-                  toast("You left the group");
+                  try {
+                    await leaveGroup(g);
+                    toast("You left the group");
+                  } catch (e) {
+                    toast((e as Error).message);
+                  }
                 }}
                 className="text-xs text-faint underline underline-offset-2 hover:text-muted"
               >
