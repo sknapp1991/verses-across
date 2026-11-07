@@ -40,6 +40,8 @@ import { getPosition, savePosition } from "@/lib/reading-position";
 import { FirstTips } from "./first-tips";
 import { ReadAlongBar, ReadAlongSpacer, useReadAlong, type ReadAlong } from "./audio-player";
 import { useReaderState } from "./use-reader-state";
+import { countOnce } from "@/lib/count";
+import { useSpeech } from "@/lib/speech";
 import { gestureLock, useChapterSwipe, useScrollIdle, type SwipeHint } from "./use-chapter-swipe";
 
 type Col = { version: Version; entry: ChapterEntry; retry: () => void };
@@ -131,6 +133,17 @@ function NextChapterFlow({
 
 export function ReaderView() {
   const { ref, entry: book, versions, setVersions } = useReaderState();
+  // Anonymous counts (lib/count.ts): a chapter read for 2 s, and a read-along that starts playing.
+  const versionsKey = versions.join(",");
+  useEffect(() => {
+    const t = setTimeout(() => countOnce("view", `${ref.work}/${ref.book}/${ref.chapter}`, ref.work, versionsKey.split(",")), 2000);
+    return () => clearTimeout(t);
+  }, [ref.work, ref.book, ref.chapter, versionsKey]);
+  const speech = useSpeech();
+  useEffect(() => {
+    if (speech.status !== "playing" || !speech.chapterKey) return;
+    countOnce("play", speech.chapterKey, speech.chapterKey.split("/")[0], speech.version ? [speech.version] : versionsKey.split(","));
+  }, [speech.status, speech.chapterKey, speech.version, versionsKey]);
   const view = useViewMode();
   const settings = useSettings();
   const { fontSize } = settings;

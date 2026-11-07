@@ -8,6 +8,7 @@
  */
 import { useSyncExternalStore } from "react";
 import { booksOfWork, getVersion } from "./catalog";
+import { count } from "./count";
 import { AUDIO_BASE, getRecordings, type Recording } from "./recordings";
 
 export const TEXT_CACHE = "va-saved";
@@ -223,6 +224,7 @@ export async function downloadText(work: string, version: string, force = false)
   const ok = await run(`${v?.abbr ?? version} text`, TEXT_CACHE, files, true, force);
   if (ok) {
     const have = (await cachedUnder(TEXT_CACHE, [textPrefix(work, version)])).length;
+    if (!force) count("download", work, [version]);
     writeSaved({ ...readSaved(), [textKey(work, version)]: { kind: "text", work, version, bytes: index.texts[`${work}/${version}`].bytes, at: Date.now(), files: have } });
     void checkSaved();
   }
