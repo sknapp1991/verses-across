@@ -96,6 +96,7 @@ dialog.sheet[open] {
   font-family: var(--font-serif);
   font-size: var(--reader-size);
   line-height: 1.65;
+  text-align: var(--reader-align, start);
 }
 .reader-text:lang(es),
 .reader-text:lang(en),

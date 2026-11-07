@@ -1,4 +1,5 @@
 "use client";
+import { TextLayoutButton } from "./controls";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
@@ -30,7 +31,6 @@ import { LevelLegend, useLevelMarks } from "./reading-levels";
 import { RedLetterCtx, useRedLetter, VerseWords } from "./red-letter";
 import { StudiedBox } from "./studied-box";
 import { FloatingNav } from "./floating-nav";
-import { HighlightModeBar } from "./highlight-mode";
 import { showXref, XrefPanel } from "./xref-panel";
 import { wordAt } from "./use-gestures";
 import { chapterMarks, getItem, highlightBg, setHighlight, toggle, useStudy } from "@/lib/study";
@@ -99,7 +99,7 @@ function NextChapterFlow({
   return (
     <div ref={box} className={column ? "sticky left-0 w-[100cqw]" : ""} aria-hidden>
       <div className="border-t border-line">
-        <ChapterHeader title={chapterTitle(book, next.chapter)} bookRef={next} versions={versions} />
+        <ChapterHeader title={chapterTitle(book, next.chapter)} bookRef={next} versions={versions} preview />
       </div>
       <div
         className={column ? "grid gap-x-6 px-4 md:px-8" : "mx-auto max-w-[var(--stackw)] space-y-4 px-4 md:px-7"}
@@ -369,6 +369,7 @@ export function ReaderView() {
     "--reader-size": `${fontSize}px`,
     "--colmin": colMin,
     "--stackw": `${settings.stackWidth ?? 48}rem`,
+    "--reader-align": settings.textAlign,
   } as CSSProperties;
   const column = view === "column";
 
@@ -446,7 +447,6 @@ export function ReaderView() {
       <FloatingNav prev={prev} next={next} versions={versions} faint={!idle || !!hint} raised={ra.speech.open} />
     )}
     {ra.speech.open && <ReadAlongBar ra={ra} />}
-    <HighlightModeBar raised={ra.speech.open} />
     <XrefPanel bookRef={ref} versions={versions} raised={ra.speech.open} />
     <VerseMenu textsFor={textsFor} versions={versions} onReadFrom={ra.supported ? ra.readFrom : undefined} />
     <LevelLegend raised={ra.speech.open} />
@@ -494,7 +494,10 @@ function ChapterHeader({
   versions,
   prev,
   next,
+  preview = false,
 }: {
+  /** The next chapter's preview under this one (continuous scroll): no buttons of its own. */
+  preview?: boolean;
   title: string;
   /** The chapter's own name(s) from the versions shown, e.g. a sutta title in English · Pāli. */
   subtitle?: string;
@@ -514,6 +517,7 @@ function ChapterHeader({
         {subtitle && <p className="mt-0.5 font-serif text-base text-muted md:text-lg">{subtitle}</p>}
       </div>
       <div className="flex shrink-0 gap-1">
+        {!preview && <TextLayoutButton />}
         <NavIcon to={prev} versions={versions} label="Previous chapter" icon={<ChevronLeft />} />
         <NavIcon to={next} versions={versions} label="Next chapter" icon={<ChevronRight />} />
       </div>
@@ -565,9 +569,10 @@ function VersionPlay({ id, verse, label }: { id: string; verse?: string; label: 
 function VersionLabel({ version, compact = false }: { version: Version; compact?: boolean }) {
   const lang = getLanguage(version.language);
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5" title={`${version.name} (${version.year}) — ${lang.name}`}>
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1.5" title={`${version.name} (${version.year}) — ${lang.name}`}>
       <span className="font-semibold text-ink">{version.abbr}</span>
-      {!compact && <span className="truncate text-faint">{lang.name}</span>}
+      {/* Never cut short ("Spa…"): the name wraps under the abbreviation when the column is narrow. */}
+      {!compact && <span className="whitespace-nowrap text-faint">{lang.name}</span>}
       {version.kind === "ai" && (
         <span className="rounded bg-accent-soft px-1 text-[10px] font-bold uppercase text-accent">AI translation</span>
       )}

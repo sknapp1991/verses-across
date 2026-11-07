@@ -100,6 +100,27 @@ export const stopPlan = (id: string) => {
   delete next[id];
   write(next);
 };
+/* Plans finished and then stopped (so they still count for badges and levels). "<id>@<start>" each. */
+const DONE = "va-plans-done:v1";
+export function finishedPlans(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(DONE) ?? "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+export function recordFinished(id: string, start: number) {
+  const k = `${id}@${start}`;
+  const all = finishedPlans();
+  if (all.includes(k)) return;
+  try {
+    localStorage.setItem(DONE, JSON.stringify([...all, k]));
+  } catch {
+    /* private mode */
+  }
+}
+
 /** 0-based day number since the plan started (calendar days, local time). */
 export function dayIndex(start: number, now = Date.now()) {
   const a = new Date(start);

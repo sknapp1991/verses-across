@@ -1,11 +1,16 @@
 "use client";
-/** My Study → Plans: start a reading plan, see today's reading, tick chapters off (the "studied" mark). */
+/**
+ * Plans & Goals (its own top-bar button): start a reading plan, see today's reading, tick chapters off
+ * (the "studied" mark), and set daily or weekly goals or a date to finish a book.
+ */
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { chapterTitle, DEFAULT_VERSIONS, findBook, readHref, type BookRef } from "@/lib/catalog";
-import { dayIndex, planDays, PLANS, startPlan, stopPlan, useStartedPlans, type PlanDef } from "@/lib/plans";
+import { dayIndex, planDays, PLANS, recordFinished, startPlan, stopPlan, useStartedPlans, type PlanDef } from "@/lib/plans";
 import { getItem, toggle, useStudy } from "@/lib/study";
-import { toast } from "@/lib/ui-store";
+import { closePanel, toast } from "@/lib/ui-store";
+import { CalendarIcon, CloseIcon } from "./icons";
+import { Goals } from "./progress-panel";
 import { useReaderState } from "./use-reader-state";
 
 const label = (r: BookRef) => chapterTitle(findBook(r.work, r.book), r.chapter, r.book);
@@ -15,7 +20,20 @@ export function PlansPanel({ onNavigate }: { onNavigate?: () => void }) {
   const active = PLANS.filter((p) => started[p.id]);
   const others = PLANS.filter((p) => !started[p.id]);
   return (
-    <div className="space-y-4 px-2 py-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
+        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
+          <CalendarIcon width={18} height={18} className="text-accent" /> Plans &amp; Goals
+        </h2>
+        <button type="button" onClick={() => closePanel("plans")} aria-label="Close Plans and Goals" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
+          <CloseIcon />
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-2 py-3">
+        <div className="px-2">
+          <Goals />
+        </div>
+        <section aria-label="Reading plans" className="space-y-4">
       {active.map((p) => (
         <ActivePlan key={p.id} plan={p} start={started[p.id].start} onNavigate={onNavigate} />
       ))}
@@ -43,6 +61,8 @@ export function PlansPanel({ onNavigate }: { onNavigate?: () => void }) {
         </ul>
         <p className="px-2 pt-2 text-xs text-faint">Progress uses the “studied” tick on each chapter, so ticking a chapter anywhere counts.</p>
       </div>
+        </section>
+      </div>
     </div>
   );
 }
@@ -60,6 +80,18 @@ function ActivePlan({ plan, start, onNavigate }: { plan: PlanDef; start: number;
   const calendar = Math.min(total - 1, dayIndex(start));
   const behind = next >= 0 ? calendar - next : 0;
   const today = next >= 0 ? days[next] : null;
+  // The chapters the last "Mark day N as read" ticked, so it can be undone.
+  const [undo, setUndo] = useState<{ day: number; refs: BookRef[]; at: number } | null>(null);
+  const markDay = () => {
+    if (!today) return;
+    const refs = today.filter((r) => !done(r));
+    refs.forEach((r) => toggle("studied", r));
+    setUndo({ day: next + 1, refs, at: next + 1 });
+  };
+  const undoMark = () => {
+    undo?.refs.forEach((r) => done(r) && toggle("studied", r));
+    setUndo(null);
+  };
   const href = (r: BookRef) => readHref(r, r.work === ref.work ? versions : DEFAULT_VERSIONS[r.work]);
 
   return (
@@ -99,20 +131,26 @@ function ActivePlan({ plan, start, onNavigate }: { plan: PlanDef; start: number;
               );
             })}
           </ul>
-          <button
-            type="button"
-            onClick={() => today.forEach((r) => !done(r) && toggle("studied", r))}
-            className="mt-2 min-h-9 w-full rounded-lg border border-line text-sm hover:border-faint"
-          >
+          <button type="button" onClick={markDay} className="mt-2 min-h-9 w-full rounded-lg border border-line text-sm hover:border-faint">
             Mark day {next + 1} as read
           </button>
         </>
       ) : (
         <p className="mt-2 text-sm font-medium text-accent">Finished — well done! 🎉</p>
       )}
+      {/* Only while it still applies (gone once anything else is ticked or unticked). */}
+      {undo && undo.at === (next >= 0 ? next : days.length) && (
+        <p role="status" className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-accent-soft px-3 py-1.5 text-sm text-ink">
+          <span>Day {undo.day} marked as read.</span>
+          <button type="button" onClick={undoMark} className="min-h-8 rounded-md px-2 font-semibold text-accent hover:underline">
+            Undo
+          </button>
+        </p>
+      )}
       <button
         type="button"
         onClick={() => {
+          if (!today) recordFinished(plan.id, start); // finished: still counts after stopping
           stopPlan(plan.id);
           toast(`Stopped ${plan.name} (your ticks are kept)`);
         }}

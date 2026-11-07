@@ -1,7 +1,7 @@
 "use client";
 /**
  * Highlight mode: while on, tapping a verse paints it with the chosen colour (tap again to clear).
- * Toggle from the top bar; this floating bar shows the colours and turns it off.
+ * Toggle from the top bar; the strip under the top bar (ModeBanner) shows the colours and turns it off.
  */
 import { updateSettings, useSettings } from "@/lib/settings";
 import { HIGHLIGHTS } from "@/lib/study";
@@ -28,39 +28,57 @@ export function HighlightModeToggle({ full = false }: { full?: boolean }) {
   );
 }
 
-export function HighlightModeBar({ raised }: { raised: boolean }) {
-  const { highlightMode, highlightColor } = useSettings();
-  if (!highlightMode) return null;
+/**
+ * The strip right under the top bar while Words mode or Highlight mode is on: says what tapping does now
+ * (easy to spot, unlike a small note at the bottom) and turns the mode off. Highlight mode also picks the colour.
+ */
+export function ModeBanner() {
+  const { highlightMode, highlightColor, wordMode } = useSettings();
+  if (!highlightMode && !wordMode) return null;
   return (
     <div
-      role="toolbar"
-      aria-label="Highlight mode"
       data-no-swipe
-      className={`absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-line bg-panel/95 py-1 pl-3 pr-1 shadow-lg backdrop-blur ${
-        raised ? "bottom-24" : "bottom-4 mb-[env(safe-area-inset-bottom)]"
-      }`}
+      className="mode-banner flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-accent/40 bg-accent-soft px-3 py-1.5 text-sm text-ink md:px-4"
     >
-      <span className="hidden pr-1 text-xs font-medium text-muted sm:inline">Tap verses to highlight</span>
-      {HIGHLIGHTS.map((h) => (
-        <button
-          key={h.id}
-          type="button"
-          aria-label={h.label}
-          aria-pressed={highlightColor === h.id}
-          onClick={() => updateSettings({ highlightColor: h.id })}
-          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 ${highlightColor === h.id ? "border-ink" : "border-transparent"}`}
-        >
-          <span className="h-6 w-6 rounded-full" style={{ background: h.dot }} />
-        </button>
-      ))}
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span className="text-accent" aria-hidden>
+          {wordMode ? <WordsGlyph /> : <MarkerIcon width={18} height={18} />}
+        </span>
+        <span role="status" className="min-w-0">
+          <strong className="font-semibold">{wordMode ? "Words mode is on:" : "Highlight mode is on:"}</strong>{" "}
+          {wordMode ? "tap any word to see its original and meaning." : "tap verses to highlight them (tap again to clear)."}
+        </span>
+      </span>
+      {highlightMode && (
+        <span className="flex items-center gap-0.5" role="group" aria-label="Highlight colour">
+          {HIGHLIGHTS.map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              aria-label={h.label}
+              aria-pressed={highlightColor === h.id}
+              onClick={() => updateSettings({ highlightColor: h.id })}
+              className={`flex h-9 w-9 items-center justify-center rounded-full border-2 ${highlightColor === h.id ? "border-ink" : "border-transparent"}`}
+            >
+              <span className="h-6 w-6 rounded-full" style={{ background: h.dot }} />
+            </button>
+          ))}
+        </span>
+      )}
       <button
         type="button"
-        onClick={() => updateSettings({ highlightMode: false })}
-        aria-label="Turn off highlight mode"
-        className="flex h-9 w-9 items-center justify-center rounded-full text-muted hover:bg-raised"
+        onClick={() => updateSettings(wordMode ? { wordMode: false } : { highlightMode: false })}
+        className="flex min-h-9 items-center gap-1 rounded-lg border border-line bg-panel px-3 text-sm font-medium hover:border-faint"
       >
-        <CloseIcon width={18} height={18} />
+        <CloseIcon width={14} height={14} /> Turn off
       </button>
     </div>
   );
 }
+
+const WordsGlyph = () => (
+  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M4 19V7l4 8 4-8v12" />
+    <path d="M15 19h5M17.5 9v10" />
+  </svg>
+);

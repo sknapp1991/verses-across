@@ -5,6 +5,7 @@
  * in the chapter), and a card shows the original word and its meaning. Highlights use the CSS Custom
  * Highlight API, so the text itself is never re-rendered.
  */
+import { selectXref } from "@/lib/ui-store";
 import { useEffect, useState, useSyncExternalStore, type RefObject } from "react";
 import { getVersion } from "@/lib/catalog";
 import { updateSettings, useSettings } from "@/lib/settings";
@@ -241,21 +242,8 @@ export function WordStudy({ scroller, rowsKey, versions, raised }: { scroller: R
   }, [wordMode]);
   if (!wordMode) return null;
 
-  if (!s)
-    return (
-      <div
-        role="status"
-        data-no-swipe
-        className={`absolute left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-panel/95 py-1.5 pl-4 pr-1 text-sm shadow-lg backdrop-blur ${
-          raised ? "bottom-24" : "bottom-4 mb-[env(safe-area-inset-bottom)]"
-        }`}
-      >
-        <span>Words mode: tap any word</span>
-        <button type="button" onClick={() => updateSettings({ wordMode: false })} aria-label="Turn off Words mode" className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:text-ink">
-          <CloseIcon width={14} height={14} />
-        </button>
-      </div>
-    );
+  // The "tap any word" note is the strip under the top bar (ModeBanner).
+  if (!s) return null;
 
   const { pick, nums } = s;
   const bible = pick.work === "bible";
@@ -332,7 +320,10 @@ export function WordModeToggle({ full = false }: { full?: boolean }) {
     <button
       type="button"
       aria-pressed={wordMode}
-      onClick={() => updateSettings(wordMode ? { wordMode: false } : { wordMode: true, highlightMode: false, xrefMode: false })}
+      onClick={() => {
+        updateSettings(wordMode ? { wordMode: false } : { wordMode: true, highlightMode: false, xrefMode: false });
+        if (!wordMode) selectXref(false);
+      }}
       title="Words mode: tap a word to see its meaning and the same word in every version"
       aria-label="Words mode"
       className={`flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm desk:border ${full ? "w-full border" : "w-11 px-0"} ${

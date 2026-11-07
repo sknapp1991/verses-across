@@ -1,15 +1,18 @@
 "use client";
 /**
- * Progress: time spent reading and listening, verses and chapters, streaks, goals and badges.
+ * Progress: your level (1–60), time spent reading and listening, verses and chapters, streaks, study
+ * groups and badges. Goals live with the reading plans (Plans & Goals, plans-panel.tsx).
  * All counted on this device (src/lib/activity.ts); nothing is sent anywhere.
  */
 import { useEffect, useMemo, useState } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
-import { BADGES, computeStats, earned, markSeen, seenBadges } from "@/lib/achievements";
+import { addGoalMet, BADGES, computeStats, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
+import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
 import { catalog, findBook } from "@/lib/catalog";
-import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Goal, type Metric } from "@/lib/goals";
-import { useStudy } from "@/lib/study";
-import { closePanel, toast } from "@/lib/ui-store";
+import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
+import { getItem, useStudy } from "@/lib/study";
+import type { StudyItem } from "@/lib/storage";
+import { closePanel, openPanel, toast } from "@/lib/ui-store";
 import { CloseIcon, TrashIcon, TrophyIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 import { GroupsSection } from "./groups-section";
@@ -29,12 +32,11 @@ let lastPeriod: Period = "week";
 export function ProgressPanel() {
   const a = useActivity();
   const { items } = useStudy();
-  const goals = useGoals();
   const [period, setPeriod] = useState<Period>(lastPeriod);
   useEffect(() => {
     lastPeriod = period;
   }, [period]);
-  const stats = useMemo(() => computeStats(a, items), [a, items]);
+  const stats = useStats();
   const t = useMemo(() => totals(a, period === "all" ? undefined : periodStart(period)), [a, period]);
   const studiedIn = useMemo(() => {
     const from = period === "all" ? "" : periodStart(period);
@@ -50,12 +52,22 @@ export function ProgressPanel() {
         <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
           <TrophyIcon width={18} height={18} className="text-accent" /> Progress
         </h2>
-        <button type="button" onClick={closePanel} aria-label="Close Progress" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
+        <button type="button" onClick={() => closePanel("progress")} aria-label="Close Progress" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
           <CloseIcon />
         </button>
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-3">
+        <LevelCard stats={stats} />
+        <button
+          type="button"
+          onClick={() => openPanel("plans")}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl border border-line px-4 text-sm hover:bg-raised"
+        >
+          <span>Reading plans and goals</span>
+          <span className="text-accent">Plans &amp; Goals →</span>
+        </button>
+
         {/* Streak headline */}
         <div className="flex items-center gap-3 rounded-xl border border-line bg-raised px-4 py-3">
           <span className="text-3xl" aria-hidden>
@@ -97,8 +109,6 @@ export function ProgressPanel() {
           </div>
           {period !== "day" && <Chart a={a} period={period} />}
         </section>
-
-        <Goals goals={goals} a={a} />
 
         <GroupsSection />
 
@@ -222,7 +232,10 @@ function Ring({ value, size = 40 }: { value: number; size?: number }) {
   );
 }
 
-function Goals({ goals, a }: { goals: Goal[]; a: Activity }) {
+/** Goals: in Plans & Goals. */
+export function Goals() {
+  const a = useActivity();
+  const goals = useGoals();
   const { items } = useStudy();
   const [adding, setAdding] = useState(false);
   return (
@@ -337,6 +350,7 @@ const MET = "va-goals-met:v1";
 export function ProgressWatcher() {
   const a = useActivity();
   const { items, ready } = useStudy();
+  const started = useStartedPlans();
   useEffect(() => {
     startActivityTracking();
     startSync();
@@ -345,10 +359,23 @@ export function ProgressWatcher() {
   useEffect(() => {
     if (!ready) return;
     const t = setTimeout(() => {
-      const stats = computeStats(a, items);
+      const stats = statsNow(a, items, started);
       const now = BADGES.filter((b) => earned(b, stats)).map((b) => b.id);
       const seen = seenBadges();
-      if (seen === null) return markSeen(now); // first run: don't announce what was already done
+      const lvl = levelOf(xpOf(stats)).level;
+      const was = seenLevel();
+      if (seen === null || was === null) {
+        // first run: don't announce what was already done
+        markSeen(now);
+        markLevel(lvl);
+        return;
+      }
+      if (lvl > was) {
+        markLevel(lvl);
+        const title = levelOf(xpOf(stats)).title;
+        toast(lvl === MAX_LEVEL ? `⬆️ Level ${lvl} — ${title}, the highest level!` : `⬆️ Level ${lvl} — ${title}!`, 5000);
+        return; // a badge earned at the same moment is announced on the next check, a few seconds later
+      }
       const fresh = BADGES.filter((b) => now.includes(b.id) && !seen.has(b.id));
       if (fresh.length) {
         markSeen(now);
@@ -371,13 +398,14 @@ export function ProgressWatcher() {
           } catch {
             /* ignore */
           }
+          addGoalMet();
           toast(`🎯 Goal reached: ${p.label}`, 5000);
           break;
         }
       }
     }, 1500);
     return () => clearTimeout(t);
-  }, [a, items, ready]);
+  }, [a, items, ready, started]);
   return null;
 }
 
@@ -390,4 +418,78 @@ export function useGoalRing(): number | null {
   if (!g) return null;
   const p = goalProgress(g, a, items);
   return p.target ? Math.min(1, p.value / p.target) : 0;
+}
+
+/* ---------- stats with plans and goals; the level card ---------- */
+
+function statsNow(a: Activity, items: Map<string, StudyItem>, started: Record<string, { start: number }>): Stats {
+  const done = new Set(finishedPlans());
+  for (const p of PLANS) if (started[p.id] && planDays(p).every((d) => d.every((r) => !!getItem("studied", r)))) done.add(`${p.id}@${started[p.id].start}`);
+  const plansDone = done.size;
+  return computeStats(a, items, { plansDone, goalsMet: goalsMetCount() });
+}
+
+/** Everything counted, with finished plans and goals reached (for badges and the level). */
+export function useStats(): Stats {
+  const a = useActivity();
+  const { items } = useStudy();
+  const started = useStartedPlans();
+  return useMemo(() => statsNow(a, items, started), [a, items, started]);
+}
+
+/** The current level (1–60), for the top-bar trophy. */
+export function useLevel() {
+  const stats = useStats();
+  return levelOf(xpOf(stats));
+}
+
+function LevelCard({ stats }: { stats: Stats }) {
+  const [how, setHow] = useState(false);
+  const xp = xpOf(stats);
+  const l = levelOf(xp);
+  return (
+    <section aria-label="Level" className="space-y-2 rounded-xl border border-line bg-raised px-4 py-3">
+      <div className="flex items-center gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-accent font-serif text-xl font-semibold tabular-nums text-accent" aria-hidden>
+          {l.level}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-xl font-semibold leading-tight text-ink">
+            Level {l.level} <span className="text-base font-normal text-muted">· {l.title}</span>
+          </p>
+          <p className="text-xs text-muted">
+            {l.to ? `${(l.to - xp).toLocaleString()} XP to level ${l.level + 1}` : "The highest level. Well done!"}
+          </p>
+        </div>
+      </div>
+      <div
+        role="progressbar"
+        aria-label={`Experience toward level ${Math.min(MAX_LEVEL, l.level + 1)}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(l.progress * 100)}
+        className="h-2.5 overflow-hidden rounded-full bg-line"
+      >
+        <div className="h-full rounded-full bg-accent transition-[width] motion-reduce:transition-none" style={{ width: `${Math.max(2, l.progress * 100)}%` }} />
+      </div>
+      <p className="flex justify-between text-[11px] tabular-nums text-faint">
+        <span>{xp.toLocaleString()} XP</span>
+        <span>{l.to ? `${l.to.toLocaleString()} XP` : `Level ${MAX_LEVEL}`}</span>
+      </p>
+      <button type="button" aria-expanded={how} onClick={() => setHow(!how)} className="min-h-8 text-xs text-accent underline-offset-2 hover:underline">
+        {how ? "Hide how to earn XP" : "How to earn XP"}
+      </button>
+      {how && (
+        <ul className="space-y-0.5 text-xs text-muted">
+          {XP_RULES.map((r) => (
+            <li key={r.label} className="flex justify-between gap-2">
+              <span>{r.label}</span>
+              <span className="shrink-0 tabular-nums">+{r.xp.toLocaleString()}</span>
+            </li>
+          ))}
+          <li className="pt-1 text-faint">Levels go from 1 to {MAX_LEVEL}; each one takes a little more than the last.</li>
+        </ul>
+      )}
+    </section>
+  );
 }

@@ -55,7 +55,7 @@ export function openSearch(query?: string, versions?: string[]) {
   });
   openPanel("search");
 }
-export const closeSearch = closePanel;
+export const closeSearch = () => closePanel("search");
 
 /* ---------- panel ---------- */
 

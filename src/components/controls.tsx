@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { DEFAULT_VERSIONS, getVersion, versionsForWork } from "@/lib/catalog";
 import { getLanguage, LANGUAGES } from "@/lib/languages";
 import {
@@ -17,11 +17,48 @@ import {
   useSettings,
   useViewMode,
   versionColor,
+  type TextAlign,
 } from "@/lib/settings";
 import type { Version } from "@/lib/schema";
 import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PencilIcon, RowsIcon, SunIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 
+/** An on/off switch (a sliding pill), used for the yes/no settings. */
+export function Switch({ checked, onChange, label, hint }: { checked: boolean; onChange: (on: boolean) => void; label: React.ReactNode; hint?: React.ReactNode }) {
+  const id = useId();
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-labelledby={`${id}-l`}
+      aria-describedby={hint ? `${id}-h` : undefined}
+      onClick={() => onChange(!checked)}
+      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg text-left"
+    >
+      <span className="text-sm">
+        <span id={`${id}-l`} className="font-medium">
+          {label}
+        </span>
+        {hint && (
+          <span id={`${id}-h`} className="block text-xs text-faint">
+            {hint}
+          </span>
+        )}
+      </span>
+      <span
+        aria-hidden
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors motion-reduce:transition-none ${
+          checked ? "border-accent bg-accent" : "border-line bg-line"
+        }`}
+      >
+        <span
+          className={`absolute left-0 h-5 w-5 rounded-full bg-white shadow transition-transform motion-reduce:transition-none ${checked ? "translate-x-[1.3rem]" : "translate-x-0.5"}`}
+        />
+      </span>
+    </button>
+  );
+}
 
 export function ViewToggle({ full = false }: { full?: boolean }) {
   const view = useViewMode();
@@ -43,7 +80,7 @@ export function ViewToggle({ full = false }: { full?: boolean }) {
           }`}
         >
           <Icon width={18} height={18} />
-          <span className={full ? "" : "hidden lg:inline"}>{label}</span>
+          <span className={full ? "" : "hidden xl:inline"}>{label}</span>
         </button>
       ))}
     </div>
@@ -195,7 +232,18 @@ function ColorPicker({ value, onPick, label, children }: { value: string; onPick
               />
             ))}
           </div>
-          <label className="mt-2 flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg text-xs text-muted hover:bg-raised">
+          <button
+            type="button"
+            onClick={() => {
+              onPick("");
+              setAt(null);
+            }}
+            className={`mt-2 flex min-h-9 w-full items-center justify-center gap-2 rounded-lg text-xs hover:bg-raised ${value ? "text-muted" : "font-medium text-ink"}`}
+          >
+            <span className="h-4 w-4 rounded border border-line bg-ink" aria-hidden />
+            Normal (black, or white in dark mode)
+          </button>
+          <label className="flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg text-xs text-muted hover:bg-raised">
             <input type="color" value={value || "#888888"} onChange={(e) => onPick(e.target.value)} className="h-5 w-5 cursor-pointer border-0 bg-transparent p-0" />
             More colours…
           </label>
@@ -218,7 +266,7 @@ function VersionColorSwatch({ id, language, abbr }: { id: string; language: stri
     >
       <span className="flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center" title={own ? `${abbr} colour (tap to change)` : `Pick a colour for ${abbr}`}>
         <span
-          className={`h-6 w-6 rounded-md border ${s.langColors && effective ? "border-transparent" : "border-dashed border-faint"}`}
+          className={`h-6 w-6 rounded-md border ${!s.langColors ? "border-dashed border-faint" : effective ? "border-transparent" : "border-line bg-ink"}`}
           style={{ background: s.langColors && effective ? effective : undefined }}
         />
       </span>
@@ -516,27 +564,13 @@ export function ChapterSwipeControl() {
           ? "Use the ‹ › buttons to change chapter."
           : `Swipe ${chapterSwipe === "two" ? "with two fingers " : ""}sideways across most of the screen and let go. In Column view, swipe past the first or last column.`}
       </p>
-      <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
-        <span className="text-sm">
-          Continuous scroll
-          <span className="block text-xs text-faint">The next chapter follows below as you read</span>
-        </span>
-        <input
-          type="checkbox"
-          checked={continuousScroll}
-          onChange={(e) => updateSettings({ continuousScroll: e.target.checked })}
-          className="h-5 w-5 accent-[var(--accent)]"
-        />
-      </label>
-      <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
-        <span className="text-sm">Floating ‹ › chapter buttons</span>
-        <input
-          type="checkbox"
-          checked={floatingNav}
-          onChange={(e) => updateSettings({ floatingNav: e.target.checked })}
-          className="h-5 w-5 accent-[var(--accent)]"
-        />
-      </label>
+      <Switch
+        checked={continuousScroll}
+        onChange={(on) => updateSettings({ continuousScroll: on })}
+        label="Continuous scroll"
+        hint="The next chapter follows below as you read"
+      />
+      <Switch checked={floatingNav} onChange={(on) => updateSettings({ floatingNav: on })} label="Floating ‹ › chapter buttons" />
     </div>
   );
 }
@@ -588,25 +622,116 @@ export function WidthControl() {
   );
 }
 
+const ALIGNS: { id: TextAlign; label: string; lines: [number, number][] }[] = [
+  { id: "start", label: "Left", lines: [[4, 20], [4, 14], [4, 18], [4, 11]] },
+  { id: "center", label: "Center", lines: [[4, 20], [7, 17], [5, 19], [8, 16]] },
+  { id: "end", label: "Right", lines: [[4, 20], [10, 20], [6, 20], [13, 20]] },
+  { id: "justify", label: "Justified", lines: [[4, 20], [4, 20], [4, 20], [4, 13]] },
+];
+
+/** Verse text alignment: left, center, right or justified. */
+export function AlignControl() {
+  const { textAlign } = useSettings();
+  return (
+    <div className="space-y-1">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text alignment</h3>
+      <div role="radiogroup" aria-label="Text alignment" className="flex rounded-lg border border-line bg-raised p-0.5">
+        {ALIGNS.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            role="radio"
+            aria-checked={textAlign === a.id}
+            onClick={() => updateSettings({ textAlign: a.id })}
+            title={a.label}
+            className={`flex h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md text-[11px] ${
+              textAlign === a.id ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-ink"
+            }`}
+          >
+            <svg width={18} height={14} viewBox="0 0 24 18" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+              {a.lines.map(([x1, x2], i) => (
+                <path key={i} d={`M${x1} ${2 + i * 4.5}H${x2}`} />
+              ))}
+            </svg>
+            {a.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-faint">Hebrew and Arabic are read from the right, so for them Left and Right swap.</p>
+    </div>
+  );
+}
+
+/**
+ * In the reading area, next to the chapter arrows: column (or reading) width and text alignment, so they
+ * are changed right where the text is. Opens a small panel; Escape or a click outside closes it.
+ */
+export function TextLayoutButton() {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const { textAlign } = useSettings();
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  const icon = ALIGNS.find((a) => a.id === textAlign) ?? ALIGNS[0];
+  return (
+    <div ref={wrap} className="relative" data-no-swipe>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Text layout: width and alignment"
+        title="Width and alignment"
+        className={`flex h-11 items-center gap-1.5 rounded-lg border border-line px-3 text-sm ${open ? "bg-accent-soft text-accent" : "bg-raised text-muted hover:text-ink"}`}
+      >
+        <svg width={18} height={14} viewBox="0 0 24 18" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+          {icon.lines.map(([x1, x2], i) => (
+            <path key={i} d={`M${x1} ${2 + i * 4.5}H${x2}`} />
+          ))}
+        </svg>
+        <span className="hidden sm:inline">Layout</span>
+      </button>
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Text layout"
+          className="absolute right-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] space-y-4 rounded-xl border border-line bg-panel p-4 text-left shadow-xl"
+        >
+          <WidthControl />
+          <AlignControl />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Colour each language's text; each colour can be changed. */
 export function LanguageColors() {
   const s = useSettings();
   return (
     <div className="space-y-2">
-      <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-faint">
-          Coloured text
-          <span className="block font-normal normal-case tracking-normal">
-            Each version can have its own colour (colour block in “Your columns”); otherwise its language colour is used.
-          </span>
-        </span>
-        <input
-          type="checkbox"
-          checked={s.langColors}
-          onChange={(e) => updateSettings({ langColors: e.target.checked })}
-          className="h-5 w-5 accent-[var(--accent)]"
-        />
-      </label>
+      <Switch
+        checked={s.langColors}
+        onChange={(on) => updateSettings({ langColors: on })}
+        label="Coloured text"
+        hint={
+          <>
+            Each version can have its own colour (colour block in “Your columns”); otherwise its language colour is used. “Normal” is black
+            in light mode and white in dark mode.
+          </>
+        }
+      />
       {s.langColors && (
         <div className="grid grid-cols-2 gap-1">
           {LANGUAGES.map((l) => {
@@ -618,9 +743,16 @@ export function LanguageColors() {
                   label={`${l.name} colour`}
                   onPick={(c) => updateSettings({ palette: { ...getSettings().palette, [l.code]: c } })}
                 >
-                  <span className="h-7 w-7 shrink-0 cursor-pointer rounded border border-line" style={{ background: color || undefined }} />
+                  <span
+                    className={`h-7 w-7 shrink-0 cursor-pointer rounded border border-line ${color ? "" : "bg-ink"}`}
+                    style={{ background: color || undefined }}
+                    title={color ? undefined : "Normal text colour: black in light mode, white in dark mode"}
+                  />
                 </ColorPicker>
-                <span style={{ color: color || undefined }}>{l.name}</span>
+                <span style={{ color: color || undefined }}>
+                  {l.name}
+                  {!color && <span className="block text-[11px] leading-tight text-faint">Normal (black / white in dark mode)</span>}
+                </span>
               </div>
             );
           })}

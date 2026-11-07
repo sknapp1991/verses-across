@@ -5,6 +5,7 @@
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { updateSettings, useSettings } from "@/lib/settings";
+import { Switch } from "./controls";
 
 type Ranges = Record<string, [number, number][]>; // "ch:v" → [start, end)
 let index: Promise<Record<string, string[]>> | null = null;
@@ -74,12 +75,11 @@ export function VerseWords({ t, version, chapter, v }: { t: string; version: str
 export function RedLetterToggle() {
   const { redLetter } = useSettings();
   return (
-    <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3 text-sm">
-      <span>
-        <span className="font-medium">Words of Jesus in red</span>
-        <span className="block text-xs text-faint">KJV, WEB and the French Louis Segond mark them</span>
-      </span>
-      <input type="checkbox" checked={redLetter} onChange={(e) => updateSettings({ redLetter: e.target.checked })} className="h-5 w-5 accent-[var(--accent)]" />
-    </label>
+    <Switch
+      checked={redLetter}
+      onChange={(on) => updateSettings({ redLetter: on })}
+      label="Words of Jesus in red"
+      hint="KJV, WEB and the French Louis Segond mark them"
+    />
   );
 }

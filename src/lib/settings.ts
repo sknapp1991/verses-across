@@ -12,6 +12,8 @@ export type ViewMode = "column" | "stacked";
 export type Theme = "light" | "dark" | "system";
 
 /** A saved study setup ("template"): versions + how they look. */
+export type TextAlign = "start" | "center" | "end" | "justify";
+
 export type Setup = {
   id: string;
   name: string;
@@ -87,6 +89,8 @@ export type Settings = {
   continuousScroll: boolean;
   /** Floating ‹ › chapter buttons (fade while scrolling). */
   floatingNav: boolean;
+  /** Verse text alignment ("start" = left, or right for Hebrew and Arabic). */
+  textAlign: TextAlign;
   /** Saved setups, in the order they were made. */
   setups: Setup[];
   /** The saved setup last switched to (so changes can be saved back into it). */
@@ -152,6 +156,7 @@ const DEFAULTS: Settings = {
   chapterSwipe: "one",
   continuousScroll: false,
   floatingNav: true,
+  textAlign: "start",
   setups: [],
   activeSetup: null,
 };
@@ -203,6 +208,7 @@ function read(): Settings {
       chapterSwipe: p.chapterSwipe === "two" || p.chapterSwipe === "off" ? p.chapterSwipe : "one",
       continuousScroll: (p as { continuousScroll?: unknown }).continuousScroll === true,
       floatingNav: p.floatingNav !== false,
+      textAlign: (["center", "end", "justify"] as const).find((x) => x === (p as { textAlign?: unknown }).textAlign) ?? "start",
       setups: Array.isArray(p.setups)
         ? p.setups.filter((x): x is Setup => !!x && typeof x.name === "string" && Array.isArray(x.versions)).slice(0, 30)
         : [],
