@@ -1,13 +1,14 @@
 "use client";
 /** "Studied" checkbox at the end of a chapter; stores when you marked it (shown as MM/DD/YY h:mm AM). */
 import type { BookRef } from "@/lib/catalog";
-import { formatStamp, getItem, toggle, useStudy } from "@/lib/study";
+import { formatStamp, itemId, toggle, useStudy } from "@/lib/study";
 import { toast } from "@/lib/ui-store";
 import { CheckIcon } from "./icons";
 
 export function StudiedBox({ bookRef, title }: { bookRef: BookRef; title: string }) {
-  useStudy();
-  const item = getItem("studied", bookRef);
+  // From the hook's snapshot (empty while the server-rendered page is taken over), so it hydrates cleanly.
+  const { items } = useStudy();
+  const item = items.get(itemId("studied", bookRef));
   return (
     <div className="mx-auto max-w-3xl px-4 pt-8 md:px-8">
       <button

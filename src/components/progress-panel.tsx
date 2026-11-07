@@ -4,7 +4,7 @@
  * groups and badges. Goals live with the reading plans (Plans & Goals, plans-panel.tsx).
  * All counted on this device (src/lib/activity.ts); nothing is sent anywhere.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
 import { addGoalMet, BADGES, computeStats, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
 import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
@@ -422,19 +422,26 @@ export function useGoalRing(): number | null {
 
 /* ---------- stats with plans and goals; the level card ---------- */
 
-function statsNow(a: Activity, items: Map<string, StudyItem>, started: Record<string, { start: number }>): Stats {
-  const done = new Set(finishedPlans());
+function statsNow(a: Activity, items: Map<string, StudyItem>, started: Record<string, { start: number }>, finished = finishedPlans(), goalsMet = goalsMetCount()): Stats {
+  const done = new Set(finished);
   for (const p of PLANS) if (started[p.id] && planDays(p).every((d) => d.every((r) => !!getItem("studied", r)))) done.add(`${p.id}@${started[p.id].start}`);
-  const plansDone = done.size;
-  return computeStats(a, items, { plansDone, goalsMet: goalsMetCount() });
+  return computeStats(a, items, { plansDone: done.size, goalsMet });
 }
 
-/** Everything counted, with finished plans and goals reached (for badges and the level). */
+const noSubscribe = () => () => {};
+const finishedKey = () => finishedPlans().join("|");
+
+/**
+ * Everything counted, with finished plans and goals reached (for badges and the level). The two counts
+ * kept in storage are read the hydration-safe way (0 while the server-rendered page is taken over).
+ */
 export function useStats(): Stats {
   const a = useActivity();
   const { items } = useStudy();
   const started = useStartedPlans();
-  return useMemo(() => statsNow(a, items, started), [a, items, started]);
+  const goalsMet = useSyncExternalStore(noSubscribe, goalsMetCount, () => 0);
+  const finished = useSyncExternalStore(noSubscribe, finishedKey, () => "");
+  return useMemo(() => statsNow(a, items, started, finished ? finished.split("|") : [], goalsMet), [a, items, started, finished, goalsMet]);
 }
 
 /** The current level (1–60), for the top-bar trophy. */
