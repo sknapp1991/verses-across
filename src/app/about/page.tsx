@@ -9,6 +9,12 @@ export const metadata: Metadata = {
 };
 
 const REPO = "https://github.com/sknapp1991/snoopwiggy";
+const SOCIALS = [
+  ["YouTube", "https://www.youtube.com/@versesacross"],
+  ["Instagram", "https://www.instagram.com/versesacross/"],
+  ["TikTok", "https://www.tiktok.com/@versesacross"],
+  ["Facebook", "https://www.facebook.com/profile.php?id=61596354840469"],
+] as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -178,6 +184,21 @@ export default function AboutPage() {
             </a>
             .
           </p>
+          <p className="text-sm">Follow Verses Across for new features and a verse of the day:</p>
+          <ul className="flex flex-wrap gap-2 text-sm">
+            {SOCIALS.map(([name, href]) => (
+              <li key={name}>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer me"
+                  className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-ink hover:border-faint hover:bg-raised"
+                >
+                  {name}
+                </a>
+              </li>
+            ))}
+          </ul>
         </Section>
       </div>
     </main>
