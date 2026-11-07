@@ -37,7 +37,6 @@ import { chapterMarks, getItem, highlightBg, setHighlight, toggle, useStudy } fr
 import { openVerseMenu, toast } from "@/lib/ui-store";
 import { setReadingContext } from "@/lib/ai-chat";
 import { getPosition, savePosition } from "@/lib/reading-position";
-import { FirstTips } from "./first-tips";
 import { ReadAlongBar, ReadAlongSpacer, useReadAlong, type ReadAlong } from "./audio-player";
 import { useReaderState } from "./use-reader-state";
 import { countOnce } from "@/lib/count";
@@ -384,7 +383,6 @@ export function ReaderView() {
     >
       <div ref={content}>
       <div className={column ? "sticky left-0 w-[100cqw]" : ""}>
-        <FirstTips />
         <ChapterHeader title={title} subtitle={entries.flatMap((e) => (e.status === "ok" && e.data.title ? [e.data.title] : [])).filter((t, i, a) => a.indexOf(t) === i).join(" · ")} bookRef={ref} versions={versions} prev={prev} next={next} />
       </div>
 

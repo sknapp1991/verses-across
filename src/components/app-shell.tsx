@@ -13,6 +13,7 @@ import { StudyPanel } from "./study-panel";
 import { ProgressPanel, ProgressWatcher } from "./progress-panel";
 import { SyncDialog } from "./sync-dialog";
 import { DownloadsDialog } from "./downloads-dialog";
+import { Tour } from "./tour";
 import { GroupInvite } from "./groups-section";
 import { AiWindow } from "./ai-window";
 import { closePanel, useUi, type Panel } from "@/lib/ui-store";
@@ -100,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ProgressWatcher />
       <SyncDialog />
       <DownloadsDialog />
+      <Tour />
       <GroupInvite />
 
       {toast && <Toast key={toast.id} text={toast.text} />}

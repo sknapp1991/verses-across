@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Guided tour: each card slides in gently (none with reduced motion). */
+@keyframes tour-in {
+  from { opacity: 0; transform: translateX(14px); }
+}
+.tour-card { animation: tour-in 0.22s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .tour-card { animation: none; }
+}
 /* "Desktop layout" (sidebar + full top bar): wide AND tall. A phone turned sideways is wide but short,
    so it keeps the phone layout (library drawer, settings sheet) and gives all the width to columns. */
 @custom-variant desk (@media (min-width: 768px) and (min-height: 501px));

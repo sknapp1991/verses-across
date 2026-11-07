@@ -1,4 +1,5 @@
 "use client";
+import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -253,6 +254,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             {" · "}
             <button type="button" onClick={() => openFeedback()} className="underline underline-offset-2 hover:text-muted">
               Send feedback
+            </button>
+            {" · "}
+            <button type="button" onClick={() => openTour()} className="underline underline-offset-2 hover:text-muted">
+              Take the tour
             </button>
           </p>
         )}

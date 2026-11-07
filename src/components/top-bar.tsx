@@ -13,6 +13,7 @@ import { Modal } from "./modal";
 import { useReaderState } from "./use-reader-state";
 import { AiButton } from "./ai-window";
 import { OfflineDownloadsButton } from "./downloads-dialog";
+import { TourButton } from "./tour";
 import { ListenTopButton } from "./audio-player";
 import { RedLetterToggle } from "./red-letter";
 import { WordModeToggle } from "./word-study";
@@ -112,6 +113,7 @@ export function TopBar({
           <WidthControl />
           <ChapterSwipeControl />
           <OfflineDownloadsButton />
+          <TourButton />
         </TopPopover>
         <TopPopover label="Read together" title="Read together: send a link to this exact spot" icon={<ShareIcon />}>
           <ReadTogether />
@@ -165,6 +167,7 @@ export function TopBar({
             <LanguageColors />
             <ChapterSwipeControl />
             <OfflineDownloadsButton />
+            <TourButton />
             <ReadTogether />
             <div className="space-y-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Versions &amp; languages</h3>
