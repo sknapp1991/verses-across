@@ -77,3 +77,6 @@ next-env.d.ts
 /.cache-xref/
 /public/redletter
 /public/og/
+
+# vertical clips made by scripts/make-shorts.mjs
+/.cache-shorts/
