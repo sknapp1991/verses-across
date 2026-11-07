@@ -1,7 +1,7 @@
 # Verses Across roadmap
 
 The world's scriptures side by side, in many languages. Free, no ads, no account. Live at https://versesacross.com.
-This file is the source of truth; the roadmap page (linked from Desktop\Magnum Opus\Verses Across Files) shows the same.
+This file is the source of truth; the roadmap page https://claude.ai/artifact/G3QttiDxEaYA9aL61z5nPJ (shortcut: Desktop\Magnum Opus\Verses Across Files\Verses Across Roadmap) shows the same.
 
 Key facts: 111 versions of 78 works · 15 languages · 18 sections · about 27,600 chapters · open source (AGPL-3.0) ·
 Cloudflare Workers + R2 · pushing to `main` deploys · every change reviewed by Fable before it ships.
