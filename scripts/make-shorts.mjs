@@ -7,7 +7,7 @@
  * Two kinds of clip:
  *   - "cards": a passage in several languages (or one idea across traditions) fading in one by one,
  *     rendered from the library texts in public/texts, then an end card.
- *   - "app": the real reader on a phone-sized screen (needs `next start -p 3100` running), e.g. Words mode.
+ *   - "app": the real reader on a phone-sized screen (the live site by default; SHORTS_APP=http://127.0.0.1:3100 for a local build), e.g. Words mode.
  * Texts are read from public/texts so they are exactly what the app shows; every card names its source.
  * Needs Chrome and ffmpeg.
  */
@@ -21,7 +21,7 @@ const OUT = path.resolve(process.argv[2] ?? path.join(ROOT, ".cache-shorts"));
 const VOTD_AT = process.argv.indexOf("--votd");
 const ONLY = new Set(process.argv.slice(3).filter((a, i) => !a.startsWith("--") && (VOTD_AT < 0 || i + 3 > VOTD_AT + 2)));
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
-const APP = "http://127.0.0.1:3100";
+const APP = process.env.SHORTS_APP || "https://versesacross.com"; // the real reader to record ("app" clips); a local build also works
 const W = 540, H = 960, SCALE = 2; // CSS px x2 = 1080x1920
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
