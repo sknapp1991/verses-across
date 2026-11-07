@@ -2,6 +2,7 @@
  * Vertical short clips (1080x1920, dark mode, no sound) for TikTok / YouTube Shorts / Reels.
  *
  *   node scripts/make-shorts.mjs <out-dir> [name ...]
+ *   node scripts/make-shorts.mjs <out-dir> --votd 2026-11-08 21     (verse of the day for 21 days from that date)
  *
  * Two kinds of clip:
  *   - "cards": a passage in several languages (or one idea across traditions) fading in one by one,
@@ -17,7 +18,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.resolve(process.argv[2] ?? path.join(ROOT, ".cache-shorts"));
-const ONLY = new Set(process.argv.slice(3));
+const VOTD_AT = process.argv.indexOf("--votd");
+const ONLY = new Set(process.argv.slice(3).filter((a, i) => !a.startsWith("--") && (VOTD_AT < 0 || i + 3 > VOTD_AT + 2)));
 const CHROME = "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const APP = "http://127.0.0.1:3100";
 const W = 540, H = 960, SCALE = 2; // CSS px x2 = 1080x1920
@@ -36,6 +38,13 @@ const HUES = ["#60a5fa", "#fb923c", "#4ade80", "#c084fc", "#f472b6", "#2dd4bf"];
 
 /* ---------------- clip list ---------------- */
 
+const KJV = "English · King James Version";
+const RVR = "Español · Reina-Valera 1909";
+const LSG = "Français · Louis Segond 1910";
+const LUT = "Deutsch · Luther 1912";
+const GRK = "Ελληνικά · Greek (Textus Receptus)";
+const HEB = "עברית · Hebrew (Masoretic)";
+
 const CLIPS = [
   {
     name: "01-john-3-16-five-languages",
@@ -43,11 +52,11 @@ const CLIPS = [
     kicker: "One verse, five languages",
     title: "John 3:16",
     cards: [
-      ["English · KJV (1611)", text("bible", "kjv", "jhn", 3, 16)],
-      ["Español · Reina-Valera 1909", text("bible", "rvr1909", "jhn", 3, 16)],
-      ["Français · Louis Segond 1910", text("bible", "lsg1910", "jhn", 3, 16)],
-      ["Deutsch · Luther 1912", text("bible", "luther1912", "jhn", 3, 16)],
-      ["Ελληνικά · Greek (Textus Receptus)", text("bible", "greek", "jhn", 3, 16)],
+      [KJV, text("bible", "kjv", "jhn", 3, 16)],
+      [RVR, text("bible", "rvr1909", "jhn", 3, 16)],
+      [LSG, text("bible", "lsg1910", "jhn", 3, 16)],
+      [LUT, text("bible", "luther1912", "jhn", 3, 16)],
+      [GRK, text("bible", "greek", "jhn", 3, 16)],
     ],
   },
   {
@@ -56,11 +65,11 @@ const CLIPS = [
     kicker: "One verse, five languages",
     title: "Psalm 23:1",
     cards: [
-      ["English · KJV (1611)", text("bible", "kjv", "psa", 23, 1)],
-      ["עברית · Hebrew (Masoretic)", text("bible", "hebrew", "psa", 23, 1), "rtl"],
-      ["Español · Reina-Valera 1909", text("bible", "rvr1909", "psa", 23, 1)],
-      ["Français · Louis Segond 1910", text("bible", "lsg1910", "psa", 23, 1)],
-      ["Deutsch · Luther 1912", text("bible", "luther1912", "psa", 23, 1)],
+      [KJV, text("bible", "kjv", "psa", 23, 1)],
+      [HEB, text("bible", "hebrew", "psa", 23, 1), "rtl"],
+      [RVR, text("bible", "rvr1909", "psa", 23, 1)],
+      [LSG, text("bible", "lsg1910", "psa", 23, 1)],
+      [LUT, text("bible", "luther1912", "psa", 23, 1)],
     ],
   },
   {
@@ -80,23 +89,62 @@ const CLIPS = [
       [text("analects", "legge-an", "analects", 15, 23), "What you do not want done to yourself, do not do to others."],
     ],
   },
-  {
-    name: "04-the-original-word-agapao",
-    kind: "app",
-    kicker: "Tap a word, see the original",
-  },
+  { name: "04-the-original-word-agapao", kind: "app", kicker: "Tap a word, see the original", book: "jhn", ch: 3, v: 16, phrase: "so loved the world", word: "loved", versions: ["kjv", "rvr1909", "luther1912"] },
   {
     name: "05-verse-of-the-day-2026-11-07",
     kind: "cards",
     kicker: "Verse of the day",
     title: "Matthew 5:9",
     cards: [
-      ["English · KJV (1611)", text("bible", "kjv", "mat", 5, 9)],
-      ["Español · Reina-Valera 1909", text("bible", "rvr1909", "mat", 5, 9)],
-      ["Ελληνικά · Greek (Textus Receptus)", text("bible", "greek", "mat", 5, 9)],
+      [KJV, text("bible", "kjv", "mat", 5, 9)],
+      [RVR, text("bible", "rvr1909", "mat", 5, 9)],
+      [GRK, text("bible", "greek", "mat", 5, 9)],
     ],
   },
+  { name: "06-the-original-word-logos", kind: "app", book: "jhn", ch: 1, v: 1, phrase: "In the beginning was the Word", word: "Word", versions: ["kjv", "rvr1909", "luther1912"] },
+  { name: "07-the-original-word-shalom", kind: "app", book: "num", ch: 6, v: 26, phrase: "give thee peace", word: "peace", versions: ["kjv", "rvr1909", "luther1912"] },
+  { name: "08-the-original-word-hesed", kind: "app", book: "psa", ch: 136, v: 1, phrase: "his mercy endureth", word: "mercy", versions: ["kjv", "rvr1909", "luther1912"] },
+  {
+    name: "09-forgiveness-four-traditions",
+    kind: "cards",
+    kicker: "The same idea, four traditions",
+    title: "Forgiveness",
+    cards: [
+      ["Christianity · Matthew 6:14 (KJV)", text("bible", "kjv", "mat", 6, 14)],
+      ["Islam · Quran 24:22 (Pickthall)", "Let them forgive and show indulgence. Yearn ye not that Allah may forgive you? Allah is Forgiving, Merciful."],
+      ["Buddhism · Dhammapada 5 (Sujato)", text("dhammapada", "sujato", "dhp", 1, 5)],
+      ["Hinduism · Bhagavad Gita 16:3 (Besant)", text("gita", "besant", "gita", 16, 3)],
+    ],
+    excerpts: [[text("quran", "pickthall", "quran", 24, 22), "Let them forgive and show indulgence. Yearn ye not that Allah may forgive you? Allah is Forgiving, Merciful."]],
+  },
 ];
+
+/* ---------------- verse of the day (same list and same day rule as src/lib/daily.ts) ---------------- */
+
+const catalog = JSON.parse(readFileSync(path.join(ROOT, "data", "catalog.json"), "utf8"));
+const DAILY = [...readFileSync(path.join(ROOT, "src", "lib", "daily.ts"), "utf8").matchAll(/\{ work: "([^"]+)", book: "([^"]+)", chapter: (\d+), verse: "([^"]+)" \}/g)].map((m) => ({ work: m[1], book: m[2], chapter: Number(m[3]), verse: m[4] }));
+const dailyFor = (y, m, d) => DAILY[Math.floor(Date.UTC(y, m - 1, d) / 86_400_000) % DAILY.length];
+const LANG = { en: "English", es: "Español", el: "Ελληνικά", he: "עברית", ar: "العربية", sa: "संस्कृतम्", pi: "Pāli" };
+/** Versions shown for a work's verse of the day: its English, plus the original language (and Spanish for the Bible). */
+const VOTD_VERSIONS = { bible: null, tanakh: ["jps1917", "mt"], quran: ["pickthall", "tanzil"], gita: ["besant", "sanskrit"], dhammapada: ["sujato", "pli"], mishnah: ["kulp", "mishnah-he"] };
+function itemName(work, book) {
+  for (const r of catalog.religions) for (const col of r.collections) for (const it of col.items) if (it.work === work && it.id === book) return it.name;
+  return book;
+}
+function votdClip(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dv = dailyFor(y, m, d);
+  const ot = dv.work === "bible" && !["mat", "mrk", "luk", "jhn", "act", "rom", "1co", "2co", "gal", "eph", "php", "col", "1th", "2th", "1ti", "2ti", "tit", "phm", "heb", "jas", "1pe", "2pe", "1jn", "2jn", "3jn", "jud", "rev"].includes(dv.book);
+  const ids = VOTD_VERSIONS[dv.work] ?? (dv.work === "bible" ? ["kjv", "rvr1909", ot ? "hebrew" : "greek"] : catalog.versions.filter((v) => v.work === dv.work && v.language === "en").slice(0, 1).map((v) => v.id));
+  const cards = ids.map((id) => {
+    const v = catalog.versions.find((x) => x.work === dv.work && x.id === id);
+    const t = text(dv.work, id, dv.book, dv.chapter, dv.verse);
+    return [`${LANG[v.language] ?? v.language} · ${v.name}`, t, ["he", "ar"].includes(v.language) ? "rtl" : undefined];
+  });
+  const name = itemName(dv.work, dv.book).split(" · ")[0];
+  const single = ["quran", "gita", "dhammapada", "yoga-sutras", "thomas"].includes(dv.work);
+  return { name: `votd-${dateStr}`, kind: "cards", kicker: "Verse of the day", title: `${name} ${dv.chapter}:${dv.verse}`.replace(/^(The Quran|Bhagavad Gita|Dhammapada) /, single ? "$1 " : "$1 "), cards };
+}
 
 for (const c of CLIPS) for (const [full, part] of c.excerpts ?? []) if (!full.includes(part)) throw new Error(`${c.name}: excerpt not found in source: ${part}`);
 
@@ -215,19 +263,21 @@ async function makeCards(b, clip) {
 /* ---------------- app clip: Words mode on a phone ---------------- */
 
 async function makeWordClip(b, clip) {
+  const { book, ch, v, phrase, word, versions } = clip;
   await b.send("Page.navigate", { url: `${APP}/about` });
   await sleep(1500);
   await b.ev(`(() => {
+    localStorage.clear(); // a clean reader each time (no tab strip from earlier clips)
     localStorage.setItem("gs:tips:v1", "1");
     const s = JSON.parse(localStorage.getItem("gs:settings:v1") ?? "{}");
-    s.versions = { ...(s.versions ?? {}), bible: ["kjv", "rvr1909", "luther1912"] };
+    s.versions = { ...(s.versions ?? {}), bible: ${JSON.stringify(versions)} };
     s.view = "stacked"; s.wordMode = true; s.theme = "dark"; s.fontSize = 20;
     localStorage.setItem("gs:settings:v1", JSON.stringify(s));
     return true })()`);
-  await b.send("Page.navigate", { url: `${APP}/read/bible/jhn/3` });
+  await b.send("Page.navigate", { url: `${APP}/read/bible/${book}/${ch}` });
   await sleep(5000);
   await b.ev(`document.querySelectorAll("dialog[open]").forEach(d => d.close()); true`);
-  await b.ev(`(() => { const el = [...document.querySelectorAll('[data-v="16"]')][0]; el?.scrollIntoView({ block: "start" }); document.querySelector("main, [data-scroller]")?.scrollBy?.(0, -70); return true })()`);
+  await b.ev(`(() => { const el = [...document.querySelectorAll('[data-v="${v}"]')][0]; el?.scrollIntoView({ block: "start" }); document.querySelector("main, [data-scroller]")?.scrollBy?.(0, -70); return true })()`);
   await sleep(1200);
   // Hide the floating chapter arrows: in a tall phone video they'd sit on top of the word card.
   await b.ev(`(() => { const nav = document.querySelector('[aria-label="Chapter"]'); if (nav) nav.style.display = "none"; return !!nav })()`);
@@ -235,12 +285,12 @@ async function makeWordClip(b, clip) {
     c.style.cssText = "position:fixed;z-index:99999;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.5);pointer-events:none;left:${W - 80}px;top:${H - 140}px;transform:translate(-50%,-50%);transition:left .9s ease,top .9s ease,transform .15s";
     document.body.appendChild(c); return true })()`);
   const pos = await b.ev(`(() => {
-    const t = [...document.querySelectorAll("[data-text]")].find(e => e.textContent.includes("so loved the world"));
+    const t = [...document.querySelectorAll("[data-text]")].find(e => e.textContent.includes(${JSON.stringify(phrase)}));
     if (!t) return null;
     const w = document.createTreeWalker(t, NodeFilter.SHOW_TEXT);
-    for (let n; (n = w.nextNode()); ) { const i = n.textContent.indexOf("loved"); if (i >= 0) { const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 5); const b = r.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 } } }
+    for (let n; (n = w.nextNode()); ) { const i = n.textContent.indexOf(${JSON.stringify(word)}); if (i >= 0) { const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + ${word.length}); const b = r.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 } } }
     return null })()`);
-  if (!pos) throw new Error("couldn't find 'loved' on screen");
+  if (!pos) throw new Error(`couldn't find "${word}" on screen`);
   return b.record(clip.name, async () => {
     await sleep(1600);
     await b.ev(`(() => { const c = document.getElementById("fc"); c.style.left = "${pos.x}px"; c.style.top = "${pos.y}px"; return true })()`);
@@ -259,8 +309,14 @@ async function makeWordClip(b, clip) {
 mkdirSync(OUT, { recursive: true });
 const b = await browser(9371, path.join(OUT, ".frames", "profile"));
 try {
-  for (const clip of CLIPS) {
-    if (ONLY.size && !ONLY.has(clip.name)) continue;
+  const votd = process.argv.indexOf("--votd");
+  const list = votd > 0
+    ? Array.from({ length: Number(process.argv[votd + 2] ?? 1) }, (_, i) => {
+        const [y, m, d] = process.argv[votd + 1].split("-").map(Number);
+        return votdClip(new Date(Date.UTC(y, m - 1, d + i)).toISOString().slice(0, 10));
+      })
+    : CLIPS.filter((c) => !ONLY.size || ONLY.has(c.name));
+  for (const clip of list) {
     const frames = clip.kind === "app" ? await makeWordClip(b, clip) : await makeCards(b, clip);
     console.log(`${clip.name}.mp4  ${(frames / 25).toFixed(1)} s`);
   }
