@@ -16,7 +16,7 @@ Cloudflare Workers + R2 · pushing to `main` deploys · every change reviewed by
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| I | **Instagram / shorts assets** | queued | "One word, five languages" clips (love, peace, light); 1080×1350 carousel slides (one language per slide); a 10-second "built this week" clip when offline downloads ship. `scripts/make-shorts.mjs`. Verse-of-the-day clips rendered through Nov 28; next batch before then. |
+| I | **Instagram / shorts assets** | handed to the social session | It makes the clips and carousels itself with `scripts/make-shorts.mjs` (live site by default). I keep sending lines + clips when app features ship. |
 | B | Brother's next list | waiting | Whatever he sends next goes here first. |
 
 ## Later
@@ -25,6 +25,7 @@ Cloudflare Workers + R2 · pushing to `main` deploys · every change reviewed by
 |---|------|-------|
 | SEO | **Search: the next steps** | Most of the SEO work is already live (see History). Later: watch Search Console / Bing for indexing problems; landing pages per work and per tradition with their own titles and descriptions; `hreflang`-style alternates per language once indexing shows it would help; structured data for works (`Book`) beyond breadcrumbs. Low risk, no rush. |
 | A | Read-along: locked-phone test | Skylar to try a real locked phone with recorded voices. |
+| N | Notes for Skylar (brother's lists) | Tafsir/Ta'wil waits for openly licensed English translations (listed as coming soon). Quranism, Wahhabism and Atheism/Agnosticism sections need Skylar to choose texts and framing. Frankl and later Jung are still under copyright. |
 | L | More of the library | Project Gutenberg / public-domain texts as they come up; AI translations only where no free English exists, always labelled. |
 
 ## Check-ins
