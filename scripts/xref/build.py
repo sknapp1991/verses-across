@@ -5,6 +5,7 @@ Similarity = cosine of sentence embeddings (BAAI/bge-base-en-v1.5) of one Englis
 computed here once (GPU if there is one) and shipped as static files; the site does no AI work.
 
   .venv-tts/Scripts/python.exe scripts/xref/build.py        (after `npm run pack`; ~10 min on a GPU)
+  .venv-tts/Scripts/python.exe scripts/xref/build.py --literature-only   (books only; scripture files kept; less memory)
       → .cache-xref/<work>/<book>.json   {"<chapter>:<verse>": [["work/book/chapter:verse", score], ...]}
   npx tsx scripts/xref/upload.ts   → R2 (xref/…), served by /api/xref (too big to keep in git)
 
@@ -105,6 +106,11 @@ def main():
         torch.save({"n": len(refs), "emb": emb.float().cpu()}, CACHE)
         emb = emb.to(dev)
     emb = emb.half() if dev == "cuda" else emb.float()
+
+    # --literature-only: scripture's own files in .cache-xref are left as they are (much less memory).
+    if "--literature-only" in sys.argv:
+        literature(emb, refs, dev)
+        return
 
     groups = defaultdict(list)
     for i, r in enumerate(rels):
