@@ -96,7 +96,6 @@ function NextChapterFlow({
   versions,
   scroller,
   column,
-  narrow,
   hold,
   onGo,
 }: {
@@ -104,7 +103,6 @@ function NextChapterFlow({
   versions: string[];
   scroller: RefObject<HTMLDivElement | null>;
   column: boolean;
-  narrow: boolean;
   hold: boolean;
   /** `past`: how far the reader has scrolled beyond the next chapter's heading. */
   onGo: (past: number) => void;
@@ -142,7 +140,9 @@ function NextChapterFlow({
         // Measured from the first verse (the real chapter's heading is taller: it has the buttons), so the
         // lines being read stay exactly where they are; negative while still inside the heading. At most the
         // preview's own length (a flick into the space after it lands at the preview's end, not further).
-        const texts = el.querySelectorAll<HTMLElement>(".reader-text");
+        // Column view lines up cells (the real chapter aligns its [data-v] cells), stacked view lines up the text.
+        const cells = el.querySelectorAll<HTMLElement>("[data-pv-cell]");
+        const texts = cells.length ? cells : el.querySelectorAll<HTMLElement>(".reader-text");
         const first = texts[0];
         const last = texts[texts.length - 1];
         const span = first && last ? last.getBoundingClientRect().bottom - first.getBoundingClientRect().top : 0;
@@ -165,22 +165,34 @@ function NextChapterFlow({
     };
   }, [scroller, hold]);
   if (!book) return null;
-  const shown = versions.slice(0, column && narrow ? 1 : versions.length);
   const vers = versions.map((id) => getVersion(id));
   const multi = versions.length > 1;
   return (
-    <div ref={box} className={column ? "sticky left-0 w-[100cqw]" : ""} aria-hidden>
-      <div className="border-t border-line">
+    <div ref={box} aria-hidden>
+      <div className={`border-t border-line ${column ? "sticky left-0 w-[100cqw]" : ""}`}>
         <ChapterHeader title={chapterTitle(book, next.chapter)} bookRef={next} versions={versions} preview titleOnly />
       </div>
       {column ? (
-        <div className="grid gap-x-6 px-4 md:px-8" style={{ gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` }}>
+        // The same grid as the chapter itself (ColumnView): every version side by side at the same column
+        // widths, its label on top, a placeholder line while a version loads — so the switch doesn't jump.
+        <div className="grid min-w-full" style={{ gridTemplateColumns: `repeat(${versions.length}, minmax(var(--colmin), 1fr))` }}>
+          {vers.map((v, i) => (
+            <div key={versions[i]} className="border-b border-line px-4 py-2 text-sm md:px-5">
+              {v && <VersionLabel version={v} />}
+            </div>
+          ))}
           {rows.slice(0, 12).flatMap((row) =>
-            shown.map((id, i) => (
-              <p key={`${row.v}-${id}`} lang={vers[i]?.language} dir={vers[i]?.dir} className="reader-text py-2" style={{ color: vers[i] ? versionColor(settings, vers[i]!) : undefined }}>
-                <span className="mr-1 font-sans text-xs font-semibold text-accent">{row.v}</span>
-                {row.cells[i]?.t}
-              </p>
+            versions.map((id, i) => (
+              <div key={`${row.v}-${id}`} data-pv-cell className="border-b border-line/60 px-3 py-2.5 md:px-4">
+                {entries[i]?.status === "ok" ? (
+                  <p lang={vers[i]?.language} dir={vers[i]?.dir} className="reader-text" style={{ color: vers[i] ? versionColor(settings, vers[i]!) : undefined }}>
+                    {!row.cells[i]?.cont && <span className="mr-1 font-sans text-[0.62em] font-semibold text-accent">{row.v}</span>}
+                    {row.cells[i]?.t}
+                  </p>
+                ) : (
+                  <SkeletonLine />
+                )}
+              </div>
             )),
           )}
         </div>
@@ -566,7 +578,6 @@ export function ReaderView() {
           versions={versions}
           scroller={scroller}
           column={column}
-          narrow={!wide && !landscape}
           hold={ra.speech.status === "playing"}
           onGo={(past) => {
             // The chapter just finished by scrolling on: marked as studied (unless that's switched off).
