@@ -270,6 +270,10 @@ Royal Aal al-Bayt Institute by email on 2026-11-06).
 
 ## Recorded audio (audio v2)
 
+- **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
+  (archive.org item `bible_kjv_complete_2001_librivox`; LibriVox recordings are dedicated to the public
+  domain). Cut into chapters with verse timings by `scripts/tts/align-librivox.py`; the player labels it
+  "Michael Armenta · human reader (LibriVox)".
 - **Kokoro-82M** (hexgrad, Apache-2.0 open weights; https://huggingface.co/hexgrad/Kokoro-82M) reads the
   public-domain texts above into chapter MP3s (`scripts/tts/generate.py`). The model card states it was
   trained on permissive / non-copyrighted audio. The recordings are derived from public-domain texts and
