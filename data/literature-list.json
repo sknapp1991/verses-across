@@ -9203,6 +9203,95 @@
        "author": "Dodge, Mary Mapes, 1830-1905",
        "lang": "en",
        "downloads": 1155
+      },
+      {
+       "gid": 14872,
+       "title": "Tales of Beatrix Potter",
+       "author": "Potter, Beatrix, 1866-1943",
+       "lang": "en",
+       "group": [
+        14872,
+        14407,
+        14814,
+        15137,
+        14220,
+        14797,
+        45264,
+        14868,
+        45265,
+        17089
+       ],
+       "downloads": 3393
+      },
+      {
+       "gid": 39784,
+       "title": "Mother Goose's Nursery Rhymes A Collection of Alphabets, Rhymes, Tales, and Jingles",
+       "author": "Gilbert, John, 1817-1897 [Illustrator]; Crane, Walter, 1845-1915 [Illustrator]; Tenniel, John, 1820-1914 [Illustrator]; Weir, Harrison, 1824-1906 [Illustrator]; Zwecker, Johann Baptist, 1814-1876 [Illustrator]",
+       "lang": "en",
+       "downloads": 3381
+      },
+      {
+       "gid": 27602,
+       "title": "The True Story Book",
+       "author": "Lang, Andrew, 1844-1912 [Editor]",
+       "lang": "en",
+       "downloads": 2646
+      },
+      {
+       "gid": 32488,
+       "title": "Just so stories",
+       "author": "Kipling, Rudyard, 1865-1936; Gleeson, Joseph M. (Joseph Michael), 1861-1917 [Illustrator]",
+       "lang": "en",
+       "downloads": 1999
+      },
+      {
+       "gid": 18190,
+       "title": "Raggedy Ann stories",
+       "author": "Gruelle, Johnny, 1880-1938",
+       "lang": "en",
+       "downloads": 1703
+      },
+      {
+       "gid": 26197,
+       "title": "The Nursery Rhyme Book",
+       "author": "Lang, Andrew, 1844-1912 [Editor]; Brooke, L. Leslie (Leonard Leslie), 1862-1940 [Illustrator]",
+       "lang": "en",
+       "downloads": 1596
+      },
+      {
+       "gid": 5312,
+       "title": "Mother Goose in Prose",
+       "author": "Baum, L. Frank (Lyman Frank), 1856-1919; Parrish, Maxfield, 1870-1966 [Illustrator]",
+       "lang": "en",
+       "downloads": 1199
+      },
+      {
+       "gid": 35555,
+       "title": "Kim",
+       "author": "Kipling, Rudyard, 1865-1936",
+       "lang": "en",
+       "downloads": 1058
+      },
+      {
+       "gid": 17371,
+       "title": "Raggedy Andy stories",
+       "author": "Gruelle, Johnny, 1880-1938",
+       "lang": "en",
+       "downloads": 931
+      },
+      {
+       "gid": 38567,
+       "title": "Eight Cousins",
+       "author": "Alcott, Louisa May, 1832-1888",
+       "lang": "en",
+       "downloads": 818
+      },
+      {
+       "gid": 28308,
+       "title": "The Children's Book of Christmas Stories",
+       "author": "Dickinson, Asa Don, 1876-1960 [Editor]; Skinner, Ada M. (Ada Maria), 1878- [Editor]",
+       "lang": "en",
+       "downloads": 733
       }
      ]
     },
@@ -9885,101 +9974,6 @@
        "author": "Beeton, Mrs. (Isabella Mary), 1836-1865",
        "lang": "en",
        "downloads": 1732
-      }
-     ]
-    },
-    {
-     "id": "lit-emmy",
-     "name": "Emmy's Picks",
-     "books": [
-      {
-       "gid": 14872,
-       "title": "Tales of Beatrix Potter",
-       "author": "Potter, Beatrix, 1866-1943",
-       "lang": "en",
-       "group": [
-        14872,
-        14407,
-        14814,
-        15137,
-        14220,
-        14797,
-        45264,
-        14868,
-        45265,
-        17089
-       ],
-       "downloads": 3393
-      },
-      {
-       "gid": 39784,
-       "title": "Mother Goose's Nursery Rhymes A Collection of Alphabets, Rhymes, Tales, and Jingles",
-       "author": "Gilbert, John, 1817-1897 [Illustrator]; Crane, Walter, 1845-1915 [Illustrator]; Tenniel, John, 1820-1914 [Illustrator]; Weir, Harrison, 1824-1906 [Illustrator]; Zwecker, Johann Baptist, 1814-1876 [Illustrator]",
-       "lang": "en",
-       "downloads": 3381
-      },
-      {
-       "gid": 27602,
-       "title": "The True Story Book",
-       "author": "Lang, Andrew, 1844-1912 [Editor]",
-       "lang": "en",
-       "downloads": 2646
-      },
-      {
-       "gid": 32488,
-       "title": "Just so stories",
-       "author": "Kipling, Rudyard, 1865-1936; Gleeson, Joseph M. (Joseph Michael), 1861-1917 [Illustrator]",
-       "lang": "en",
-       "downloads": 1999
-      },
-      {
-       "gid": 18190,
-       "title": "Raggedy Ann stories",
-       "author": "Gruelle, Johnny, 1880-1938",
-       "lang": "en",
-       "downloads": 1703
-      },
-      {
-       "gid": 26197,
-       "title": "The Nursery Rhyme Book",
-       "author": "Lang, Andrew, 1844-1912 [Editor]; Brooke, L. Leslie (Leonard Leslie), 1862-1940 [Illustrator]",
-       "lang": "en",
-       "downloads": 1596
-      },
-      {
-       "gid": 5312,
-       "title": "Mother Goose in Prose",
-       "author": "Baum, L. Frank (Lyman Frank), 1856-1919; Parrish, Maxfield, 1870-1966 [Illustrator]",
-       "lang": "en",
-       "downloads": 1199
-      },
-      {
-       "gid": 35555,
-       "title": "Kim",
-       "author": "Kipling, Rudyard, 1865-1936",
-       "lang": "en",
-       "downloads": 1058
-      },
-      {
-       "gid": 17371,
-       "title": "Raggedy Andy stories",
-       "author": "Gruelle, Johnny, 1880-1938",
-       "lang": "en",
-       "downloads": 931
-      },
-      {
-       "gid": 38567,
-       "title": "Eight Cousins",
-       "author": "Alcott, Louisa May, 1832-1888",
-       "lang": "en",
-       "downloads": 818
-      },
-      {
-       "gid": 28308,
-       "title": "The Children's Book of Christmas Stories",
-       "author": "Dickinson, Asa Don, 1876-1960 [Editor]; Skinner, Ada M. (Ada Maria), 1878- [Editor]",
-       "lang": "en",
-       "downloads": 733
       }
      ]
     }

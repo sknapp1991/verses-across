@@ -6,9 +6,8 @@
  *               Science Fiction & Fantasy, Science Fiction, …, Fantasy, Humor, Western
  *     Poetry      (one shelf)
  *     Drama       (one shelf)
- *     For Children
+ *     For Children  (including the books that were on "Emmy's Picks")
  *     Non-fiction ▸ Social Sciences, Countries, Religion, Law, Wars, Animals, Education, Music, Science, Technology
- *     Emmy's Picks
  *
  * Rewrites the shelves of data/literature-list.json (the importer's input) and data/literature-catalog.json
  * (what the site reads) the same way, so no re-import is needed. Safe to run again (it works from the
@@ -55,8 +54,13 @@ function arrange<B>(shelves: Shelf<B>[], gidOf: (b: B) => number, byGid: (gid: n
   }
   out.push({ id: "lit-poetry", name: "Poetry", books: pick(POETRY) });
   out.push({ id: "lit-drama", name: "Drama", books: pick(DRAMA) });
+  // For Children, with the books that were on "Emmy's Picks" folded in (Skylar, Nov 8: no personal names on shelves).
   const children = get("lit-children");
-  if (children) out.push({ ...children, section: undefined });
+  if (children) {
+    const seen = new Set<number>();
+    const books = [...children.books, ...(get("lit-emmy")?.books ?? [])].filter((b) => !seen.has(gidOf(b)) && !!seen.add(gidOf(b)));
+    out.push({ id: children.id, name: children.name, books });
+  }
   for (const id of NONFICTION_ORDER) {
     const c = get(id);
     if (!c) continue;
@@ -64,10 +68,8 @@ function arrange<B>(shelves: Shelf<B>[], gidOf: (b: B) => number, byGid: (gid: n
     if (id === "lit-social") books = [...books, ...pick(TO_SOCIAL).filter((b) => !books.some((x) => gidOf(x) === gidOf(b)))];
     out.push({ id: c.id, name: c.name, section: "Non-fiction", books });
   }
-  const emmy = get("lit-emmy");
-  if (emmy) out.push({ ...emmy, section: undefined });
   // Anything not placed above (a shelf added later) stays, at the end.
-  const placed = new Set(out.map((c) => c.id).concat(["lit-crime"]));
+  const placed = new Set(out.map((c) => c.id).concat(["lit-crime", "lit-emmy"]));
   for (const c of all.values()) if (!placed.has(c.id)) out.push(c);
   return [{ id: "literature", name: "Literature", collections: out.map((c) => (c.section ? c : { id: c.id, name: c.name, books: c.books })) }];
 }
