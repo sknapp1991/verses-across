@@ -44,7 +44,7 @@ button:disabled { opacity:.5; }
 .chip { border:1px solid var(--line); background:var(--raised); color:var(--muted); border-radius:999px; padding:7px 13px; font-size:14px; cursor:pointer; min-height:36px; }
 .chip[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, transparent); font-weight:600; }
 .status { display:inline-block; border-radius:999px; padding:2px 9px; font-size:12px; font-weight:600; border:1px solid currentColor; }
-.s-New { color:var(--muted); } .s-Seen { color:var(--blue); } .s-Working { color:var(--warn); } .s-Live { color:var(--good); } .s-Question { color:var(--bad); } .s-Roadmap { color:var(--purple); }
+.s-New { color:var(--muted); } .s-Seen { color:var(--blue); } .s-Working { color:var(--warn); } .s-Live { color:var(--good); } .s-Question { color:var(--bad); } .s-Roadmap { color:var(--purple); } .s-Done { color:var(--faint); }
 .s-Waiting { color:var(--warn); } .s-Approved, .s-go { color:var(--good); } .s-Changes, .s-no { color:var(--bad); } .s-sheet { color:var(--warn); }
 .thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:6px; margin-top:8px; }
 .thumbs img, .thumbs video { width:100%; border-radius:8px; background:#000; max-height:60vh; object-fit:contain; }
@@ -200,12 +200,20 @@ async function showReport() {
 async function showInbox(id) {
   if (id) return showOne(id);
   const list = await api("/api/reports");
-  const items = list.map((r) => h("div.card.tap", { onclick: () => go("inbox", r.id) },
+  const card = (r) => h("div.card.tap", { onclick: () => go("inbox", r.id) },
     h("div.row", {}, status(r.status), h("span.faint", {}, r.type + " · " + who(r.author) + " · " + when(r.created)),
       r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null),
     h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
-    r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude: " + r.notes) : null));
-  show(h("h2", {}, "Inbox"), items.length ? h("div", {}, items) : h("p.muted", {}, "Nothing yet. Reports you send show up here with their status."));
+    r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude: " + r.notes) : null);
+  // Open things on top; finished ones (shipped, closed, or put on the roadmap) in History, newest change first.
+  const DONE = new Set(["Live", "Done", "Roadmap"]);
+  const open = list.filter((r) => !DONE.has(r.status));
+  const past = list.filter((r) => DONE.has(r.status)).sort((a, z) => (z.updated || "").localeCompare(a.updated || ""));
+  show(h("h2", {}, "Inbox"),
+    open.length ? h("div", {}, open.map(card)) : h("p.muted", {}, list.length ? "Nothing open. Everything is in History below." : "Nothing yet. Reports you send show up here with their status."),
+    past.length ? h("details.card", { style: "padding:0;border:0;background:none" },
+      h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "History: " + past.length + " finished (shipped, closed or on the roadmap)"),
+      h("div", {}, past.map(card))) : null);
 }
 
 async function showOne(id) {
@@ -228,7 +236,7 @@ async function showOne(id) {
   // Owner's session only: the status Claude sets (Claude works the inbox from this browser).
   let tools = null;
   if (ME.owner) {
-    const sel = h("select", {}, ["New", "Seen", "Working", "Live", "Question", "Roadmap"].map((s) => h("option", { value: s, selected: s === r.status }, s)));
+    const sel = h("select", {}, ["New", "Seen", "Working", "Question", "Live", "Done", "Roadmap"].map((s) => h("option", { value: s, selected: s === r.status }, s)));
     const notes = h("textarea", { style: "min-height:70px" }); notes.value = r.notes || "";
     const link = h("input", { type: "url", placeholder: "https://versesacross.com/…" }); link.value = r.live_url || "";
     tools = h("details.card", {}, h("summary", { class: "faint" }, "Status and note (Claude)"),

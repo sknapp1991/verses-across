@@ -6,7 +6,7 @@
 // What it can do is limited by the hub itself: statuses, notes, test links, replies as Claude, clips for
 // approval, "what shipped" lines. It can't approve, decide website feedback, vote, or act as a person.
 //
-//   node hub/cli.mjs list [New|Seen|Working|Live|Question|Roadmap]
+//   node hub/cli.mjs list [New|Seen|Working|Question|Live|Done|Roadmap]
 //   node hub/cli.mjs show <id>
 //   node hub/cli.mjs status <id> <Status> [note…]
 //   node hub/cli.mjs link <id> <https://versesacross.com/…>

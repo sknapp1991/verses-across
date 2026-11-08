@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS reports (
   type TEXT NOT NULL,            -- Bug | Idea | Content | Question
   place TEXT NOT NULL DEFAULT '', -- where: a page, URL or verse
   body TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'New', -- New | Seen | Working | Live | Question | Roadmap
+  status TEXT NOT NULL DEFAULT 'New', -- New | Seen | Working | Question (open) · Live | Done | Roadmap (history)
   notes TEXT NOT NULL DEFAULT '',     -- Claude's plain note (what changed / the question)
   live_url TEXT NOT NULL DEFAULT '',  -- where to test it once Live
   updated TEXT NOT NULL

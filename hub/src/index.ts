@@ -30,7 +30,8 @@ type R2 = {
 type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string };
 
 const TYPES = new Set(["Bug", "Idea", "Content", "Question"]);
-const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap"]);
+/** Open: New, Seen, Working, Question. History: Live (shipped), Done (closed, nothing to change), Roadmap (later). */
+const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap", "Done"]);
 const PART = 10 * 1024 * 1024; // upload parts (the page sends 10 MB at a time)
 const MAX_FILE = 2 * 1024 * 1024 * 1024; // 2 GB per file
 /** Exactly these: photos and phone videos. Never SVG or HTML (they could run code on the hub's address). */
