@@ -27,7 +27,7 @@ import { NoteLine, VerseBox, VerseCtx, VerseText, type Marks, type VerseActions 
 import { VerseMenu, verseReference, type VerseText as VerseTextInfo } from "./verse-menu";
 import { VerseQuick, type QuickAt } from "./verse-quick";
 import { pickWord, WordStudy } from "./word-study";
-import { LevelLegend, useLevelMarks } from "./reading-levels";
+import { LevelLegend, LevelsButton, useLevelMarks } from "./reading-levels";
 import { RedLetterCtx, useRedLetter, VerseWords } from "./red-letter";
 import { StudiedBox } from "./studied-box";
 import { FloatingNav } from "./floating-nav";
@@ -553,14 +553,15 @@ function ReaderToolbar({ title, subtitle, bookRef, versions, prev, next }: { tit
           {subtitle && <span className="ml-2 font-serif text-base font-normal text-muted">{subtitle}</span>}
         </h1>
       </div>
-      <div role="group" aria-label="Text settings" className="hidden shrink-0 items-center gap-1 @min-[44rem]:flex">
+      <div role="group" aria-label="Text settings" className="hidden shrink-0 items-center gap-1 @min-[48rem]:flex">
         <ViewToggle compact />
         <WidthButton />
         <AlignButton />
         <FontSizeControl compact />
         <ColoursButton />
+        <LevelsButton />
       </div>
-      <div className="flex shrink-0 @min-[44rem]:hidden">
+      <div className="flex shrink-0 @min-[48rem]:hidden">
         <TextSettingsButton />
       </div>
       <div className="flex shrink-0 items-center gap-1">

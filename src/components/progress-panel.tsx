@@ -13,10 +13,11 @@ import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Me
 import { getItem, useStudy } from "@/lib/study";
 import type { StudyItem } from "@/lib/storage";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
-import { CloseIcon, TrashIcon, TrophyIcon } from "./icons";
+import { TrashIcon, TrophyIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 import { startSync } from "@/lib/sync";
 import { startGroups } from "@/lib/groups";
+import { PanelHeader } from "./panel-header";
 
 type Period = "day" | "week" | "month" | "year" | "all";
 const PERIODS: { id: Period; label: string }[] = [
@@ -47,14 +48,7 @@ export function ProgressPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
-        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
-          <TrophyIcon width={18} height={18} className="text-accent" /> Progress
-        </h2>
-        <button type="button" onClick={() => closePanel("progress")} aria-label="Close Progress" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
-          <CloseIcon />
-        </button>
-      </div>
+      <PanelHeader icon={<TrophyIcon width={18} height={18} />} title="Progress" onClose={() => closePanel("progress")} closeLabel="Close Progress" />
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-3">
         <LevelCard stats={stats} />

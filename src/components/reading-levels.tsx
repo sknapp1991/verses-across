@@ -8,6 +8,7 @@ import { updateSettings, useSettings, type Settings } from "@/lib/settings";
 import { levelKey, levelsFor } from "@/lib/words";
 import { tokenize } from "@/lib/word-norm";
 import { CloseIcon } from "./icons";
+import { ToolPopover } from "./controls";
 
 export type LevelMarks = Settings["levelMarks"];
 const ORDER = ["B1", "B2", "C1", "C2"];
@@ -97,6 +98,27 @@ export function LevelMarksControl() {
         ))}
       </select>
     </label>
+  );
+}
+
+/** Reading toolbar: the reading levels (underlines for harder words); the icon is lit while they're on. */
+export function LevelsButton() {
+  const { levelMarks } = useSettings();
+  const on = levelMarks !== "off";
+  return (
+    <ToolPopover
+      label={`Reading levels${on ? " (on)" : ""}`}
+      title="Reading levels: underline words a learner may not know yet"
+      text="Levels"
+      icon={
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden className={on ? "text-accent" : ""}>
+          <path d="M4 15l3.5-9 3.5 9M5.3 12h4.4M14 15V7h2.5a2 2 0 010 4H14h3a2 2 0 010 4h-3" />
+          <path d="M3 19.5h18" strokeDasharray="2 2.5" />
+        </svg>
+      }
+    >
+      <LevelMarksControl />
+    </ToolPopover>
   );
 }
 

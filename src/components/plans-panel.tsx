@@ -9,9 +9,10 @@ import { chapterTitle, DEFAULT_VERSIONS, findBook, readHref, type BookRef } from
 import { dayIndex, planDays, PLANS, recordFinished, startPlan, stopPlan, useStartedPlans, type PlanDef } from "@/lib/plans";
 import { getItem, toggle, useStudy } from "@/lib/study";
 import { closePanel, toast } from "@/lib/ui-store";
-import { CalendarIcon, CloseIcon } from "./icons";
+import { CalendarIcon } from "./icons";
 import { Goals } from "./progress-panel";
 import { useReaderState } from "./use-reader-state";
+import { PanelHeader } from "./panel-header";
 
 const label = (r: BookRef) => chapterTitle(findBook(r.work, r.book), r.chapter, r.book);
 
@@ -21,14 +22,7 @@ export function PlansPanel({ onNavigate }: { onNavigate?: () => void }) {
   const others = PLANS.filter((p) => !started[p.id]);
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
-        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
-          <CalendarIcon width={18} height={18} className="text-accent" /> Plans &amp; Goals
-        </h2>
-        <button type="button" onClick={() => closePanel("plans")} aria-label="Close Plans and Goals" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
-          <CloseIcon />
-        </button>
-      </div>
+      <PanelHeader icon={<CalendarIcon width={18} height={18} />} title="Plans & Goals" onClose={() => closePanel("plans")} closeLabel="Close Plans and Goals" />
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-2 py-3">
         <div className="px-2">
           <Goals />

@@ -96,7 +96,6 @@ export function TopBar({
           <TopPopover label="Display options" title="Saved setups, words of Jesus in red, swiping, offline and more" icon={<SlidersIcon />}>
             <SavedSetups />
             <RedLetterToggle />
-            <LevelMarksControl />
             <ChapterSwipeControl />
             <OfflineDownloadsButton />
             <TourButton />

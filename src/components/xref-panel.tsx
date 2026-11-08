@@ -15,6 +15,7 @@ import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, getVersion, readHref
 import { fetchBook } from "@/lib/chapter-store";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { CloseIcon, SparkIcon } from "./icons";
+import { PanelHeader } from "./panel-header";
 
 type Hit = { work: string; book: string; chapter: number; v: string; score: number };
 
@@ -250,22 +251,14 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className={`flex shrink-0 items-center gap-1 border-b border-line py-1 pl-4 pr-1 ${phone ? "bg-raised pt-3" : ""}`}>
-        <span className="text-accent">
-          <XrefIcon />
-        </span>
-        <h2 className="min-w-0 flex-1 truncate font-serif text-lg font-semibold">
-          Cross references{verse ? <span className="font-sans text-sm font-normal text-muted"> · {selectionLabel(sel)}</span> : null}
-        </h2>
-        <button
-          type="button"
-          onClick={closeXref}
-          aria-label="Close cross references"
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink"
-        >
-          <CloseIcon />
-        </button>
-      </header>
+      <PanelHeader
+        icon={<XrefIcon />}
+        title="Cross references"
+        extra={verse ? selectionLabel(sel) : undefined}
+        onClose={closeXref}
+        closeLabel="Close cross references"
+        className={phone ? "pt-3" : ""}
+      />
       {sel.length > 0 && (
         <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-line px-3 py-2 text-xs">
           <span className="mr-1 font-semibold uppercase tracking-wide text-faint">Verses</span>

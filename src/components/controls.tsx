@@ -22,6 +22,7 @@ import {
 import type { Version } from "@/lib/schema";
 import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PaletteIcon, PencilIcon, RowsIcon, SunIcon, WidthIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
+import { LevelMarksControl } from "./reading-levels";
 
 /** An on/off switch (a sliding pill), used for the yes/no settings. */
 export function Switch({ checked, onChange, label, hint }: { checked: boolean; onChange: (on: boolean) => void; label: React.ReactNode; hint?: React.ReactNode }) {
@@ -667,7 +668,7 @@ export function AlignControl() {
  * A small button in the reading area's toolbar with a panel under it. Escape, a click outside or the
  * button closes it. The panel sits above the text (the toolbar is outside the scrolling text).
  */
-function ToolPopover({ label, title, icon, text, children, wide = false }: { label: string; title: string; icon: React.ReactNode; text?: string; children: React.ReactNode; wide?: boolean }) {
+export function ToolPopover({ label, title, icon, text, children, wide = false }: { label: string; title: string; icon: React.ReactNode; text?: string; children: React.ReactNode; wide?: boolean }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -756,6 +757,7 @@ export function TextSettingsButton() {
       </div>
       <WidthControl />
       <AlignControl />
+      <LevelMarksControl />
       <LanguageColors />
     </ToolPopover>
   );

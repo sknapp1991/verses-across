@@ -19,6 +19,7 @@ import { AiWindow } from "./ai-window";
 import { closePanel, openPanel, selectXref, setSplit, useUi, type PanelId } from "@/lib/ui-store";
 import { closeXref, XrefDockPanel } from "./xref-panel";
 import { PlansPanel } from "./plans-panel";
+import { DockPanelContext } from "./panel-header";
 import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon, UsersIcon } from "./icons";
 
 /** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"). */
@@ -173,23 +174,34 @@ function PanelBody({ panel, onNavigate }: { panel: DockId; onNavigate?: () => vo
  * Drag the left edge to resize (double-click: back to the default width).
  */
 function Dock() {
-  const { panel, tabs, split, xrefActive } = useUi();
+  const { panel, tabs, split: splitSetting, xrefActive, shownN, shownAt } = useUi();
   const { xrefMode, panelWidth } = useSettings();
   const huge = useMediaQuery("(min-width: 1800px)", false);
+  // Side by side: panels folded up to their title bar (the others share the room).
+  // Each folded panel with the count it was folded at: a panel asked to show after that (its button, a
+  // search, a verse's cross references) is open again.
+  const [foldedAt, setFoldedAt] = useState<Partial<Record<DockId, number>>>({});
+  const folded = (Object.keys(foldedAt) as DockId[]).filter((id) => (foldedAt[id] ?? -1) >= (shownAt[id] ?? 0));
   const all: DockId[] = xrefMode ? [...tabs, "xref"] : tabs;
+  // Side by side needs two panels; with one left it shows as a plain panel (the setting is kept).
+  const split = splitSetting && all.length > 1;
   if (!all.length) return null;
   const active: DockId = xrefMode && (xrefActive || !panel) ? "xref" : (panel ?? all[0]);
   const shown = split ? all : [active];
   const cols = Math.min(shown.length, huge ? 3 : 2);
-  const rows = Math.ceil(shown.length / cols);
+  // Panels go down the columns in turn: 1 3 5 | 2 4.
+  const columns = Array.from({ length: cols }, (_, c) => shown.filter((_, i) => i % cols === c));
   const each = panelWidth ?? 384;
   const select = (id: DockId) => {
     if (split) setSplit(false);
     if (id === "xref") selectXref(true);
     else openPanel(id);
   };
-  const close = (id: DockId) => (id === "xref" ? closeXref() : closePanel(id));
-  const lastSpan = shown.length % cols ? cols - (shown.length % cols) + 1 : 1;
+  const close = (id: DockId) => {
+    setFoldedAt((f) => without(f, id));
+    if (id === "xref") closeXref();
+    else closePanel(id);
+  };
   return (
     <aside
       aria-label={split ? "Side panels" : PANEL_LABEL[active]}
@@ -258,7 +270,7 @@ function Dock() {
           </div>
           <button
             type="button"
-            onClick={() => setSplit(!split)}
+            onClick={() => setSplit(!splitSetting)}
             aria-pressed={split}
             aria-label={split ? "Show the panels as tabs" : "Show the open panels side by side"}
             title={split ? "Show the panels as tabs" : "Show the open panels side by side"}
@@ -269,24 +281,44 @@ function Dock() {
           </button>
         </div>
       )}
-      <div
-        className="grid min-h-0 flex-1 gap-px bg-line"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}
-      >
-        {shown.map((id, i) => (
-          <section
-            key={id}
-            aria-label={PANEL_LABEL[id]}
-            // An odd last panel takes the rest of its row.
-            style={i === shown.length - 1 && lastSpan > 1 ? { gridColumn: `span ${lastSpan}` } : undefined}
-            className="min-h-0 min-w-0 overflow-hidden bg-panel"
-          >
-            <PanelBody panel={id} />
-          </section>
+      <div className="flex min-h-0 flex-1 gap-px bg-line">
+        {columns.map((col, c) => (
+          <div key={c} className="flex min-h-0 min-w-0 flex-1 flex-col gap-px">
+            {col.map((id) => {
+              const isFolded = split && folded.includes(id);
+              const toggle = () => setFoldedAt((f) => (isFolded ? without(f, id) : { ...f, [id]: shownN }));
+              return (
+                <DockPanelContext.Provider
+                  key={id}
+                  value={{ split, collapsed: isFolded, toggle }}
+                >
+                  <section
+                    aria-label={PANEL_LABEL[id]}
+                    // Folded: just the title bar. Open: shares the column; when that's short, the whole panel
+                    // scrolls (its own lists still scroll inside it), so nothing is out of reach.
+                    // Folded, everything under the title bar is hidden (not just clipped), so the keyboard skips it.
+                    className={`min-w-0 bg-panel ${isFolded ? "h-9 shrink-0 overflow-hidden [&_header~*]:hidden" : "min-h-0 flex-1 overflow-y-auto"}`}
+                  >
+                    <div className={split && !isFolded ? "h-full min-h-[20rem]" : "h-full"}>
+                      <PanelBody panel={id} />
+                    </div>
+                  </section>
+                </DockPanelContext.Provider>
+              );
+            })}
+            {/* Every panel in this column folded: the space below stays empty. */}
+            {split && col.every((id) => folded.includes(id)) && <div className="flex-1 bg-panel" />}
+          </div>
         ))}
       </div>
     </aside>
   );
+}
+
+function without<T extends object>(o: T, key: keyof T): T {
+  const r = { ...o };
+  delete r[key];
+  return r;
 }
 
 const SplitIcon = () => (

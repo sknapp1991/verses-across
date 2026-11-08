@@ -264,7 +264,7 @@ export function TabBar() {
 }
 
 /**
- * The traditions row (blue, apart from the amber book tabs under it). Drag one sideways to move it
+ * The traditions row (orange, set apart from the book tabs under it). Drag one sideways to move it
  * (touch: press and hold, then drag); its books move with it.
  */
 function GroupRow({

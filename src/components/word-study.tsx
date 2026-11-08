@@ -11,6 +11,7 @@ import { getVersion } from "@/lib/catalog";
 import { updateSettings, useSettings } from "@/lib/settings";
 import { APPROX, lexicon, loadTags, spans, TAGGED, type LexEntry } from "@/lib/strongs";
 import { getLanguage } from "@/lib/languages";
+import { translit } from "@/lib/translit";
 import { hasWords, lookupWord, type WordCard } from "@/lib/words";
 import { CloseIcon, WordsIcon } from "./icons";
 import { openSearch } from "./search-panel";
@@ -189,6 +190,17 @@ const LEVEL_NOTE: Record<string, string> = {
   archaic: "old-fashioned English",
 };
 
+/** "(lyubóv)" after a Russian, Greek, Hebrew or Arabic word: how to say it. */
+function Say({ word, lang, className = "" }: { word: string; lang: string; className?: string }) {
+  const t = translit(word, lang);
+  if (!t) return null;
+  return (
+    <span lang="en" dir="ltr" className={`ml-1 italic text-muted ${className}`} title="How to say it (approximate)">
+      ({t})
+    </span>
+  );
+}
+
 function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
   const e = card.entry;
   const tr = Object.entries(e.tr ?? {}).filter(([l]) => l !== lang);
@@ -200,7 +212,10 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
         </p>
       )}
       <p className="flex flex-wrap items-baseline gap-x-2">
-        <span className="font-semibold">{card.head}</span>
+        <span className="font-semibold">
+          {card.head}
+          <Say word={card.head} lang={lang} />
+        </span>
         {e.pos.length > 0 && <span className="italic text-muted">{e.pos.join(", ")}</span>}
         {e.level && (
           <span className="rounded-full border border-line px-2 text-xs text-muted" title={e.est ? "Estimated from how common the word is" : "From a learner word list (CEFR)"}>
@@ -222,7 +237,14 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
         <div className="flex flex-wrap gap-1 pt-0.5">
           {tr.slice(0, 10).map(([l, words]) => (
             <span key={l} className="rounded-full bg-raised px-2 py-0.5 text-xs" lang={l}>
-              <span className="text-faint">{getLanguage(l).name}:</span> {words.slice(0, 2).join(", ")}
+              <span className="text-faint">{getLanguage(l).name}:</span>{" "}
+              {words.slice(0, 2).map((w, i) => (
+                <span key={`${i}:${w}`}>
+                  {i > 0 && ", "}
+                  {w}
+                  <Say word={w} lang={l} />
+                </span>
+              ))}
             </span>
           ))}
         </div>
@@ -258,7 +280,10 @@ export function WordStudy({ scroller, rowsKey, versions, raised }: { scroller: R
       }`}
     >
       <div className="flex items-start gap-2">
-        <h2 className="min-w-0 flex-1 font-serif text-xl font-semibold">{pick.word}</h2>
+        <h2 className="min-w-0 flex-1 font-serif text-xl font-semibold">
+          {pick.word}
+          <Say word={pick.word} lang={getVersion(pick.version)?.language ?? ""} className="ml-2 font-sans text-base font-normal" />
+        </h2>
         <button type="button" onClick={() => openSearch(pick.word, [pick.version])} className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:text-ink">
           Search
         </button>

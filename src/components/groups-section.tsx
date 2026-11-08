@@ -26,6 +26,7 @@ import { CloseIcon, UsersIcon } from "./icons";
 import { Modal } from "./modal";
 import { Qr } from "./qr";
 import { useReaderState } from "./use-reader-state";
+import { PanelHeader } from "./panel-header";
 
 const NAME_KEY = "va-group-name";
 const savedName = () => {
@@ -49,14 +50,7 @@ const btn = "min-h-10 rounded-lg px-3 text-sm";
 export function GroupsPanel() {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
-        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
-          <UsersIcon width={18} height={18} className="text-accent" /> Study groups
-        </h2>
-        <button type="button" onClick={() => closePanel("groups")} aria-label="Close Study groups" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
-          <CloseIcon />
-        </button>
-      </div>
+      <PanelHeader icon={<UsersIcon width={18} height={18} />} title="Study groups" onClose={() => closePanel("groups")} closeLabel="Close Study groups" />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
         <GroupsSection heading={false} />
       </div>

@@ -25,10 +25,13 @@ type Ui = {
   xrefActive: boolean;
   menu: VerseMenuState;
   toast: { id: number; text: string } | null;
+  /** A counter, and the count at which each panel was last asked to show (also when it already did). */
+  shownN: number;
+  shownAt: Partial<Record<PanelId | "xref", number>>;
 };
 
 const SPLIT_KEY = "va-dock-split:v1";
-let ui: Ui = { panel: null, tabs: [], split: false, xrefActive: false, menu: null, toast: null };
+let ui: Ui = { panel: null, tabs: [], split: false, xrefActive: false, menu: null, toast: null, shownN: 0, shownAt: {} };
 const SERVER: Ui = ui;
 let splitLoaded = false;
 const subs = new Set<() => void>();
@@ -61,7 +64,9 @@ export function useUi() {
 }
 
 /** Open a panel (adds it as a tab if needed) and select it. */
-export const openPanel = (panel: PanelId) => set({ panel, tabs: ui.tabs.includes(panel) ? ui.tabs : [...ui.tabs, panel], xrefActive: false });
+export const openPanel = (panel: PanelId) =>
+  set({ panel, tabs: ui.tabs.includes(panel) ? ui.tabs : [...ui.tabs, panel], xrefActive: false, ...asked(panel) });
+const asked = (id: PanelId | "xref") => ({ shownN: ui.shownN + 1, shownAt: { ...ui.shownAt, [id]: ui.shownN + 1 } });
 
 /** Close one panel's tab, or (no argument, or on a phone, where only one shows at a time) the whole dock. */
 export function closePanel(panel?: PanelId) {
@@ -86,7 +91,7 @@ export function isShowing(u: Pick<Ui, "panel" | "tabs" | "split" | "xrefActive">
 }
 
 /** Cross references tab selected (or not) in the dock. */
-export const selectXref = (on: boolean) => set({ xrefActive: on });
+export const selectXref = (on: boolean) => set(on ? { xrefActive: true, ...asked("xref") } : { xrefActive: false });
 
 export function setSplit(split: boolean) {
   set({ split });

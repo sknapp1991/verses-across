@@ -13,6 +13,7 @@ import { markMatches, search, suggest, type SearchResult, type VerseHit } from "
 import { ChevronDown, ChevronRight, CloseIcon, SearchIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 import { closePanel, openPanel } from "@/lib/ui-store";
+import { PanelHeader } from "./panel-header";
 
 /* ---------- open/close + state that survives closing the panel ---------- */
 
@@ -153,6 +154,7 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <PanelHeader icon={<SearchIcon width={18} height={18} />} title="Search" onClose={closeSearch} closeLabel="Close search" />
       <div className="space-y-2 border-b border-line p-3">
         <div className="flex items-center gap-1">
           <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-raised px-3 focus-within:ring-2 focus-within:ring-accent/50">
@@ -171,14 +173,6 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
               className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint md:text-sm"
             />
           </label>
-          <button
-            type="button"
-            onClick={closeSearch}
-            aria-label="Close search"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-raised"
-          >
-            <CloseIcon />
-          </button>
         </div>
         <VersionFilter work={work} selected={selected} perVersion={result?.perVersion} />
         <div className="flex flex-wrap gap-1">

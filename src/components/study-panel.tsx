@@ -10,10 +10,11 @@ import { fetchBook } from "@/lib/chapter-store";
 import { downloadBackup, lastBackup } from "@/lib/backup";
 import { formatStamp, highlightBg, HIGHLIGHTS, importJson, removeItem, useStudy, type StudyItem, type StudyKind } from "@/lib/study";
 import { closePanel, toast } from "@/lib/ui-store";
-import { CloseIcon, ClockIcon, NoteIcon, StarIcon, MarkerIcon, CheckSquareIcon } from "./icons";
+import { CloseIcon, ClockIcon, LibraryIcon, NoteIcon, StarIcon, MarkerIcon, CheckSquareIcon } from "./icons";
 import { openSyncDialog, syncSummary } from "./sync-dialog";
 import { useSync } from "@/lib/sync";
 import { useReaderState } from "./use-reader-state";
+import { PanelHeader } from "./panel-header";
 
 const TABS: { kind: StudyKind; label: string; Icon: typeof StarIcon; empty: string }[] = [
   { kind: "favorite", label: "Favorites", Icon: StarIcon, empty: "Tap a verse number to add it to your favorites." },
@@ -100,12 +101,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
-        <h2 className="font-serif text-lg font-semibold">My Study</h2>
-        <button type="button" onClick={() => closePanel("study")} aria-label="Close My Study" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
-          <CloseIcon />
-        </button>
-      </div>
+      <PanelHeader icon={<LibraryIcon width={18} height={18} />} title="My Study" onClose={() => closePanel("study")} closeLabel="Close My Study" />
       <div role="tablist" aria-label="My Study" className="flex flex-wrap gap-1 border-b border-line px-2 py-1.5">
         {TABS.map(({ kind, label, Icon }) => (
           <button
