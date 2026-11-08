@@ -28,10 +28,12 @@ type Ui = {
   /** A counter, and the count at which each panel was last asked to show (also when it already did). */
   shownN: number;
   shownAt: Partial<Record<PanelId | "xref", number>>;
+  /** Phone: the "More" sheet (tools and reading settings). null = closed; else the section to scroll to ("" = top). */
+  sheet: string | null;
 };
 
 const SPLIT_KEY = "va-dock-split:v1";
-let ui: Ui = { panel: null, tabs: [], split: false, xrefActive: false, menu: null, toast: null, shownN: 0, shownAt: {} };
+let ui: Ui = { panel: null, tabs: [], split: false, xrefActive: false, menu: null, toast: null, shownN: 0, shownAt: {}, sheet: null };
 const SERVER: Ui = ui;
 let splitLoaded = false;
 const subs = new Set<() => void>();
@@ -101,6 +103,10 @@ export function setSplit(split: boolean) {
     /* private mode */
   }
 }
+
+/** Phone: open the "More" sheet, scrolled to a section ("text", "versions"…) when one is named. */
+export const openSheet = (section = "") => set({ sheet: section });
+export const closeSheet = () => set({ sheet: null });
 
 export const openVerseMenu = (menu: NonNullable<VerseMenuState>) => set({ menu });
 export const closeVerseMenu = () => set({ menu: null });

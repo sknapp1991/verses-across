@@ -1,39 +1,34 @@
 "use client";
 import Link from "next/link";
-import { chapterTitle, findBook, readHref } from "@/lib/catalog";
-import { toast } from "@/lib/ui-store";
+import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
-import { CalendarIcon, ChatIcon, CloseIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
+import { CalendarIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, MoreIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
+import { ReadTogether } from "./read-together";
 import { HighlightModeToggle } from "./highlight-mode";
 import { XrefToggle } from "./xref-panel";
-import { isShowing, openPanel, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
+import { isShowing, openSheet, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
 import { openSearch } from "./search-panel";
-import { AlignControl, ChapterSwipeControl, SavedSetups, FontSizeControl, LanguageColors, ThemeToggle, VersionChooser, ViewToggle, WidthControl } from "./controls";
-import { Modal } from "./modal";
+import { ChapterSwipeControl, SavedSetups, ThemeToggle, VersionChooser } from "./controls";
 import { useReaderState } from "./use-reader-state";
 import { AiButton } from "./ai-window";
 import { OfflineDownloadsButton } from "./downloads-dialog";
+import { InstallAppButton } from "./install-app";
 import { TourButton } from "./tour";
 import { ListenTopButton } from "./audio-player";
 import { RedLetterToggle } from "./red-letter";
 import { WordModeToggle } from "./word-study";
-import { LevelMarksControl } from "./reading-levels";
 import { ProgressButton } from "./progress-button";
+import { MoreSheet } from "./more-sheet";
 
-export function TopBar({
-  onOpenLibrary,
-  sheetOpen,
-  setSheetOpen,
-}: {
-  onOpenLibrary: () => void;
-  sheetOpen: boolean;
-  setSheetOpen: (open: boolean) => void;
-}) {
+export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const { ref, entry, versions } = useReaderState();
+  const { sheet } = useUi();
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-0 border-b min-[440px]:gap-2 border-line bg-panel px-2 pt-[env(safe-area-inset-top)] md:px-4">
+    // Phone: menu, where you are, and four buttons (Search, My Study, Listen, More); the rest is in the More
+    // sheet. Desktop: every tool has its own button.
+    <header className="flex min-h-14 shrink-0 items-center gap-0 border-b border-line bg-panel px-2 pt-[env(safe-area-inset-top)] desk:gap-2 md:px-4">
       <button
         type="button"
         onClick={onOpenLibrary}
@@ -56,10 +51,9 @@ export function TopBar({
         type="button"
         onClick={onOpenLibrary}
         aria-label="Open library"
-        className="min-w-0 flex-1 truncate text-left font-serif text-lg font-semibold desk:hidden"
+        className="min-w-0 flex-1 truncate px-1 text-left font-serif text-[17px] font-semibold desk:hidden"
       >
-        {/* Narrow phones: the icons need the room (the chapter title is right below in the page). */}
-        <span className="hidden min-[440px]:inline">{entry ? chapterTitle(entry, ref.chapter) : "Verses Across"}</span>
+        {entry ? chapterTitle(entry, ref.chapter) : "Verses Across"}
       </button>
 
       <div className="hidden flex-1 desk:block" />
@@ -68,18 +62,22 @@ export function TopBar({
       <Group label="Search and study panels">
         <PanelButton id="search" label="Search the text" title="Search (/)" icon={<SearchIcon />} onOpen={() => openSearch()} />
         <PanelButton id="study" label="My Study" title="My Study: favorites, notes, highlights" icon={<LibraryIcon />} />
-        <XrefToggle />
+        <span className="hidden desk:contents">
+          <XrefToggle />
+        </span>
       </Group>
       <Divider />
       <Group label="Progress, plans, goals and groups">
         <ProgressButton />
-        <PanelButton id="plans" label="Plans and goals" title="Plans & Goals: reading plans and daily goals" icon={<CalendarIcon />} className="hidden min-[480px]:flex" />
+        <PanelButton id="plans" label="Plans and goals" title="Plans & Goals: reading plans and daily goals" icon={<CalendarIcon />} className="hidden desk:flex" />
         <PanelButton id="groups" label="Study groups" title="Study groups: read with friends or family" icon={<UsersIcon />} className="hidden desk:flex" />
       </Group>
       <Divider />
       <Group label="Listen and ask">
         <ListenTopButton />
-        <AiButton />
+        <span className="hidden desk:contents">
+          <AiButton />
+        </span>
       </Group>
 
       {/* Desktop controls (text size, colours, width, alignment and columns/stacked are above the text). */}
@@ -98,6 +96,7 @@ export function TopBar({
             <RedLetterToggle />
             <ChapterSwipeControl />
             <OfflineDownloadsButton />
+            <InstallAppButton />
             <TourButton />
             {/* Narrower screens: Read together is in here instead of its own button. */}
             <div className="xl:hidden">
@@ -112,77 +111,24 @@ export function TopBar({
         </Group>
       </div>
 
-      {/* Phone: one settings button → bottom sheet */}
+      {/* Phone: one More button → the sheet with the other tools and every reading setting */}
       <button
         type="button"
-        onClick={() => setSheetOpen(true)}
-        aria-label="Reading settings"
-        className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink desk:hidden"
+        onClick={() => openSheet()}
+        aria-label="More: tools and reading settings"
+        aria-expanded={sheet != null}
+        className={`flex h-11 w-11 items-center justify-center rounded-lg hover:bg-raised hover:text-ink desk:hidden ${sheet != null ? "bg-accent-soft text-accent" : "text-muted"}`}
       >
-        <SlidersIcon />
+        <MoreIcon />
       </button>
-      <Modal open={sheetOpen} onClose={() => setSheetOpen(false)} variant="sheet" label="Reading settings">
-        <div className="flex max-h-[85dvh] flex-col">
-          <div className="flex items-center justify-between border-b border-line px-4 py-2">
-            <h2 className="font-semibold">Reading settings</h2>
-            <button
-              type="button"
-              onClick={() => setSheetOpen(false)}
-              aria-label="Close"
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised"
-            >
-              <CloseIcon />
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4">
-            <SavedSetups />
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Layout</h3>
-              <ViewToggle full />
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text</h3>
-              <div className="flex items-center gap-2">
-                <FontSizeControl />
-                <ThemeToggle />
-              </div>
-            </div>
-            <HighlightModeToggle full />
-            <WordModeToggle full />
-            <XrefToggle full />
-            <button
-              type="button"
-              onClick={() => {
-                setSheetOpen(false);
-                openPanel("plans");
-              }}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm text-muted hover:text-ink"
-            >
-              <CalendarIcon width={18} height={18} /> Plans &amp; Goals
-            </button>
-            <RedLetterToggle />
-            <LevelMarksControl />
-            <WidthControl />
-            <AlignControl />
-            <LanguageColors />
-            <ChapterSwipeControl />
-            <OfflineDownloadsButton />
-            <TourButton />
-            <ReadTogether />
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Versions &amp; languages</h3>
-              <VersionChooser />
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <MoreSheet />
     </header>
   );
 }
 
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div role="group" aria-label={label} className="flex items-center gap-0 min-[440px]:gap-1">
+    <div role="group" aria-label={label} className="flex items-center gap-0 desk:gap-1">
       {children}
     </div>
   );
@@ -296,58 +242,6 @@ function TopPopover({ label, title, icon, children }: { label: string; title: st
           {children}
         </div>
       )}
-    </div>
-  );
-}
-
-/** Placeholder for a future chat between readers. */
-/** The verse at the top of the reading area (what a friend should land on), if any. */
-function topVerse(): string | undefined {
-  const els = document.querySelectorAll<HTMLElement>("[data-v]");
-  for (const el of els) {
-    const r = el.getBoundingClientRect();
-    if (r.height && r.bottom > 120) return el.dataset.v;
-  }
-}
-
-/**
- * Read together: a link that opens this chapter, in these versions, at the verse on screen. The friend
- * taps it and is at the same place; the talking happens in whatever app you send it with.
- */
-function ReadTogether() {
-  const { ref, versions } = useReaderState();
-  const share = async () => {
-    const v = topVerse();
-    const url = window.location.origin + readHref(ref, versions, v && v !== "1" ? v : undefined);
-    const where = `${chapterTitle(findBook(ref.work, ref.book), ref.chapter, ref.book)}${v && v !== "1" ? `:${v}` : ""}`;
-    const text = `Read ${where} with me on Verses Across`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Read together", text, url });
-        return;
-      } catch (e) {
-        if ((e as DOMException)?.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(`${text}: ${url}`);
-      toast("Link copied — paste it in a message to a friend");
-    } catch {
-      window.prompt("Copy this link:", url);
-    }
-  };
-  return (
-    <div className="space-y-2 text-sm">
-      <p className="flex items-center gap-2 font-semibold">
-        <ShareIcon width={16} height={16} className="text-accent" /> Read together
-      </p>
-      <p className="text-muted">Send a friend a link to this exact spot: the same chapter, the same versions side by side, at the verse you’re on.</p>
-      <button type="button" onClick={share} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 font-medium text-accent-ink">
-        <ShareIcon width={16} height={16} /> Share this page
-      </button>
-      <p className="flex items-center gap-1.5 text-xs text-faint">
-        <ChatIcon width={12} height={12} /> Chatting inside the site may come later.
-      </p>
     </div>
   );
 }

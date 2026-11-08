@@ -13,6 +13,8 @@
 /* "Desktop layout" (sidebar + full top bar): wide AND tall. A phone turned sideways is wide but short,
    so it keeps the phone layout (library drawer, settings sheet) and gives all the width to columns. */
 @custom-variant desk (@media (min-width: 768px) and (min-height: 501px));
+/* A phone turned sideways (wide but short): the chapter header folds into one row. Same test as PHONE_LANDSCAPE_QUERY. */
+@custom-variant pland (@media (orientation: landscape) and (max-height: 500px));
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -142,10 +144,13 @@ dialog.sheet[open] {
   }
 }
 
-/* Thin scrollbars (desktop) */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
+/* Thin scrollbars (desktop). In the base layer, so a utility like [scrollbar-width:none] on a row of
+   tabs or chips can still hide its scrollbar (an unlayered rule would win over every utility). */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
 }
 
 /* Read-along: the verse being spoken */

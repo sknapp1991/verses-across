@@ -1,6 +1,6 @@
 "use client";
 /**
- * Top-bar Progress button: a trophy, with a ring around it showing today's goal when one is set, and
+ * Top-bar Progress button (desktop; phones have a tile in the More sheet): a trophy, with a ring around it showing today's goal when one is set, and
  * the reader's level (1–60) in the corner.
  */
 import { isShowing, togglePanel, useUi } from "@/lib/ui-store";
@@ -23,7 +23,7 @@ export function ProgressButton() {
       aria-label={`Progress, level and badges (level ${level}${goal})`}
       aria-pressed={on}
       title={`Progress, level and badges · Level ${level}`}
-      className={`relative hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-raised hover:text-ink min-[380px]:flex desk:border desk:border-line ${
+      className={`relative hidden h-11 w-11 items-center justify-center rounded-lg hover:bg-raised hover:text-ink desk:flex desk:border desk:border-line ${
         on ? "bg-accent-soft text-accent" : "text-muted desk:bg-raised"
       }`}
     >

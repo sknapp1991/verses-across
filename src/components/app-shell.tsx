@@ -15,8 +15,9 @@ import { SyncDialog } from "./sync-dialog";
 import { DownloadsDialog } from "./downloads-dialog";
 import { Tour } from "./tour";
 import { GroupInvite, GroupsPanel } from "./groups-section";
+import { InstallCard } from "./install-app";
 import { AiWindow } from "./ai-window";
-import { closePanel, openPanel, selectXref, setSplit, useUi, type PanelId } from "@/lib/ui-store";
+import { closePanel, openPanel, openSheet, selectXref, setSplit, useUi, type PanelId } from "@/lib/ui-store";
 import { closeXref, XrefDockPanel } from "./xref-panel";
 import { PlansPanel } from "./plans-panel";
 import { DockPanelContext } from "./panel-header";
@@ -37,7 +38,6 @@ function useThemeSync() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   useThemeSync();
   useTabsSync();
   const { panel, toast } = useUi();
@@ -53,16 +53,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  // Phone: swipe in from the left edge for the library, up from the bottom edge for reading settings.
+  // Phone: swipe in from the left edge for the library, up from the bottom edge for the More sheet.
   useEdgeSwipes(
     () => setDrawerOpen(true),
-    () => setSheetOpen(true),
+    () => openSheet(),
   );
 
   return (
     <div className="flex h-dvh flex-col">
       <BackupNudge />
-      <TopBar onOpenLibrary={() => setDrawerOpen(true)} sheetOpen={sheetOpen} setSheetOpen={setSheetOpen} />
+      <TopBar onOpenLibrary={() => setDrawerOpen(true)} />
       <TabBar />
       <ModeBanner />
       <div className="flex min-h-0 flex-1">
@@ -83,6 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <DownloadsDialog />
       <Tour />
       <GroupInvite />
+      <InstallCard />
 
       {toast && <Toast key={toast.id} text={toast.text} />}
 

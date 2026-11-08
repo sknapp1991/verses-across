@@ -20,7 +20,7 @@ import {
   useViewMode,
   WIDE_QUERY,
 } from "@/lib/settings";
-import { ChevronLeft, ChevronRight, GripIcon, PauseIcon, PlayIcon } from "./icons";
+import { ChevronDown, ChevronLeft, ChevronRight, GripIcon, LanguagesIcon, PauseIcon, PlayIcon } from "./icons";
 import { useColumnDrag } from "./use-column-drag";
 import { openSearch } from "./search-panel";
 import { NoteLine, VerseBox, VerseCtx, VerseText, type Marks, type VerseActions } from "./verse-parts";
@@ -34,7 +34,7 @@ import { FloatingNav } from "./floating-nav";
 import { showXref, XrefPanel } from "./xref-panel";
 import { wordAt } from "./use-gestures";
 import { chapterMarks, getItem, highlightBg, setHighlight, toggle, useStudy } from "@/lib/study";
-import { openVerseMenu, toast } from "@/lib/ui-store";
+import { openSheet, openVerseMenu, toast } from "@/lib/ui-store";
 import { setReadingContext } from "@/lib/ai-chat";
 import { getPosition, savePosition } from "@/lib/reading-position";
 import { ReadAlongBar, ReadAlongSpacer, useReadAlong, type ReadAlong } from "./audio-player";
@@ -514,17 +514,45 @@ function ChapterHeader({
   next?: BookRef;
 }) {
   const book = findBook(bookRef.work, bookRef.book)!;
+  const abbrs = versions.map((id) => getVersion(id)?.abbr ?? id);
   return (
-    <div className="mx-auto flex max-w-5xl items-end justify-between gap-3 px-4 pb-3 pt-5 md:px-8 md:pt-8">
-      <div className="min-w-0">
-        <p className="truncate text-xs font-medium uppercase tracking-wider text-faint">
+    // Phone landscape (short): one row — the name, the versions chip and the buttons — so the text starts sooner.
+    <div className="mx-auto flex max-w-5xl items-end justify-between gap-3 px-4 pb-3 pt-4 pland:items-center pland:py-1.5 md:px-8 md:pt-8">
+      <div className="min-w-0 pland:flex pland:flex-wrap pland:items-center pland:gap-x-3">
+        <p className="truncate text-xs font-medium uppercase tracking-wider text-faint pland:hidden">
           {book.religion.name} · {book.collection.name}
         </p>
-        <h1 className="font-serif text-2xl font-semibold md:text-3xl">{title}</h1>
-        {subtitle && <p className="mt-0.5 font-serif text-base text-muted md:text-lg">{subtitle}</p>}
+        <h1 className="font-serif text-2xl font-semibold pland:text-xl md:text-3xl">{title}</h1>
+        {subtitle && <p className="mt-0.5 font-serif text-base text-muted pland:mt-0 md:text-lg">{subtitle}</p>}
+        {/* The versions being read: tap to add, remove or reorder them (the sheet opens at that section). */}
+        {!preview && (
+          <button
+            type="button"
+            onClick={() => openSheet("versions")}
+            aria-label={`Versions: ${abbrs.join(", ")}. Change versions and languages`}
+            className="mt-1 flex min-h-10 max-w-full items-center pland:mt-0"
+          >
+            <span className="flex h-8 max-w-full items-center gap-1.5 rounded-full border border-line bg-raised pl-2.5 pr-2 text-xs font-semibold text-muted">
+              <LanguagesIcon width={14} height={14} className="shrink-0 text-accent" />
+              <span className="truncate">{abbrs.join(" · ")}</span>
+              <ChevronDown width={12} height={12} className="shrink-0 text-faint" />
+            </span>
+          </button>
+        )}
       </div>
-      <div className="flex shrink-0 gap-1">
-        {!preview && <TextSettingsButton />}
+      {/* data-chapter-nav: while these are on screen, the floating ‹ › pill steps aside. */}
+      <div className="flex shrink-0 gap-1" data-chapter-nav>
+        {!preview && (
+          <button
+            type="button"
+            onClick={() => openSheet("text")}
+            aria-label="Text settings"
+            title="Text size, columns or stacked, width, alignment and colours"
+            className="flex h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-raised px-2 text-muted hover:text-ink"
+          >
+            <span aria-hidden className="font-serif text-base font-semibold leading-none">Aa</span>
+          </button>
+        )}
         <NavIcon to={prev} versions={versions} label="Previous chapter" icon={<ChevronLeft />} />
         <NavIcon to={next} versions={versions} label="Next chapter" icon={<ChevronRight />} />
       </div>
@@ -862,7 +890,7 @@ function Skeleton() {
 function ChapterNav({ prev, next, versions }: { prev?: BookRef; next?: BookRef; versions: string[] }) {
   const cls = "flex min-h-12 flex-1 items-center gap-2 rounded-xl border border-line bg-raised px-4 text-sm hover:border-faint";
   return (
-    <nav aria-label="Chapter navigation" className="mx-auto flex max-w-3xl gap-3 px-4 pb-4 pt-8 md:px-8">
+    <nav aria-label="Chapter navigation" data-chapter-nav className="mx-auto flex max-w-3xl gap-3 px-4 pb-4 pt-8 md:px-8">
       {prev ? (
         <Link href={readHref(prev, versions)} className={cls}>
           <ChevronLeft className="shrink-0 text-faint" />

@@ -14,6 +14,7 @@ import { getLanguage } from "@/lib/languages";
 import { translit } from "@/lib/translit";
 import { hasWords, lookupWord, type WordCard } from "@/lib/words";
 import { CloseIcon, WordsIcon } from "./icons";
+import { modeButtonClass } from "./highlight-mode";
 import { openSearch } from "./search-panel";
 
 export type WordPick = { work: string; book: string; chapter: number; v: string; version: string; word: string; offset: number };
@@ -339,7 +340,7 @@ export function WordStudy({ scroller, rowsKey, versions, raised }: { scroller: R
   );
 }
 
-export function WordModeToggle({ full = false }: { full?: boolean }) {
+export function WordModeToggle({ full = false, tile = false }: { full?: boolean; tile?: boolean }) {
   const { wordMode } = useSettings();
   return (
     <button
@@ -351,12 +352,17 @@ export function WordModeToggle({ full = false }: { full?: boolean }) {
       }}
       title="Words mode: tap a word to see its meaning and the same word in every version"
       aria-label="Words mode"
-      className={`flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm desk:border ${full ? "w-full border" : "w-11 px-0"} ${
-        wordMode ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:bg-raised hover:text-ink desk:bg-raised"
-      }`}
+      className={
+        tile
+          ? modeButtonClass(wordMode, "tile")
+          : `flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm desk:border ${full ? "w-full border" : "w-11 px-0"} ${
+              wordMode ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:bg-raised hover:text-ink desk:bg-raised"
+            }`
+      }
     >
       <WordsIcon />
       {full && <span>Words mode {wordMode ? "on" : "off"}</span>}
+      {tile && <span>Words</span>}
     </button>
   );
 }

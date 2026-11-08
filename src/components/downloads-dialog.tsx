@@ -57,7 +57,7 @@ export function DownloadsDialog() {
   );
 }
 
-/** The button in Display options / Reading settings that opens the window. */
+/** The button in Display options (phone: the More sheet) that opens the window. */
 const noSubscribe = () => () => {};
 export function OfflineDownloadsButton() {
   const { saved } = useDownloads();

@@ -53,6 +53,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${reading.variable} ${greek.variable} ${hebrew.variable} ${arabic.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Android / Chrome: keep the "install this app" offer for the Add to Home Screen card (install-app.tsx). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__vaInstall=e;dispatchEvent(new Event("va-bip"))});`,
+          }}
+        />
       </head>
       <body className="overflow-hidden">
         <DomainMove />

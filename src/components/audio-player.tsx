@@ -10,7 +10,7 @@ import type { AlignedRow } from "@/lib/align";
 import { chapterTitle, findBook, readHref, type BookRef } from "@/lib/catalog";
 import type { ChapterEntry } from "@/lib/chapter-store";
 import { getLanguage } from "@/lib/languages";
-import { getSettings, TTS_RATE_MAX, TTS_RATE_MIN, updateSettings, useMediaQuery, useSettings } from "@/lib/settings";
+import { getSettings, TTS_RATE_MAX, TTS_RATE_MIN, updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { useColumnDrag } from "./use-column-drag";
 import {
   close,
@@ -787,6 +787,8 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
   }, []);
   const settings = useSettings();
   const touch = useMediaQuery("(pointer: coarse)", false);
+  // Phone: the bar keeps to the essentials — a one-line hint and only the most important notice at a time.
+  const wide = useMediaQuery(WIDE_QUERY, true);
   const { speech, version, lang } = ra;
   if (!speech.open || !version) return null;
   const playing = speech.status === "playing";
@@ -795,11 +797,27 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
   const { list: langVoices, fallback } = voicesFor(ra.allVoices, lang);
   const langName = getLanguage(lang).name;
   const noVoice = ra.allVoices.length > 0 && langVoices.length === 0;
+  // The notes under the controls, most important first (a phone shows just the first).
+  const notices: React.ReactNode[] = [];
+  if (speech.error || noVoice || fallback)
+    notices.push(
+      speech.error ??
+        (noVoice
+          ? `No ${langName} voice on this device, so the browser will guess. Add one in your system’s text-to-speech settings.`
+          : `No ${langName} voice on this device; using a ${getLanguage(fallback!).name} voice.`),
+    );
+  if (speech.engine === "recorded") notices.push(`${ra.mixed ? "Recorded voices" : "Recorded voice"}: keeps playing with the screen off · lock-screen controls.`);
+  if (speech.engine !== "recorded" && ra.mixed && speech.status !== "idle")
+    notices.push("Device voices stop when the phone locks. To keep listening locked, every version read in turn needs a recorded voice for this chapter (the ● in ⚙).");
+  if (speech.engine !== "recorded" && ra.recordings.length > 0 && !ra.recording && settings.ttsRecorded[version.id] !== "device")
+    notices.push("No recording of this chapter yet, so a device voice is reading.");
+  if (speech.engine !== "recorded" && speech.wordTiming === false && !speech.error && langVoices.some((v) => v.localService) && !ra.voice?.localService)
+    notices.push("This voice can’t follow along word by word. Voices installed on your device (e.g. “Microsoft …”) can — pick one under ⚙ Voice.");
 
   const btn = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-raised hover:text-ink disabled:opacity-40";
 
-  // The options can take up to ~60% of the screen; past that they scroll inside.
-  const cap = typeof window === "undefined" ? 480 : Math.round(window.innerHeight * 0.6);
+  // The options can take up to ~60% of the screen (40% of a short one, a phone on its side); past that they scroll inside.
+  const cap = typeof window === "undefined" ? 480 : Math.round(window.innerHeight * (window.innerHeight < 500 ? 0.4 : 0.6));
   const openH = Math.min(moreH, cap);
   const scrolls = moreH > cap;
   const tuck = () => {
@@ -979,8 +997,13 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
 
       {speech.ready && (
         <p className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted" role="status">
-          Ready at verse {verse ?? speech.verse}. Press ▶ to start here, tap any verse to start there, or choose a verse or
-          range with ▾.
+          {wide ? (
+            <>
+              Ready at verse {verse ?? speech.verse}. Press ▶ to start here, tap any verse to start there, or choose a verse or range with ▾.
+            </>
+          ) : (
+            <>Press ▶ to start at verse {verse ?? speech.verse}, or tap any verse.</>
+          )}
         </p>
       )}
       {ra.cols.length > 1 && <VersionBubbles ra={ra} more={more} onMore={() => setMore((m) => !m)} />}
@@ -1062,34 +1085,11 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
         </div>
       )}
 
-      {speech.engine === "recorded" && (
-        <p className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted">
-          {ra.mixed ? "Recorded voices" : "Recorded voice"}: keeps playing with the screen off · lock-screen controls.
+      {(wide ? notices : notices.slice(0, 1)).map((n, i) => (
+        <p key={i} className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted" role="status">
+          {n}
         </p>
-      )}
-      {speech.engine !== "recorded" && ra.mixed && speech.status !== "idle" && (
-        <p className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted">
-          Device voices stop when the phone locks. To keep listening locked, every version read in turn needs a recorded
-          voice for this chapter (the ● in ⚙).
-        </p>
-      )}
-      {speech.engine !== "recorded" && ra.recordings.length > 0 && !ra.recording && settings.ttsRecorded[version.id] !== "device" && (
-        <p className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted">No recording of this chapter yet, so a device voice is reading.</p>
-      )}
-      {speech.engine !== "recorded" && speech.wordTiming === false && !speech.error && langVoices.some((v) => v.localService) && !ra.voice?.localService && (
-        <p className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted" role="status">
-          This voice can’t follow along word by word. Voices installed on your device (e.g. “Microsoft …”) can — pick one under ⚙ Voice.
-        </p>
-      )}
-
-      {(speech.error || noVoice || fallback) && (
-        <p className="mx-auto max-w-3xl px-4 pb-1.5 text-xs text-muted" role="status">
-          {speech.error ??
-            (noVoice
-              ? `No ${langName} voice on this device, so the browser will guess. Add one in your system’s text-to-speech settings.`
-              : `No ${langName} voice on this device; using a ${getLanguage(fallback!).name} voice.`)}
-        </p>
-      )}
+      ))}
 
       <div
         data-options

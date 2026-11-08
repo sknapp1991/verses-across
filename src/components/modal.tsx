@@ -47,6 +47,8 @@ export function Modal({
         if (e.target === e.currentTarget) onClose(); // backdrop click
       }}
     >
+      {/* Phone sheets: a small handle at the top, the usual sign that the sheet swipes down to close. */}
+      {variant !== "drawer" && <span aria-hidden className="pointer-events-none absolute left-1/2 top-1.5 z-20 h-1 w-9 -translate-x-1/2 rounded-full bg-faint/50 desk:hidden" />}
       {open ? children : null}
     </dialog>
   );

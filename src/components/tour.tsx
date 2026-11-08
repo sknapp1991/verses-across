@@ -57,7 +57,7 @@ const STEPS: Step[] = [
     icon: <ColumnsIcon />,
     title: "Scriptures side by side",
     body: "Read the Bible, Quran, Torah, Gita, Pali Canon and more, with several translations and the original language next to each other.",
-    where: "Versions (at the top, or in Reading settings on a phone) adds or removes columns. Swipe sideways for the next chapter.",
+    where: "Versions (at the top, or the versions chip under the chapter name on a phone) adds or removes columns. Swipe sideways for the next chapter.",
   },
   {
     icon: <HeadphonesIcon />,
@@ -69,7 +69,7 @@ const STEPS: Step[] = [
     icon: <LanguagesIcon />,
     title: "Tap a word for the original",
     body: "In Words mode, tap a word to see its Hebrew or Greek original and meaning, with the same word lit up in every version on screen.",
-    where: "The Words mode button at the top (or in Reading settings on a phone), then tap any word.",
+    where: "The Words mode button at the top (or More ⋯ → Tap a verse on a phone), then tap any word.",
   },
   {
     icon: <StarIcon />,
@@ -96,7 +96,7 @@ const STEPS: Step[] = [
     icon: <BookIcon />,
     title: "Read with no signal",
     body: "Save any version, and its read-along audio, on this device. The size shows first, and you can delete it any time.",
-    where: "Display options (or Reading settings on a phone), then Offline downloads.",
+    where: "Display options (or More ⋯ on a phone), then Offline downloads.",
     tryIt: { label: "Open Offline downloads", go: openDownloads },
   },
 ];
@@ -233,7 +233,7 @@ export function Tour() {
             </button>
           </div>
         </div>
-        <p className="text-center text-xs text-muted">Replay any time: Display options (or Reading settings), then Take the tour.</p>
+        <p className="text-center text-xs text-muted">Replay any time: Display options (or More ⋯ on a phone), then Take the tour.</p>
       </div>
     </Modal>
   );

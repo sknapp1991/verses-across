@@ -15,6 +15,7 @@ import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, getVersion, readHref
 import { fetchBook } from "@/lib/chapter-store";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { CloseIcon, SparkIcon } from "./icons";
+import { modeButtonClass } from "./highlight-mode";
 import { PanelHeader } from "./panel-header";
 
 type Hit = { work: string; book: string; chapter: number; v: string; score: number };
@@ -67,7 +68,7 @@ const label = (h: { work: string; book: string; chapter: number; v: string }) =>
   `${chapterTitle(findBook(h.work, h.book), h.chapter, h.book)}:${h.v}`;
 const religionOf = (work: string, book: string) => findBook(work, book)?.religion;
 
-export function XrefToggle({ full = false }: { full?: boolean }) {
+export function XrefToggle({ full = false, tile = false, onToggle }: { full?: boolean; tile?: boolean; onToggle?: (on: boolean) => void }) {
   const { xrefMode } = useSettings();
   const { panel, tabs, split, xrefActive } = useUi();
   const wide = useMediaQuery(WIDE_QUERY, true);
@@ -79,18 +80,28 @@ export function XrefToggle({ full = false }: { full?: boolean }) {
       aria-pressed={xrefMode}
       onClick={() => {
         if (hidden) return selectXref(true);
-        if (xrefMode) return closeXref();
+        if (xrefMode) {
+          closeXref();
+          onToggle?.(false);
+          return;
+        }
         updateSettings({ xrefMode: true, wordMode: false, highlightMode: false });
         selectXref(true);
+        onToggle?.(true);
       }}
       title="Cross references: tap a verse to see similar verses (in this religion or others)"
       aria-label="Cross references"
-      className={`flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm desk:border ${full ? "w-full border" : "w-11 px-0"} ${
-        xrefMode ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:bg-raised hover:text-ink desk:bg-raised"
-      }`}
+      className={
+        tile
+          ? modeButtonClass(xrefMode, "tile")
+          : `flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm desk:border ${full ? "w-full border" : "w-11 px-0"} ${
+              xrefMode ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:bg-raised hover:text-ink desk:bg-raised"
+            }`
+      }
     >
       <XrefIcon />
       {full && <span>Cross references {xrefMode ? "on" : "off"}</span>}
+      {tile && <span>Cross refs</span>}
     </button>
   );
 }

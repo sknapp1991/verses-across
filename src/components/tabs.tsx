@@ -4,7 +4,9 @@
  * Saved on the device. Tap to switch, ✕ to close, swipe sideways on the bar for the previous/next
  * tab, and drag a tab to reorder (mouse: drag; touch: press and hold, then drag).
  * When tabs come from more than one tradition (Christianity, Judaism…), a row above them switches
- * between those groups, returning to the tab you last used in each.
+ * between those groups, returning to the tab you last used in each. On a phone that row is folded
+ * into the tab row: the other traditions follow the books as orange chips (the tradition you're in is
+ * named under the chapter title), so the chrome is one row shorter.
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -173,22 +175,22 @@ export function TabBar() {
     if (last) router.push(readHref(parse(last), versions));
   };
 
+  const counted = groups.map((g) => ({ ...g, count: tabs.filter((t) => groupOf(t).id === g.id).length }));
   return (
     <div className="shrink-0 border-b border-line bg-panel">
+      {/* Desktop: the traditions on their own row. Phone: one row — the books, then the other traditions as chips. */}
       {groups.length > 1 && (
-        <GroupRow
-          groups={groups.map((g) => ({ ...g, count: tabs.filter((t) => groupOf(t).id === g.id).length }))}
-          active={activeGroup}
-          onOpen={openGroup}
-          onReorder={(order) => updateSettings({ tabs: order.flatMap((id) => tabs.filter((t) => groupOf(t).id === id)) })}
-        />
+        <div className="hidden desk:block">
+          <GroupRow
+            groups={counted}
+            active={activeGroup}
+            onOpen={openGroup}
+            onReorder={(order) => updateSettings({ tabs: order.flatMap((id) => tabs.filter((t) => groupOf(t).id === id)) })}
+          />
+        </div>
       )}
-      <div
-        ref={barRef}
-        role="tablist"
-        aria-label="Open books"
-        className="flex h-11 items-stretch gap-1 overflow-x-auto px-2 [scrollbar-width:none]"
-      >
+      <div ref={barRef} className="flex h-11 items-stretch gap-1 overflow-x-auto px-2 [scrollbar-width:none]">
+      <div role="tablist" aria-label="Open books" className="flex items-stretch gap-1">
         {visible.map((t, i) => {
           const r = parse(t);
           const active = i === activeIndex;
@@ -258,6 +260,28 @@ export function TabBar() {
             </div>
           );
         })}
+      </div>
+      {groups.length > 1 && (
+        <div role="group" aria-label="Other traditions" className="flex items-center gap-1 pl-1 desk:hidden">
+          <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-line" />
+          {counted
+            .filter((g) => g.id !== activeGroup)
+            .map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => openGroup(g.id)}
+                title={`Switch to your ${g.name} books`}
+                className="flex h-full shrink-0 select-none items-center"
+              >
+                <span className="flex min-h-7 items-center gap-1 rounded-full bg-trad-soft/70 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-trad">
+                  {g.name}
+                  <span className="font-normal tabular-nums opacity-75">{g.count}</span>
+                </span>
+              </button>
+            ))}
+        </div>
+      )}
       </div>
     </div>
   );

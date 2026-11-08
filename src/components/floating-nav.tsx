@@ -3,10 +3,12 @@
  * Floating chapter buttons: a see-through pill [‹ ⋮ ›] that's always there (fainter while scrolling).
  * Drag it by the middle grip anywhere on the screen — over the tabs or search bar too — and it stays
  * where you leave it (this device). Double-tap / double-click the grip to put it back.
+ * Phone: it sits in the bottom right corner by default and hides while the chapter's own arrows show.
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { chapterTitle, findBook, readHref, type BookRef } from "@/lib/catalog";
+import { useMediaQuery, WIDE_QUERY } from "@/lib/settings";
 import { ChevronLeft, ChevronRight } from "./icons";
 
 const KEY = "gs:navpos:v1"; // { x, y } as fractions of the window (pill centre)
@@ -23,6 +25,20 @@ function readPos(): Pos | null {
 }
 
 const label = (r: BookRef) => chapterTitle(findBook(r.work, r.book), r.chapter, r.book);
+
+/** The bottom safe area (home indicator) in px, measured once with a probe (CSS env() can't be read directly). */
+let safeBottomPx: number | null = null;
+function safeAreaBottom() {
+  if (typeof document === "undefined") return 0;
+  if (safeBottomPx == null) {
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:fixed;visibility:hidden;height:env(safe-area-inset-bottom,0px)";
+    document.body.appendChild(probe);
+    safeBottomPx = probe.offsetHeight;
+    probe.remove();
+  }
+  return safeBottomPx;
+}
 
 export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: BookRef; next?: BookRef; versions: string[]; faint: boolean; raised: boolean }) {
   const [pos, setPos] = useState<Pos | null>(null);
@@ -69,6 +85,24 @@ export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: Bo
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+  // Phone: while the chapter's own ‹ › buttons (under its name, and at its end) are on screen, the pill
+  // steps aside, so there's never two sets of arrows at once.
+  const wide = useMediaQuery(WIDE_QUERY, true);
+  const [navSeen, setNavSeen] = useState(false);
+  const chapter = `${prev?.work}/${prev?.book}/${prev?.chapter}|${next?.work}/${next?.book}/${next?.chapter}`;
+  useEffect(() => {
+    if (wide) return; // (navSeen is only ever true on a phone, and the class below also checks `wide`)
+    const seen = new Map<Element, boolean>();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) seen.set(e.target, e.isIntersecting);
+      setNavSeen([...seen.values()].some(Boolean));
+    });
+    const t = setTimeout(() => document.querySelectorAll("[data-chapter-nav]").forEach((el) => io.observe(el)), 0);
+    return () => {
+      clearTimeout(t);
+      io.disconnect();
+    };
+  }, [wide, chapter]);
   if (!pos) return null;
 
   const W = typeof window === "undefined" ? 400 : window.innerWidth;
@@ -77,9 +111,14 @@ export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: Bo
   const ph = 48;
   // The default spot moves up above the read-aloud bar while it's open.
   const y = !custom && raised ? 0.78 : pos.y;
-  const left = Math.min(W - pw - 6, Math.max(6, pos.x * W - pw / 2));
-  const above = !custom && raised && barTop != null ? barTop - ph - 10 : null;
-  const top = Math.min(H - ph - 6, Math.max(6, above ?? y * H - ph / 2));
+  // Phone default: the bottom right corner (out of the way of the text); above the player, or its chip, while it reads.
+  const phoneDefault = !wide && !custom;
+  const left = Math.min(W - pw - 6, Math.max(6, phoneDefault ? W - pw - 10 : pos.x * W - pw / 2));
+  const above = !custom && raised ? (barTop != null ? barTop - ph - 10 : !wide ? H - ph - 12 - 60 : null) : null;
+  // Phone default: above the home indicator (the bottom safe area is ~34 px in full screen on iPhones).
+  const safeBottom = safeAreaBottom();
+  const top = Math.min(H - ph - 6, Math.max(6, above ?? (phoneDefault ? H - ph - 18 - safeBottom : y * H - ph / 2)));
+  const aside = !wide && navSeen && !dragging;
 
   const startDrag = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -136,8 +175,10 @@ export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: Bo
       data-no-swipe
       style={{ left, top }}
       className={`fixed z-40 flex items-center gap-0.5 rounded-full border border-line/70 bg-panel/55 p-0.5 shadow-lg backdrop-blur-sm transition-opacity duration-300 ${
-        dragging ? "opacity-100" : faint ? "opacity-40 hover:opacity-100" : "opacity-90"
+        aside ? "pointer-events-none opacity-0" : dragging ? "opacity-100" : faint ? "opacity-40 hover:opacity-100" : "opacity-90"
       }`}
+      aria-hidden={aside || undefined}
+      inert={aside || undefined}
       role="navigation"
       aria-label="Chapter"
     >

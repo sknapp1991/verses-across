@@ -161,3 +161,7 @@ export const UsersIcon = (p: P) => (
 export const WidthIcon = (p: P) => (
   <svg {...base(p)}><path d="M4 4v16M20 4v16M7.5 12h9M10 9.5L7.5 12l2.5 2.5M14 9.5l2.5 2.5-2.5 2.5" /></svg>
 );
+/** More (⋯): the phone's button for the other tools and the reading settings. */
+export const MoreIcon = (p: P) => (
+  <svg {...base(p)}><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></svg>
+);
