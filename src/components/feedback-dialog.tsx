@@ -32,6 +32,9 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
   const [message, setMessage] = useState(req.message ?? "");
   const [withDetails, setWithDetails] = useState(true);
   const [state, setState] = useState<"idle" | "sending" | "sent" | { error: string }>("idle");
+  // Spam checks (see /api/feedback): when the form opened, and a hidden field only bots fill in.
+  const [openedAt] = useState(() => Date.now());
+  const [website, setWebsite] = useState("");
   // Gathered once, when the form opens (what was on screen at that moment).
   const details = useMemo(() => gatherDetails(req), [req]);
   const hint = TOPICS.find((t) => t.id === topic)!.hint;
@@ -47,7 +50,7 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
     if (!message.trim() || state === "sending") return;
     setState("sending");
     try {
-      const res = await fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload()) });
+      const res = await fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload(), website, openMs: req.message ? -1 : Date.now() - openedAt }) });
       if (res.ok) return setState("sent");
       const j = (await res.json().catch(() => null)) as { error?: string } | null;
       setState({ error: j?.error ?? "Couldn’t send right now." });
@@ -93,6 +96,18 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
           }}
         >
           {req.verse?.texts[0] && <p className="line-clamp-2 font-serif text-sm text-muted">{req.verse.texts[0].text}</p>}
+
+          {/* Spam trap: hidden from people and screen readers; bots that fill every field fill this one. */}
+          <input
+            type="text"
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden
+            className="absolute -left-[9999px] h-px w-px opacity-0"
+          />
 
           <div role="radiogroup" aria-label="What is it about?" className="flex flex-wrap gap-2">
             {TOPICS.map((t) => (
