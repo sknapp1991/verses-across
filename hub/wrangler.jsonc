@@ -1,0 +1,32 @@
+// The private team hub (hub.versesacross.com): a separate Worker from the public site.
+// Locked by Cloudflare Access (Zero Trust, team tight-leaf-77cd; only the two team emails), and the Worker
+// checks the Access token itself on every request. The two emails are secrets, never in this file:
+//   npx wrangler secret put TEAM_EMAILS   (both emails, comma-separated)
+//   npx wrangler secret put OWNER_EMAIL   (the one who approves)
+// Deploy from this folder: npx wrangler deploy
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "va-hub",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "routes": [{ "pattern": "hub.versesacross.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "TEAM_DOMAIN": "tight-leaf-77cd.cloudflareaccess.com",
+    "POLICY_AUD": "39ff06db220e1d12871310c408e16ca691c6948a6410796d1a9de007683d5032",
+    "REPO": "sknapp1991/snoopwiggy",
+    "SITE": "https://versesacross.com"
+  },
+  "d1_databases": [
+    // The hub's own data (reports, comments, approvals…): hub/schema.sql
+    { "binding": "DB", "database_name": "va-hub", "database_id": "0743b301-1649-4cf9-a53f-698f82e7a26f" },
+    // The public site's database: website feedback waiting for Go / No (feedback_queue) and reading totals (daily)
+    { "binding": "SITE_DB", "database_name": "versesacross-stats", "database_id": "1353e9b6-72a1-4507-a127-10ff268e7f29" }
+  ],
+  "r2_buckets": [
+    // Photos and videos attached to reports, and clips waiting for approval (private)
+    { "binding": "MEDIA", "bucket_name": "va-hub-media" }
+  ],
+  "observability": { "enabled": true }
+}

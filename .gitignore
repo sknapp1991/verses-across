@@ -81,3 +81,8 @@ next-env.d.ts
 # vertical clips made by scripts/make-shorts.mjs
 /.cache-shorts/
 /public/offline/
+
+# hub local test key and state
+hub/.test-key.json
+hub/.wrangler/
+hub/.dev.vars
