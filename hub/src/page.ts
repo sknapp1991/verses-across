@@ -44,7 +44,7 @@ button:disabled { opacity:.5; }
 .chip { border:1px solid var(--line); background:var(--raised); color:var(--muted); border-radius:999px; padding:7px 13px; font-size:14px; cursor:pointer; min-height:36px; }
 .chip[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, transparent); font-weight:600; }
 .status { display:inline-block; border-radius:999px; padding:2px 9px; font-size:12px; font-weight:600; border:1px solid currentColor; }
-.s-New { color:var(--muted); } .s-Seen { color:var(--blue); } .s-Working { color:var(--warn); } .s-Live { color:var(--good); } .s-Question { color:var(--bad); } .s-Roadmap { color:var(--purple); } .s-Done { color:var(--faint); }
+.s-New { color:var(--muted); } .s-Seen { color:var(--blue); } .s-Working { color:var(--warn); } .s-Live { color:var(--good); } .s-Question { color:var(--bad); } .s-Roadmap { color:var(--purple); } .s-Done { color:var(--faint); } .s-Reopened { color:var(--bad); }
 .s-Waiting { color:var(--warn); } .s-Approved, .s-go { color:var(--good); } .s-Changes, .s-no { color:var(--bad); } .s-sheet { color:var(--warn); }
 .thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:6px; margin-top:8px; }
 .thumbs img, .thumbs video { width:100%; border-radius:8px; background:#000; max-height:60vh; object-fit:contain; }
@@ -236,7 +236,7 @@ async function showOne(id) {
   // Owner's session only: the status Claude sets (Claude works the inbox from this browser).
   let tools = null;
   if (ME.owner) {
-    const sel = h("select", {}, ["New", "Seen", "Working", "Question", "Live", "Done", "Roadmap"].map((s) => h("option", { value: s, selected: s === r.status }, s)));
+    const sel = h("select", {}, ["New", "Seen", "Working", "Question", "Reopened", "Live", "Done", "Roadmap"].map((s) => h("option", { value: s, selected: s === r.status }, s)));
     const notes = h("textarea", { style: "min-height:70px" }); notes.value = r.notes || "";
     const link = h("input", { type: "url", placeholder: "https://versesacross.com/…" }); link.value = r.live_url || "";
     tools = h("details.card", {}, h("summary", { class: "faint" }, "Status and note (Claude)"),
@@ -255,6 +255,16 @@ async function showOne(id) {
     catch (e) { toast(e.message); addFiles.disabled = false; }
   } }, "Upload");
 
+  // A finished report that isn't really fixed: either of you sends it back with a note.
+  let reopen = null;
+  if (r.status === "Live" || r.status === "Done") {
+    const why = h("textarea", { placeholder: "What's still wrong? e.g. fix not verified, still jumps on Psalm 24", style: "min-height:70px" });
+    reopen = h("details.card", {}, h("summary", { class: "faint" }, "Not fixed? Reopen it"), why,
+      h("button.btn", { type: "button", style: "margin-top:8px", onclick: async () => {
+        if (!why.value.trim()) return toast("Say what's still wrong");
+        try { await post("/api/reports/" + id + "/reopen", { note: why.value }); toast("Reopened. Claude will pick it up."); go("inbox", id); } catch (e) { toast(e.message); }
+      } }, "Reopen"));
+  }
   show(
     h("button.back", { onclick: () => go("inbox") }, "← Inbox"),
     h("div.card", {},
@@ -264,6 +274,7 @@ async function showOne(id) {
       r.files && r.files.length ? h("div.thumbs", {}, r.files.map(mediaEl)) : null,
       r.notes ? h("div.pre", { style: "margin-top:10px;border-top:1px solid var(--line);padding-top:8px" }, h("b", {}, "Claude: "), r.notes) : null,
       r.status === "Live" && r.live_url ? h("p", {}, h("a", { href: r.live_url, target: "_blank", rel: "noopener" }, "Try it on the site →")) : null),
+    reopen,
     tools,
     h("h3", {}, "Conversation"), thread, reply,
     ME.owner ? h("label", { style: "display:flex;gap:6px;align-items:center" }, asClaude, "Post as Claude") : null,

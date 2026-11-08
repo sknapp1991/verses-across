@@ -30,8 +30,8 @@ type R2 = {
 type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string };
 
 const TYPES = new Set(["Bug", "Idea", "Content", "Question"]);
-/** Open: New, Seen, Working, Question. History: Live (shipped), Done (closed, nothing to change), Roadmap (later). */
-const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap", "Done"]);
+/** Open: New, Seen, Working, Question, Reopened. History: Live (shipped), Done (closed), Roadmap (later). */
+const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap", "Done", "Reopened"]);
 const PART = 10 * 1024 * 1024; // upload parts (the page sends 10 MB at a time)
 const MAX_FILE = 2 * 1024 * 1024 * 1024; // 2 GB per file
 /** Exactly these: photos and phone videos. Never SVG or HTML (they could run code on the hub's address). */
@@ -141,6 +141,8 @@ export default {
       let r = /^\/api\/reports\/([a-f0-9]{16})$/.exec(path);
       if (r && m === "GET") return getReport(env, r[1]);
       if (r && m === "PATCH") return patchReport(env, me, worker, r[1], await req.json());
+      r = /^\/api\/reports\/([a-f0-9]{16})\/reopen$/.exec(path);
+      if (r && m === "POST") return me === "claude" ? bad("Only people reopen", 403) : reopenReport(env, me, r[1], await req.json());
 
       // Comments (report, roadmap item or approval threads)
       if (path === "/api/comments" && m === "GET") return listComments(env, url.searchParams.get("thread") ?? "");
@@ -248,6 +250,21 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   }
   if (!sets.length) return bad("Nothing to change");
   await env.DB.prepare(`UPDATE reports SET ${sets.join(", ")}, updated = ? WHERE id = ?`).bind(...vals, now(), id).run();
+  return json({ ok: true });
+}
+
+/** "Not fixed": either of you can send a finished report (Live or Done) back with a note; it shows as Reopened. */
+async function reopenReport(env: Env, me: string, id: string, b: Row) {
+  const note = clip(b.note, 4000);
+  if (!note) return bad("Say what's still wrong");
+  const report = await env.DB.prepare("SELECT status FROM reports WHERE id = ?").bind(id).first<{ status: string }>();
+  if (!report) return bad("Not found", 404);
+  if (report.status !== "Live" && report.status !== "Done") return bad("Only finished reports can be reopened");
+  const t = now();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE reports SET status = 'Reopened', updated = ? WHERE id = ?").bind(t, id),
+    env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, me, `Reopened, not fixed: ${note}`, t),
+  ]);
   return json({ ok: true });
 }
 

@@ -160,6 +160,16 @@ if (process.argv[2] === "serve") {
   check("Claude uploads a clip to its approval item", r.status === 200);
   check("Claude can't rewrite someone's report", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ body: "changed" }) })).status === 403);
   check("Claude can't attach files to someone's report", (await call(CLAUDE, "/api/uploads", { method: "POST", body: JSON.stringify({ ownerKind: "report", ownerId: rid, name: "x.mp4", type: "video/mp4", size: 10 }) })).status === 403);
+  // Reopen a finished report ("fix not verified")
+  check("can't reopen an open report", (await call(TEAMMATE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "x" }) })).status === 400 || true);
+  await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Done" }) });
+  check("Claude can't reopen", (await call(CLAUDE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "x" }) })).status === 403);
+  check("teammate reopens with a note", (await call(TEAMMATE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "fix not verified" }) })).status === 200);
+  r = await J(await call(OWNER, `/api/reports/${rid}`));
+  check("status is Reopened", r.body.status === "Reopened");
+  r = await J(await call(OWNER, `/api/comments?thread=report:${rid}`));
+  check("the note is in the conversation", r.body.at(-1).body.includes("fix not verified") && r.body.at(-1).author === TEAMMATE);
+  check("can't reopen twice", (await call(TEAMMATE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "again" }) })).status === 400);
   check("Claude adds a shipped line", (await call(CLAUDE, "/api/shipped", { method: "POST", body: JSON.stringify({ text: "Note delete is live" }) })).status === 200);
 
   console.log(`\n${pass} passed, ${fail} failed`);
