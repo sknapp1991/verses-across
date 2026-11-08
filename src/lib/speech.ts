@@ -125,6 +125,25 @@ export function pickVoice(all: SpeechSynthesisVoice[], lang: string, savedUri?: 
   );
 }
 
+/** Apple's novelty voices (and the robotic "Eloquence" ones): last in the list, never in the top few. */
+const NOVELTY = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Deranged|Hysterical|Pipe Organ|Grandma|Grandpa|Eddy|Flo|Reed|Rocko|Sandy|Shelley)\b/i;
+
+/**
+ * The few device voices worth showing first (a phone can have dozens per language): the chosen one, then
+ * the natural-sounding ones (Siri, Enhanced / Premium, Natural / Neural), the user's own accent, on-device.
+ */
+export function topVoices(list: SpeechSynthesisVoice[], chosenUri: string | undefined, n = 3) {
+  const here = typeof navigator !== "undefined" ? navigator.language.toLowerCase() : "";
+  const score = (v: SpeechSynthesisVoice) =>
+    (v.voiceURI === chosenUri ? 100 : 0) +
+    (/premium|enhanced|natural|neural|siri/i.test(v.name + v.voiceURI) ? 8 : 0) +
+    (v.lang.toLowerCase().replace("_", "-") === here ? 2 : 0) +
+    (v.localService ? 1 : 0) +
+    (v.default ? 1 : 0) -
+    (NOVELTY.test(v.name) ? 50 : 0);
+  return [...list].sort((a, b) => score(b) - score(a)).slice(0, n);
+}
+
 /* ---------- speaking ---------- */
 
 /** Make text easier to speak: drop Hebrew cantillation marks and the sof pasuq, brackets, stray symbols. */

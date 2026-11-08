@@ -31,6 +31,7 @@ import {
   stop,
   useSpeech,
   useVoices,
+  topVoices,
   voicesFor,
   type SpeechItem,
   playRecordedMix,
@@ -767,6 +768,8 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
   const setMore = (v: boolean | ((m: boolean) => boolean)) => barUi.set({ more: typeof v === "function" ? v(barUi.get().more) : v });
   const setTucked = (v: boolean) => barUi.set({ tucked: v });
   const [picker, setPicker] = useState(false);
+  // Voice list: the best few device voices until "More voices…" is picked.
+  const [allVoicesShown, setAllVoicesShown] = useState(false);
   const [range, setRange] = useState<{ from: string; to: string } | null>(null);
   const swipeStart = useRef<Swipe | null>(null);
   const justSwiped = useRef(false);
@@ -1107,6 +1110,7 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
                 disabled={!langVoices.length && !ra.recordings.length}
                 onChange={(e) => {
                   const val = e.target.value;
+                  if (val === MORE_VOICES) return setAllVoicesShown(true);
                   if (val.startsWith("rec:")) {
                     ra.chooseRecording(val.slice(4));
                     return;
@@ -1130,11 +1134,12 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
                 )}
                 <optgroup label="This device’s voices">
                   {!langVoices.length && <option value="">Browser default</option>}
-                  {langVoices.map((v) => (
-                    <option key={v.voiceURI} value={v.voiceURI}>
-                      {v.name} ({v.lang}){v.localService ? " · on device" : " · online"}
-                    </option>
-                  ))}
+                  <DeviceVoiceOptions
+                    list={langVoices}
+                    chosen={ra.voice?.voiceURI}
+                    all={allVoicesShown}
+                    label={(v) => `${v.name} (${v.lang})${v.localService ? " · on device" : " · online"}`}
+                  />
                 </optgroup>
               </select>
               <select
@@ -1247,8 +1252,28 @@ function VersionBubbles({ ra, more, onMore }: { ra: ReadAlong; more: boolean; on
 }
 
 /** Several versions in turn: a voice and a speed for each one, side by side. */
+/** Picked in a voice list: show every device voice for that language. */
+const MORE_VOICES = "__more__";
+
+/** A language's device voices: the best three (a phone can have dozens), then "More voices…" for the rest. */
+function DeviceVoiceOptions({ list, chosen, all, label }: { list: SpeechSynthesisVoice[]; chosen?: string; all: boolean; label: (v: SpeechSynthesisVoice) => string }) {
+  const sorted = topVoices(list, chosen, list.length);
+  const shown = all || list.length <= 4 ? sorted : sorted.slice(0, 3);
+  return (
+    <>
+      {shown.map((v) => (
+        <option key={v.voiceURI} value={v.voiceURI}>
+          {label(v)}
+        </option>
+      ))}
+      {shown.length < list.length && <option value={MORE_VOICES}>More voices ({list.length - shown.length})…</option>}
+    </>
+  );
+}
+
 function MixVoices({ ra }: { ra: ReadAlong }) {
   const settings = useSettings();
+  const [allFor, setAllFor] = useState<string[]>([]);
   const recorded = ra.mixIds.map((id) => !!ra.mixRecording(id));
   const partial = recorded.some(Boolean) && !recorded.every(Boolean);
   return (
@@ -1277,7 +1302,7 @@ function MixVoices({ ra }: { ra: ReadAlong }) {
                 aria-label={`${v.abbr} voice`}
                 value={rec ? `rec:${rec.id}` : (chosen?.voiceURI ?? "")}
                 disabled={!list.length && !recs.length}
-                onChange={(e) => ra.setMixVoice(id, e.target.value)}
+                onChange={(e) => (e.target.value === MORE_VOICES ? setAllFor((a) => [...a, lang]) : ra.setMixVoice(id, e.target.value))}
                 className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-raised px-2"
               >
                 {recs.length > 0 && (
@@ -1291,11 +1316,7 @@ function MixVoices({ ra }: { ra: ReadAlong }) {
                 )}
                 <optgroup label="This device’s voices">
                   {!list.length && <option value="">Browser default</option>}
-                  {list.map((x) => (
-                    <option key={x.voiceURI} value={x.voiceURI}>
-                      {x.name}
-                    </option>
-                  ))}
+                  <DeviceVoiceOptions list={list} chosen={chosen?.voiceURI} all={allFor.includes(lang)} label={(x) => x.name} />
                 </optgroup>
               </select>
               <select

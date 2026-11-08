@@ -237,6 +237,8 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hits, settings.xrefSame, settings.xrefOthers, own?.id]);
 
+  const [lookOpen, setLookOpen] = useState(false);
+  const lookingIn = [...(settings.xrefSame && own ? [own.name] : []), ...others.filter((r) => settings.xrefOthers.includes(r.id)).map((r) => r.name)];
   const toggleOther = (id: string) =>
     updateSettings({ xrefOthers: settings.xrefOthers.includes(id) ? settings.xrefOthers.filter((x) => x !== id) : [...settings.xrefOthers, id] });
 
@@ -281,46 +283,65 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
           )}
         </div>
       )}
-      <div className="shrink-0 space-y-1 border-b border-line px-3 py-2 text-xs">
-        <div className="flex items-center gap-2">
-          <p className="font-semibold uppercase tracking-wide text-faint">Look in</p>
-          <button
-            type="button"
-            onClick={() => updateSettings({ xrefSame: true, xrefOthers: others.map((r) => r.id) })}
-            className="ml-auto min-h-7 px-1 text-muted underline-offset-2 hover:text-ink hover:underline"
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={() => updateSettings({ xrefSame: true, xrefOthers: [] })}
-            className="min-h-7 px-1 text-muted underline-offset-2 hover:text-ink hover:underline"
-          >
-            Only {own?.name ?? "this one"}
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {own && (
-            <label className="flex min-h-8 cursor-pointer items-center gap-1.5">
-              <input type="checkbox" checked={settings.xrefSame} onChange={(e) => updateSettings({ xrefSame: e.target.checked })} className="h-4 w-4 accent-[var(--accent)]" />
-              {own.name} <span className="text-faint">(same)</span>
-            </label>
-          )}
-          {others.map((r) => (
-            <label key={r.id} className="flex min-h-8 cursor-pointer items-center gap-1.5">
-              <input type="checkbox" checked={settings.xrefOthers.includes(r.id)} onChange={() => toggleOther(r.id)} className="h-4 w-4 accent-[var(--accent)]" />
-              {r.name}
-            </label>
-          ))}
-        </div>
-      </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-2 text-sm">
+        {/* Which religions to look in: one line until opened (the full list of 20 would fill a phone's sheet). */}
+        <div className="-mx-3 -mt-2 border-b border-line px-3 py-2 text-xs">
+          {!lookOpen ? (
+            <button
+              type="button"
+              onClick={() => setLookOpen(true)}
+              aria-expanded={false}
+              className="flex min-h-8 w-full items-center gap-2 text-left"
+            >
+              <span className="shrink-0 font-semibold uppercase tracking-wide text-faint">Look in</span>
+              <span className="min-w-0 flex-1 truncate text-muted">{lookingIn.length ? lookingIn.join(", ") : "nothing ticked"}</span>
+              <span className="shrink-0 font-medium text-accent">Change</span>
+            </button>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <p className="font-semibold uppercase tracking-wide text-faint">Look in</p>
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ xrefSame: true, xrefOthers: others.map((r) => r.id) })}
+                  className="ml-auto min-h-7 px-1 text-muted underline-offset-2 hover:text-ink hover:underline"
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ xrefSame: true, xrefOthers: [] })}
+                  className="min-h-7 px-1 text-muted underline-offset-2 hover:text-ink hover:underline"
+                >
+                  Only {own?.name ?? "this one"}
+                </button>
+                <button type="button" onClick={() => setLookOpen(false)} aria-expanded className="min-h-7 rounded-md bg-accent-soft px-2 font-medium text-accent">
+                  Done
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {own && (
+                  <label className="flex min-h-8 cursor-pointer items-center gap-1.5">
+                    <input type="checkbox" checked={settings.xrefSame} onChange={(e) => updateSettings({ xrefSame: e.target.checked })} className="h-4 w-4 accent-[var(--accent)]" />
+                    {own.name} <span className="text-faint">(same)</span>
+                  </label>
+                )}
+                {others.map((r) => (
+                  <label key={r.id} className="flex min-h-8 cursor-pointer items-center gap-1.5">
+                    <input type="checkbox" checked={settings.xrefOthers.includes(r.id)} onChange={() => toggleOther(r.id)} className="h-4 w-4 accent-[var(--accent)]" />
+                    {r.name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         {!verse ? (
-          <p className="text-muted">Tap a verse (or several) to see the verses most like it. Tick other religions above to look across traditions.</p>
+          <p className="text-muted">Tap a verse (or several) to see the verses most like it. Use “Change” above to look across other religions.</p>
         ) : !hits ? (
           <p className="animate-pulse text-muted">Loading…</p>
         ) : !groups.length ? (
-          <p className="text-muted">Tick at least one religion above.</p>
+          <p className="text-muted">Tick at least one religion (“Change” above).</p>
         ) : (
           groups.map((g) => (
             <div key={g.religion.id}>
