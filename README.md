@@ -34,7 +34,7 @@ Copy `.env.example` to `.env.local` (git-ignored). Phase 1 needs no keys. Phase 
 
 ## Copyright and license
 
-Copyright © 2026 **Skylar Knapp** and **Michael Knapp**, co-owners of Verses Across.
+© 2026 Verses Across
 
 The **code** is free software under the [GNU Affero General Public License v3.0 or later](LICENSE). You may use,
 change and share it, but any version you share or run for others (including as a website) must stay

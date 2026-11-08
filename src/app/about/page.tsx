@@ -44,8 +44,7 @@ export default function AboutPage() {
 
         <Section title="Copyright and license">
           <p>
-            Copyright © 2026 <strong className="text-ink">Skylar Knapp</strong> and{" "}
-            <strong className="text-ink">Michael Knapp</strong>, co-owners of Verses Across.
+            <strong className="text-ink">© 2026 Verses Across</strong>
           </p>
           <p>
             The app&rsquo;s code is free software under the{" "}

@@ -113,6 +113,7 @@ function NextChapterFlow({
   const entries = useChapters(keys);
   const rows = useMemo(() => alignVerses(entries.map((e) => (e.status === "ok" ? e.data : undefined))), [entries]);
   const book = findBook(next.work, next.book);
+  const settings = useSettings();
   const box = useRef<HTMLDivElement>(null);
   const go = useRef(onGo);
   useEffect(() => {
@@ -165,35 +166,57 @@ function NextChapterFlow({
   }, [scroller, hold]);
   if (!book) return null;
   const shown = versions.slice(0, column && narrow ? 1 : versions.length);
+  const vers = versions.map((id) => getVersion(id));
+  const multi = versions.length > 1;
   return (
     <div ref={box} className={column ? "sticky left-0 w-[100cqw]" : ""} aria-hidden>
       <div className="border-t border-line">
         <ChapterHeader title={chapterTitle(book, next.chapter)} bookRef={next} versions={versions} preview titleOnly />
       </div>
-      <div
-        className={column ? "grid gap-x-6 px-4 md:px-8" : "mx-auto max-w-[var(--stackw)] space-y-4 px-4 md:px-7"}
-        style={column ? { gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` } : undefined}
-      >
-        {rows.slice(0, 12).flatMap((row) =>
-          column
-            ? shown.map((id, i) => (
-                <p key={`${row.v}-${id}`} lang={getVersion(id)?.language} dir={getVersion(id)?.dir} className="reader-text py-2">
-                  <span className="mr-1 font-sans text-xs font-semibold text-accent">{row.v}</span>
-                  {row.cells[i]?.t}
-                </p>
-              ))
-            : [
-                <div key={row.v} className="space-y-1">
-                  {shown.map((id, i) => (
-                    <p key={id} lang={getVersion(id)?.language} dir={getVersion(id)?.dir} className={`reader-text ${i > 0 ? "text-ink/85" : ""}`}>
-                      {i === 0 && <span className="mr-1 font-sans text-xs font-semibold text-accent">{row.v}</span>}
-                      {row.cells[i]?.t}
-                    </p>
-                  ))}
-                </div>,
-              ],
-        )}
-      </div>
+      {column ? (
+        <div className="grid gap-x-6 px-4 md:px-8" style={{ gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` }}>
+          {rows.slice(0, 12).flatMap((row) =>
+            shown.map((id, i) => (
+              <p key={`${row.v}-${id}`} lang={vers[i]?.language} dir={vers[i]?.dir} className="reader-text py-2" style={{ color: vers[i] ? versionColor(settings, vers[i]!) : undefined }}>
+                <span className="mr-1 font-sans text-xs font-semibold text-accent">{row.v}</span>
+                {row.cells[i]?.t}
+              </p>
+            )),
+          )}
+        </div>
+      ) : (
+        // The same layout as the chapter itself (StackedView): version labels, language colours, and a
+        // placeholder line for a version still loading, so nothing pops in or moves when it becomes real.
+        <ol className="mx-auto max-w-[var(--stackw)] divide-y divide-line/70 px-3 md:px-6">
+          {rows.slice(0, 12).map((row) => (
+            <li key={row.v} className="rounded-sm px-1 py-3">
+              <div className="min-w-0 space-y-2">
+                {versions.map((id, i) => {
+                  const v = vers[i];
+                  if (!v || entries[i]?.status === "error") return null;
+                  return (
+                    <div key={id} className={i > 0 ? "text-ink/85" : ""}>
+                      {multi && (
+                        <div className="mb-0.5 flex items-center text-[11px] uppercase tracking-wide">
+                          <VersionLabel version={v} compact />
+                        </div>
+                      )}
+                      {entries[i]?.status === "ok" ? (
+                        <p lang={v.language} dir={v.dir} className="reader-text" style={{ color: versionColor(settings, v) }}>
+                          {i === 0 && <span className="mr-1 font-sans text-xs font-semibold text-accent">{row.v}</span>}
+                          {row.cells[i]?.t}
+                        </p>
+                      ) : (
+                        <SkeletonLine />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
       <div className="h-[60dvh]" />
     </div>
   );

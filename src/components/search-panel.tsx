@@ -175,6 +175,12 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
           </label>
         </div>
         <VersionFilter work={work} selected={selected} perVersion={result?.perVersion} />
+      </div>
+
+      {/* Everything under the "In:" line scrolls with the results, so the options and word suggestions
+          don't take fixed space on a small screen. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2" aria-busy={busy}>
+        <div className="space-y-2 px-1 pb-2">
         <div className="flex flex-wrap gap-1">
           <Toggle on={state.crossLanguage} onChange={(v) => setUi({ crossLanguage: v })} title="Find the same word in the other languages (e.g. sacrifice → sacrificio)">
             🌐 Same word in other languages
@@ -197,9 +203,9 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2" aria-live="polite" aria-busy={busy}>
+        <div aria-live="polite">
         {!query && <Help />}
         {query && error && <p className="px-3 py-6 text-center text-sm text-red-700 dark:text-red-400">{error}</p>}
         {query && !error && result && (
@@ -258,6 +264,7 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
           </>
         )}
         {query && !result && !error && <p className="px-3 py-6 text-center text-sm text-faint">Searching…</p>}
+        </div>
       </div>
     </div>
   );

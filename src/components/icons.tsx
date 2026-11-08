@@ -92,6 +92,9 @@ export const ClockIcon = (p: P) => (
 export const NoteIcon = (p: P) => (
   <svg {...base(p)}><path d="M5 4h10l4 4v12H5z" /><path d="M15 4v4h4M8.5 12h7M8.5 16h5" /></svg>
 );
+export const RocketIcon = (p: P) => (
+  <svg {...base(p)}><path d="M14 4c3.5 0 6 2.5 6 6-1.5 3-4.5 6-8 7.5L6.5 12C8 8.5 11 5.5 14 4z" /><circle cx="14.5" cy="9.5" r="1.6" /><path d="M6.5 12l-2.5.5L6 9.5h3M12 17.5l-.5 2.5 3-2V15M7 17c-1 .5-2 2-2 2s1.5-1 2-2" /></svg>
+);
 export const PinIcon = (p: P) => (
   <svg {...base(p)}><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg>
 );

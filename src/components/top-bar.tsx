@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
-import { CalendarIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, MoreIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
+import { CalendarIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, MoreIcon, RocketIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
 import { ReadTogether } from "./read-together";
 import { HighlightModeToggle } from "./highlight-mode";
 import { XrefToggle } from "./xref-panel";
@@ -91,6 +91,14 @@ export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         </Group>
         <Divider />
         <Group label="More">
+          <Link
+            href="/coming-soon"
+            aria-label="Coming soon: what's planned next"
+            title="Coming soon: games, a section for children, a path for teachers and more"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-raised text-muted hover:text-ink"
+          >
+            <RocketIcon />
+          </Link>
           <ThemeToggle />
           <TopPopover label="Display options" title="Saved setups, words of Jesus in red, swiping, offline and more" icon={<SlidersIcon />}>
             <SavedSetups />

@@ -10,6 +10,7 @@
  */
 import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { closeSheet, openPanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
 import { openAi, useAiChat } from "@/lib/ai-chat";
@@ -17,6 +18,7 @@ import { Modal } from "./modal";
 import {
   CalendarIcon,
   CloseIcon,
+  RocketIcon,
   ShareIcon,
   SparkIcon,
   TrophyIcon,
@@ -222,6 +224,7 @@ function Section({
 /* ---------- the tools ---------- */
 
 function Tiles() {
+  const router = useRouter();
   const ai = useAiChat();
   const share = useShareHere();
   const go = (id: PanelId) => {
@@ -262,6 +265,15 @@ function Tiles() {
         onClick={() => {
           closeSheet();
           void share();
+        }}
+      />
+      <Tile
+        icon={<RocketIcon />}
+        label="Coming soon"
+        title="What's planned next: games, a section for children, a path for teachers and more"
+        onClick={() => {
+          closeSheet();
+          router.push("/coming-soon");
         }}
       />
     </div>

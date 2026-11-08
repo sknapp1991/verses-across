@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const urls: MetadataRoute.Sitemap = [
     { url: `${SITE}/`, priority: 1 },
     { url: `${SITE}/about`, priority: 0.5 },
+    { url: `${SITE}/coming-soon`, priority: 0.3 },
   ];
   for (const w of catalog.works)
     for (const b of booksOfWork(w.id)) {
