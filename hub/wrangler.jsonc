@@ -18,7 +18,7 @@
     "REPO": "sknapp1991/verses-across",
     "SITE": "https://versesacross.com",
     // Client ID of the Access service token "Claude" (its secret is only on Skylar's PC); empty = Claude can't sign in
-    "CLAUDE_TOKEN_ID": ""
+    "CLAUDE_TOKEN_ID": "55b44a41dbbf4ba073216b06d7d9ef53.access"
   },
   "d1_databases": [
     // The hub's own data (reports, comments, approvals…): hub/schema.sql
