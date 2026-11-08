@@ -14,12 +14,12 @@ import { ProgressPanel, ProgressWatcher } from "./progress-panel";
 import { SyncDialog } from "./sync-dialog";
 import { DownloadsDialog } from "./downloads-dialog";
 import { Tour } from "./tour";
-import { GroupInvite } from "./groups-section";
+import { GroupInvite, GroupsPanel } from "./groups-section";
 import { AiWindow } from "./ai-window";
 import { closePanel, openPanel, selectXref, setSplit, useUi, type PanelId } from "@/lib/ui-store";
 import { closeXref, XrefDockPanel } from "./xref-panel";
 import { PlansPanel } from "./plans-panel";
-import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon } from "./icons";
+import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon, UsersIcon } from "./icons";
 
 /** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"). */
 function useThemeSync() {
@@ -131,12 +131,22 @@ function Toast({ text }: { text: string }) {
   );
 }
 
-const PANEL_LABEL: Record<DockId, string> = { search: "Search", study: "My Study", progress: "Progress", plans: "Plans & Goals", xref: "Cross references" };
+const PANEL_LABEL: Record<DockId, string> = {
+  search: "Search",
+  study: "My Study",
+  progress: "Progress",
+  plans: "Plans & Goals",
+  groups: "Study groups",
+  xref: "Cross references",
+};
+/** Shorter names for the dock's tabs, so every tab fits without scrolling. */
+const TAB_LABEL: Record<DockId, string> = { search: "Search", study: "My Study", progress: "Progress", plans: "Plans & Goals", groups: "Groups", xref: "Cross refs" };
 const PANEL_ICON: Record<DockId, React.ReactNode> = {
   search: <SearchIcon width={16} height={16} />,
   study: <LibraryIcon width={16} height={16} />,
   progress: <TrophyIcon width={16} height={16} />,
   plans: <CalendarIcon width={16} height={16} />,
+  groups: <UsersIcon width={16} height={16} />,
   xref: (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M7 4h4v6H7zM13 14h4v6h-4z" />
@@ -151,37 +161,47 @@ function PanelBody({ panel, onNavigate }: { panel: DockId; onNavigate?: () => vo
   if (panel === "search") return <SearchPanel onNavigate={onNavigate} />;
   if (panel === "progress") return <ProgressPanel />;
   if (panel === "plans") return <PlansPanel onNavigate={onNavigate} />;
+  if (panel === "groups") return <GroupsPanel />;
   if (panel === "xref") return <XrefDockPanel />;
   return <StudyPanel onNavigate={onNavigate} />;
 }
 
 /**
- * Wide screens: the panel anchored at the right. Search, My Study, Cross references, Progress and
- * Plans & Goals open in it as tabs; "Side by side" shows them all at once. Drag the left edge to resize
- * (double-click: back to the default width).
+ * Wide screens: the panel anchored at the right. Search, My Study, Cross references, Progress,
+ * Plans & Goals and Study groups open in it as tabs (all always in view); "Side by side" shows them
+ * all at once in a grid of two columns (three on a very wide screen), so each keeps a usable size.
+ * Drag the left edge to resize (double-click: back to the default width).
  */
 function Dock() {
   const { panel, tabs, split, xrefActive } = useUi();
   const { xrefMode, panelWidth } = useSettings();
+  const huge = useMediaQuery("(min-width: 1800px)", false);
   const all: DockId[] = xrefMode ? [...tabs, "xref"] : tabs;
   if (!all.length) return null;
   const active: DockId = xrefMode && (xrefActive || !panel) ? "xref" : (panel ?? all[0]);
   const shown = split ? all : [active];
+  const cols = Math.min(shown.length, huge ? 3 : 2);
+  const rows = Math.ceil(shown.length / cols);
   const each = panelWidth ?? 384;
-  const select = (id: DockId) => (id === "xref" ? selectXref(true) : openPanel(id));
+  const select = (id: DockId) => {
+    if (split) setSplit(false);
+    if (id === "xref") selectXref(true);
+    else openPanel(id);
+  };
   const close = (id: DockId) => (id === "xref" ? closeXref() : closePanel(id));
+  const lastSpan = shown.length % cols ? cols - (shown.length % cols) + 1 : 1;
   return (
     <aside
       aria-label={split ? "Side panels" : PANEL_LABEL[active]}
       // Side by side never takes more than about half the screen, so the text keeps room to read.
-      style={{ width: shown.length > 1 ? `min(${each * shown.length}px, max(50vw, calc(100vw - 44rem)))` : `min(${each}px, 60vw)` }}
+      style={{ width: cols > 1 ? `min(${each * cols}px, max(50vw, calc(100vw - 44rem)))` : `min(${each}px, 60vw)` }}
       className="relative flex shrink-0 flex-col border-l border-line bg-panel"
     >
       <div
         onPointerDown={(e) => {
           e.preventDefault();
           const startX = e.clientX;
-          const n = shown.length;
+          const n = cols;
           const onMove = (ev: PointerEvent) =>
             updateSettings({
               panelWidth: Math.round(
@@ -201,52 +221,66 @@ function Dock() {
         className="absolute inset-y-0 -left-1 z-10 w-2 cursor-ew-resize hover:bg-accent/30"
       />
       {all.length > 1 && (
-        <div className="flex shrink-0 items-center gap-1 border-b border-line bg-raised/60 px-1.5 py-1">
-          {split ? (
-            <p className="min-w-0 flex-1 truncate px-2 text-xs text-muted">{all.length} panels side by side</p>
-          ) : (
-            <div role="group" aria-label="Open panels" className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
-              {all.map((id) => (
-                <span key={id} className={`flex shrink-0 items-center rounded-lg ${id === active ? "bg-panel shadow-sm ring-1 ring-line" : ""}`}>
+        <div className="flex shrink-0 items-stretch gap-1 border-b border-line bg-raised/60 p-1">
+          {/* Every open panel has a named tab of the same width, so none is ever off screen. */}
+          <div role="group" aria-label="Open panels" className="grid min-w-0 flex-1 auto-cols-fr grid-flow-col gap-1">
+            {all.map((id) => {
+              const on = !split && id === active;
+              return (
+                // Each tab is a container: when a tab gets too narrow (many panels, narrow dock) it shows just its
+                // icon, and the small close X goes (each panel also has its own close button).
+                <span key={id} className={`@container relative flex min-w-0 overflow-hidden rounded-lg ${on ? "bg-panel shadow-sm ring-1 ring-line" : "hover:bg-panel/60"}`}>
                   <button
                     type="button"
-                    aria-pressed={id === active}
-                    aria-label={`Show ${PANEL_LABEL[id]}`}
+                    aria-pressed={on}
+                    aria-label={split ? `Show only ${PANEL_LABEL[id]}` : `Show ${PANEL_LABEL[id]}`}
                     title={PANEL_LABEL[id]}
                     onClick={() => select(id)}
-                    className={`flex min-h-9 items-center gap-1.5 pl-2.5 pr-1 text-sm ${id === active ? "font-medium text-ink" : "text-muted hover:text-ink"}`}
+                    className={`flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 pb-1 pt-2 text-[11px] leading-tight ${
+                      on ? "font-semibold text-ink" : "text-muted hover:text-ink"
+                    }`}
                   >
-                    <span className={id === active ? "text-accent" : ""}>{PANEL_ICON[id]}</span>
-                    {/* The selected tab is named; the others show their icon (name on hover), so all fit. */}
-                    {(id === active || all.length <= 2) && PANEL_LABEL[id]}
+                    <span className={on ? "text-accent" : ""}>{PANEL_ICON[id]}</span>
+                    <span className="hidden max-w-full text-center @min-[4.5rem]:block">{TAB_LABEL[id]}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => close(id)}
                     aria-label={`Close ${PANEL_LABEL[id]}`}
-                    className="flex h-9 w-7 items-center justify-center rounded-md text-faint hover:text-ink"
+                    title={`Close ${PANEL_LABEL[id]}`}
+                    className="absolute right-0 top-0 hidden h-5 w-5 items-center justify-center rounded-md text-faint hover:bg-raised hover:text-ink @min-[4rem]:flex"
                   >
-                    <CloseIcon width={12} height={12} />
+                    <CloseIcon width={11} height={11} />
                   </button>
                 </span>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
           <button
             type="button"
             onClick={() => setSplit(!split)}
             aria-pressed={split}
+            aria-label={split ? "Show the panels as tabs" : "Show the open panels side by side"}
             title={split ? "Show the panels as tabs" : "Show the open panels side by side"}
-            className="flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5 text-xs font-medium text-muted hover:text-ink"
+            className="flex w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg border border-line bg-panel px-1 text-center text-[11px] leading-tight text-muted hover:text-ink"
           >
             {split ? <TabsIcon /> : <SplitIcon />}
-            {split ? "Tabs" : all.length > 2 ? <span className="sr-only">Side by side</span> : "Side by side"}
+            {split ? "Tabs" : "Side by side"}
           </button>
         </div>
       )}
-      <div className="flex min-h-0 flex-1 divide-x divide-line">
-        {shown.map((id) => (
-          <section key={id} aria-label={PANEL_LABEL[id]} className="min-h-0 min-w-0 flex-1">
+      <div
+        className="grid min-h-0 flex-1 gap-px bg-line"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))` }}
+      >
+        {shown.map((id, i) => (
+          <section
+            key={id}
+            aria-label={PANEL_LABEL[id]}
+            // An odd last panel takes the rest of its row.
+            style={i === shown.length - 1 && lastSpan > 1 ? { gridColumn: `span ${lastSpan}` } : undefined}
+            className="min-h-0 min-w-0 overflow-hidden bg-panel"
+          >
             <PanelBody panel={id} />
           </section>
         ))}

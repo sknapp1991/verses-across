@@ -12,7 +12,7 @@ import { updateSettings, useSettings } from "@/lib/settings";
 import { APPROX, lexicon, loadTags, spans, TAGGED, type LexEntry } from "@/lib/strongs";
 import { getLanguage } from "@/lib/languages";
 import { hasWords, lookupWord, type WordCard } from "@/lib/words";
-import { CloseIcon } from "./icons";
+import { CloseIcon, WordsIcon } from "./icons";
 import { openSearch } from "./search-panel";
 
 export type WordPick = { work: string; book: string; chapter: number; v: string; version: string; word: string; offset: number };
@@ -330,10 +330,7 @@ export function WordModeToggle({ full = false }: { full?: boolean }) {
         wordMode ? "border-accent bg-accent-soft text-accent" : "border-line text-muted hover:bg-raised hover:text-ink desk:bg-raised"
       }`}
     >
-      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M4 19V7l4 8 4-8v12" />
-        <path d="M15 19h5M17.5 9v10" />
-      </svg>
+      <WordsIcon />
       {full && <span>Words mode {wordMode ? "on" : "off"}</span>}
     </button>
   );

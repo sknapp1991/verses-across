@@ -106,7 +106,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
           <CloseIcon />
         </button>
       </div>
-      <div role="tablist" aria-label="My Study" className="flex gap-1 overflow-x-auto border-b border-line px-2 py-1.5">
+      <div role="tablist" aria-label="My Study" className="flex flex-wrap gap-1 border-b border-line px-2 py-1.5">
         {TABS.map(({ kind, label, Icon }) => (
           <button
             key={kind}
@@ -114,7 +114,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
             type="button"
             aria-selected={tab === kind}
             onClick={() => setTab(kind)}
-            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm ${
+            className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-sm ${
               tab === kind ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-raised"
             }`}
           >
@@ -147,7 +147,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
       {inTab.length > 1 && (
         <div className="space-y-2 border-b border-line/70 px-3 py-2">
           {religions.length > 1 && (
-            <div className="flex gap-1 overflow-x-auto" aria-label="Filter by tradition">
+            <div className="flex flex-wrap gap-1" aria-label="Filter by tradition">
               <button type="button" onClick={() => setReligion(null)} className={`min-h-9 shrink-0 rounded-full px-3 text-xs ${!rel ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-raised"}`}>
                 All
               </button>

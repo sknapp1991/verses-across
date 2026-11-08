@@ -146,3 +146,18 @@ export const ChatIcon = (p: P) => (
 export const TrophyIcon = (p: P) => (
   <svg {...base(p)}><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4" /></svg>
 );
+/** Words mode: a Latin A beside a Greek alpha over a dotted line (tap a word: its original and meaning). */
+export const WordsIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2.5 16l3.8-10 3.8 10M3.9 12.5h4.8" />
+    <path d="M20.5 9.5c-.9 4.6-2.2 6.5-4.3 6.5-1.7 0-2.7-1.4-2.7-3.3s1-3.4 2.7-3.4c2.2 0 2.9 2.6 4.3 6.7" />
+    <path d="M3 20h.01M7 20h.01M11 20h.01M15 20h.01M19 20h.01" strokeWidth={2.4} />
+  </svg>
+);
+export const UsersIcon = (p: P) => (
+  <svg {...base(p)}><circle cx="9" cy="8" r="3.2" /><path d="M3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5" /><path d="M15.5 5.2a3 3 0 010 5.6M17.5 14.8c1.8.6 3 2.2 3.4 4.7" /></svg>
+);
+/** Column / reading width: arrows pointing out to two edges. */
+export const WidthIcon = (p: P) => (
+  <svg {...base(p)}><path d="M4 4v16M20 4v16M7.5 12h9M10 9.5L7.5 12l2.5 2.5M14 9.5l2.5 2.5-2.5 2.5" /></svg>
+);

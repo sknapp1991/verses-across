@@ -38,7 +38,7 @@ export function useTabsSync() {
     const { tabs, tabsRecent } = getSettings();
     const here = parse(current);
     // Most recently used first (one entry per book) — used to return to the last tab of a group.
-    const recent = [bookKey(current), ...tabsRecent.filter((b) => b !== bookKey(current))].slice(0, 40);
+    const recent = [bookKey(current), ...tabsRecent.filter((b) => b !== bookKey(current))].slice(0, MAX_TABS);
     const i = tabs.findIndex((t) => sameBook(parse(t), here));
     if (i >= 0) {
       if (tabs[i] === current && tabsRecent[0] === bookKey(current)) return;
@@ -176,27 +176,12 @@ export function TabBar() {
   return (
     <div className="shrink-0 border-b border-line bg-panel">
       {groups.length > 1 && (
-        <div role="tablist" aria-label="Traditions" className="flex gap-1 overflow-x-auto px-2 pt-1 [scrollbar-width:none]">
-          {groups.map((g) => {
-            const on = g.id === activeGroup;
-            const count = tabs.filter((t) => groupOf(t).id === g.id).length;
-            return (
-              <button
-                key={g.id}
-                type="button"
-                role="tab"
-                aria-selected={on}
-                onClick={() => !on && openGroup(g.id)}
-                className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold uppercase tracking-wide ${
-                  on ? "bg-accent-soft text-accent" : "text-faint hover:bg-raised hover:text-ink"
-                }`}
-              >
-                {g.name}
-                <span className="font-normal tabular-nums opacity-75">{count}</span>
-              </button>
-            );
-          })}
-        </div>
+        <GroupRow
+          groups={groups.map((g) => ({ ...g, count: tabs.filter((t) => groupOf(t).id === g.id).length }))}
+          active={activeGroup}
+          onOpen={openGroup}
+          onReorder={(order) => updateSettings({ tabs: order.flatMap((id) => tabs.filter((t) => groupOf(t).id === id)) })}
+        />
       )}
       <div
         ref={barRef}
@@ -274,6 +259,119 @@ export function TabBar() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The traditions row (blue, apart from the amber book tabs under it). Drag one sideways to move it
+ * (touch: press and hold, then drag); its books move with it.
+ */
+function GroupRow({
+  groups,
+  active,
+  onOpen,
+  onReorder,
+}: {
+  groups: { id: string; name: string; count: number }[];
+  active?: string;
+  onOpen: (id: string) => void;
+  onReorder: (order: string[]) => void;
+}) {
+  const row = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<{ id: string; over: number } | null>(null);
+  const d = useRef<{ id: string; x: number; y: number; active: boolean; timer: number } | null>(null);
+  const suppress = useRef(false);
+  const indexAt = (x: number) => {
+    const els = [...(row.current?.querySelectorAll<HTMLElement>("[data-group]") ?? [])];
+    const i = els.findIndex((el) => x < el.getBoundingClientRect().left + el.offsetWidth / 2);
+    return i === -1 ? els.length - 1 : i;
+  };
+  const start = (id: string, x: number) => {
+    if (!d.current) return;
+    d.current.active = true;
+    suppress.current = true;
+    navigator.vibrate?.(15);
+    setDrag({ id, over: indexAt(x) });
+  };
+  const end = (e: React.PointerEvent) => {
+    const cur = d.current;
+    if (cur) clearTimeout(cur.timer);
+    if (cur?.active && e.type === "pointerup") {
+      const over = indexAt(e.clientX);
+      const ids = groups.map((g) => g.id).filter((id) => id !== cur.id);
+      const from = groups.findIndex((g) => g.id === cur.id);
+      if (over !== from) {
+        ids.splice(over, 0, cur.id);
+        onReorder(ids);
+      }
+    }
+    d.current = null;
+    setDrag(null);
+    setTimeout(() => (suppress.current = false), 0);
+  };
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => {
+      if (d.current?.active && e.cancelable) e.preventDefault();
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
+  }, []);
+  return (
+    <div ref={row} role="tablist" aria-label="Traditions" className="flex gap-1 overflow-x-auto bg-trad-soft/40 px-2 py-1 [scrollbar-width:none]">
+      {groups.map((g, i) => {
+        const on = g.id === active;
+        const dragging = drag?.id === g.id;
+        const showDrop = drag && !dragging && drag.over === i;
+        return (
+          <button
+            key={g.id}
+            data-group
+            type="button"
+            role="tab"
+            aria-selected={on}
+            title="Drag to move"
+            onClick={() => !suppress.current && !on && onOpen(g.id)}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              const cur = { id: g.id, x: e.clientX, y: e.clientY, active: false, timer: 0 };
+              d.current = cur;
+              if (e.pointerType !== "mouse") cur.timer = window.setTimeout(() => start(g.id, cur.x), 400);
+            }}
+            onPointerMove={(e) => {
+              const cur = d.current;
+              if (!cur || cur.id !== g.id) return;
+              const dist = Math.hypot(e.clientX - cur.x, e.clientY - cur.y);
+              if (!cur.active) {
+                if (e.pointerType === "mouse" && dist > 6) {
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {
+                    /* synthetic pointer */
+                  }
+                  start(g.id, e.clientX);
+                } else if (e.pointerType !== "mouse" && dist > 8) {
+                  clearTimeout(cur.timer);
+                  d.current = null;
+                }
+                return;
+              }
+              setDrag({ id: g.id, over: indexAt(e.clientX) });
+            }}
+            onPointerUp={end}
+            onPointerCancel={end}
+            onContextMenu={(e) => d.current?.active && e.preventDefault()}
+            className={`flex min-h-8 shrink-0 select-none items-center gap-1.5 rounded-full px-3 text-xs font-semibold uppercase tracking-wide ${
+              on ? "bg-trad text-paper" : "text-trad hover:bg-trad-soft"
+            } ${dragging ? "opacity-50" : ""} ${showDrop ? "outline-2 outline-dashed outline-trad" : ""}`}
+          >
+            {g.name}
+            <span className="font-normal tabular-nums opacity-75">{g.count}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

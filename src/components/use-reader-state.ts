@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useSyncExternalStore } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DEFAULT_LOCATION,
@@ -38,6 +38,13 @@ export function useReaderState() {
   const address = useSyncExternalStore(noSubscribe, addressSnapshot, () => null);
   const differs =
     !!address && !!routerParams.work && (address.work !== routerParams.work || address.book !== routerParams.book || address.chapter !== routerParams.chapter);
+  // Right after a link is followed the router already names the new chapter while the address bar still
+  // shows the old one (Next.js updates it as the new page is put on screen). Look again once it has: without
+  // this the tab bar kept the old chapter until something else redrew it (the first click seemed lost).
+  const [, recheck] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (differs) recheck();
+  }, [differs, routerParams.work, routerParams.book, routerParams.chapter]);
   const params = differs ? address : routerParams;
   const search = differs ? new URLSearchParams(address.v ? `v=${address.v}` : "") : routerSearch;
   const router = useRouter();

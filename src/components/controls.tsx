@@ -20,7 +20,7 @@ import {
   type TextAlign,
 } from "@/lib/settings";
 import type { Version } from "@/lib/schema";
-import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PencilIcon, RowsIcon, SunIcon } from "./icons";
+import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PaletteIcon, PencilIcon, RowsIcon, SunIcon, WidthIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 
 /** An on/off switch (a sliding pill), used for the yes/no settings. */
@@ -60,7 +60,7 @@ export function Switch({ checked, onChange, label, hint }: { checked: boolean; o
   );
 }
 
-export function ViewToggle({ full = false }: { full?: boolean }) {
+export function ViewToggle({ full = false, compact = false }: { full?: boolean; compact?: boolean }) {
   const view = useViewMode();
   const opts = [
     { id: "column" as const, label: "Columns", Icon: ColumnsIcon },
@@ -75,19 +75,20 @@ export function ViewToggle({ full = false }: { full?: boolean }) {
           aria-pressed={view === id}
           onClick={() => updateSettings({ view: id })}
           title={label}
-          className={`flex h-11 flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-sm ${
+          aria-label={compact ? `${label} view` : undefined}
+          className={`flex ${compact ? "h-8 px-2" : "h-11 px-3"} flex-1 items-center justify-center gap-1.5 rounded-md text-sm ${
             view === id ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-ink"
           }`}
         >
           <Icon width={18} height={18} />
-          <span className={full ? "" : "hidden xl:inline"}>{label}</span>
+          <span className={full ? "" : compact ? "hidden 2xl:inline" : "hidden xl:inline"}>{label}</span>
         </button>
       ))}
     </div>
   );
 }
 
-export function FontSizeControl() {
+export function FontSizeControl({ compact = false }: { compact?: boolean }) {
   const { fontSize } = useSettings();
   const set = (n: number) => updateSettings({ fontSize: Math.min(FONT_MAX, Math.max(FONT_MIN, n)) });
   return (
@@ -97,12 +98,12 @@ export function FontSizeControl() {
         onClick={() => set(fontSize - 2)}
         disabled={fontSize <= FONT_MIN}
         aria-label="Smaller text"
-        className="flex h-11 w-11 items-center justify-center rounded-md text-sm text-muted hover:text-ink disabled:opacity-40"
+        className={`flex ${compact ? "h-8 w-8" : "h-11 w-11"} items-center justify-center rounded-md text-sm text-muted hover:text-ink disabled:opacity-40`}
       >
         A−
       </button>
       <span
-        className="w-8 text-center text-xs tabular-nums text-faint"
+        className={`${compact ? "w-6" : "w-8"} text-center text-xs tabular-nums text-faint`}
         aria-live="polite"
         title={fontSize <= FONT_MIN ? "Smallest text size" : fontSize >= FONT_MAX ? "Largest text size" : undefined}
       >
@@ -113,7 +114,7 @@ export function FontSizeControl() {
         onClick={() => set(fontSize + 2)}
         disabled={fontSize >= FONT_MAX}
         aria-label="Larger text"
-        className="flex h-11 w-11 items-center justify-center rounded-md text-base font-medium text-muted hover:text-ink disabled:opacity-40"
+        className={`flex ${compact ? "h-8 w-8" : "h-11 w-11"} items-center justify-center rounded-md text-base font-medium text-muted hover:text-ink disabled:opacity-40`}
       >
         A+
       </button>
@@ -663,13 +664,12 @@ export function AlignControl() {
 }
 
 /**
- * In the reading area, next to the chapter arrows: column (or reading) width and text alignment, so they
- * are changed right where the text is. Opens a small panel; Escape or a click outside closes it.
+ * A small button in the reading area's toolbar with a panel under it. Escape, a click outside or the
+ * button closes it. The panel sits above the text (the toolbar is outside the scrolling text).
  */
-export function TextLayoutButton() {
+function ToolPopover({ label, title, icon, text, children, wide = false }: { label: string; title: string; icon: React.ReactNode; text?: string; children: React.ReactNode; wide?: boolean }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
-  const { textAlign } = useSettings();
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -683,7 +683,6 @@ export function TextLayoutButton() {
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
-  const icon = ALIGNS.find((a) => a.id === textAlign) ?? ALIGNS[0];
   return (
     <div ref={wrap} className="relative" data-no-swipe>
       <button
@@ -691,28 +690,84 @@ export function TextLayoutButton() {
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Text layout: width and alignment"
-        title="Width and alignment"
-        className={`flex h-11 items-center gap-1.5 rounded-lg border border-line px-3 text-sm ${open ? "bg-accent-soft text-accent" : "bg-raised text-muted hover:text-ink"}`}
+        aria-label={label}
+        title={title}
+        className={`flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg border border-line px-2 text-sm desk:h-9 desk:min-w-9 ${open ? "bg-accent-soft text-accent" : "bg-raised text-muted hover:text-ink"}`}
       >
-        <svg width={18} height={14} viewBox="0 0 24 18" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-          {icon.lines.map(([x1, x2], i) => (
-            <path key={i} d={`M${x1} ${2 + i * 4.5}H${x2}`} />
-          ))}
-        </svg>
-        <span className="hidden sm:inline">Layout</span>
+        {icon}
+        {text && <span className="hidden 2xl:inline">{text}</span>}
       </button>
       {open && (
         <div
           role="dialog"
-          aria-label="Text layout"
-          className="absolute right-0 top-full z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] space-y-4 rounded-xl border border-line bg-panel p-4 text-left shadow-xl"
+          aria-label={label}
+          className={`absolute right-0 top-full z-40 mt-2 max-h-[calc(100dvh-10rem)] ${wide ? "w-96" : "w-80"} max-w-[calc(100vw-2rem)] space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 text-left shadow-xl`}
         >
-          <WidthControl />
-          <AlignControl />
+          {children}
         </div>
       )}
     </div>
+  );
+}
+
+const AlignGlyph = ({ id }: { id: TextAlign }) => {
+  const a = ALIGNS.find((x) => x.id === id) ?? ALIGNS[0];
+  return (
+    <svg width={18} height={14} viewBox="0 0 24 18" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+      {a.lines.map(([x1, x2], i) => (
+        <path key={i} d={`M${x1} ${2 + i * 4.5}H${x2}`} />
+      ))}
+    </svg>
+  );
+};
+
+/** Reading toolbar: column width (Column view) or reading width (Stacked view). */
+export function WidthButton() {
+  const column = useViewMode() === "column";
+  return (
+    <ToolPopover label={column ? "Column width" : "Reading width"} title={column ? "Column width" : "Reading width"} text="Width" icon={<WidthIcon width={18} height={18} />}>
+      <WidthControl />
+    </ToolPopover>
+  );
+}
+
+/** Reading toolbar: text alignment (the button shows the current one). */
+export function AlignButton() {
+  const { textAlign } = useSettings();
+  const name = ALIGNS.find((a) => a.id === textAlign)?.label ?? "Left";
+  return (
+    <ToolPopover label={`Text alignment: ${name}`} title="Text alignment: left, center, right or justified" text="Align" icon={<AlignGlyph id={textAlign} />}>
+      <AlignControl />
+    </ToolPopover>
+  );
+}
+
+/** Reading toolbar when the reading area is narrow: every text setting in one panel. */
+export function TextSettingsButton() {
+  return (
+    <ToolPopover label="Text settings" title="Columns or stacked, width, alignment, size and colours" wide icon={<span aria-hidden className="font-serif text-base font-semibold leading-none">Aa</span>}>
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Layout</h3>
+        <ViewToggle full />
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text size</h3>
+        <FontSizeControl />
+      </div>
+      <WidthControl />
+      <AlignControl />
+      <LanguageColors />
+    </ToolPopover>
+  );
+}
+
+/** Reading toolbar: text and language colours. */
+export function ColoursButton() {
+  const { langColors } = useSettings();
+  return (
+    <ToolPopover label="Text and language colours" title={`Text and language colours${langColors ? " (on)" : ""}`} text="Colours" wide icon={<PaletteIcon width={18} height={18} className={langColors ? "text-accent" : ""} />}>
+      <LanguageColors />
+    </ToolPopover>
   );
 }
 

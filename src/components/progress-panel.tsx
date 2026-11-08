@@ -15,7 +15,6 @@ import type { StudyItem } from "@/lib/storage";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
 import { CloseIcon, TrashIcon, TrophyIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
-import { GroupsSection } from "./groups-section";
 import { startSync } from "@/lib/sync";
 import { startGroups } from "@/lib/groups";
 
@@ -110,7 +109,14 @@ export function ProgressPanel() {
           {period !== "day" && <Chart a={a} period={period} />}
         </section>
 
-        <GroupsSection />
+        <button
+          type="button"
+          onClick={() => openPanel("groups")}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl border border-line px-4 text-sm hover:bg-raised"
+        >
+          <span>Read with friends or family</span>
+          <span className="text-accent">Study groups →</span>
+        </button>
 
         <section className="space-y-2" aria-label="Badges">
           <h3 className="flex items-baseline justify-between text-xs font-semibold uppercase tracking-wide text-faint">

@@ -101,7 +101,8 @@ export const FONT_MIN = 10;
 export const FONT_MAX = 32;
 export const COL_MIN = 10, COL_MAX = 40; // rem
 export const STACK_MIN = 24, STACK_MAX = 100; // rem
-export const MAX_TABS = 12;
+/** Open book tabs kept (across every tradition); past this the oldest is closed. */
+export const MAX_TABS = 60;
 export const TTS_RATE_MIN = 0.5, TTS_RATE_MAX = 2;
 
 /** Colour-blind-friendly defaults (Okabe–Ito based), tuned for both themes via CSS mix. */
@@ -185,7 +186,7 @@ function read(): Settings {
       palette: p.palette && typeof p.palette === "object" ? p.palette : {},
       versionColors: p.versionColors && typeof p.versionColors === "object" ? p.versionColors : {},
       tabs: Array.isArray(p.tabs) ? p.tabs.filter((t): t is string => typeof t === "string").slice(0, MAX_TABS) : [],
-      tabsRecent: Array.isArray(p.tabsRecent) ? p.tabsRecent.filter((t): t is string => typeof t === "string").slice(0, 40) : [],
+      tabsRecent: Array.isArray(p.tabsRecent) ? p.tabsRecent.filter((t): t is string => typeof t === "string").slice(0, MAX_TABS) : [],
       ttsRate: num(p.ttsRate, TTS_RATE_MIN, TTS_RATE_MAX) ?? 1,
       ttsVoices: p.ttsVoices && typeof p.ttsVoices === "object" ? p.ttsVoices : {},
       ttsRates: p.ttsRates && typeof p.ttsRates === "object" ? p.ttsRates : {},

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
 import { toast } from "@/lib/ui-store";
 import { useEffect, useRef, useState } from "react";
-import { CalendarIcon, ChatIcon, CloseIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, PaletteIcon, SearchIcon, SlidersIcon } from "./icons";
+import { CalendarIcon, ChatIcon, CloseIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
 import { HighlightModeToggle } from "./highlight-mode";
 import { XrefToggle } from "./xref-panel";
 import { isShowing, openPanel, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
@@ -71,9 +71,10 @@ export function TopBar({
         <XrefToggle />
       </Group>
       <Divider />
-      <Group label="Progress, plans and goals">
+      <Group label="Progress, plans, goals and groups">
         <ProgressButton />
         <PanelButton id="plans" label="Plans and goals" title="Plans & Goals: reading plans and daily goals" icon={<CalendarIcon />} className="hidden min-[480px]:flex" />
+        <PanelButton id="groups" label="Study groups" title="Study groups: read with friends or family" icon={<UsersIcon />} className="hidden desk:flex" />
       </Group>
       <Divider />
       <Group label="Listen and ask">
@@ -81,61 +82,35 @@ export function TopBar({
         <AiButton />
       </Group>
 
-      {/* Desktop controls */}
+      {/* Desktop controls (text size, colours, width, alignment and columns/stacked are above the text). */}
       <Divider />
       <div className="hidden items-center gap-1 desk:flex">
-        <Group label="Versions and layout">
+        <Group label="Tap modes and versions">
           <WordModeToggle />
-          <VersionsPopover count={versions.length} />
-          <ViewToggle />
-        </Group>
-        <Divider />
-        {/* Narrower screens (768–1279 px): the look settings fold into one Display button. */}
-        <Group label="Text look">
           <HighlightModeToggle />
-          <span className="flex xl:hidden">
-            <TopPopover label="Display options" title="Text size, colours, light/dark, saved setups and more" icon={<SlidersIcon />}>
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text</h3>
-                <div className="flex items-center gap-2">
-                  <FontSizeControl />
-                  <ThemeToggle />
-                </div>
-              </div>
-              <LanguageColors />
-              <SavedSetups />
-              <RedLetterToggle />
-              <LevelMarksControl />
-              <ChapterSwipeControl />
-              <OfflineDownloadsButton />
-              <TourButton />
-              <ReadTogether />
-            </TopPopover>
-          </span>
-          <span className="hidden items-center gap-1 xl:flex">
-          <TopPopover label="Colours" title="Text and language colours" icon={<PaletteIcon />}>
-            <LanguageColors />
-          </TopPopover>
-          <FontSizeControl />
-          <ThemeToggle />
-          </span>
+          <VersionsPopover count={versions.length} />
         </Group>
-        <span className="hidden xl:contents">
         <Divider />
         <Group label="More">
-          <TopPopover label="Display options" title="Saved setups, swiping, offline" icon={<SlidersIcon />}>
+          <ThemeToggle />
+          <TopPopover label="Display options" title="Saved setups, words of Jesus in red, swiping, offline and more" icon={<SlidersIcon />}>
             <SavedSetups />
             <RedLetterToggle />
             <LevelMarksControl />
             <ChapterSwipeControl />
             <OfflineDownloadsButton />
             <TourButton />
+            {/* Narrower screens: Read together is in here instead of its own button. */}
+            <div className="xl:hidden">
+              <ReadTogether />
+            </div>
           </TopPopover>
-          <TopPopover label="Read together" title="Read together: send a link to this exact spot" icon={<ShareIcon />}>
-            <ReadTogether />
-          </TopPopover>
+          <span className="hidden xl:flex">
+            <TopPopover label="Read together" title="Read together: send a link to this exact spot" icon={<ShareIcon />}>
+              <ReadTogether />
+            </TopPopover>
+          </span>
         </Group>
-        </span>
       </div>
 
       {/* Phone: one settings button → bottom sheet */}

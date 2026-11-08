@@ -1,5 +1,5 @@
 "use client";
-import { TextLayoutButton } from "./controls";
+import { AlignButton, ColoursButton, FontSizeControl, TextSettingsButton, ViewToggle, WidthButton } from "./controls";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
@@ -356,6 +356,7 @@ export function ReaderView() {
   if (!valid || !book) return <NotFound />;
 
   const title = chapterTitle(book, ref.chapter);
+  const subtitle = entries.flatMap((e) => (e.status === "ok" && e.data.title ? [e.data.title] : [])).filter((t, i, a) => a.indexOf(t) === i).join(" · ");
   // Column width: phone portrait shows one column per swipe unless the user picked a width;
   // phone landscape and desktop use the saved width (or a sensible default) so 2–3 columns fit.
   const colMin = landscape
@@ -375,6 +376,10 @@ export function ReaderView() {
 
   return (
     <>
+    <div className="absolute inset-0 flex flex-col">
+    {/* Desktop: the chapter's name and the text settings stay at the top while the text scrolls. */}
+    <ReaderToolbar title={title} subtitle={subtitle} bookRef={ref} versions={versions} prev={prev} next={next} />
+    <div className="relative min-h-0 flex-1">
     <div
       ref={scroller}
       style={style}
@@ -383,8 +388,8 @@ export function ReaderView() {
       }`}
     >
       <div ref={content}>
-      <div className={column ? "sticky left-0 w-[100cqw]" : ""}>
-        <ChapterHeader title={title} subtitle={entries.flatMap((e) => (e.status === "ok" && e.data.title ? [e.data.title] : [])).filter((t, i, a) => a.indexOf(t) === i).join(" · ")} bookRef={ref} versions={versions} prev={prev} next={next} />
+      <div className={column ? "sticky left-0 w-[100cqw] desk:hidden" : "desk:hidden"}>
+        <ChapterHeader title={title} subtitle={subtitle} bookRef={ref} versions={versions} prev={prev} next={next} />
       </div>
 
       <ListenCtx.Provider value={ra}>
@@ -431,6 +436,8 @@ export function ReaderView() {
       )}
       {settings.continuousScroll && next && <ReadAlongSpacer ra={ra} />}
       </div>
+    </div>
+    </div>
     </div>
     <SwipeHintView hint={hint} prev={prev} next={next} />
     {pinchSize !== null && (
@@ -517,7 +524,7 @@ function ChapterHeader({
         {subtitle && <p className="mt-0.5 font-serif text-base text-muted md:text-lg">{subtitle}</p>}
       </div>
       <div className="flex shrink-0 gap-1">
-        {!preview && <TextLayoutButton />}
+        {!preview && <TextSettingsButton />}
         <NavIcon to={prev} versions={versions} label="Previous chapter" icon={<ChevronLeft />} />
         <NavIcon to={next} versions={versions} label="Next chapter" icon={<ChevronRight />} />
       </div>
@@ -525,8 +532,49 @@ function ChapterHeader({
   );
 }
 
-function NavIcon({ to, versions, label, icon }: { to?: BookRef; versions: string[]; label: string; icon: React.ReactNode }) {
-  const cls = "flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-raised";
+/**
+ * Desktop: a slim bar above the text that doesn't scroll away: where you are (tradition · collection,
+ * chapter) and the text settings (columns or stacked, width, alignment, size, colours), plus the
+ * chapter arrows. Its pop-ups open over the text.
+ */
+function ReaderToolbar({ title, subtitle, bookRef, versions, prev, next }: { title: string; subtitle?: string; bookRef: BookRef; versions: string[]; prev?: BookRef; next?: BookRef }) {
+  const book = findBook(bookRef.work, bookRef.book)!;
+  return (
+    // A container: when the reading area is narrow (panels open beside it) the settings fold into one button,
+    // so the bar stays one row.
+    <div data-no-swipe className="@container relative z-20 hidden shrink-0 border-b border-line bg-paper desk:block">
+    <div className="flex items-center gap-3 px-4 py-1.5 md:px-6">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-medium uppercase leading-4 tracking-wider text-faint">
+          {book.religion.name} · {book.collection.name}
+        </p>
+        <h1 className="truncate font-serif text-xl font-semibold leading-tight" title={subtitle ? `${title} · ${subtitle}` : title}>
+          {title}
+          {subtitle && <span className="ml-2 font-serif text-base font-normal text-muted">{subtitle}</span>}
+        </h1>
+      </div>
+      <div role="group" aria-label="Text settings" className="hidden shrink-0 items-center gap-1 @min-[44rem]:flex">
+        <ViewToggle compact />
+        <WidthButton />
+        <AlignButton />
+        <FontSizeControl compact />
+        <ColoursButton />
+      </div>
+      <div className="flex shrink-0 @min-[44rem]:hidden">
+        <TextSettingsButton />
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <span aria-hidden className="mx-1 h-6 w-px bg-line" />
+        <NavIcon to={prev} versions={versions} label="Previous chapter" icon={<ChevronLeft />} small />
+        <NavIcon to={next} versions={versions} label="Next chapter" icon={<ChevronRight />} small />
+      </div>
+    </div>
+    </div>
+  );
+}
+
+function NavIcon({ to, versions, label, icon, small = false }: { to?: BookRef; versions: string[]; label: string; icon: React.ReactNode; small?: boolean }) {
+  const cls = `flex ${small ? "h-9 w-9" : "h-11 w-11"} items-center justify-center rounded-lg border border-line bg-raised`;
   if (!to)
     return (
       <span className={`${cls} opacity-40`} aria-hidden>
@@ -627,7 +675,9 @@ function ColumnView({
 }) {
   const { drag, handlers } = useColumnDrag(onReorder);
   const n = cols.length;
-  // One version with a chosen column width: keep that width (centred) instead of filling the screen.
+  // One version with a chosen column width: keep that width (centred) instead of filling the screen, but
+  // never narrower than a comfortable reading width (a width set small to fit five columns elsewhere
+  // would otherwise squeeze a one-version book into a thin strip).
   const { colWidth } = useSettings();
   const wideScreen = useMediaQuery(WIDE_QUERY, true);
   const fixedSingle = n === 1 && colWidth != null && wideScreen;
@@ -639,7 +689,7 @@ function ColumnView({
       role="table"
       aria-label="Parallel versions"
       className={`grid min-w-full ${fixedSingle ? "justify-center" : ""}`}
-      style={{ gridTemplateColumns: fixedSingle ? "var(--colmin)" : `repeat(${n}, minmax(var(--colmin), 1fr))` }}
+      style={{ gridTemplateColumns: fixedSingle ? "minmax(0, max(var(--colmin), min(100%, 44rem)))" : `repeat(${n}, minmax(var(--colmin), 1fr))` }}
     >
       <div role="row" className="contents">
         {cols.map((c, i) => (

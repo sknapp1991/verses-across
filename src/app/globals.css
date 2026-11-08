@@ -29,6 +29,9 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
+  /* The traditions row above the book tabs (blue, so it reads apart from the amber book tabs). */
+  --color-trad: var(--trad);
+  --color-trad-soft: var(--trad-soft);
 }
 
 :root {
@@ -42,6 +45,8 @@
   --accent: #b45309;
   --accent-ink: #ffffff;
   --accent-soft: #fdf1df;
+  --trad: #2f6aa8;
+  --trad-soft: #e3eefa;
   --reader-size: 18px;
   color-scheme: light;
 }
@@ -57,6 +62,8 @@
   --accent: #f59e0b;
   --accent-ink: #1a1306;
   --accent-soft: #3a2a10;
+  --trad: #8ab6e6;
+  --trad-soft: #17283d;
   color-scheme: dark;
 }
 

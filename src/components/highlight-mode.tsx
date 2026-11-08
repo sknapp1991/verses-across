@@ -5,7 +5,7 @@
  */
 import { updateSettings, useSettings } from "@/lib/settings";
 import { HIGHLIGHTS } from "@/lib/study";
-import { CloseIcon, MarkerIcon } from "./icons";
+import { CloseIcon, MarkerIcon, WordsIcon } from "./icons";
 
 export function HighlightModeToggle({ full = false }: { full?: boolean }) {
   const { highlightMode, highlightColor } = useSettings();
@@ -42,7 +42,7 @@ export function ModeBanner() {
     >
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span className="text-accent" aria-hidden>
-          {wordMode ? <WordsGlyph /> : <MarkerIcon width={18} height={18} />}
+          {wordMode ? <WordsIcon width={18} height={18} /> : <MarkerIcon width={18} height={18} />}
         </span>
         <span role="status" className="min-w-0">
           <strong className="font-semibold">{wordMode ? "Words mode is on:" : "Highlight mode is on:"}</strong>{" "}
@@ -76,9 +76,3 @@ export function ModeBanner() {
   );
 }
 
-const WordsGlyph = () => (
-  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M4 19V7l4 8 4-8v12" />
-    <path d="M15 19h5M17.5 9v10" />
-  </svg>
-);

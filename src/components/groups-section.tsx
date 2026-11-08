@@ -1,6 +1,6 @@
 "use client";
 /**
- * Study groups in the Progress panel: create one, invite friends (link, code or QR), see everyone's
+ * Study groups (their own panel, from the top bar): create one, invite friends (link, code or QR), see everyone's
  * streak, time this week and progress in the group's book. Plus the prompt shown when an invite link
  * is opened.
  */
@@ -21,8 +21,8 @@ import {
   type GroupView,
   type MyGroup,
 } from "@/lib/groups";
-import { toast } from "@/lib/ui-store";
-import { CloseIcon } from "./icons";
+import { closePanel, openPanel, toast } from "@/lib/ui-store";
+import { CloseIcon, UsersIcon } from "./icons";
 import { Modal } from "./modal";
 import { Qr } from "./qr";
 import { useReaderState } from "./use-reader-state";
@@ -45,12 +45,31 @@ const rememberName = (n: string) => {
 const field = "h-10 w-full rounded-lg border border-line bg-raised px-3 text-base outline-none focus:ring-2 focus:ring-accent/50 md:text-sm";
 const btn = "min-h-10 rounded-lg px-3 text-sm";
 
-export function GroupsSection() {
+/** The Study groups panel (side dock on a wide screen, a sheet on a phone). */
+export function GroupsPanel() {
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
+        <h2 className="flex items-center gap-2 font-serif text-lg font-semibold">
+          <UsersIcon width={18} height={18} className="text-accent" /> Study groups
+        </h2>
+        <button type="button" onClick={() => closePanel("groups")} aria-label="Close Study groups" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
+          <CloseIcon />
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+        <GroupsSection heading={false} />
+      </div>
+    </div>
+  );
+}
+
+export function GroupsSection({ heading = true }: { heading?: boolean }) {
   const groups = useGroups();
   const [mode, setMode] = useState<null | "create" | "join">(null);
   return (
     <section className="space-y-2" aria-label="Study groups">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Study groups</h3>
+      {heading && <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Study groups</h3>}
       {groups.length === 0 && !mode && (
         <p className="text-sm text-muted">Study with friends or family: see each other’s streaks and progress, and read a book together. No accounts.</p>
       )}
@@ -140,6 +159,7 @@ function JoinForm({ onDone, code }: { onDone: () => void; code?: string }) {
         if (r) return setErr(r);
         toast("You joined the group");
         onDone();
+        openPanel("groups");
       }}
     >
       {!code && (

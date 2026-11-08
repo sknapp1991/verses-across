@@ -1,6 +1,6 @@
 "use client";
 /**
- * Small shared UI state: the side dock (Search, My Study, Progress, Plans & Goals; Cross references
+ * Small shared UI state: the side dock (Search, My Study, Progress, Plans & Goals, Study groups; Cross references
  * joins it from its own setting), the verse action menu, and toast messages.
  *
  * The dock is the panel anchored at the right on a wide screen. Several panels can be open in it at
@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
 import type { StudyRef } from "./storage";
 import { getSettings, WIDE_QUERY } from "./settings";
 
-export type PanelId = "search" | "study" | "progress" | "plans";
+export type PanelId = "search" | "study" | "progress" | "plans" | "groups";
 export type Panel = PanelId | null;
 /** `version`: the column that was tapped (read aloud uses it). */
 export type VerseMenuState = (StudyRef & { verse: string; focus?: "note" | "ask"; version?: string }) | null;
