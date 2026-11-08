@@ -11,8 +11,11 @@ export function Modal({
   onClose,
   variant,
   label,
+  noSwipe = false,
   children,
 }: {
+  /** No swipe-down-to-close (the content handles dragging itself, e.g. a resizable panel sheet). */
+  noSwipe?: boolean;
   open: boolean;
   onClose: () => void;
   /** drawer: from the left; sheet: from the bottom; card: bottom sheet on phones, centred card on desktop. */
@@ -28,7 +31,7 @@ export function Modal({
     if (!open && d.open) d.close();
   }, [open]);
   // Swipe the drawer left / the sheet down to close it (in addition to ✕, Esc and tapping outside).
-  useSwipeToDismiss(ref, variant === "drawer" ? "left" : "down", onClose, open);
+  useSwipeToDismiss(ref, variant === "drawer" ? "left" : "down", onClose, open && !noSwipe);
 
   const shape =
     variant === "drawer"

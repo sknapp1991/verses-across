@@ -73,8 +73,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         {wide && <Dock />}
       </div>
 
-      <Modal open={!wide && !!panel} onClose={() => closePanel()} variant="sheet" label={panel ? PANEL_LABEL[panel] : "Panel"}>
-        <div className="h-[80dvh]">{panel && <PanelBody panel={panel} onNavigate={() => closePanel()} />}</div>
+      <Modal open={!wide && !!panel} onClose={() => closePanel()} variant="sheet" label={panel ? PANEL_LABEL[panel] : "Panel"} noSwipe>
+        {panel && (
+          <ResizableSheet>
+            <PanelBody panel={panel} onNavigate={() => closePanel()} />
+          </ResizableSheet>
+        )}
       </Modal>
 
       <AiWindow />
@@ -343,6 +347,65 @@ export function ShellFallback() {
         <div className="hidden w-72 shrink-0 border-r border-line bg-panel desk:block lg:w-80" />
         <div className="flex-1" />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Phone: a panel's bottom sheet (Search, My Study, Cross references…). Drag its title bar (or the handle
+ * above it) up or down to any height, to see more of the text behind it; drag it right down to close.
+ * The height is remembered for the next panel.
+ */
+const SHEET_KEY = "va-sheet-h";
+function ResizableSheet({ children }: { children: ReactNode }) {
+  const [h, setH] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem(SHEET_KEY));
+      return v >= 22 && v <= 80 ? v : 80;
+    } catch {
+      return 80;
+    }
+  });
+  const drag = useRef<{ y: number; h: number } | null>(null);
+  const live = useRef(h);
+  const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const t = e.target as HTMLElement;
+    // From the title bar or the very top edge (the handle), not from its buttons.
+    const top = e.clientY - e.currentTarget.getBoundingClientRect().top;
+    if (!(t.closest("header") || top < 18) || t.closest("button, a, input, select")) return;
+    drag.current = { y: e.clientY, h: live.current };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    const next = Math.min(80, Math.max(12, d.h - ((e.clientY - d.y) / window.innerHeight) * 100));
+    live.current = next;
+    setH(next);
+  };
+  const onUp = () => {
+    if (!drag.current) return;
+    drag.current = null;
+    if (live.current < 22) {
+      closePanel(); // dragged right down: close, as swiping a sheet down does
+      return;
+    }
+    try {
+      localStorage.setItem(SHEET_KEY, String(Math.round(live.current)));
+    } catch {
+      /* private mode */
+    }
+  };
+  return (
+    <div
+      style={{ height: `${h}dvh` }}
+      className="[&_header]:cursor-ns-resize [&_header]:touch-none [&_header]:select-none"
+      onPointerDown={onDown}
+      onPointerMove={onMove}
+      onPointerUp={onUp}
+      onPointerCancel={onUp}
+    >
+      {children}
     </div>
   );
 }

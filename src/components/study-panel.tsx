@@ -102,7 +102,10 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <PanelHeader icon={<LibraryIcon width={18} height={18} />} title="My Study" onClose={() => closePanel("study")} closeLabel="Close My Study" />
-      <div role="tablist" aria-label="My Study" className="flex flex-wrap gap-1 border-b border-line px-2 py-1.5">
+      {/* One scrolling page under the title (the list gets the room): the tabs stay pinned, the filters and
+          the sync / backup box scroll away with the rest. */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div role="tablist" aria-label="My Study" className="sticky top-0 z-10 flex flex-wrap gap-1 border-b border-line bg-panel px-2 py-1.5">
         {TABS.map(({ kind, label, Icon }) => (
           <button
             key={kind}
@@ -186,7 +189,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2">
+      <div className="px-2 py-2">
         {!ready ? null : list.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-faint">{inTab.length ? "Nothing matches these filters." : TABS.find((t) => t.kind === tab)!.empty}</p>
         ) : (
@@ -233,6 +236,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
             }}
           />
         </div>
+      </div>
       </div>
     </div>
   );

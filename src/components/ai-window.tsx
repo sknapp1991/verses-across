@@ -184,6 +184,21 @@ export function AiWindow() {
     window.addEventListener("pointercancel", onUp);
   };
 
+  /** Phone: drag the sheet's top edge or its title bar (not its buttons) up or down to any height. */
+  const phoneResize = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    const startY = e.clientY;
+    const startH = sheetH ?? window.innerHeight * 0.72;
+    const onMove = (ev: PointerEvent) =>
+      setSheetH(Math.min(window.innerHeight - 40, Math.max(window.innerHeight * 0.15, startH - (ev.clientY - startY))));
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   const frame = wide
     ? box
       ? { left: box.x, top: box.y, width: box.w, height: box.h }
@@ -201,8 +216,8 @@ export function AiWindow() {
       }`}
     >
       <header
-        onPointerDown={wide ? (e) => dragFrom(e, "move") : undefined}
-        className={`flex shrink-0 items-center gap-1 border-b border-line bg-raised py-1 pl-3 pr-1 ${wide ? "cursor-move select-none" : ""}`}
+        onPointerDown={wide ? (e) => dragFrom(e, "move") : phoneResize}
+        className={`flex shrink-0 items-center gap-1 border-b border-line bg-raised py-1 pl-3 pr-1 ${wide ? "cursor-move select-none" : "touch-none select-none"}`}
       >
         <SparkIcon className="shrink-0 text-accent" width={18} height={18} />
         <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
@@ -444,18 +459,7 @@ export function AiWindow() {
       {!wide && (
         // Phone: drag the top edge of the sheet to make it taller or shorter.
         <div
-          onPointerDown={(e) => {
-            const startY = e.clientY;
-            const startH = sheetH ?? window.innerHeight * 0.72;
-            const onMove = (ev: PointerEvent) =>
-              setSheetH(Math.min(window.innerHeight - 40, Math.max(window.innerHeight * 0.3, startH - (ev.clientY - startY))));
-            const onUp = () => {
-              window.removeEventListener("pointermove", onMove);
-              window.removeEventListener("pointerup", onUp);
-            };
-            window.addEventListener("pointermove", onMove);
-            window.addEventListener("pointerup", onUp);
-          }}
+          onPointerDown={phoneResize}
           aria-label="Drag to resize"
           className="absolute inset-x-0 top-0 flex h-3 touch-none justify-center"
         >

@@ -538,7 +538,7 @@ export function SavedSetups() {
 
 /** Swipe-to-change-chapter setting and the floating ‹ › buttons. */
 export function ChapterSwipeControl() {
-  const { chapterSwipe, floatingNav, continuousScroll } = useSettings();
+  const { chapterSwipe, floatingNav, continuousScroll, autoStudied } = useSettings();
   const opts = [
     { id: "one" as const, label: "One finger" },
     { id: "two" as const, label: "Two fingers" },
@@ -572,7 +572,18 @@ export function ChapterSwipeControl() {
         label="Continuous scroll"
         hint="The next chapter follows below as you read"
       />
-      <Switch checked={floatingNav} onChange={(on) => updateSettings({ floatingNav: on })} label="Floating ‹ › chapter buttons" />
+      {continuousScroll && (
+        <Switch
+          checked={autoStudied}
+          onChange={(on) => updateSettings({ autoStudied: on })}
+          label="Mark chapters as studied as I scroll on"
+          hint="Scrolling into the next chapter marks the one you finished"
+        />
+      )}
+      {/* Phones have the ‹ › in the pinned bar above the text; the floating pair is for wider screens. */}
+      <div className="hidden desk:block">
+        <Switch checked={floatingNav} onChange={(on) => updateSettings({ floatingNav: on })} label="Floating ‹ › chapter buttons" />
+      </div>
     </div>
   );
 }

@@ -45,8 +45,12 @@ import { gestureLock, useChapterSwipe, useScrollIdle, type SwipeHint } from "./u
 
 type Col = { version: Version; entry: ChapterEntry; retry: () => void };
 
-/** The chapter just entered by scrolling on (continuous scroll), so its saved position isn't restored. */
+/**
+ * The chapter just entered by scrolling on (continuous scroll), so its saved position isn't restored,
+ * and how far past its heading the reader had already scrolled (kept, so the page doesn't jump).
+ */
 let continuedInto: string | null = null;
+let continuedOffset = 0;
 
 /**
  * Continuous scroll: the start of the next chapter, shown below this one. When its heading reaches the
@@ -68,7 +72,8 @@ function NextChapterFlow({
   column: boolean;
   narrow: boolean;
   hold: boolean;
-  onGo: () => void;
+  /** `past`: how far the reader has scrolled beyond the next chapter's heading. */
+  onGo: (past: number) => void;
 }) {
   const keys = versions.map((v) => chapterKey(next.work, v, next.book, next.chapter));
   const entries = useChapters(keys);
@@ -83,23 +88,53 @@ function NextChapterFlow({
     const sc = scroller.current;
     if (!sc || hold) return;
     let done = false;
-    const check = () => {
+    let idle = 0;
+    // Only the reader's own scrolling counts (a touch, wheel or key started it), never the position this
+    // chapter was just set to: otherwise a long carried-over offset could run on through short chapters.
+    let armed = false;
+    const arm = () => {
+      armed = true;
+    };
+    // Move on only once scrolling has come to rest with the next chapter's heading at or above the top:
+    // switching during a flick stops the phone's momentum and the page jumps.
+    const settle = () => {
       const el = box.current;
-      if (done || !el) return;
-      if (el.getBoundingClientRect().top - sc.getBoundingClientRect().top <= 1) {
+      if (done || !el || !armed) return;
+      const top = sc.getBoundingClientRect().top;
+      const past = top - el.getBoundingClientRect().top; // px scrolled past its heading
+      if (past >= -1) {
         done = true;
-        go.current();
+        // Measured from the first verse (the real chapter's heading is taller: it has the buttons), so the
+        // lines being read stay exactly where they are; negative while still inside the heading. At most the
+        // preview's own length (a flick into the space after it lands at the preview's end, not further).
+        const texts = el.querySelectorAll<HTMLElement>(".reader-text");
+        const first = texts[0];
+        const last = texts[texts.length - 1];
+        const span = first && last ? last.getBoundingClientRect().bottom - first.getBoundingClientRect().top : 0;
+        go.current(first ? Math.min(top - first.getBoundingClientRect().top, span) : Math.max(0, past) - 1e6);
       }
     };
-    sc.addEventListener("scroll", check, { passive: true });
-    return () => sc.removeEventListener("scroll", check);
+    const onScroll = () => {
+      window.clearTimeout(idle);
+      idle = window.setTimeout(settle, 180);
+    };
+    const inputs = ["touchstart", "wheel", "keydown", "pointerdown"] as const;
+    inputs.forEach((t) => sc.addEventListener(t, arm, { passive: true }));
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    sc.addEventListener("scrollend", settle);
+    return () => {
+      window.clearTimeout(idle);
+      inputs.forEach((t) => sc.removeEventListener(t, arm));
+      sc.removeEventListener("scroll", onScroll);
+      sc.removeEventListener("scrollend", settle);
+    };
   }, [scroller, hold]);
   if (!book) return null;
   const shown = versions.slice(0, column && narrow ? 1 : versions.length);
   return (
     <div ref={box} className={column ? "sticky left-0 w-[100cqw]" : ""} aria-hidden>
       <div className="border-t border-line">
-        <ChapterHeader title={chapterTitle(book, next.chapter)} bookRef={next} versions={versions} preview />
+        <ChapterHeader title={chapterTitle(book, next.chapter)} bookRef={next} versions={versions} preview titleOnly />
       </div>
       <div
         className={column ? "grid gap-x-6 px-4 md:px-8" : "mx-auto max-w-[var(--stackw)] space-y-4 px-4 md:px-7"}
@@ -272,6 +307,24 @@ export function ReaderView() {
 
   // Jump to #v16 once every column's text is there (so later columns don't push the verse away).
   // Remembered per chapter + hash, so following a search result to another chapter jumps again.
+  // Read, not just passed through: the chapter's beginning was on screen and it was open a while. Only then
+  // does scrolling on into the next chapter mark it as studied (a #v30 link, or a fast scroll, doesn't).
+  const readFrom = useRef<{ key: string; sawTop: boolean; at: number }>({ key: "", sawTop: false, at: 0 });
+  useEffect(() => {
+    const sc = scroller.current;
+    const key = `${ref.work}/${ref.book}/${ref.chapter}`;
+    readFrom.current = { key, sawTop: false, at: Date.now() };
+    if (!sc) return;
+    const look = () => {
+      if (sc.scrollTop < 150) readFrom.current.sawTop = true;
+    };
+    const t = window.setTimeout(look, 600); // after any restored position is applied
+    sc.addEventListener("scroll", look, { passive: true });
+    return () => {
+      window.clearTimeout(t);
+      sc.removeEventListener("scroll", look);
+    };
+  }, [ref.work, ref.book, ref.chapter]);
   const jumped = useRef("");
   useEffect(() => {
     if (!allLoaded || !rows.length) return;
@@ -294,6 +347,15 @@ export function ReaderView() {
     if (!hash && continuedInto === `${ref.work}/${ref.book}/${ref.chapter}`) {
       continuedInto = null;
       jumped.current = `${ref.work}/${ref.book}/${ref.chapter}#`;
+      // The same spot the reader was at in the preview: as far past this chapter's heading as before.
+      // (continuedOffset = px past the first verse's top; at or before the heading: stay at the top)
+      const sc = scroller.current;
+      const first = sc?.querySelector<HTMLElement>("[data-v]");
+      if (sc && first && continuedOffset > -1e5) {
+        const firstAt = first.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+        sc.scrollTop = Math.max(0, firstAt + continuedOffset);
+      }
+      continuedOffset = 0;
       return;
     }
     // No #verse in the link: go back to where you were in this chapter (if not the top).
@@ -389,8 +451,9 @@ export function ReaderView() {
     >
       <div ref={content}>
       <div className={column ? "sticky left-0 w-[100cqw] desk:hidden" : "desk:hidden"}>
-        <ChapterHeader title={title} subtitle={subtitle} bookRef={ref} versions={versions} prev={prev} next={next} />
+        <ChapterHeader title={title} subtitle={subtitle} bookRef={ref} versions={versions} prev={prev} next={next} titleOnly />
       </div>
+      <ChapterBar versions={versions} prev={prev} next={next} column={column} />
 
       <ListenCtx.Provider value={ra}>
       <VerseCtx.Provider value={actions}>
@@ -428,8 +491,15 @@ export function ReaderView() {
           column={column}
           narrow={!wide && !landscape}
           hold={ra.speech.status === "playing"}
-          onGo={() => {
+          onGo={(past) => {
+            // The chapter just finished by scrolling on: marked as studied (unless that's switched off).
+            const read = readFrom.current.sawTop && Date.now() - readFrom.current.at > 20_000;
+            if (settings.autoStudied && allLoaded && read && !getItem("studied", ref)) {
+              toggle("studied", ref);
+              toast(`${title} marked as studied`);
+            }
             continuedInto = `${next.work}/${next.book}/${next.chapter}`;
+            continuedOffset = past;
             router.push(readHref(next, versions), { scroll: false });
           }}
         />
@@ -502,9 +572,12 @@ function ChapterHeader({
   prev,
   next,
   preview = false,
+  titleOnly = false,
 }: {
   /** The next chapter's preview under this one (continuous scroll): no buttons of its own. */
   preview?: boolean;
+  /** Only the names: the versions chip and the buttons are in the pinned ChapterBar below it. */
+  titleOnly?: boolean;
   title: string;
   /** The chapter's own name(s) from the versions shown, e.g. a sutta title in English · Pāli. */
   subtitle?: string;
@@ -525,7 +598,7 @@ function ChapterHeader({
         <h1 className="font-serif text-2xl font-semibold pland:text-xl md:text-3xl">{title}</h1>
         {subtitle && <p className="mt-0.5 font-serif text-base text-muted pland:mt-0 md:text-lg">{subtitle}</p>}
         {/* The versions being read: tap to add, remove or reorder them (the sheet opens at that section). */}
-        {!preview && (
+        {!preview && !titleOnly && (
           <button
             type="button"
             onClick={() => openSheet("versions")}
@@ -541,6 +614,7 @@ function ChapterHeader({
         )}
       </div>
       {/* data-chapter-nav: while these are on screen, the floating ‹ › pill steps aside. */}
+      {!titleOnly && (
       <div className="flex shrink-0 gap-1" data-chapter-nav>
         {!preview && (
           <button
@@ -555,6 +629,53 @@ function ChapterHeader({
         )}
         <NavIcon to={prev} versions={versions} label="Previous chapter" icon={<ChevronLeft />} />
         <NavIcon to={next} versions={versions} label="Next chapter" icon={<ChevronRight />} />
+      </div>
+      )}
+    </div>
+  );
+}
+
+/** Height of the pinned ChapterBar on a phone (Column view's version labels stick just below it). */
+const BAR_TOP = "top-[57px] pland:top-[45px] desk:top-0";
+
+/**
+ * Phone: the versions chip (versions & languages), Aa (text settings) and the chapter arrows, pinned to the
+ * top of the text while it scrolls, so they're always one tap away.
+ */
+function ChapterBar({ versions, prev, next, column }: { versions: string[]; prev?: BookRef; next?: BookRef; column: boolean }) {
+  const abbrs = versions.map((id) => getVersion(id)?.abbr ?? id);
+  return (
+    <div
+      data-no-swipe
+      className={`sticky top-0 z-20 h-[57px] border-b border-line bg-paper/95 backdrop-blur pland:h-[45px] desk:hidden ${column ? "left-0 w-[100cqw]" : ""}`}
+    >
+      <div className="mx-auto flex h-full max-w-5xl items-center justify-between gap-2 px-4 md:px-8">
+        <button
+          type="button"
+          onClick={() => openSheet("versions")}
+          aria-label={`Versions: ${abbrs.join(", ")}. Change versions and languages`}
+          className="flex min-h-11 min-w-0 items-center"
+        >
+          <span className="flex h-8 max-w-full items-center gap-1.5 rounded-full border border-line bg-raised pl-2.5 pr-2 text-xs font-semibold text-muted">
+            <LanguagesIcon width={14} height={14} className="shrink-0 text-accent" />
+            <span className="truncate">{abbrs.join(" · ")}</span>
+            <ChevronDown width={12} height={12} className="shrink-0 text-faint" />
+          </span>
+        </button>
+        {/* data-chapter-nav: while these are on screen, the floating ‹ › pill steps aside. */}
+        <div className="flex shrink-0 gap-1" data-chapter-nav>
+          <button
+            type="button"
+            onClick={() => openSheet("text")}
+            aria-label="Text settings"
+            title="Text size, columns or stacked, width, alignment and colours"
+            className="flex h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-raised px-2 text-muted hover:text-ink"
+          >
+            <span aria-hidden className="font-serif text-base font-semibold leading-none">Aa</span>
+          </button>
+          <NavIcon to={prev} versions={versions} label="Previous chapter" icon={<ChevronLeft />} />
+          <NavIcon to={next} versions={versions} label="Next chapter" icon={<ChevronRight />} />
+        </div>
       </div>
     </div>
   );
@@ -728,7 +849,7 @@ function ColumnView({
             key={c.version.id}
             {...(cols.length > 1 ? handlers(i) : {})}
             title={cols.length > 1 ? "Drag to move this column (touch: press and hold, then drag)" : undefined}
-            className={`sticky top-0 z-10 snap-start select-none border-b border-line bg-paper/95 px-4 py-2 text-sm backdrop-blur md:px-5 ${
+            className={`sticky ${BAR_TOP} z-10 snap-start select-none border-b border-line bg-paper/95 px-4 py-2 text-sm backdrop-blur md:px-5 ${
               cols.length > 1 ? "cursor-grab active:cursor-grabbing" : ""
             } ${drag?.from === i ? "opacity-50" : ""} ${drag && drag.over === i && drag.from !== i ? "outline-2 -outline-offset-2 outline-dashed outline-accent" : ""}`}
           >
@@ -912,9 +1033,19 @@ function ChapterNav({ prev, next, versions }: { prev?: BookRef; next?: BookRef; 
   );
 }
 
+/**
+ * The versions' credits and licences, folded into one quiet line at the end of the chapter (tap to read
+ * them): always there as the licences ask, without a block of small print between chapters while scrolling.
+ */
 function Attribution({ versions }: { versions: Version[] }) {
   return (
-    <footer className="mx-auto max-w-3xl space-y-1 px-4 pb-10 pt-2 text-xs leading-relaxed text-faint md:px-8">
+    <footer className="mx-auto max-w-3xl px-4 pb-10 pt-2 text-xs leading-relaxed text-faint md:px-8">
+      <details className="group">
+        <summary className="flex min-h-9 cursor-pointer list-none items-center justify-center gap-1 select-none hover:text-muted [&::-webkit-details-marker]:hidden">
+          Sources &amp; credits: {versions.map((v) => v.abbr).join(" · ")}
+          <ChevronDown width={12} height={12} className="transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="space-y-1 pt-1">
       {versions.map((v) => (
         <p key={v.id}>
           <span className="font-semibold">{v.abbr}</span> — {v.name} ({v.yearNote ?? v.year}). {v.license}.{" "}
@@ -926,6 +1057,8 @@ function Attribution({ versions }: { versions: Version[] }) {
       ))}
       {versions[0]?.work === "bible" && <p>Verse numbers follow the English (KJV) system so versions line up; a version’s own number is shown where it differs.</p>}
       {versions[0] && ["tipitaka", "abhidhamma"].includes(versions[0].work) && <p>Numbers in the margin count the paragraphs of each discourse; SuttaCentral’s own segment numbering is the same in every language, so the versions line up exactly.</p>}
+        </div>
+      </details>
     </footer>
   );
 }

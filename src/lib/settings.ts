@@ -87,6 +87,8 @@ export type Settings = {
   chapterSwipe: "one" | "two" | "off";
   /** Continuous scroll: the next chapter follows below; scrolling into it moves on to it. */
   continuousScroll: boolean;
+  /** Continuous scroll: a chapter scrolled past on into the next one is marked as studied. */
+  autoStudied: boolean;
   /** Floating ‹ › chapter buttons (fade while scrolling). */
   floatingNav: boolean;
   /** Verse text alignment ("start" = left, or right for Hebrew and Arabic). */
@@ -156,6 +158,7 @@ const DEFAULTS: Settings = {
   xrefOthers: [],
   chapterSwipe: "one",
   continuousScroll: false,
+  autoStudied: true,
   floatingNav: true,
   textAlign: "start",
   setups: [],
@@ -208,6 +211,7 @@ function read(): Settings {
       xrefOthers: Array.isArray((p as { xrefOthers?: unknown }).xrefOthers) ? ((p as { xrefOthers: unknown[] }).xrefOthers.filter((x) => typeof x === "string") as string[]) : [],
       chapterSwipe: p.chapterSwipe === "two" || p.chapterSwipe === "off" ? p.chapterSwipe : "one",
       continuousScroll: (p as { continuousScroll?: unknown }).continuousScroll === true,
+      autoStudied: (p as { autoStudied?: unknown }).autoStudied !== false,
       floatingNav: p.floatingNav !== false,
       textAlign: (["center", "end", "justify"] as const).find((x) => x === (p as { textAlign?: unknown }).textAlign) ?? "start",
       setups: Array.isArray(p.setups)
