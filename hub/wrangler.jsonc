@@ -15,8 +15,10 @@
   "vars": {
     "TEAM_DOMAIN": "tight-leaf-77ed.cloudflareaccess.com",
     "POLICY_AUD": "39ff06db220e1d12871310c408e16ca691c6948a6410796d1a9de007683d5032",
-    "REPO": "sknapp1991/snoopwiggy",
-    "SITE": "https://versesacross.com"
+    "REPO": "sknapp1991/verses-across",
+    "SITE": "https://versesacross.com",
+    // Client ID of the Access service token "Claude" (its secret is only on Skylar's PC); empty = Claude can't sign in
+    "CLAUDE_TOKEN_ID": ""
   },
   "d1_databases": [
     // The hub's own data (reports, comments, approvals…): hub/schema.sql

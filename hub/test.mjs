@@ -22,10 +22,11 @@ function key() {
   return k;
 }
 const b64 = (o) => Buffer.from(typeof o === "string" ? o : JSON.stringify(o)).toString("base64url");
-function jwt(email, { aud = AUD, iss = `https://${TEAM}`, exp = Math.floor(Date.now() / 1000) + 600, alg = "RS256" } = {}) {
+function jwt(email, { aud = AUD, iss = `https://${TEAM}`, exp = Math.floor(Date.now() / 1000) + 600, alg = "RS256", service = null } = {}) {
   const k = key();
   const head = b64({ alg, kid: k.kid, typ: "JWT" });
-  const body = b64({ aud: [aud], email, iss, exp, iat: Math.floor(Date.now() / 1000) });
+  // A service token's token has no email, its Client ID as common_name.
+  const body = b64(service ? { aud: [aud], common_name: service, iss, exp, iat: Math.floor(Date.now() / 1000), type: "app" } : { aud: [aud], email, iss, exp, iat: Math.floor(Date.now() / 1000) });
   const sig = createSign("RSA-SHA256").update(`${head}.${body}`).sign(k.priv).toString("base64url");
   return `${head}.${body}.${sig}`;
 }
@@ -139,6 +140,27 @@ if (process.argv[2] === "serve") {
   r = await J(await call(OWNER, "/api/shipped"));
   check("shipped loads (commits + totals)", r.status === 200 && Array.isArray(r.body.commits), `${r.body.commits?.length} commits`);
   check("unknown path → 404", (await call(OWNER, "/api/nope")).status === 404);
+
+  // Claude's service token
+  const CLAUDE = jwt(null, { service: "test-claude.access" });
+  check("unknown service token → 403", (await call(jwt(null, { service: "someone-else.access" }), "/api/me")).status === 403);
+  r = await J(await call(CLAUDE, "/api/me"));
+  check("Claude's token signs in as Claude, not owner", r.status === 200 && r.body.email === "claude" && r.body.owner === false && r.body.worker === true, JSON.stringify(r.body));
+  check("Claude sets status + note", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "Shipped" }) })).status === 200);
+  await call(CLAUDE, "/api/comments", { method: "POST", body: JSON.stringify({ thread: `report:${rid}`, body: "Live now" }) });
+  r = await J(await call(OWNER, `/api/comments?thread=report:${rid}`));
+  check("Claude's reply shows as Claude", r.body.at(-1).author === "claude");
+  r = await J(await call(CLAUDE, "/api/approvals", { method: "POST", body: JSON.stringify({ kind: "clip", title: "Clip from Claude" }) }));
+  check("Claude adds a clip for approval", r.status === 200);
+  const cid = r.body.id;
+  check("Claude can't approve", (await call(CLAUDE, `/api/approvals/${cid}`, { method: "PATCH", body: JSON.stringify({ decision: "Approved" }) })).status === 403);
+  check("Claude can't decide website feedback", (await call(CLAUDE, "/api/feedback/abcd1234", { method: "PATCH", body: JSON.stringify({ decision: "Go" }) })).status === 403);
+  check("Claude can't vote", (await call(CLAUDE, `/api/roadmap/${item}/vote`, { method: "POST", body: "{}" })).status === 403);
+  r = await J(await call(CLAUDE, "/api/uploads", { method: "POST", body: JSON.stringify({ ownerKind: "approval", ownerId: cid, name: "clip.mp4", type: "video/mp4", size: 10 }) }));
+  check("Claude uploads a clip to its approval item", r.status === 200);
+  check("Claude can't rewrite someone's report", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ body: "changed" }) })).status === 403);
+  check("Claude can't attach files to someone's report", (await call(CLAUDE, "/api/uploads", { method: "POST", body: JSON.stringify({ ownerKind: "report", ownerId: rid, name: "x.mp4", type: "video/mp4", size: 10 }) })).status === 403);
+  check("Claude adds a shipped line", (await call(CLAUDE, "/api/shipped", { method: "POST", body: JSON.stringify({ text: "Note delete is live" }) })).status === 200);
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

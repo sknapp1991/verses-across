@@ -22,8 +22,12 @@ type R2 = {
   resumeMultipartUpload(key: string, uploadId: string): R2Upload;
   delete(key: string): Promise<void>;
 };
-/** CERTS_URL: local tests only (`wrangler dev --var CERTS_URL:…`, hub/test.mjs); never set in production. */
-type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; OWNER_EMAIL?: string; REPO: string; SITE: string; CERTS_URL?: string };
+/**
+ * CLAUDE_TOKEN_ID: the Client ID of the Cloudflare Access service token named "Claude" (not secret by itself;
+ * its secret stays on Skylar's PC). A request carrying that token is "claude": it may set statuses, notes and
+ * test links, answer as Claude, add clips for approval and "what shipped" lines. It can never approve or decide.
+ * CERTS_URL: local tests only (`wrangler dev --var CERTS_URL:…`, hub/test.mjs); never set in production. */
+type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string };
 
 const TYPES = new Set(["Bug", "Idea", "Content", "Question"]);
 const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap"]);
@@ -64,7 +68,7 @@ const b64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(
 /** Why a sign-in was refused, in the Worker's log (never the token itself). */
 const deny = (why: string): null => (console.warn(`access denied: ${why}`), null);
 
-/** The signed-in email, or null. Checks signature, issuer, audience and expiry. */
+/** The signed-in email, "claude" for Claude's service token, or null. Checks signature, issuer, audience and expiry. */
 async function whoIs(req: Request, env: Env): Promise<string | null> {
   const token = req.headers.get("cf-access-jwt-assertion");
   if (!token) return null;
@@ -81,12 +85,14 @@ async function whoIs(req: Request, env: Env): Promise<string | null> {
     if (!key) return deny("unknown signing key");
     const ok = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, b64url(s), new TextEncoder().encode(`${h}.${p}`));
     if (!ok) return deny("bad signature");
-    const claims = JSON.parse(new TextDecoder().decode(b64url(p))) as { aud?: string | string[]; iss?: string; exp?: number; nbf?: number; email?: string };
+    const claims = JSON.parse(new TextDecoder().decode(b64url(p))) as { aud?: string | string[]; iss?: string; exp?: number; nbf?: number; email?: string; common_name?: string };
     const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
     const t = Math.floor(Date.now() / 1000);
     if (!aud.includes(env.POLICY_AUD)) return deny("wrong app");
     if (claims.iss !== `https://${env.TEAM_DOMAIN}`) return deny("wrong issuer");
     if (!claims.exp || claims.exp < t || (claims.nbf && claims.nbf > t + 60)) return deny("expired");
+    // Claude's service token: no email, its Client ID as common_name.
+    if (!claims.email && claims.common_name) return env.CLAUDE_TOKEN_ID && claims.common_name === env.CLAUDE_TOKEN_ID ? "claude" : deny("unknown service token");
     const email = (claims.email ?? "").toLowerCase();
     const team = (env.TEAM_EMAILS ?? "").toLowerCase().split(",").map((x) => x.trim()).filter(Boolean);
     return team.includes(email) ? email : deny("not on the team list");
@@ -102,7 +108,9 @@ export default {
     const url = new URL(req.url);
     const me = await whoIs(req, env);
     if (!me) return new Response("Not signed in to the Verses Across team hub.", { status: 403, headers: { "content-type": "text/plain" } });
-    const owner = me === (env.OWNER_EMAIL ?? "").toLowerCase().trim();
+    const owner = me !== "claude" && me === (env.OWNER_EMAIL ?? "").toLowerCase().trim();
+    // Claude (its service token, or the owner's own session) does the inbox work: statuses, notes, clips to approve.
+    const worker = owner || me === "claude";
     const path = url.pathname;
     const m = req.method;
 
@@ -124,21 +132,21 @@ export default {
             "referrer-policy": "no-referrer",
           },
         });
-      if (path === "/api/me") return json({ email: me, owner, name: me.split("@")[0] });
+      if (path === "/api/me") return json({ email: me, owner, worker, name: me === "claude" ? "Claude" : me.split("@")[0] });
 
       // Reports
       if (path === "/api/reports" && m === "GET") return listReports(env, url);
       if (path === "/api/reports" && m === "POST") return createReport(env, me, await req.json());
       let r = /^\/api\/reports\/([a-f0-9]{16})$/.exec(path);
       if (r && m === "GET") return getReport(env, r[1]);
-      if (r && m === "PATCH") return patchReport(env, me, owner, r[1], await req.json());
+      if (r && m === "PATCH") return patchReport(env, me, worker, r[1], await req.json());
 
       // Comments (report, roadmap item or approval threads)
       if (path === "/api/comments" && m === "GET") return listComments(env, url.searchParams.get("thread") ?? "");
       if (path === "/api/comments" && m === "POST") return addComment(env, me, owner, await req.json());
 
       // Uploads (to R2, 10 MB parts) and media
-      if (path === "/api/uploads" && m === "POST") return startUpload(env, me, owner, await req.json());
+      if (path === "/api/uploads" && m === "POST") return startUpload(env, me, worker, await req.json());
       r = /^\/api\/uploads\/([a-f0-9]{16})\/part\/(\d{1,5})$/.exec(path);
       if (r && m === "PUT") return uploadPart(env, req, me, r[1], Number(r[2]));
       r = /^\/api\/uploads\/([a-f0-9]{16})\/complete$/.exec(path);
@@ -148,7 +156,7 @@ export default {
 
       // Approvals (clips) and website feedback (Go / No)
       if (path === "/api/approvals" && m === "GET") return listApprovals(env);
-      if (path === "/api/approvals" && m === "POST") return owner ? createApproval(env, me, await req.json()) : bad("Only the owner can add approvals", 403);
+      if (path === "/api/approvals" && m === "POST") return worker ? createApproval(env, me, await req.json()) : bad("Only the owner or Claude can add approvals", 403);
       r = /^\/api\/approvals\/([a-f0-9]{16})$/.exec(path);
       if (r && m === "PATCH") return owner ? decideApproval(env, me, r[1], await req.json()) : bad("Only the owner can approve", 403);
       if (path === "/api/feedback" && m === "GET") return listFeedback(env);
@@ -158,9 +166,9 @@ export default {
       // Roadmap, votes, shipped
       if (path === "/api/roadmap" && m === "GET") return roadmap(env, me);
       r = /^\/api\/roadmap\/([A-Za-z0-9-]{1,12})\/vote$/.exec(path);
-      if (r && m === "POST") return vote(env, me, r[1]);
+      if (r && m === "POST") return me === "claude" ? bad("Votes are for people", 403) : vote(env, me, r[1]);
       if (path === "/api/shipped" && m === "GET") return shipped(env);
-      if (path === "/api/shipped" && m === "POST") return owner ? addShipped(env, await req.json()) : bad("Only the owner can add", 403);
+      if (path === "/api/shipped" && m === "POST") return worker ? addShipped(env, await req.json()) : bad("Only the owner or Claude can add", 403);
 
       return bad("Not found", 404);
     } catch (e) {
@@ -206,7 +214,7 @@ async function getReport(env: Env, id: string) {
 }
 
 /** Status, note and test link are Claude's (posted from the owner's session); either of you can edit your own text. */
-async function patchReport(env: Env, me: string, owner: boolean, id: string, b: Row) {
+async function patchReport(env: Env, me: string, owner: boolean /* owner or Claude */, id: string, b: Row) {
   const report = await env.DB.prepare("SELECT author FROM reports WHERE id = ?").bind(id).first<{ author: string }>();
   if (!report) return bad("Not found", 404);
   const sets: string[] = [];
@@ -230,7 +238,8 @@ async function patchReport(env: Env, me: string, owner: boolean, id: string, b: 
     vals.push(u);
   }
   if (b.body !== undefined) {
-    if (report.author !== me && !owner) return bad("Not your report", 403);
+    // People edit their own text (the owner may tidy any); Claude never rewrites what someone wrote.
+    if (me === "claude" || (report.author !== me && !owner)) return bad("Not your report", 403);
     const body = clip(b.body, 8000);
     if (!body) return bad("Write what it is");
     sets.push("body = ?");
@@ -257,7 +266,7 @@ async function addComment(env: Env, me: string, owner: boolean, b: Row) {
   if (!THREAD.test(thread)) return bad("Bad thread");
   if (!body) return bad("Write something");
   // Claude answers from the owner's browser and is shown as Claude.
-  const author = owner && b.asClaude === true ? "claude" : me;
+  const author = me === "claude" || (owner && b.asClaude === true) ? "claude" : me;
   await env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), thread, author, body, now()).run();
   if (thread.startsWith("report:")) await env.DB.prepare("UPDATE reports SET updated = ? WHERE id = ?").bind(now(), thread.slice(7)).run();
   return json({ ok: true });
@@ -278,7 +287,8 @@ async function startUpload(env: Env, me: string, owner: boolean, b: Row) {
   const table = kind === "report" ? "reports" : "approvals";
   const exists = await env.DB.prepare(`SELECT id, ${kind === "report" ? "author" : "created_by"} AS who FROM ${table} WHERE id = ?`).bind(ownerId).first<{ who: string }>();
   if (!exists) return bad("Not found", 404);
-  if (kind === "report" && exists.who !== me && !owner) return bad("Not your report", 403);
+  // A report's files come from its author (or the owner); Claude only adds clips to approvals.
+  if (kind === "report" && (me === "claude" || (exists.who !== me && !owner))) return bad("Not your report", 403);
   const id = uid();
   const key = `${kind}/${ownerId}/${id}-${name}`;
   const up = await env.MEDIA.createMultipartUpload(key, { httpMetadata: { contentType: type } });
