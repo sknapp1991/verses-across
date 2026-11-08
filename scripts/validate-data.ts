@@ -7,12 +7,14 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { catalogSchema, chapterSchema } from "../src/lib/schema";
+import { catalog as fullCatalog } from "../src/lib/catalog";
 
 const ROOT = path.resolve(__dirname, "..");
 
 async function main() {
   const errors: string[] = [];
-  const catalog = catalogSchema.parse(JSON.parse(await readFile(path.join(ROOT, "data", "catalog.json"), "utf8")));
+  // The expanded catalog (scripture + the Literature / Fiction shelves from data/literature-catalog.json).
+  const catalog = catalogSchema.parse(fullCatalog);
 
   // Catalog integrity
   const ids = new Set<string>();
@@ -35,7 +37,8 @@ async function main() {
           continue;
         }
         const m = books.get(it.work) ?? new Map();
-        if (m.has(it.id)) errors.push(`duplicate book id ${it.work}/${it.id}`);
+        // A Literature / Fiction book may be on several shelves (same book, same chapters); anything else once.
+        if (m.has(it.id) && !(it.work.startsWith("lit-") && m.get(it.id) === it.chapters)) errors.push(`duplicate book id ${it.work}/${it.id}`);
         m.set(it.id, it.chapters);
         if (c.id === "apocrypha") optional.add(`${it.work}/${it.id}`);
         books.set(it.work, m);

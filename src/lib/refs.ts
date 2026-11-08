@@ -4,7 +4,7 @@
  * "MN 10", "SN 12.2", "AN 4.170", "Dhp 183". Book names match by full name or an unambiguous prefix;
  * books of the scripture being read win when a name exists in several (Genesis: Bible vs Tanakh).
  */
-import { catalog, type BookRef } from "./catalog";
+import { scriptureShelves, type BookRef } from "./catalog";
 
 export type FoundRef = { start: number; end: number; ref: BookRef; verse?: string; to?: string; label: string };
 
@@ -18,7 +18,7 @@ const norm = (s: string) =>
     .trim();
 
 type Book = { work: string; id: string; name: string; chapters: number };
-const BOOKS: Book[] = catalog.religions.flatMap((r) =>
+const BOOKS: Book[] = scriptureShelves.flatMap((r) =>
   r.collections.flatMap((c) =>
     c.items.flatMap((i) => (i.work && i.chapters && i.status !== "coming-soon" ? [{ work: i.work, id: i.id, name: i.name, chapters: i.chapters }] : [])),
   ),

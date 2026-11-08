@@ -164,7 +164,7 @@ function VersionRow({ v, checked, onChange, disableUncheck }: { v: Version; chec
       <span className="min-w-0 flex-1">
         <span className="font-medium">{v.abbr}</span> <span className="text-muted">— {v.name}</span>
         <span className="block text-xs text-faint">
-          {v.year} · {v.license}
+          {v.yearNote ?? v.year} · {v.license}
         </span>
       </span>
     </label>

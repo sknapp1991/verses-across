@@ -6,7 +6,7 @@
  */
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { catalog, findBook, getVersion, readHref, type BookEntry } from "@/lib/catalog";
+import { catalog, findBook, getVersion, isLiteratureWork, readHref, type BookEntry } from "@/lib/catalog";
 import { fetchBook, type BookFile } from "@/lib/chapter-store";
 import { getLanguage } from "@/lib/languages";
 import { markMatches, search, suggest, type SearchResult, type VerseHit } from "@/lib/search";
@@ -200,6 +200,13 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2" aria-live="polite" aria-busy={busy}>
+        {isLiteratureWork(work) ? (
+          <div className="space-y-2 px-3 py-6 text-center text-sm text-muted">
+            <p className="font-medium text-ink">Search isn’t available for the Literature and Fiction books yet.</p>
+            <p>Open a scripture to search it, or use the library’s “Search books” box to find a book by its title.</p>
+          </div>
+        ) : (
+          <>
         {!query && <Help />}
         {query && error && <p className="px-3 py-6 text-center text-sm text-red-700 dark:text-red-400">{error}</p>}
         {query && !error && result && (
@@ -258,6 +265,8 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
           </>
         )}
         {query && !result && !error && <p className="px-3 py-6 text-center text-sm text-faint">Searching…</p>}
+          </>
+        )}
       </div>
     </div>
   );

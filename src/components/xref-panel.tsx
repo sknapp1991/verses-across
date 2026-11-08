@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { selectXref, useUi } from "@/lib/ui-store";
 import { useReaderState } from "./use-reader-state";
 import { askAboutVerse, sendAi, useAiChat } from "@/lib/ai-chat";
-import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
+import { catalog, chapterTitle, isLiteratureWork, scriptureShelves, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { CloseIcon, SparkIcon } from "./icons";
@@ -233,20 +233,24 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
   }, [key]);
 
   const own = religionOf(bookRef.work, bookRef.book);
-  const others = catalog.religions.filter((r) => r.id !== own?.id);
+  const book = isLiteratureWork(bookRef.work);
+  const others = scriptureShelves.filter((r) => r.id !== own?.id);
   const hits = data?.k === key ? data.hits : null;
   const groups = useMemo(() => {
     if (!hits) return [];
-    const want = [...(settings.xrefSame && own ? [own.id] : []), ...others.map((r) => r.id).filter((id) => settings.xrefOthers.includes(id))];
+    // A Literature / Fiction book: its matches are all scripture (one way), shown for every religion.
+    const want = book
+      ? others.map((r) => r.id)
+      : [...(settings.xrefSame && own ? [own.id] : []), ...others.map((r) => r.id).filter((id) => settings.xrefOthers.includes(id))];
     return want
       .map((id) => ({
         religion: catalog.religions.find((r) => r.id === id)!,
         hits: hits.filter((h) => religionOf(h.work, h.book)?.id === id).slice(0, sel.length > 1 ? 8 : 6),
       }))
-      .filter((g) => g.religion);
+      .filter((g) => g.religion && (!book || g.hits.length > 0)); // a book: only the religions with a match
     // others is derived from own
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hits, settings.xrefSame, settings.xrefOthers, own?.id]);
+  }, [hits, settings.xrefSame, settings.xrefOthers, own?.id, book]);
 
   const [lookOpen, setLookOpen] = useState(false);
   const lookingIn = [...(settings.xrefSame && own ? [own.name] : []), ...others.filter((r) => settings.xrefOthers.includes(r.id)).map((r) => r.name)];
@@ -295,7 +299,11 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
         </div>
       )}
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-2 text-sm">
-        {/* Which religions to look in: one line until opened (the full list of 20 would fill a phone's sheet). */}
+        {/* Which religions to look in: one line until opened (the full list of 20 would fill a phone's sheet).
+            A book of literature always looks in every scripture, so it has none. */}
+        {book ? (
+          <p className="-mx-3 -mt-2 border-b border-line px-3 py-2 text-xs text-muted">Related passages in the world’s scriptures</p>
+        ) : (
         <div className="-mx-3 -mt-2 border-b border-line px-3 py-2 text-xs">
           {!lookOpen ? (
             <button
@@ -347,12 +355,15 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
             </div>
           )}
         </div>
+        )}
         {!verse ? (
-          <p className="text-muted">Tap a verse (or several) to see the verses most like it. Use “Change” above to look across other religions.</p>
+          <p className="text-muted">
+            {book ? "Tap a paragraph to see the scripture passages closest to it in meaning." : "Tap a verse (or several) to see the verses most like it. Use “Change” above to look across other religions."}
+          </p>
         ) : !hits ? (
           <p className="animate-pulse text-muted">Loading…</p>
         ) : !groups.length ? (
-          <p className="text-muted">Tick at least one religion (“Change” above).</p>
+          <p className="text-muted">{book ? "No close match in scripture for this paragraph." : "Tick at least one religion (“Change” above)."}</p>
         ) : (
           groups.map((g) => (
             <div key={g.religion.id}>

@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
 import { addGoalMet, BADGES, computeStats, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
 import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
-import { catalog, findBook } from "@/lib/catalog";
+import { findBook, scriptureShelves } from "@/lib/catalog";
 import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
 import { getItem, useStudy } from "@/lib/study";
 import type { StudyItem } from "@/lib/storage";
@@ -154,7 +154,7 @@ const fmtProgress = (v: number) => (v % 1 ? v.toFixed(1) : v.toLocaleString());
 
 function traditionsIn(works: Set<string>) {
   const rel = new Set<string>();
-  for (const r of catalog.religions) for (const c of r.collections) for (const i of c.items) if (i.work && works.has(i.work)) rel.add(r.id);
+  for (const r of scriptureShelves) for (const c of r.collections) for (const i of c.items) if (i.work && works.has(i.work)) rel.add(r.id);
   return rel.size;
 }
 

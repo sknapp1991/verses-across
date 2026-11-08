@@ -8,6 +8,8 @@ computed here once (GPU if there is one) and shipped as static files; the site d
       → .cache-xref/<work>/<book>.json   {"<chapter>:<verse>": [["work/book/chapter:verse", score], ...]}
   npx tsx scripts/xref/upload.ts   → R2 (xref/…), served by /api/xref (too big to keep in git)
 
+Literature ("lit-*" works, see literature() below) is matched one way: novel → scripture only.
+
 Rules: the verse's own chapter is skipped; so is the "same" verse in a parallel text (Bible OT ↔
 Tanakh, same book and chapter), which would otherwise top every list. Scores are 0–100.
 """
@@ -152,6 +154,71 @@ def main():
             json.dump(data, fh, separators=(",", ":"), ensure_ascii=False)
         total += os.path.getsize(p)
     print(f"{len(files)} files, {total / 1e6:.1f} MB")
+    literature(emb, refs, dev)
+
+
+# Literature (the Literature and Fiction shelves, works "lit-*"): one way only. A paragraph of a novel shows the
+# scripture passages closest to it; scripture never lists novels. Short paragraphs (dialogue lines) are skipped.
+LIT_K = 8
+LIT_MIN_LEN = 200
+LIT_MIN_SCORE = 0.58
+
+
+def literature(emb, refs, dev):
+    lit = json.load(open(os.path.join(ROOT, "data", "literature-catalog.json"), encoding="utf8"))
+    main_version = {}
+    for work, _book, _title, _chapters, editions in lit["books"]:
+        en = [e for e in editions if e[1] == "en"]
+        if en:
+            main_version[work] = f"pg{en[0][0]}"
+    lrefs, ltexts = [], []
+    for work, ver in sorted(main_version.items()):
+        d = os.path.join(TEXTS, work, ver)
+        if not os.path.isdir(d):
+            continue
+        for f in sorted(os.listdir(d)):
+            book = json.load(open(os.path.join(d, f), encoding="utf8"))
+            for ch, c in book["chapters"].items():
+                for x in c["verses"]:
+                    t = (x.get("t") or "").strip()
+                    if len(t) >= LIT_MIN_LEN:
+                        lrefs.append((work, f[:-5], int(ch), x["v"]))
+                        ltexts.append(t[:1200])
+    print(f"literature: {len(lrefs)} paragraphs")
+    if not lrefs:
+        return
+    model = SentenceTransformer(MODEL, device=dev)
+    if dev == "cuda":
+        model.half()
+    model.max_seq_length = 256
+    order = sorted(range(len(ltexts)), key=lambda i: len(ltexts[i]))
+    e = model.encode([ltexts[i] for i in order], batch_size=256, normalize_embeddings=True, convert_to_tensor=True, show_progress_bar=True).cpu()
+    del model
+    lemb = torch.empty_like(e)
+    lemb[torch.tensor(order)] = e  # back in reading order (on the CPU: the GPU has 8 GB)
+    del e
+    if dev == "cuda":
+        torch.cuda.empty_cache()
+    lemb = lemb.half().to(dev) if dev == "cuda" else lemb.float()
+    files = defaultdict(dict)
+    chunk = 1024
+    for s in range(0, len(lrefs), chunk):
+        sims = lemb[s : s + chunk] @ emb.T
+        val, pos = sims.topk(LIT_K, dim=1)
+        val, pos = val.float().cpu().tolist(), pos.cpu().tolist()
+        for row in range(len(val)):
+            hits = [[f"{refs[j][0]}/{refs[j][1]}/{refs[j][2]}:{refs[j][3]}", round(sc * 100)] for sc, j in zip(val[row], pos[row]) if sc >= LIT_MIN_SCORE]
+            if hits:
+                w, b, c, v = lrefs[s + row]
+                files[(w, b)][f"{c}:{v}"] = hits
+    total = 0
+    for (w, b), data in files.items():
+        os.makedirs(os.path.join(OUT, w), exist_ok=True)
+        p = os.path.join(OUT, w, f"{b}.json")
+        with open(p, "w", encoding="utf8") as fh:
+            json.dump(data, fh, separators=(",", ":"), ensure_ascii=False)
+        total += os.path.getsize(p)
+    print(f"literature: {len(files)} files, {total / 1e6:.1f} MB")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { catalog, chapterTitle, DEFAULT_VERSIONS, readHref, type BookRef } from "@/lib/catalog";
+import { catalog, chapterTitle, DEFAULT_VERSIONS, isLiteratureWork, readHref, type BookRef } from "@/lib/catalog";
 import { findRefs } from "@/lib/refs";
 import { DailyVerse } from "./daily-verse";
 import type { CatalogItem, Collection, Religion } from "@/lib/schema";
@@ -21,9 +21,10 @@ const norm = (s: string) =>
 
 type Hit = { religion: Religion; collection: Collection; item: CatalogItem };
 
-const ALL: Hit[] = catalog.religions.flatMap((religion) =>
-  religion.collections.flatMap((collection) => collection.items.map((item) => ({ religion, collection, item }))),
-);
+const ALL: Hit[] = catalog.religions
+  .flatMap((religion) => religion.collections.flatMap((collection) => collection.items.map((item) => ({ religion, collection, item }))))
+  // A book on several Literature / Fiction shelves is one search result (its first shelf).
+  .filter((h, i, all) => !h.item.work || all.findIndex((x) => x.item.work === h.item.work && x.item.id === h.item.id) === i);
 
 /** "john 3:16", "1 cor 13", "gen" → a jump target when the book is unambiguous. */
 function parseJump(q: string): { hit: Hit; chapter: number; verse?: string } | null {
@@ -33,7 +34,9 @@ function parseJump(q: string): { hit: Hit; chapter: number; verse?: string } | n
   const avail = ALL.filter((h) => h.item.work && h.item.chapters && h.item.status !== "coming-soon");
   const exact = avail.filter((h) => norm(h.item.name) === name || h.item.id === name.replace(/\s/g, ""));
   const prefix = avail.filter((h) => norm(h.item.name).startsWith(name));
-  const hit = exact[0] ?? (prefix.length === 1 ? prefix[0] : undefined);
+  // "joh 3:16" is John, not "John Splendid" on the Fiction shelf: scripture wins a shared prefix.
+  const scripturePrefix = prefix.filter((h) => !isLiteratureWork(h.item.work!));
+  const hit = exact[0] ?? (prefix.length === 1 ? prefix[0] : scripturePrefix.length === 1 ? scripturePrefix[0] : undefined);
   if (!hit) return null;
   const chapter = Number(m[2]);
   if (chapter < 1 || chapter > (hit.item.chapters ?? 0)) return null;

@@ -32,6 +32,7 @@ async function main() {
   let n = 0;
   const t0 = Date.now();
   for (const work of catalog.works) {
+    if (work.id.startsWith("lit-")) continue; // literature books use the site's own preview picture
     const books = booksOfWork(work.id);
     if (!books.length) continue;
     await mkdir(path.join(OUT, work.id), { recursive: true });

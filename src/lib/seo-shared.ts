@@ -42,7 +42,8 @@ export function parseChapter(work: string, bookId: string, chapter: string): (Ch
 }
 
 export const chapterPath = (r: ChapterRef) => `/read/${r.work}/${r.book}/${r.chapter}`;
-export const ogImagePath = (r: { work: string; book: string }) => `/og/${r.work}/${r.book}.png`;
+/** Each scripture book has its own preview picture; the Literature / Fiction books use the site's (not 1,000 more files). */
+export const ogImagePath = (r: { work: string; book: string }) => (r.work.startsWith("lit-") ? "/opengraph-image.png" : `/og/${r.work}/${r.book}.png`);
 
 /** First words of a verse for a description: whole words, about `max` characters. */
 export function snippet(text: string, max = 120): string {

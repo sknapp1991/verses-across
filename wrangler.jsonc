@@ -39,6 +39,10 @@
   "d1_databases": [
     { "binding": "STATS_DB", "database_name": "versesacross-stats", "database_id": "1353e9b6-72a1-4507-a127-10ff268e7f29" }
   ],
+  // Feedback reports are also emailed (src/app/api/feedback), from feedback@versesacross.com (Email Routing).
+  // Cloudflare only sends to addresses verified on the account; the recipient is the secret FEEDBACK_TO
+  // (set with: npx wrangler secret put FEEDBACK_TO), so no personal address is in this public repo.
+  "send_email": [{ "name": "FEEDBACK_MAIL" }],
   "observability": { "enabled": true }
   // Worker name stays "snoopwiggy" (renaming re-creates the Worker). Custom domains attached in the dashboard:
   // versesacross.com + www (official, Verses Across) and snoopwiggy.com + www, which the app forwards to

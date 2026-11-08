@@ -24,6 +24,7 @@ import { LevelMarksControl } from "./reading-levels";
 import { OfflineDownloadsButton } from "./downloads-dialog";
 import { TourButton } from "./tour";
 import { InstallAppButton } from "./install-app";
+import { FeedbackButton } from "./feedback-dialog";
 import { useGoalRing, useLevel } from "./progress-panel";
 import { useShareHere } from "./read-together";
 
@@ -97,6 +98,14 @@ function Body({ section }: { section: string }) {
         <Section id="more" title="More">
           <InstallAppButton onDone={closeSheet} />
           <OfflineDownloadsButton />
+          <div className="grid grid-cols-2 gap-2">
+            <FeedbackButton onOpen={closeSheet} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm hover:border-faint">
+              Send feedback
+            </FeedbackButton>
+            <a href="mailto:support@versesacross.com" className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm hover:border-faint">
+              Email for help
+            </a>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <TourButton />
             <Link href="/about" onClick={closeSheet} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm hover:border-faint">

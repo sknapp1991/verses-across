@@ -646,7 +646,7 @@ function VersionPlay({ id, verse, label }: { id: string; verse?: string; label: 
 function VersionLabel({ version, compact = false }: { version: Version; compact?: boolean }) {
   const lang = getLanguage(version.language);
   return (
-    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1.5" title={`${version.name} (${version.year}) — ${lang.name}`}>
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1.5" title={`${version.name} (${version.yearNote ?? version.year}) — ${lang.name}`}>
       <span className="font-semibold text-ink">{version.abbr}</span>
       {/* Never cut short ("Spa…"): the name wraps under the abbreviation when the column is narrow. */}
       {!compact && <span className="whitespace-nowrap text-faint">{lang.name}</span>}
@@ -684,7 +684,8 @@ function Cell({ verse, version, chapter, box }: { verse: Verse | null; version: 
           ({verse.n})
         </span>
       )}
-      <span data-text>
+      {/* Poems keep their line breaks (only literature texts have them). */}
+      <span data-text className="whitespace-pre-line">
         <VerseWords t={verse.t} version={version.id} chapter={chapter} v={verse.v} />
       </span>
     </VerseText>

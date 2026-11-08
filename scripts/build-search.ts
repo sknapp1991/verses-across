@@ -141,6 +141,9 @@ async function main() {
   let files = 0;
   let bytes = 0;
   for (const v of catalog.versions) {
+    // Literature (Project Gutenberg books) has no full-text index yet: one per book would pass the hosting
+    // plan's 20,000-file limit. A combined index for the shelf can come later.
+    if (v.work.startsWith("lit-")) continue;
     if (!(await exists(path.join(SRC, v.work, v.id)))) continue;
     const r = await buildVersion(v.work, v.id);
     files += r.files;

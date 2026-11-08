@@ -156,9 +156,13 @@ export default function AboutPage() {
             <li>
               If you send feedback, we receive what you write, your email address if you give one, and (unless you untick
               it) the page you were on, the verse and versions on screen, your device and browser type, your reading
-              settings and any recent error messages. You can see all of it before sending. We store reports privately,
-              use them only to fix and improve Verses Across, and never share or sell them. Ask us and we&rsquo;ll delete
-              yours.
+              settings and any recent error messages. You can see all of it before sending. We store reports privately and
+              email a copy to the maintainer&rsquo;s inbox, use them only to fix and improve Verses Across, and never share or sell them. Ask us and we&rsquo;ll delete
+              yours:{" "}
+              <a href="mailto:privacy@versesacross.com" className={a}>
+                privacy@versesacross.com
+              </a>
+              .
             </li>
             <li>
               Like every website, our host (Cloudflare) briefly handles standard technical data such as your IP address, to
@@ -182,8 +186,32 @@ export default function AboutPage() {
             <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer" className={a}>
               open an issue on GitHub
             </a>
+            , or email{" "}
+            <a href="mailto:feedback@versesacross.com" className={a}>
+              feedback@versesacross.com
+            </a>
             .
           </p>
+          <ul className="space-y-1 text-sm">
+            <li>
+              Something not working, or need help:{" "}
+              <a href="mailto:support@versesacross.com" className={a}>
+                support@versesacross.com
+              </a>
+            </li>
+            <li>
+              Privacy and your data:{" "}
+              <a href="mailto:privacy@versesacross.com" className={a}>
+                privacy@versesacross.com
+              </a>
+            </li>
+            <li>
+              Anything else, including business:{" "}
+              <a href="mailto:contact@versesacross.com" className={a}>
+                contact@versesacross.com
+              </a>
+            </li>
+          </ul>
           <p className="text-sm">Follow Verses Across for new features and a verse of the day:</p>
           <ul className="flex flex-wrap gap-2 text-sm">
             {SOCIALS.map(([name, href]) => (

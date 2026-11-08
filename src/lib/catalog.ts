@@ -3,9 +3,54 @@
  * scripture text itself is fetched per chapter as static files from /texts/...
  */
 import raw from "../../data/catalog.json";
+import lit from "../../data/literature-catalog.json";
 import type { Catalog, CatalogItem, Collection, Religion, Version } from "./schema";
 
-export const catalog = raw as unknown as Catalog;
+type LitEdition = [gid: number, language: string, abbr: string, year: number, author: string, translator: string | null, yearNote: string | null];
+type LitBook = [work: string, book: string, title: string, chapters: number, editions: LitEdition[]];
+type LitCatalog = { books: LitBook[]; shelves: { id: string; name: string; collections: { id: string; name: string; books: string[] }[] }[] };
+
+/**
+ * The scripture catalog, plus the Literature and Fiction shelves expanded from their compact file
+ * (data/literature-catalog.json): one work per book, one version per Gutenberg edition.
+ */
+function withLiterature(base: Catalog, l: LitCatalog): Catalog {
+  const items = new Map<string, CatalogItem>();
+  const works = [...base.works];
+  const versions = [...base.versions];
+  for (const [work, book, title, chapters, editions] of l.books) {
+    works.push({ id: work, name: title, versification: work });
+    items.set(work, { id: book, name: title, work, chapters, chapterName: title });
+    for (const [gid, language, abbr, year, author, translator, yearNote] of editions) {
+      const by = translator ? `${author}, translated by ${translator}` : author;
+      versions.push({
+        id: `pg${gid}`,
+        work,
+        abbr,
+        name: `${title} (${by})`,
+        language,
+        kind: "native",
+        dir: "ltr",
+        year,
+        ...(yearNote ? { yearNote } : {}),
+        translator: translator ?? `${author} (written in ${language === "en" ? "English" : "the original language"})`,
+        license: "Public Domain",
+        attribution: `${by}, ${title}; public domain in the US; text from Project Gutenberg #${gid}.`,
+        sourceUrl: `https://www.gutenberg.org/ebooks/${gid}`,
+        licensed: false,
+        versification: work,
+      } as Version);
+    }
+  }
+  const shelves: Religion[] = l.shelves.map((sh) => ({
+    id: sh.id,
+    name: sh.name,
+    collections: sh.collections.map((c) => ({ id: c.id, name: c.name, items: c.books.map((w) => items.get(w)!).filter(Boolean) })),
+  }));
+  return { ...base, works, versions, religions: [...base.religions, ...shelves] };
+}
+
+export const catalog = withLiterature(raw as unknown as Catalog, lit as unknown as LitCatalog);
 
 export type BookRef = { work: string; book: string; chapter: number };
 export type BookEntry = CatalogItem & { religion: Religion; collection: Collection };
@@ -102,6 +147,15 @@ export function getVersion(id: string): Version | undefined {
   return catalog.versions.find((v) => v.id === id);
 }
 
+/**
+ * The Literature and Fiction shelves (Project Gutenberg books) sit in the library beside the religions but aren't religions:
+ * it stays out of the verse of the day, "traditions" counts and badges, reference links and cross-reference
+ * targets. A book can be on several of its shelves (Frankenstein: Gothic, Horror, Science Fiction…).
+ */
+export const BOOK_SHELVES = new Set(["literature", "fiction"]);
+export const isLiteratureWork = (work: string) => work.startsWith("lit-");
+export const scriptureShelves = catalog.religions.filter((r) => !BOOK_SHELVES.has(r.id));
+
 const bookCache = new Map<string, BookEntry[]>();
 /** Available books of a work, in reading order. */
 export function booksOfWork(work: string): BookEntry[] {
@@ -111,8 +165,8 @@ export function booksOfWork(work: string): BookEntry[] {
     for (const religion of catalog.religions)
       for (const collection of religion.collections)
         for (const it of collection.items)
-          if (it.work === work && it.chapters && it.status !== "coming-soon")
-            list.push({ ...it, religion, collection });
+          if (it.work === work && it.chapters && it.status !== "coming-soon" && !list.some((b) => b.id === it.id))
+            list.push({ ...it, religion, collection }); // once, even when the book is on several shelves
     bookCache.set(work, list);
   }
   return list;

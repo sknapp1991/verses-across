@@ -5,7 +5,7 @@
  * only celebrated once.
  */
 import { dayKey, streaks, totals, type Activity } from "./activity";
-import { catalog, findBook } from "./catalog";
+import { findBook, scriptureShelves } from "./catalog";
 import type { StudyItem } from "./storage";
 
 export type Stats = {
@@ -56,7 +56,7 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
     if (total > 0 && n >= total) finished.add(k);
   }
   const collectionsDone: string[] = [];
-  for (const rel of catalog.religions)
+  for (const rel of scriptureShelves)
     for (const col of rel.collections) {
       const books = col.items.filter((i) => i.work && i.chapters && i.status !== "coming-soon");
       if (books.length > 1 && books.every((i) => finished.has(`${i.work}/${i.id}`))) collectionsDone.push(col.name);
@@ -64,7 +64,7 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
   // traditions = religions with any reading, listening or study
   const worksTouched = new Set([...t.works, ...[...perBook.keys()].map((k) => k.split("/")[0])]);
   const religions = new Set<string>();
-  for (const rel of catalog.religions)
+  for (const rel of scriptureShelves)
     for (const col of rel.collections) for (const i of col.items) if (i.work && worksTouched.has(i.work)) religions.add(rel.id);
   const s = streaks(a, studyDays);
   return {

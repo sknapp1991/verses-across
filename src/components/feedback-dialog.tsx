@@ -156,6 +156,9 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
                 <button type="button" onClick={copyReport} className="underline underline-offset-2">
                   Copy the report
                 </button>
+                <a href="mailto:feedback@versesacross.com?subject=Verses%20Across%20feedback" className="underline underline-offset-2">
+                  Email it to feedback@versesacross.com
+                </a>
                 <a href="https://github.com/sknapp1991/snoopwiggy/issues/new" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
                   Open a GitHub issue
                 </a>
@@ -178,9 +181,16 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
 }
 
 /** A button that opens the form (for server-rendered pages such as About). */
-export function FeedbackButton({ className, children }: { className?: string; children: React.ReactNode }) {
+export function FeedbackButton({ className, children, onOpen }: { className?: string; children: React.ReactNode; onOpen?: () => void }) {
   return (
-    <button type="button" onClick={() => openFeedback()} className={className}>
+    <button
+      type="button"
+      onClick={() => {
+        onOpen?.(); // e.g. close the sheet it sits in, so the form isn't behind it
+        openFeedback();
+      }}
+      className={className}
+    >
       {children}
     </button>
   );

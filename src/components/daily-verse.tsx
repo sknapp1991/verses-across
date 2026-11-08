@@ -5,7 +5,7 @@
  */
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { DEFAULT_VERSIONS, catalog, chapterTitle, findBook, getVersion, readHref } from "@/lib/catalog";
+import { DEFAULT_VERSIONS, scriptureShelves, chapterTitle, findBook, getVersion, readHref } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { dailyVerse, todayKey, type Daily } from "@/lib/daily";
 import { CloseIcon } from "./icons";
@@ -13,7 +13,7 @@ import { CloseIcon } from "./icons";
 const KEY = "gs:daily-hidden:v1";
 
 /** Every book with an English version to show (Arabic- or Pali-only books and empty parts are skipped). */
-const POOL = catalog.religions.flatMap((r) =>
+const POOL = scriptureShelves.flatMap((r) =>
   r.collections.flatMap((c) =>
     c.items.flatMap((i) => {
       const v = i.work ? getVersion(DEFAULT_VERSIONS[i.work]?.[0] ?? "") : undefined;
