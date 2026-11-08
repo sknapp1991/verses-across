@@ -31,6 +31,7 @@ import { LevelLegend, LevelsButton, useLevelMarks } from "./reading-levels";
 import { RedLetterCtx, useRedLetter, VerseWords } from "./red-letter";
 import { StudiedBox } from "./studied-box";
 import { FloatingNav } from "./floating-nav";
+import { TapModesButton } from "./tap-modes";
 import { showXref, XrefPanel } from "./xref-panel";
 import { wordAt } from "./use-gestures";
 import { chapterMarks, getItem, highlightBg, setHighlight, toggle, useStudy } from "@/lib/study";
@@ -51,6 +52,39 @@ type Col = { version: Version; entry: ChapterEntry; retry: () => void };
  */
 let continuedInto: string | null = null;
 let continuedOffset = 0;
+
+/**
+ * Where a chapter opens. Going to a chapter (a link: library, ‹ ›, search; a swipe; ← / →) opens it at
+ * verse 1. Coming back to it (opening the app, a reload, Back / Forward) returns to the verse you were
+ * at. A link with #verse always goes to that verse.
+ */
+let goingTo: string | null = null; // "bible/psa/24": the chapter just asked for by a link, swipe or key
+const chapterOf = (href: string) => /\/read\/([^/?#]+\/[^/?#]+\/[^/?#]+)/.exec(href)?.[1] ?? null;
+function goTo(href: string) {
+  goingTo = chapterOf(href);
+}
+if (typeof document !== "undefined")
+  document.addEventListener(
+    "click",
+    (e) => {
+      // Only a plain click that navigates here (not a new tab or window), to another chapter.
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || (a.target && a.target !== "_self")) return;
+      const to = chapterOf(new URL(a.href, location.href).pathname);
+      goingTo = to && to !== chapterOf(location.pathname) ? to : null;
+    },
+    true,
+  );
+/** Decided once per chapter visit (the jump effect runs several times while the columns load). */
+let resumeDecided: { chapter: string; resume: boolean } = { chapter: "", resume: false };
+function shouldResume(chapter: string) {
+  if (resumeDecided.chapter !== chapter) {
+    resumeDecided = { chapter, resume: goingTo !== chapter };
+    goingTo = null;
+  }
+  return resumeDecided.resume;
+}
 
 /**
  * Continuous scroll: the start of the next chapter, shown below this one. When its heading reaches the
@@ -230,7 +264,10 @@ export function ReaderView() {
     onHint: setHint,
     onGo: (dir) => {
       const to = dir === "prev" ? prev : next;
-      if (to) router.push(readHref(to, versions));
+      if (to) {
+        goTo(readHref(to, versions));
+        router.push(readHref(to, versions));
+      }
     },
   });
   const ra = useReadAlong({ cols, rows, bookRef: ref, next, versions, scroller, setVersions });
@@ -326,6 +363,7 @@ export function ReaderView() {
     };
   }, [ref.work, ref.book, ref.chapter]);
   const jumped = useRef("");
+  const arrived = useRef(""); // the chapter already shown (so it is put at the top only once, on arrival)
   useEffect(() => {
     if (!allLoaded || !rows.length) return;
     // A link to another verse of this same chapter changes only the #hash (no re-render): links send
@@ -343,9 +381,14 @@ export function ReaderView() {
     };
     function run() {
     const hash = decodeURIComponent(window.location.hash.slice(1));
+    const firstLook = arrived.current !== `${ref.work}/${ref.book}/${ref.chapter}`;
+    arrived.current = `${ref.work}/${ref.book}/${ref.chapter}`;
     // Arrived by scrolling on from the previous chapter: stay at the top (where the reader already is).
     if (!hash && continuedInto === `${ref.work}/${ref.book}/${ref.chapter}`) {
       continuedInto = null;
+      // A visit of its own: coming back to the chapter before (Back) then resumes where you were.
+      resumeDecided = { chapter: `${ref.work}/${ref.book}/${ref.chapter}`, resume: true };
+      goingTo = null;
       jumped.current = `${ref.work}/${ref.book}/${ref.chapter}#`;
       // The same spot the reader was at in the preview: as far past this chapter's heading as before.
       // (continuedOffset = px past the first verse's top; at or before the heading: stay at the top)
@@ -358,11 +401,19 @@ export function ReaderView() {
       continuedOffset = 0;
       return;
     }
-    // No #verse in the link: go back to where you were in this chapter (if not the top).
-    const saved = hash ? null : getPosition(`${ref.work}/${ref.book}/${ref.chapter}`);
+    // No #verse in the link: coming back → where you were in this chapter; going to it → verse 1.
+    const resume = shouldResume(`${ref.work}/${ref.book}/${ref.chapter}`);
+    const saved = hash || !resume ? null : getPosition(`${ref.work}/${ref.book}/${ref.chapter}`);
     const id = hash || (saved && saved !== "1" ? `v${saved}` : "");
     const key = `${ref.work}/${ref.book}/${ref.chapter}#${id}`;
-    if (!id || jumped.current === key) return;
+    if (!id) {
+      // Make sure a new chapter starts at the top (not at the last chapter's scroll position).
+      // Only on arriving at the chapter (not when a #verse is dropped within it, e.g. Back after a verse link).
+      if (firstLook && scroller.current) scroller.current.scrollTop = 0;
+      jumped.current = key;
+      return;
+    }
+    if (jumped.current === key) return;
     if (!hash) {
       const el = document.getElementById(id);
       if (el) {
@@ -399,8 +450,11 @@ export function ReaderView() {
       if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
       const t = e.target as HTMLElement;
       if (t.closest("input, textarea, select, [contenteditable], dialog")) return;
-      if (e.key === "ArrowLeft" && prev) router.push(readHref(prev, versions));
-      if (e.key === "ArrowRight" && next) router.push(readHref(next, versions));
+      const to = e.key === "ArrowLeft" ? prev : e.key === "ArrowRight" ? next : undefined;
+      if (to) {
+        goTo(readHref(to, versions));
+        router.push(readHref(to, versions));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -664,6 +718,7 @@ function ChapterBar({ versions, prev, next, column }: { versions: string[]; prev
         </button>
         {/* data-chapter-nav: while these are on screen, the floating ‹ › pill steps aside. */}
         <div className="flex shrink-0 gap-1" data-chapter-nav>
+          <TapModesButton />
           <button
             type="button"
             onClick={() => openSheet("text")}

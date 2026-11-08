@@ -7,7 +7,7 @@ import { catalog, chapterTitle, DEFAULT_VERSIONS, isLiteratureWork, readHref, ty
 import { findRefs } from "@/lib/refs";
 import { DailyVerse } from "./daily-verse";
 import type { CatalogItem, Collection, Religion } from "@/lib/schema";
-import { ChevronDown, ChevronRight, CollapseIcon, ExpandIcon, SearchIcon } from "./icons";
+import { ChevronDown, ChevronRight, CollapseIcon, ExpandIcon, PinIcon, SearchIcon } from "./icons";
 import { usePinch } from "./use-gestures";
 import { useReaderState } from "./use-reader-state";
 import { formatStamp, useStudy } from "@/lib/study";
@@ -51,6 +51,15 @@ function refJump(q: string, preferWork: string): { hit: Hit; chapter: number; ve
   return hit ? { hit, chapter: r.ref.chapter, verse: r.verse } : null;
 }
 
+function whereIs(ref: BookRef) {
+  for (const r of catalog.religions)
+    for (const c of r.collections)
+      for (const it of c.items)
+        if (it.work === ref.work && it.id === ref.book)
+          return { religion: r.name, collection: c.items.length === 1 ? null : c.name, chapter: chapterTitle(it, ref.chapter) };
+  return null;
+}
+
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { ref, versions } = useReaderState();
   const [query, setQuery] = useState("");
@@ -70,6 +79,18 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           }
     return ids;
   }, [ref.work, ref.book]);
+
+  // "You are here": the shelf path to the chapter being read (first match, for a book on several shelves).
+  const here = whereIs(ref);
+  // Open the path to the current chapter again (whatever was collapsed) and scroll it into view.
+  const showHere = () => {
+    setToggled((t) => {
+      const next = { ...t };
+      for (const id of currentPath) next[id] = true;
+      return next;
+    });
+    requestAnimationFrame(() => requestAnimationFrame(() => activeRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })));
+  };
 
   const isOpen = (id: string) => toggled[id] ?? currentPath.has(id);
   // Reading progress: chapters marked studied, per book ("work/book" → count).
@@ -138,6 +159,19 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {!q && <DailyVerse versionsFor={(w) => (w === ref.work ? versions : (DEFAULT_VERSIONS[w] ?? []))} onNavigate={onNavigate} />}
+      {!q && here && (
+        <button
+          type="button"
+          onClick={showHere}
+          title="Show where I am in the list"
+          className="flex min-h-9 w-full items-center gap-1.5 border-b border-line px-4 text-left text-xs font-medium text-accent hover:bg-raised"
+        >
+          <PinIcon width={14} height={14} className="shrink-0" />
+          <span className="min-w-0 truncate">
+            {[here.religion, here.collection, here.chapter].filter(Boolean).join(" › ")}
+          </span>
+        </button>
+      )}
       {!q && (
         <div className="flex gap-1 border-b border-line px-3 py-1.5">
           <button
@@ -195,7 +229,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               return (
                 <li key={r.id}>
                   <TreeButton level={0} open={isOpen(rid)} onClick={() => toggle(rid)}>
-                    <span className="font-semibold">{r.name}</span>
+                    <span className={`font-semibold ${currentPath.has(rid) ? "text-accent" : ""}`}>{r.name}</span>
                     {!available && <Soon />}
                     <Progress {...progressOf(r.collections.flatMap((c) => c.items))} />
                   </TreeButton>
@@ -222,7 +256,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                         return (
                           <li key={c.id} className="pl-3">
                             <TreeButton level={1} open={isOpen(cid)} onClick={() => toggle(cid)}>
-                              <span className="font-medium">{c.name}</span>
+                              <span className={`font-medium ${currentPath.has(cid) ? "text-accent" : ""}`}>{c.name}</span>
                               {soon && <Soon />}
                               <Progress {...progressOf(c.items)} />
                             </TreeButton>

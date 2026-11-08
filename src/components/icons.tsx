@@ -92,6 +92,9 @@ export const ClockIcon = (p: P) => (
 export const NoteIcon = (p: P) => (
   <svg {...base(p)}><path d="M5 4h10l4 4v12H5z" /><path d="M15 4v4h4M8.5 12h7M8.5 16h5" /></svg>
 );
+export const PinIcon = (p: P) => (
+  <svg {...base(p)}><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.3" /></svg>
+);
 export const CopyIcon = (p: P) => (
   <svg {...base(p)}><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3" /></svg>
 );

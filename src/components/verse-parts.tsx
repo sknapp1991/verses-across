@@ -8,8 +8,9 @@
  *             double-tap a word = search for it.
  */
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import type { StudyItem, StudyKind } from "@/lib/study";
-import { ClockIcon, NoteIcon, StarIcon } from "./icons";
+import { removeItem, type StudyItem, type StudyKind } from "@/lib/study";
+import { toast } from "@/lib/ui-store";
+import { ClockIcon, NoteIcon, StarIcon, TrashIcon } from "./icons";
 import { useTapGestures, type TapPoint } from "./use-gestures";
 
 export type Marks = Partial<Record<StudyKind, StudyItem>>;
@@ -113,18 +114,46 @@ export function VerseText({
   );
 }
 
-/** Note preview under a verse: tap to edit; long notes show "… more" to read them in full. */
+/**
+ * Note preview under a verse: tap to edit; long notes show "… more" to read them in full; the bin
+ * deletes it right here (asks once, so a stray tap can't lose a note).
+ */
 export function NoteLine({ v }: { v: string }) {
   const a = useVerse();
-  const note = a.marks.get(v)?.note?.text;
+  const item = a.marks.get(v)?.note;
+  const note = item?.text;
   const [open, setOpen] = useState(false);
   const [long, setLong] = useState(false);
+  // Which note is asking "Delete?" (by id, so it never carries over to another verse or chapter).
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const confirming = !!item && confirmId === item.id;
+  const setConfirming = (on: boolean) => setConfirmId(on && item ? item.id : null);
   const textRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const el = textRef.current;
     if (el && !open) setLong(el.scrollHeight > el.clientHeight + 1);
   }, [note, open]);
-  if (!note) return null;
+  if (!note || !item) return null;
+  if (confirming)
+    return (
+      <div role="group" aria-label="Delete this note?" className="mt-1 flex w-full flex-wrap items-center gap-2 font-sans text-xs text-muted">
+        <NoteIcon width={14} height={14} className="shrink-0 text-accent" />
+        <span className="mr-auto">Delete this note?</span>
+        <button
+          type="button"
+          onClick={() => {
+            void removeItem(item.id);
+            toast("Note deleted");
+          }}
+          className="min-h-8 rounded-lg bg-red-600/90 px-3 font-medium text-white hover:bg-red-600"
+        >
+          Delete
+        </button>
+        <button type="button" autoFocus onClick={() => setConfirming(false)} className="min-h-8 rounded-lg border border-line px-3 font-medium text-ink hover:bg-raised">
+          Keep
+        </button>
+      </div>
+    );
   return (
     <div className="mt-1 flex w-full items-start gap-1.5 font-sans text-xs italic text-muted">
       <NoteIcon width={14} height={14} className="mt-px shrink-0 text-accent" />
@@ -140,6 +169,15 @@ export function NoteLine({ v }: { v: string }) {
           </button>
         )}
       </span>
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        aria-label="Delete note"
+        title="Delete note"
+        className="-my-1.5 -mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg not-italic text-faint hover:bg-raised hover:text-ink"
+      >
+        <TrashIcon width={15} height={15} />
+      </button>
     </div>
   );
 }
