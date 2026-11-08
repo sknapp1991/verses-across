@@ -81,16 +81,20 @@ export async function POST(request: Request) {
   const key = `${day}/${now.toISOString().slice(11, 19).replace(/:/g, "")}-${report.topic}-${id}.json`;
   await env.FEEDBACK.put(key, JSON.stringify(report, null, 2), { httpMetadata: { contentType: "application/json" } });
   // Email it too (best effort: the report is already saved).
+  // What happened to the email, in the reply (no addresses): "sent", "off" (no binding or address set),
+  // "limit" (daily cap reached) or the error code.
+  let mail = "off";
   if (env.FEEDBACK_MAIL && env.FEEDBACK_TO) {
     try {
       const today = await env.FEEDBACK.list({ prefix: `${day}/`, limit: MAX_EMAILS_A_DAY + 1 });
       if (today.objects.length <= MAX_EMAILS_A_DAY) {
-        const sent = await env.FEEDBACK_MAIL.send(emailFor({ ...report, topic: String(report.topic) }, env.FEEDBACK_TO));
-        console.log("feedback email sent", id, sent?.messageId);
-      }
+        await env.FEEDBACK_MAIL.send(emailFor({ ...report, topic: String(report.topic) }, env.FEEDBACK_TO));
+        mail = "sent";
+      } else mail = "limit";
     } catch (e) {
-      console.error("feedback email failed", id, (e as { code?: string }).code, (e as Error).message);
+      mail = (e as { code?: string }).code ?? "error";
+      console.error("feedback email failed", id, mail, (e as Error).message);
     }
-  }
-  return Response.json({ ok: true, id }, { headers: { "cache-control": "no-store" } });
+  } else mail = env.FEEDBACK_MAIL ? "off: no address" : "off: no binding";
+  return Response.json({ ok: true, id, mail }, { headers: { "cache-control": "no-store" } });
 }
