@@ -168,6 +168,23 @@ export function InstallCard() {
     return () => window.removeEventListener("va-install", show);
   }, []);
 
+  // iPhone pre-fills the Home Screen name from the page title ("John 3 · Holy Bible…"), not from the app name:
+  // while the steps are showing, the title is just "Verses Across" (put back when the card closes).
+  const iosSteps = open && steps && (p === "ios-safari" || p === "ios-other");
+  useEffect(() => {
+    if (!iosSteps) return;
+    const before = document.title;
+    const hold = () => {
+      if (document.title !== "Verses Across") document.title = "Verses Across";
+    };
+    hold();
+    const t = window.setInterval(hold, 500); // a page change sets its own title again
+    return () => {
+      window.clearInterval(t);
+      document.title = before;
+    };
+  }, [iosSteps]);
+
   if (!open || p === "standalone" || p === "none") return null;
 
   const dismiss = () => {
@@ -234,7 +251,7 @@ export function InstallCard() {
                 <li className="flex items-center gap-1.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-bold text-accent">2</span>
                   <span>
-                    Choose <strong className="text-ink">Add to Home Screen</strong> <span className="text-faint">(scroll the list if needed)</span>
+                    Choose <strong className="text-ink">Add to Home Screen</strong> <span className="text-faint">(swipe up on the menu if you don’t see it)</span>
                   </span>
                 </li>
               </ol>

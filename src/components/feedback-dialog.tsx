@@ -30,7 +30,6 @@ export function FeedbackHost() {
 function FeedbackBody({ req }: { req: FeedbackRequest }) {
   const [topic, setTopic] = useState<FeedbackTopic>(req.topic ?? (req.verse ? "text" : req.error ? "bug" : "other"));
   const [message, setMessage] = useState(req.message ?? "");
-  const [contact, setContact] = useState("");
   const [withDetails, setWithDetails] = useState(true);
   const [state, setState] = useState<"idle" | "sending" | "sent" | { error: string }>("idle");
   // Gathered once, when the form opens (what was on screen at that moment).
@@ -40,7 +39,6 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
   const payload = () => ({
     topic,
     message: message.trim(),
-    contact: contact.trim(),
     page: withDetails ? details.page : "",
     details: withDetails ? details : null,
   });
@@ -81,7 +79,6 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
           <p className="font-serif text-xl text-ink">Thank you!</p>
           <p className="text-sm text-muted">
             Your report reached us{withDetails ? ", with the details we need to look into it" : ""}. We read every one.
-            {contact.trim() ? " We’ll reply if we have a question." : ""}
           </p>
           <button type="button" onClick={closeFeedback} className="min-h-11 rounded-xl bg-accent px-6 font-medium text-accent-ink">
             Done
@@ -121,17 +118,6 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
             placeholder={hint}
             aria-label="What happened"
             className={`${field} resize-y py-2`}
-          />
-
-          <input
-            type="email"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            maxLength={200}
-            autoComplete="email"
-            placeholder="Email, if you’d like a reply (optional)"
-            aria-label="Your email (optional)"
-            className={`${field} h-11`}
           />
 
           <div className="space-y-1 text-sm">

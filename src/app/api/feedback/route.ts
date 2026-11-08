@@ -5,8 +5,8 @@
  * and is not stored.
  *
  * Each report is also emailed (binding FEEDBACK_MAIL, Cloudflare Email Sending, Workers Paid plan) from
- * feedback@versesacross.com to the address in the secret FEEDBACK_TO, at most 50 a day; Reply goes to the
- * reader when they left an email address. If the email can't be sent, the report is still saved.
+ * feedback@versesacross.com to the address in the secret FEEDBACK_TO, at most 50 a day.
+ * Reports are anonymous (no name or email is asked for). If the email can't be sent, the report is still saved.
  */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
@@ -14,7 +14,7 @@ type Bucket = {
   put(key: string, value: string, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
   list(opts: { prefix: string; limit: number }): Promise<{ objects: unknown[] }>;
 };
-type Mail = { to: string; from: { email: string; name: string }; subject: string; text: string; replyTo?: string };
+type Mail = { to: string; from: { email: string; name: string }; subject: string; text: string };
 type Mailer = { send(message: Mail): Promise<{ messageId: string }> };
 const FROM = "feedback@versesacross.com";
 const MAX_EMAILS_A_DAY = 50;
@@ -24,18 +24,16 @@ const TOPIC_NAME: Record<string, string> = { text: "Text mistake", audio: "Audio
 function emailFor(report: { id: string; topic: string; message: string; contact: string | null; page: string; details: unknown; received: string }, to: string): Mail {
   const first = report.message.replace(/\s+/g, " ").slice(0, 60);
   const subject = `[Verses Across] ${TOPIC_NAME[report.topic] ?? "Feedback"}: ${first}${report.message.length > 60 ? "…" : ""}`;
-  const replyTo = report.contact && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(report.contact) ? report.contact : undefined;
   const body = [
     report.message,
     "",
     "—",
     `Topic: ${TOPIC_NAME[report.topic] ?? report.topic}`,
     `Page: ${report.page || "(not given)"}`,
-    `Contact: ${report.contact ?? "(none)"}`,
     `Report ${report.id}, received ${report.received}`,
     report.details ? `\nDetails:\n${JSON.stringify(report.details, null, 2).slice(0, 8000)}` : "",
   ].join("\n");
-  return { to, from: { email: FROM, name: "Verses Across feedback" }, subject, text: body, ...(replyTo ? { replyTo } : {}) };
+  return { to, from: { email: FROM, name: "Verses Across feedback" }, subject, text: body };
 }
 type Limiter = { limit(o: { key: string }): Promise<{ success: boolean }> };
 
@@ -73,7 +71,7 @@ export async function POST(request: Request) {
     received: now.toISOString(),
     topic: TOPICS.has(body.topic as string) ? body.topic : "other",
     message,
-    contact: clip(body.contact, 200).trim() || null,
+    contact: null, // anonymous: no contact address is taken
     page: clip(body.page, 500),
     details: body.details && typeof body.details === "object" ? body.details : null,
   };

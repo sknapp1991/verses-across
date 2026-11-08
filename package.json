@@ -32,8 +32,8 @@
     "strongs:extract": "tsx scripts/build-strongs.ts --extract",
     "search-index": "tsx scripts/build-search.ts",
     "dict": "tsx scripts/build-dict.ts",
-    "predev": "npm run pack",
-    "prebuild": "npm run pack"
+    "predev": "node scripts/pack-if-stale.mjs",
+    "prebuild": "node scripts/pack-if-stale.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.15",

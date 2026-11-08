@@ -43,6 +43,7 @@ export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         <img src="/icon.svg" alt="" width={28} height={28} className="rounded-md" />
         <span className="hidden font-serif text-lg font-semibold tracking-tight xl:inline">
           <span className="text-[#b8935f]">Verses</span> <span className="text-[#5f8fc4]">Across</span>
+          <sup className="ml-0.5 align-super font-sans text-[9px] font-normal text-faint">™</sup>
         </span>
       </Link>
 

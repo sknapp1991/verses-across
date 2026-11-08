@@ -33,7 +33,7 @@ const CP1252: Record<string, number> = {
   "‘": 0x91, "’": 0x92, "“": 0x93, "”": 0x94, "•": 0x95, "–": 0x96, "—": 0x97, "˜": 0x98, "™": 0x99, "š": 0x9a, "›": 0x9b, "œ": 0x9c, "ž": 0x9e, "Ÿ": 0x9f,
 };
 /** "blasÃ©" (a UTF-8 file read as Windows-1252) → "blasé": re-encode as it was misread, then read as UTF-8. */
-function fixMojibake(t: string) {
+export function fixMojibake(t: string) {
   const bad = (x: string) => x.match(/Ã[\u0080-\u00BF]|Â[\u00A0-\u00BF]|â€/g)?.length ?? 0;
   if (!bad(t)) return t;
   const bytes: number[] = [];
@@ -85,7 +85,7 @@ const META: Record<number, [string | null, number]> = {
   32488: ["Just So Stories", 1902], 18190: ["Raggedy Ann Stories", 1918], 17371: ["Raggedy Andy Stories", 1920], 38567: [null, 1875], 35555: [null, 1901],
   39784: ["Mother Goose's Nursery Rhymes", 1877], 26197: [null, 1897], 27602: [null, 1893], 28308: [null, 1915], 5312: [null, 1897], 14872: ["Tales of Beatrix Potter", 1903],
   271: [null, 1877], 215: ["The Call of the Wild", 1903], 910: [null, 1906], 236: [null, 1894], 2818: ["Beautiful Joe", 1893], 72577: [null, 1923],
-  944: [null, 1839], 2009: ["The Origin of Species (first edition)", 1859],
+  944: [null, 1839], 2009: ["On the Origin of Species (sixth edition)", 1872],
   2641: [null, 1908], 103: [null, 1872], 3176: [null, 1869], 535: ["Travels with a Donkey in the Cévennes", 1879], 10636: [null, 1300],
   61: [null, 1848], 1: [null, 1776], 2160: [null, 1771], 829: ["Gulliver's Travels", 1726], 61221: ["A Passage to India", 1924],
   1661: [null, 1892], 2852: [null, 1902], 244: [null, 1887], 2097: ["The Sign of the Four", 1890], 2554: [null, 1866], 155: [null, 1868], 863: [null, 1920],
@@ -109,7 +109,7 @@ const META: Record<number, [string | null, number]> = {
   131: ["The Pilgrim's Progress", 1678], 26: [null, 1667], 1004: ["The Divine Comedy", 1320], 4928: [null, 1867], 16328: ["Beowulf", 1000],
   72679: ["The Lesser Key of Solomon (Goetia)", 1904], 27827: ["The Kama Sutra", 1883], 58585: [null, 1923], 2500: [null, 1922], 58: [null, 1671],
   3623: ["The Golden Bough", 1890], 7145: ["The Book of the Dead", 1895], 5657: [null, 1692], 130: [null, 1908],
-  1228: ["On the Origin of Species", 1859], 5001: ["Relativity: The Special and General Theory", 1916], 33504: [null, 1704], 15491: [null, 1665],
+  1228: ["On the Origin of Species (first edition)", 1859], 5001: ["Relativity: The Special and General Theory", 1916], 33504: [null, 1704], 15491: [null, 1665],
   21076: ["Euclid's Elements, Books I–VI", 1847], 2300: ["The Descent of Man", 1871], 30775: ["Elements of Chemistry", 1789],
   14986: ["Experimental Researches in Electricity, Volume 1", 1839], 25267: [null, 1904],
   23: ["Narrative of the Life of Frederick Douglass", 1845], 408: [null, 1903], 2376: ["Up from Slavery", 1901], 3420: [null, 1792],
@@ -185,9 +185,10 @@ function cleanBlock(b: string) {
   const t = b.trim();
   // Whole blocks that are not the book: captions, notes, image files, Gutenberg's own lines.
   if (/^\[?\s*(Illustration|Picture|Transcriber|Frontispiece|Copyright|Decoration)\b/i.test(t.replace(/^[\[(_\s]+/, "")) && /\]\s*$/.test(t)) return "";
-  if (/Project Gutenberg|Transcriber['’]?s? [Nn]ote|Distributed Proofread|www\.pgdp\.net|Internet Archive|HTML version|This e-?text was produced|typographical errors have been|Transcriber['’]?s? (Notes?|corrections)|errors? (has|have) been (silently )?corrected/i.test(t) && t.length < 1500) return "";
+  if (/Project Gutenberg|Transcriber['’]?s? [Nn]ote|Distributed Proofread|www\.pgdp\.net|Internet Archive|HTML version|This e-?text was produced|typographical errors have been|Transcriber['’]?s? (Notes?|corrections)|errors? (has|have) been (silently )?corrected|(added|inserted|corrected|changed) by the transcriber|^On page \d+,|advertising pages|in the original (book|edition|text)\b.{0,80}\b(typeset|spelled|printed|reads)|printer['’]s errors|inconsisten(t|cies) (in )?(spelling|hyphenation)/i.test(t) && t.length < 1500) return "";
   if (/^F\s+I\s+N\s+I\s+S\.?$/.test(t)) return "";
   if (/^\S+\.(jpg|jpeg|png|gif)\b/i.test(t)) return "";
+  if (/^\[?\s*(Full Size|Enlarge|Larger image)\s*\]?$/i.test(t)) return ""; // a picture link's leftover text
   return b
     .replace(/\[Illustration[\s\S]*?\]\s*\]?/gi, "")
     .replace(/\[_?(Copyright|Picture)[^\]]*\]\]?/gi, "")
@@ -234,9 +235,17 @@ const tidyTitle = (s: string) =>
   s
     .replace(/[_=]/g, "")
     .replace(/\s+/g, " ")
-    .replace(/^[.:—\-\s]+|[.\s]+$/g, "")
+    .replace(/^[.:—\-\s\]]+|[.,;\s\]]+$/g, "") // "Chapter I.]" (the end of an illustration caption) → no title
     .trim();
-const titleCase = (s: string) => (isUpperish(s) && s.length > 3 ? s.toLowerCase().replace(/(^|[\s(“"'-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()).replace(/\b(Of|The|And|A|An|In|On|To|For|With|At|By|From)\b/g, (w, _a, i) => (i ? w.toLowerCase() : w)) : s);
+/** "Chapter Ii" → "Chapter II" (a word that is a Roman numeral, after title-casing). */
+const romanUpper = (s: string) =>
+  s.replace(/\b([IVXLCivxlc]{2,8})\b/g, (w, _m, at: number) => {
+    if (!/^(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/i.test(w) || !/^[IVXL]/.test(w)) return w;
+    // Words that are also names or ordinary words ("Ill", "Li", "Liv", "Xi") only after "Chapter", "Book"…
+    if (/^(Ill|Li|Liv|Lix|Xi)$/.test(w) && !/(Chapter|Book|Part|Letter|Canto|Section|Act|Scene|Volume|Stave)\s$/i.test(s.slice(0, at))) return w;
+    return w.toUpperCase();
+  });
+const titleCase = (s: string) => (isUpperish(s) && s.length > 3 ? romanUpper(s.toLowerCase().replace(/(^|[\s(“"'-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()).replace(/\b(Of|The|And|A|An|In|On|To|For|With|At|By|From)\b/g, (w, _a, i) => (i ? w.toLowerCase() : w))) : romanUpper(s));
 
 function numberWord(s: string) {
   const u = s.toUpperCase();
@@ -271,7 +280,7 @@ function tocTitle(line: string) {
 const LOWER_WORDS = /^(PART|BOOK|VOLUME)\s/i;
 
 /** Split a book's text into chapters. */
-export function findChapters(body: string, opts: { poem?: boolean; title?: string; whole?: boolean } = {}): Found {
+export function findChapters(body: string, opts: { poem?: boolean; title?: string; whole?: boolean; noOpening?: boolean } = {}): Found {
   const warnings: string[] = [];
   // Cut what follows the story: "THE END", footnotes, index (only in the last stretch of the book).
   const tailAt = (re: RegExp) => {
@@ -287,6 +296,15 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     if (at > 0 && body.length - at < Math.max(20_000, body.length * 0.08)) body = body.slice(0, re.source.includes("THE END") ? body.indexOf("\n", at) + 1 || body.length : at);
   }
   const lines = body.split("\n");
+  // "CHAPTER" on one line and its number on the next ("CHAPTER\n   1"): one heading line.
+  for (let i = 0; i < lines.length - 1; i++) {
+    if (!new RegExp(`^\\s*(${WORDS})\\s*$`, "i").test(lines[i])) continue;
+    const j = lines[i + 1].trim() ? i + 1 : i + 2;
+    if (j < lines.length && new RegExp(`^\\s*(${NUM})\\.?\\s*$`, "i").test(lines[j])) {
+      lines[i] = `${lines[i].trim()} ${lines[j].trim()}`;
+      lines[j] = "";
+    }
+  }
   const blankBefore = (i: number) => i === 0 || !lines[i - 1].trim();
 
   const paras = (from: number, to: number) => {
@@ -332,7 +350,12 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
   /** Chapters longer than a phone reads comfortably → parts of about 60k characters. */
   const finish = (chs: { title: string; paras: string[] }[], how: string): Found => {
     const out: { title: string; paras: string[] }[] = [];
-    for (const c of chs) {
+    for (const [ci, c] of chs.entries()) {
+      // Gutenberg's own notes at the end are not a chapter.
+      if (/transcriber/i.test(c.title) && ci >= chs.length - 2) continue;
+      // A picture caption taken for a heading: a plain chapter number instead.
+      if (/^\[?\s*illustration\b/i.test(c.title)) c.title = `Chapter ${ci + 1}`;
+      c.title = c.title.replace(/^\p{Ll}/u, (ch) => ch.toUpperCase()); // "the juniper-tree" → "The juniper-tree"
       // The next section's name left at the end of a chapter ("Inferno", "PURGATORIO" in the Divine Comedy).
       while (c.paras.length > 1 && /^(INFERNO|PURGATORIO|PARADISO|HELL|PURGATORY|PARADISE)$/i.test(c.paras[c.paras.length - 1].trim())) c.paras.pop();
       const size = c.paras.join(" ").length;
@@ -371,6 +394,7 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     const entries: { title: string; upper: boolean }[] = [];
     let blanks = 0;
     let seen = 0;
+    const seenLines = new Set<string>();
     let i = tocAt + 1;
     for (; i < lines.length && i < tocAt + 500; i++) {
       const l = lines[i];
@@ -385,6 +409,13 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
       if (/^\s*(Page|PAGE|Chapter|CHAPTER|CHAP\.)\s*$/.test(l)) continue;
       let t = tocTitle(l);
       if (t.length < 2 || !norm(t) || new RegExp(`^(${WORDS})$`, "i").test(t)) t = l.trim().replace(/\s*(\.\s*){2,}\s*\d*\s*$|\s{2,}\d{1,4}\s*$/, "");
+      // An entry seen before ("VOLUME ONE", "Chapter 1. Marseilles" again): the book itself has begun.
+      // (the whole line, number included: Moby-Dick has two chapters called "Knights and Squires")
+      if (norm(l) && seenLines.has(norm(l))) {
+        while (i > tocAt + 1 && !lines[i - 1].trim()) i--; // the list ends at the blank lines before it
+        break;
+      }
+      seenLines.add(norm(l));
       if (t.length >= 2 && norm(t) && !/^(page|index|contents)$/i.test(t)) entries.push({ title: t, upper: LOWER_WORDS.test(l.trim()) });
     }
     const tocEnd = i;
@@ -424,6 +455,9 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
         tocResult = { starts, tocEnd, coverage: starts.length / chapterEntries.length };
       }
     }
+    // Only a contents list that matched the book's chapters marks text to skip: one of bare numerals
+    // ("I", "II") isn't recognised, and the scan above may have run on into chapter one.
+    if (!tocResult) tocRange = null;
   }
   const fromContents = (): Found | null => {
     if (!tocResult) return null;
@@ -515,6 +549,17 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     const start = front.slice(0, pre.index).split("\n").length;
     const ps = paras(start, hs[firstReal].line).filter((p) => !/^(CHAPTER|CHAP\.)\s/i.test(p));
     if (ps.join(" ").length >= 800) chapters.push({ title: titleCase(tidyTitle(pre[1])), paras: ps });
+  } else {
+    // Text before the first heading that isn't called a preface (a book's first story or chapter without a
+    // heading of its kind): kept as its own first section, not lost.
+    const ps = paras(tocRange ? tocRange[1] : 0, hs[firstReal].line).filter((p) => !/^(CHAPTER|CHAP\.)\s/i.test(p));
+    // (not a leftover contents list: most of its lines would be "Canto XIII. …" / "Chapter 4" entries)
+    const ls = ps.flatMap((p) => p.split(/\n| {3,}/));
+    const listy = ls.filter((l) => new RegExp(`^\\s*(${WORDS})\\b`, "i").test(l) || ROMAN_TITLE.test(l) || /^\s*[IVXLC]+\.\s/.test(l)).length;
+    // (a contents list run together into paragraphs: many bare numbers, "4 The Story of… 13 Richard Talketh…")
+    const words = ps.join(" ").split(/\s+/);
+    const numbers = words.filter((w) => /^(\d{1,3}|[IVXLC]{1,6})[.:]?$/.test(w)).length;
+    if (!opts.noOpening && ps.join(" ").length >= 3000 && listy < ls.length * 0.25 && numbers < words.length * 0.04) chapters.push({ title: "Opening pages", paras: ps });
   }
   for (let k = firstReal; k < hs.length; k++) {
     const h = hs[k];
@@ -526,9 +571,22 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
       while (j < end && !lines[j].trim()) j++;
       const cand = lines[j]?.trim() ?? "";
       const after = lines[j + 1]?.trim() ?? "";
-      if (cand && cand.length <= 80 && !/^[\[\](_*]/.test(cand) && !/[,;]$/.test(cand) && !/[a-z]\.$/.test(cand) && (isUpperish(cand) || !after) && !/^[a-z]/.test(cand)) {
+      if (cand && cand.length <= 80 && !/^[\[\](_*“"‘'«]/.test(cand) && !/[,;]$/.test(cand) && !/[a-z]\.$/.test(cand) && (isUpperish(cand) || !after) && !/^[a-z]/.test(cand)) {
         title = titleCase(tidyTitle(cand));
         start = j + 1;
+      }
+    }
+    // A long title wrapped onto the next lines (in capitals, then a blank line): keep all of it.
+    if (title) {
+      const block: string[] = [];
+      let k = start;
+      while (k < end && block.length < 3 && lines[k].trim() && lines[k].trim().length <= 80 && isUpperish(lines[k].trim())) block.push(lines[k++].trim());
+      if (block.length && (k >= end || !lines[k].trim())) {
+        // The title's own line, without its "CHAPTER V." / "IV." / "12." in front.
+        const own = title === h.title ? lines[h.line].trim().replace(new RegExp(`^(?:(?:${WORDS})\\s+(?:the\\s+|No\\.?\\s*)?(?:${NUM})|[IVXLC]+|\\d{1,3})\\b[.:—-]?\\s*`, "i"), "") : lines[start - 1].trim();
+        const whole = own + " " + block.join(" ");
+        title = titleCase(tidyTitle(whole));
+        start = k;
       }
     }
     const ps = paras(start, end);
@@ -541,9 +599,43 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     const name = [up ? up.label : "", title && title !== label ? title : label].filter(Boolean).join(" · ");
     chapters.push({ title: name || `Part ${chapters.length + 1}`, paras: ps });
   }
+  // Numbering that starts again ("Chapter 1" … "Chapter 12", then "Chapter 1" again, in a book of epochs or
+  // volumes without a recognised heading for them): number the runs, "Part 2 · Chapter 1".
+  // Only a real restart counts (another "Chapter 1"); chapters before the first one (a preface) keep their title.
+  const isOne = (t: string) => /^(Chapter|Letter|Section) (1|I)$/.test(t);
+  if (chapters.filter((c) => isOne(c.title)).length > 1) {
+    let part = 0;
+    for (const c of chapters) {
+      if (isOne(c.title)) part++;
+      if (part > 0) c.title = `Part ${part} · ${c.title}`;
+    }
+  }
   const byHeadings = finish(chapters, fam);
   const byContents = fromContents();
-  return byContents && byContents.chapters.length >= byHeadings.chapters.length ? byContents : byHeadings;
+  // Count only chapters with real text: a contents list matched against a second list (of illustrations,
+  // say) gives many one-line "chapters" and one huge last one.
+  // A result where one chapter holds over half the book (the rest one-liners) scores as one chapter.
+  const solid = (f: Found) => {
+    const sizes = f.chapters.map((c) => c.paras.join(" ").length);
+    const total = sizes.reduce((a, b) => a + b, 0);
+    // (a long chapter is already cut into "… (part 2)": add its parts back up)
+    const byTitle = new Map<string, number>();
+    f.chapters.forEach((c, i) => byTitle.set(c.title.replace(/ \(part \d+\)$/, ""), (byTitle.get(c.title.replace(/ \(part \d+\)$/, "")) ?? 0) + sizes[i]));
+    if (f.chapters.length > 5 && Math.max(...byTitle.values()) > total * 0.5) return 1;
+    return sizes.filter((s) => s >= 300).length;
+  };
+  const best = byContents && solid(byContents) >= solid(byHeadings) ? byContents : byHeadings;
+  // Never lose text: the chapters must hold at least 90% of the book's (cleaned) letters. If not, the other
+  // method; if that loses text too, the whole book in order, split into parts by length.
+  const letters = (s: string) => (s.match(/\p{L}/gu) ?? []).length;
+  const kept = (f: Found) => f.chapters.reduce((n, c) => n + letters(c.paras.join(" ")), 0);
+  const all = paras(0, lines.length);
+  const total = letters(all.join(" "));
+  if (kept(best) >= total * 0.9) return best;
+  const other = best === byContents ? byHeadings : byContents;
+  if (other && kept(other) >= total * 0.9) return other;
+  warnings.push(`chapters would keep only ${Math.round((100 * kept(best)) / Math.max(1, total))}% of the text: split into parts by length`);
+  return finish([{ title: opts.title ?? "The Text", paras: all }], "whole");
 }
 
 /* ---------- main ---------- */
@@ -641,7 +733,7 @@ async function main() {
           if (ei === 0) return null;
           continue;
         }
-        found = findChapters(gutenbergBody(t), { poem: [1322, 26, 58, 1004, 1000, 16328, 39784, 26197].includes(ed.gid), whole: [132, 14986, 10136, 44833, 20352].includes(ed.gid), title });
+        found = findChapters(gutenbergBody(t), { poem: [1322, 26, 58, 1004, 1000, 16328, 39784, 26197].includes(ed.gid), whole: [132, 14986, 10136, 44833, 20352].includes(ed.gid), noOpening: ei > 0, title }); // a second edition lines up chapter by chapter
       }
       if (!found.chapters.length) {
         report.push(`${String(ed.gid).padStart(6)} ${title}: no text found, skipped`);
@@ -731,6 +823,15 @@ async function main() {
       if (d.startsWith("lit-") && !keepWorks.has(d)) {
         await rm(path.join(ROOT, "data", "texts", d), { recursive: true, force: true });
         report.push(`removed old folder data/texts/${d}`);
+      } else if (d.startsWith("lit-")) {
+        // An edition dropped from a book (a copyrighted one replaced, say): its folder goes too.
+        const keepVersions = new Set(versions.filter((v) => v.work === d).map((v) => String(v.id)));
+        for (const v of await readdir(path.join(ROOT, "data", "texts", d))) {
+          if (!keepVersions.has(v)) {
+            await rm(path.join(ROOT, "data", "texts", d, v), { recursive: true, force: true });
+            report.push(`removed old edition data/texts/${d}/${v}`);
+          }
+        }
       }
     }
   }

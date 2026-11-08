@@ -19,6 +19,7 @@ const ROOT = path.resolve(__dirname, "..");
 const SRC = path.join(ROOT, "data", "texts");
 const OUT = path.join(ROOT, "public", "search");
 const SHARD_BYTES = 150_000;
+const LIT_ONE_FILE = 2_000_000;
 
 type Chapter = { verses: { v: string; t: string }[] };
 
@@ -54,7 +55,9 @@ function sizeOf(words: string[], postings: Map<string, number[]>) {
 }
 
 /** Split words into prefix shards, each small enough. */
-function shard(all: string[], postings: Map<string, number[]>): Map<string, string[]> {
+function shard(all: string[], postings: Map<string, number[]>, oneFileUpTo = 0): Map<string, string[]> {
+  // Small enough for one file: a single shard with the empty prefix.
+  if (oneFileUpTo && sizeOf(all, postings) <= oneFileUpTo) return new Map([["", all]]);
   const result = new Map<string, string[]>();
   const split = (prefix: string, list: string[]) => {
     if (sizeOf(list, postings) <= SHARD_BYTES || list.every((w) => w === prefix)) {
@@ -114,7 +117,8 @@ async function buildVersion(work: string, version: string) {
   }
 
   const all = [...postings.keys()].sort();
-  const shards = shard(all, postings);
+  // A literature book is searched on its own: one file (up to 2 MB) keeps the 1,000+ books to ~2,000 files.
+  const shards = shard(all, postings, work.startsWith("lit-") ? LIT_ONE_FILE : 0);
   const dir = path.join(OUT, version);
   await mkdir(dir, { recursive: true });
   let bytes = 0;
@@ -141,9 +145,6 @@ async function main() {
   let files = 0;
   let bytes = 0;
   for (const v of catalog.versions) {
-    // Literature (Project Gutenberg books) has no full-text index yet: one per book would pass the hosting
-    // plan's 20,000-file limit. A combined index for the shelf can come later.
-    if (v.work.startsWith("lit-")) continue;
     if (!(await exists(path.join(SRC, v.work, v.id)))) continue;
     const r = await buildVersion(v.work, v.id);
     files += r.files;

@@ -1,6 +1,7 @@
 "use client";
 /** "Studied" checkbox at the end of a chapter; stores when you marked it (shown as MM/DD/YY h:mm AM). */
 import type { BookRef } from "@/lib/catalog";
+import { openFeedback } from "@/lib/feedback";
 import { formatStamp, itemId, toggle, useStudy } from "@/lib/study";
 import { toast } from "@/lib/ui-store";
 import { CheckIcon } from "./icons";
@@ -37,6 +38,13 @@ export function StudiedBox({ bookRef, title }: { bookRef: BookRef; title: string
           </span>
         </span>
       </button>
+      {/* Feedback where a reader finishes: quiet, always there, never over the text. */}
+      <p className="mt-3 text-center text-xs text-faint">
+        Spotted a mistake or have an idea?{" "}
+        <button type="button" onClick={() => openFeedback()} className="min-h-8 font-medium text-accent underline-offset-2 hover:underline">
+          Send feedback
+        </button>
+      </p>
     </div>
   );
 }

@@ -200,13 +200,6 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2" aria-live="polite" aria-busy={busy}>
-        {isLiteratureWork(work) ? (
-          <div className="space-y-2 px-3 py-6 text-center text-sm text-muted">
-            <p className="font-medium text-ink">Search isn’t available for the Literature and Fiction books yet.</p>
-            <p>Open a scripture to search it, or use the library’s “Search books” box to find a book by its title.</p>
-          </div>
-        ) : (
-          <>
         {!query && <Help />}
         {query && error && <p className="px-3 py-6 text-center text-sm text-red-700 dark:text-red-400">{error}</p>}
         {query && !error && result && (
@@ -214,7 +207,7 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             <p className="px-2 pb-2 text-sm text-muted">
               {busy ? "Searching… " : ""}
               <span className="font-semibold text-ink tabular-nums">{total.toLocaleString()}</span>{" "}
-              {total === 1 ? "verse" : "verses"}
+              {isLiteratureWork(work) ? (total === 1 ? "passage in this book" : "passages in this book") : total === 1 ? "verse" : "verses"}
               {result.terms.some((t) => t.prefix) && result.forms.length > 0 && (
                 <span className="block text-xs text-faint">
                   Matching: {result.forms.slice(0, 12).join(", ")}
@@ -250,7 +243,7 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             )}
             {total === 0 && (
               <p className="px-3 py-6 text-center text-sm text-faint">
-                No verses contain {result.terms.length > 1 ? "all of these words" : "this word"} in the chosen versions. Try a
+                No {isLiteratureWork(work) ? "passages" : "verses"} contain {result.terms.length > 1 ? "all of these words" : "this word"} in the chosen versions. Try a
                 trailing * (e.g. <em>{result.terms[0]?.word}*</em>) or another version.
               </p>
             )}
@@ -265,8 +258,6 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
           </>
         )}
         {query && !result && !error && <p className="px-3 py-6 text-center text-sm text-faint">Searching…</p>}
-          </>
-        )}
       </div>
     </div>
   );

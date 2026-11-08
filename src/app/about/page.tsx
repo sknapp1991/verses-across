@@ -35,7 +35,7 @@ export default function AboutPage() {
           <Link href="/" className={`text-sm ${a}`}>
             ← Back to reading
           </Link>
-          <h1 className="font-serif text-3xl font-semibold text-ink">About Verses Across</h1>
+          <h1 className="font-serif text-3xl font-semibold text-ink">About Verses Across&trade;</h1>
           <p>
             Verses Across lets you read the world&rsquo;s scriptures side by side, in many languages. It is free, and
             always will be: no ads, no purchases, no account.
@@ -60,8 +60,8 @@ export default function AboutPage() {
             .
           </p>
           <p>
-            The name &ldquo;Verses Across&rdquo; and its logo are not covered by that license. If you share a modified
-            version, please give it its own name and logo.
+            The name Verses Across&trade; and its logo are trademarks and are not covered by that license. If you
+            share a modified version, please give it its own name and logo.
           </p>
         </Section>
 
@@ -154,7 +154,7 @@ export default function AboutPage() {
               them up sends nothing about you anywhere.
             </li>
             <li>
-              If you send feedback, we receive what you write, your email address if you give one, and (unless you untick
+              If you send feedback, we receive what you write (anonymously: no name or email is asked for) and (unless you untick
               it) the page you were on, the verse and versions on screen, your device and browser type, your reading
               settings and any recent error messages. You can see all of it before sending. We store reports privately and
               email a copy to the maintainer&rsquo;s inbox, use them only to fix and improve Verses Across, and never share or sell them. Ask us and we&rsquo;ll delete

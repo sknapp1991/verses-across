@@ -60,12 +60,13 @@ export function parseQuery(q: string): Term[] {
 
 /** The shards that can hold words starting with `word` (one shard, or several for a short prefix). */
 function shardsFor(meta: SearchMeta, word: string, prefix: boolean): string[] {
-  let best = "";
-  for (const s of meta.shards) if (word.startsWith(s) && s.length > best.length) best = s;
-  if (!prefix) return best ? [best] : [];
+  // (A small index is one shard with the empty prefix "", which starts every word.)
+  let best: string | null = null;
+  for (const s of meta.shards) if (word.startsWith(s) && s.length > (best?.length ?? -1)) best = s;
+  if (!prefix) return best !== null ? [best] : [];
   // A prefix shorter than the shard prefixes spans every shard that starts with it.
   const longer = meta.shards.filter((s) => s.startsWith(word) && s !== best);
-  return best ? [best, ...longer] : longer;
+  return best !== null ? [best, ...longer] : longer;
 }
 
 function decode(deltas: number[]): number[] {
