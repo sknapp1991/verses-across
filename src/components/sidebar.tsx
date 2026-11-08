@@ -107,8 +107,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const treeRef = useRef<HTMLDivElement>(null);
   usePinch(treeRef, (dir) => setAll(dir === "out"));
 
+  // Open at the chapter being read (Psalm 23 → the Psalms grid, centred), not at the top of the list.
+  // On phones the library is a <dialog> that is shown by the parent's effect, which runs after this
+  // one: wait a frame so the list is laid out, or scrollIntoView does nothing.
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "nearest" });
+    const id = requestAnimationFrame(() => activeRef.current?.scrollIntoView({ block: "center" }));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   const q = norm(query);
