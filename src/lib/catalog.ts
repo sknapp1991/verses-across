@@ -8,10 +8,10 @@ import type { Catalog, CatalogItem, Collection, Religion, Version } from "./sche
 
 type LitEdition = [gid: number, language: string, abbr: string, year: number, author: string, translator: string | null, yearNote: string | null];
 type LitBook = [work: string, book: string, title: string, chapters: number, editions: LitEdition[]];
-type LitCatalog = { books: LitBook[]; shelves: { id: string; name: string; collections: { id: string; name: string; books: string[] }[] }[] };
+type LitCatalog = { books: LitBook[]; shelves: { id: string; name: string; collections: { id: string; name: string; section?: string; books: string[] }[] }[] };
 
 /**
- * The scripture catalog, plus the Literature and Fiction shelves expanded from their compact file
+ * The scripture catalog, plus the Literature shelf (and its sections) expanded from its compact file
  * (data/literature-catalog.json): one work per book, one version per Gutenberg edition.
  */
 function withLiterature(base: Catalog, l: LitCatalog): Catalog {
@@ -45,7 +45,12 @@ function withLiterature(base: Catalog, l: LitCatalog): Catalog {
   const shelves: Religion[] = l.shelves.map((sh) => ({
     id: sh.id,
     name: sh.name,
-    collections: sh.collections.map((c) => ({ id: c.id, name: c.name, items: c.books.map((w) => items.get(w)!).filter(Boolean) })),
+    collections: sh.collections.map((c) => ({
+      id: c.id,
+      name: c.name,
+      ...(c.section ? { section: c.section } : {}),
+      items: c.books.map((w) => items.get(w)!).filter(Boolean),
+    })),
   }));
   return { ...base, works, versions, religions: [...base.religions, ...shelves] };
 }
@@ -148,7 +153,8 @@ export function getVersion(id: string): Version | undefined {
 }
 
 /**
- * The Literature and Fiction shelves (Project Gutenberg books) sit in the library beside the religions but aren't religions:
+ * The Literature shelf (Project Gutenberg books; Fiction, Poetry, Drama… are sections inside it, and "fiction" was its own
+ * shelf until Nov 8, kept here so old ids still count as books) sits in the library beside the religions but isn't a religion:
  * it stays out of the verse of the day, "traditions" counts and badges, reference links and cross-reference
  * targets. A book can be on several of its shelves (Frankenstein: Gothic, Horror, Science Fiction…).
  */

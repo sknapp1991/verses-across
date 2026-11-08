@@ -51,12 +51,23 @@ function refJump(q: string, preferWork: string): { hit: Hit; chapter: number; ve
   return hit ? { hit, chapter: r.ref.chapter, verse: r.verse } : null;
 }
 
+/** A tradition's shelves in order, those with a `section` gathered under it (at the section's first shelf). */
+function sectionsOf(cols: Collection[]): { section?: string; cols: Collection[] }[] {
+  const out: { section?: string; cols: Collection[] }[] = [];
+  for (const c of cols) {
+    const g = c.section ? out.find((x) => x.section === c.section) : undefined;
+    if (g) g.cols.push(c);
+    else out.push({ section: c.section, cols: [c] });
+  }
+  return out;
+}
+
 function whereIs(ref: BookRef) {
   for (const r of catalog.religions)
     for (const c of r.collections)
       for (const it of c.items)
         if (it.work === ref.work && it.id === ref.book)
-          return { religion: r.name, collection: c.items.length === 1 ? null : c.name, chapter: chapterTitle(it, ref.chapter) };
+          return { religion: r.name, section: c.section ?? null, collection: c.items.length === 1 ? null : c.name, chapter: chapterTitle(it, ref.chapter) };
   return null;
 }
 
@@ -67,6 +78,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   const activeRef = useRef<HTMLAnchorElement>(null);
 
+  // The path to the current book: its first shelf only (a book on several shelves, like Pride and Prejudice in
+  // Classic Novels and Romance, opens just the first; the others open if you tap them).
   const currentPath = useMemo(() => {
     const ids = new Set<string>();
     for (const r of catalog.religions)
@@ -74,8 +87,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         for (const it of c.items)
           if (it.work === ref.work && it.id === ref.book) {
             ids.add(`r:${r.id}`);
+            if (c.section) ids.add(`s:${r.id}/${c.section}`);
             ids.add(`c:${r.id}/${c.id}`);
             ids.add(`b:${it.work}/${it.id}`);
+            return ids;
           }
     return ids;
   }, [ref.work, ref.book]);
@@ -119,6 +134,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     for (const r of catalog.religions) {
       next[`r:${r.id}`] = open;
       for (const c of r.collections) {
+        if (c.section) next[`s:${r.id}/${c.section}`] = open;
         next[`c:${r.id}/${c.id}`] = open;
         if (!open) for (const it of c.items) next[`b:${it.work}/${it.id}`] = false;
       }
@@ -141,6 +157,52 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const hits = q ? ALL.filter((h) => norm(h.item.name).includes(q) || norm(h.collection.name).includes(q)) : [];
 
   const href = (r: BookRef, verse?: string) => readHref(r, versions, verse);
+
+  /** One shelf (collection) of a tradition: its books, or the book itself when it holds just one. */
+  const renderCollection = (r: Religion, c: Collection) => {
+    const cid = `c:${r.id}/${c.id}`;
+    if (c.items.length === 1)
+      return (
+        <li key={c.id} className="pl-3">
+          <ItemRow
+            item={{ ...c.items[0], name: c.name }}
+            open={isOpen(`b:${c.items[0].work}/${c.items[0].id}`)}
+            onToggle={() => toggle(`b:${c.items[0].work}/${c.items[0].id}`)}
+            current={ref}
+            href={href}
+            onNavigate={onNavigate}
+            activeRef={activeRef}
+          />
+        </li>
+      );
+    const soon = c.items.every((i) => i.status === "coming-soon");
+    return (
+      <li key={c.id} className="pl-3">
+        <TreeButton level={1} open={isOpen(cid)} onClick={() => toggle(cid)}>
+          <span className={`font-medium ${currentPath.has(cid) ? "text-accent" : ""}`}>{c.name}</span>
+          {soon && <Soon />}
+          <Progress {...progressOf(c.items)} />
+        </TreeButton>
+        {isOpen(cid) && (
+          <ul className="space-y-0.5 pl-3">
+            {c.items.map((it) => (
+              <li key={it.id}>
+                <ItemRow
+                  item={it}
+                  open={isOpen(`b:${it.work}/${it.id}`)}
+                  onToggle={() => toggle(`b:${it.work}/${it.id}`)}
+                  current={ref}
+                  href={href}
+                  onNavigate={onNavigate}
+                  activeRef={activeRef}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  };
 
   return (
     <nav aria-label="Library" className="flex h-full min-h-0 flex-col">
@@ -168,7 +230,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         >
           <PinIcon width={14} height={14} className="shrink-0" />
           <span className="min-w-0 truncate">
-            {[here.religion, here.collection, here.chapter].filter(Boolean).join(" › ")}
+            {[here.religion, here.section, here.collection, here.chapter].filter(Boolean).join(" › ")}
           </span>
         </button>
       )}
@@ -235,48 +297,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                   </TreeButton>
                   {isOpen(rid) && (
                     <ul className="space-y-0.5">
-                      {r.collections.map((c) => {
-                        const cid = `c:${r.id}/${c.id}`;
-                        // A collection with a single entry is shown as that entry directly.
-                        if (c.items.length === 1)
-                          return (
-                            <li key={c.id} className="pl-3">
-                              <ItemRow
-                                item={{ ...c.items[0], name: c.name }}
-                                open={isOpen(`b:${c.items[0].work}/${c.items[0].id}`)}
-                                onToggle={() => toggle(`b:${c.items[0].work}/${c.items[0].id}`)}
-                                current={ref}
-                                href={href}
-                                onNavigate={onNavigate}
-                                activeRef={activeRef}
-                              />
-                            </li>
-                          );
-                        const soon = c.items.every((i) => i.status === "coming-soon");
+                      {sectionsOf(r.collections).map((g) => {
+                        if (!g.section) return renderCollection(r, g.cols[0]);
+                        // A section (Literature › Fiction): one more level, holding its shelves.
+                        const sid = `s:${r.id}/${g.section}`;
                         return (
-                          <li key={c.id} className="pl-3">
-                            <TreeButton level={1} open={isOpen(cid)} onClick={() => toggle(cid)}>
-                              <span className={`font-medium ${currentPath.has(cid) ? "text-accent" : ""}`}>{c.name}</span>
-                              {soon && <Soon />}
-                              <Progress {...progressOf(c.items)} />
+                          <li key={sid} className="pl-3">
+                            <TreeButton level={1} open={isOpen(sid)} onClick={() => toggle(sid)}>
+                              <span className={`font-medium ${currentPath.has(sid) ? "text-accent" : ""}`}>{g.section}</span>
+                              <Progress {...progressOf(g.cols.flatMap((c) => c.items))} />
                             </TreeButton>
-                            {isOpen(cid) && (
-                              <ul className="space-y-0.5 pl-3">
-                                {c.items.map((it) => (
-                                  <li key={it.id}>
-                                    <ItemRow
-                                      item={it}
-                                      open={isOpen(`b:${it.work}/${it.id}`)}
-                                      onToggle={() => toggle(`b:${it.work}/${it.id}`)}
-                                      current={ref}
-                                      href={href}
-                                      onNavigate={onNavigate}
-                                      activeRef={activeRef}
-                                    />
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
+                            {isOpen(sid) && <ul className="space-y-0.5">{g.cols.map((c) => renderCollection(r, c))}</ul>}
                           </li>
                         );
                       })}

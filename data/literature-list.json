@@ -7,7 +7,8 @@
    "collections": [
     {
      "id": "lit-fiction",
-     "name": "Classic Novels, Plays & Poems",
+     "name": "Classic Novels",
+     "section": "Fiction",
      "books": [
       {
        "gid": 1342,
@@ -29,13 +30,6 @@
        "author": "Melville, Herman, 1819-1891",
        "lang": "en",
        "downloads": 168089
-      },
-      {
-       "gid": 1513,
-       "title": "Romeo and Juliet",
-       "author": "Shakespeare, William, 1564-1616",
-       "lang": "en",
-       "downloads": 81893
       },
       {
        "gid": 145,
@@ -143,13 +137,6 @@
        "downloads": 37607
       },
       {
-       "gid": 1080,
-       "title": "A Modest Proposal For preventing the children of poor people in Ireland, from being a burden on their parents or country, and for making them beneficial to the publick",
-       "author": "Swift, Jonathan, 1667-1745",
-       "lang": "en",
-       "downloads": 37350
-      },
-      {
        "gid": 161,
        "title": "Sense and Sensibility",
        "author": "Austen, Jane, 1775-1817",
@@ -169,20 +156,6 @@
        "author": "Brontë, Emily, 1818-1848",
        "lang": "en",
        "downloads": 35636
-      },
-      {
-       "gid": 2542,
-       "title": "A Doll's House",
-       "author": "Ibsen, Henrik, 1828-1906; Sharp, R. Farquharson (Robert Farquharson), 1864-1945 [Translator]",
-       "lang": "en",
-       "downloads": 32656
-      },
-      {
-       "gid": 844,
-       "title": "The Importance of Being Earnest",
-       "author": "Wilde, Oscar, 1854-1900",
-       "lang": "en",
-       "downloads": 31888
       },
       {
        "gid": 28054,
@@ -314,39 +287,11 @@
        "downloads": 13316
       },
       {
-       "gid": 14591,
-       "title": "Faust [part 1]. Translated Into English in the Original Metres",
-       "author": "Goethe, Johann Wolfgang von, 1749-1832; Clarke, Harry, 1889-1931 [Illustrator]; Taylor, Bayard, 1825-1878 [Translator]",
-       "lang": "en",
-       "downloads": 12999
-      },
-      {
-       "gid": 1322,
-       "title": "Leaves of Grass",
-       "author": "Whitman, Walt, 1819-1892",
-       "lang": "en",
-       "downloads": 12991
-      },
-      {
        "gid": 5230,
        "title": "The Invisible Man",
        "author": "Wells, H. G. (Herbert George), 1866-1946",
        "lang": "en",
        "downloads": 10964
-      },
-      {
-       "gid": 1524,
-       "title": "Hamlet",
-       "author": "Shakespeare, William, 1564-1616",
-       "lang": "en",
-       "downloads": 10535
-      },
-      {
-       "gid": 1533,
-       "title": "Macbeth",
-       "author": "Shakespeare, William, 1564-1616",
-       "lang": "en",
-       "downloads": 9275
       },
       {
        "gid": 110,
@@ -400,252 +345,9 @@
      ]
     },
     {
-     "id": "lit-children",
-     "name": "For Children",
-     "books": [
-      {
-       "gid": 11,
-       "title": "Alice's Adventures in Wonderland",
-       "author": "Carroll, Lewis, 1832-1898",
-       "lang": "en",
-       "downloads": 121623
-      },
-      {
-       "gid": 37106,
-       "title": "Little Women",
-       "author": "Alcott, Louisa May, 1832-1888; Merrill, Frank T., 1848-1923 [Illustrator]",
-       "lang": "en",
-       "downloads": 57282
-      },
-      {
-       "gid": 74,
-       "title": "The Adventures of Tom Sawyer, Complete",
-       "author": "Twain, Mark, 1835-1910",
-       "lang": "en",
-       "downloads": 42779
-      },
-      {
-       "gid": 55,
-       "title": "The Wonderful Wizard of Oz",
-       "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
-       "lang": "en",
-       "downloads": 38574
-      },
-      {
-       "gid": 2591,
-       "title": "Grimms' Fairy Tales",
-       "author": "Grimm, Jacob, 1785-1863; Grimm, Wilhelm, 1786-1859",
-       "lang": "en",
-       "downloads": 37383
-      },
-      {
-       "gid": 41,
-       "title": "The Legend of Sleepy Hollow",
-       "author": "Irving, Washington, 1783-1859",
-       "lang": "en",
-       "downloads": 31979
-      },
-      {
-       "gid": 120,
-       "title": "Treasure Island",
-       "author": "Stevenson, Robert Louis, 1850-1894; Rhead, Louis, 1857-1926 [Illustrator]",
-       "lang": "en",
-       "downloads": 31688
-      },
-      {
-       "gid": 45,
-       "title": "Anne of Green Gables",
-       "author": "Montgomery, L. M. (Lucy Maud), 1874-1942",
-       "lang": "en",
-       "downloads": 31124
-      },
-      {
-       "gid": 46,
-       "title": "A Christmas Carol in Prose",
-       "author": "Dickens, Charles, 1812-1870; Leech, John, 1817-1864 [Illustrator]",
-       "lang": "en",
-       "downloads": 28618
-      },
-      {
-       "gid": 16,
-       "title": "Peter Pan",
-       "author": "Barrie, J. M. (James Matthew), 1860-1937",
-       "lang": "en",
-       "downloads": 25701
-      },
-      {
-       "gid": 78017,
-       "title": "The Swiss family Robinson",
-       "author": "Wyss, Johann David, 1743-1818; Robinson, T. H. (Thomas Heath), 1869-1954 [Illustrator]",
-       "lang": "en",
-       "downloads": 25237
-      },
-      {
-       "gid": 113,
-       "title": "The Secret Garden",
-       "author": "Burnett, Frances Hodgson, 1849-1924",
-       "lang": "en",
-       "downloads": 18922
-      },
-      {
-       "gid": 67098,
-       "title": "Winnie-the-Pooh",
-       "author": "Milne, A. A. (Alan Alexander), 1882-1956; Shepard, Ernest H. (Ernest Howard), 1879-1976 [Illustrator]",
-       "lang": "en",
-       "downloads": 16254
-      },
-      {
-       "gid": 14838,
-       "title": "The Tale of Peter Rabbit",
-       "author": "Potter, Beatrix, 1866-1943",
-       "lang": "en",
-       "downloads": 16096
-      },
-      {
-       "gid": 12,
-       "title": "Through the Looking-Glass",
-       "author": "Carroll, Lewis, 1832-1898",
-       "lang": "en",
-       "downloads": 15769
-      },
-      {
-       "gid": 11339,
-       "title": "Aesop's Fables",
-       "author": "Aesop, 621? BCE-565? BCE; Chesterton, G. K. (Gilbert Keith), 1874-1936 [Commentator]; Rackham, Arthur, 1867-1939 [Illustrator]; Vernon Jones, V. S. (Vernon Stanley) [Translator]",
-       "lang": "en",
-       "downloads": 12462
-      },
-      {
-       "gid": 1837,
-       "title": "The Prince and the Pauper",
-       "author": "Twain, Mark, 1835-1910",
-       "lang": "en",
-       "downloads": 12109
-      },
-      {
-       "gid": 1597,
-       "title": "Andersen's Fairy Tales",
-       "author": "Andersen, H. C. (Hans Christian), 1805-1875",
-       "lang": "en",
-       "downloads": 11350
-      },
-      {
-       "gid": 500,
-       "title": "The Adventures of Pinocchio",
-       "author": "Collodi, Carlo, 1826-1890; Della Chiesa, Carol, 1887-1972 [Translator]",
-       "lang": "en",
-       "downloads": 10906
-      },
-      {
-       "gid": 1874,
-       "title": "The Railway Children",
-       "author": "Nesbit, E. (Edith), 1858-1924",
-       "lang": "en",
-       "downloads": 10769
-      },
-      {
-       "gid": 289,
-       "title": "The Wind in the Willows",
-       "author": "Grahame, Kenneth, 1859-1932",
-       "lang": "en",
-       "downloads": 10554
-      },
-      {
-       "gid": 902,
-       "title": "The Happy Prince, and Other Tales",
-       "author": "Wilde, Oscar, 1854-1900",
-       "lang": "en",
-       "downloads": 9425
-      },
-      {
-       "gid": 421,
-       "title": "Kidnapped",
-       "author": "Stevenson, Robert Louis, 1850-1894",
-       "lang": "en",
-       "downloads": 9248
-      },
-      {
-       "gid": 146,
-       "title": "A Little Princess Being the whole story of Sara Crewe now told for the first time",
-       "author": "Burnett, Frances Hodgson, 1849-1924",
-       "lang": "en",
-       "downloads": 7382
-      },
-      {
-       "gid": 11757,
-       "title": "The Velveteen Rabbit",
-       "author": "Bianco, Margery Williams, 1881-1944",
-       "lang": "en",
-       "downloads": 5570
-      },
-      {
-       "gid": 1450,
-       "title": "Pollyanna",
-       "author": "Porter, Eleanor H. (Eleanor Hodgman), 1868-1920",
-       "lang": "en",
-       "downloads": 4225
-      },
-      {
-       "gid": 708,
-       "title": "The Princess and the Goblin",
-       "author": "MacDonald, George, 1824-1905",
-       "lang": "en",
-       "downloads": 3848
-      },
-      {
-       "gid": 128,
-       "title": "The Arabian Nights Entertainments",
-       "author": "Lang, Andrew, 1844-1912",
-       "lang": "en",
-       "downloads": 3845
-      },
-      {
-       "gid": 501,
-       "title": "The Story of Doctor Dolittle",
-       "author": "Lofting, Hugh, 1886-1947; Walpole, Hugh, 1884-1941 [Author of introduction, etc.]",
-       "lang": "en",
-       "downloads": 3390
-      },
-      {
-       "gid": 1448,
-       "title": "Heidi",
-       "author": "Spyri, Johanna, 1827-1901; Edwards, Marion [Translator]",
-       "lang": "en",
-       "downloads": 2239
-      },
-      {
-       "gid": 498,
-       "title": "Rebecca of Sunnybrook Farm",
-       "author": "Wiggin, Kate Douglas Smith, 1856-1923",
-       "lang": "en",
-       "downloads": 1952
-      },
-      {
-       "gid": 2306,
-       "title": "Uncle Remus, His Songs and His Sayings",
-       "author": "Harris, Joel Chandler, 1848-1908",
-       "lang": "en",
-       "downloads": 1646
-      },
-      {
-       "gid": 778,
-       "title": "Five Children and It",
-       "author": "Nesbit, E. (Edith), 1858-1924",
-       "lang": "en",
-       "downloads": 1403
-      },
-      {
-       "gid": 764,
-       "title": "Hans Brinker",
-       "author": "Dodge, Mary Mapes, 1830-1905",
-       "lang": "en",
-       "downloads": 1155
-      }
-     ]
-    },
-    {
-     "id": "lit-crime",
-     "name": "Crime",
+     "id": "fic-crime",
+     "name": "Crime, Thrillers & Mystery",
+     "section": "Fiction",
      "books": [
       {
        "gid": 1661,
@@ -737,806 +439,6 @@
        "author": "Christie, Agatha, 1890-1976",
        "lang": "en",
        "downloads": 20657
-      }
-     ]
-    },
-    {
-     "id": "lit-social",
-     "name": "Social Sciences",
-     "books": [
-      {
-       "gid": 23,
-       "title": "Narrative of the Life of Frederick Douglass, an American Slave",
-       "author": "Douglass, Frederick, 1818-1895",
-       "lang": "en",
-       "downloads": 42092
-      },
-      {
-       "gid": 205,
-       "title": "Walden, and On The Duty Of Civil Disobedience",
-       "author": "Thoreau, Henry David, 1817-1862",
-       "lang": "en",
-       "downloads": 33667
-      },
-      {
-       "gid": 408,
-       "title": "The Souls of Black Folk",
-       "author": "Du Bois, W. E. B. (William Edward Burghardt), 1868-1963",
-       "lang": "en",
-       "downloads": 29969
-      },
-      {
-       "gid": 2376,
-       "title": "Up from Slavery",
-       "author": "Washington, Booker T., 1856-1915",
-       "lang": "en",
-       "downloads": 13343
-      },
-      {
-       "gid": 815,
-       "title": "Democracy in America — Volume 1",
-       "author": "Tocqueville, Alexis de, 1805-1859; Reeve, Henry, 1813-1895 [Translator]",
-       "lang": "en",
-       "downloads": 11397
-      },
-      {
-       "gid": 2130,
-       "title": "Utopia",
-       "author": "More, Thomas, Saint, 1478-1535; Morley, Henry, 1822-1894 [Editor]",
-       "lang": "en",
-       "downloads": 10564
-      },
-      {
-       "gid": 11030,
-       "title": "Incidents in the Life of a Slave Girl, Written by Herself",
-       "author": "Jacobs, Harriet A. (Harriet Ann), 1813-1897; Child, Lydia Maria, 1802-1880 [Editor]",
-       "lang": "en",
-       "downloads": 10404
-      },
-      {
-       "gid": 140,
-       "title": "The Jungle",
-       "author": "Sinclair, Upton, 1878-1968",
-       "lang": "en",
-       "downloads": 10305
-      },
-      {
-       "gid": 3420,
-       "title": "A Vindication of the Rights of Woman With Strictures on Political and Moral Subjects",
-       "author": "Wollstonecraft, Mary, 1759-1797",
-       "lang": "en",
-       "downloads": 9937
-      },
-      {
-       "gid": 45502,
-       "title": "How the Other Half Lives",
-       "author": "Riis, Jacob A. (Jacob August), 1849-1914",
-       "lang": "en",
-       "downloads": 9430
-      },
-      {
-       "gid": 27083,
-       "title": "The Subjection of Women",
-       "author": "Mill, John Stuart, 1806-1873",
-       "lang": "en",
-       "downloads": 6636
-      },
-      {
-       "gid": 833,
-       "title": "The Theory of the Leisure Class",
-       "author": "Veblen, Thorstein, 1857-1929",
-       "lang": "en",
-       "downloads": 5227
-      }
-     ]
-    },
-    {
-     "id": "lit-countries",
-     "name": "Countries",
-     "books": [
-      {
-       "gid": 2641,
-       "title": "A Room with a View",
-       "author": "Forster, E. M. (Edward Morgan), 1879-1970",
-       "lang": "en",
-       "downloads": 52959
-      },
-      {
-       "gid": 2160,
-       "title": "The Expedition of Humphry Clinker",
-       "author": "Smollett, T. (Tobias), 1721-1771",
-       "lang": "en",
-       "downloads": 43773
-      },
-      {
-       "gid": 103,
-       "title": "Around the World in Eighty Days",
-       "author": "Verne, Jules, 1828-1905; Towle, George M. (George Makepeace), 1841-1893 [Translator]",
-       "lang": "en",
-       "downloads": 20292
-      },
-      {
-       "gid": 829,
-       "title": "Gulliver's Travels into Several Remote Nations of the World",
-       "author": "Swift, Jonathan, 1667-1745",
-       "lang": "en",
-       "downloads": 18824
-      },
-      {
-       "gid": 61,
-       "title": "The Communist Manifesto",
-       "author": "Marx, Karl, 1818-1883; Engels, Friedrich, 1820-1895",
-       "lang": "en",
-       "downloads": 13596
-      },
-      {
-       "gid": 10636,
-       "title": "The Travels of Marco Polo — Volume 1",
-       "author": "Polo, Marco, 1254-1324; Rusticiano, da Pisa; Cordier, Henri, 1849-1925 [Editor]; Yule, Henry, Sir, 1820-1889 [Translator]",
-       "lang": "en",
-       "downloads": 11950
-      },
-      {
-       "gid": 1,
-       "title": "The Declaration of Independence of the United States of America",
-       "author": "Jefferson, Thomas, 1743-1826",
-       "lang": "en",
-       "downloads": 8535
-      },
-      {
-       "gid": 3176,
-       "title": "The Innocents Abroad",
-       "author": "Twain, Mark, 1835-1910",
-       "lang": "en",
-       "downloads": 7302
-      },
-      {
-       "gid": 61221,
-       "title": "A passage to India",
-       "author": "Forster, E. M. (Edward Morgan), 1879-1970",
-       "lang": "en",
-       "downloads": 3556
-      },
-      {
-       "gid": 535,
-       "title": "Travels with a donkey in the Cevennes",
-       "author": "Stevenson, Robert Louis, 1850-1894; Crane, Walter, 1845-1915 [Illustrator]",
-       "lang": "en",
-       "downloads": 2148
-      }
-     ]
-    },
-    {
-     "id": "lit-religion",
-     "name": "Religion",
-     "books": [
-      {
-       "gid": 16328,
-       "title": "Beowulf",
-       "author": "Hall, J. Lesslie (John Lesslie), 1856-1928 [Translator]",
-       "lang": "en",
-       "downloads": 37188
-      },
-      {
-       "gid": 27827,
-       "title": "The Kama Sutra of Vatsyayana Translated From the Sanscrit in Seven Parts With Preface, Introduction and Concluding Remarks",
-       "author": "Vatsyayana; Bhide, Shivaram Parashuram [Translator]; Burton, Richard Francis, Sir, 1821-1890 [Translator]; Indrajit, Bhagavanlal [Translator]",
-       "lang": "en",
-       "downloads": 23608
-      },
-      {
-       "gid": 72679,
-       "title": "The lesser Key of Solomon, Goetia, the book of evil spirits",
-       "author": "De Laurence, L. W. (Lauron William), 1868-1936 [Editor]",
-       "lang": "en",
-       "downloads": 19420
-      },
-      {
-       "gid": 58585,
-       "title": "The Prophet",
-       "author": "Gibran, Kahlil, 1883-1931",
-       "lang": "en",
-       "downloads": 16019
-      },
-      {
-       "gid": 26,
-       "title": "Paradise Lost",
-       "author": "Milton, John, 1608-1674",
-       "lang": "en",
-       "downloads": 12923
-      },
-      {
-       "gid": 2500,
-       "title": "Siddhartha",
-       "author": "Hesse, Hermann, 1877-1962",
-       "lang": "en",
-       "downloads": 10102
-      },
-      {
-       "gid": 131,
-       "title": "The Pilgrim's Progress from this world to that which is to come Delivered under the similitude of a dream, by John Bunyan",
-       "author": "Bunyan, John, 1628-1688",
-       "lang": "en",
-       "downloads": 6427
-      },
-      {
-       "gid": 3623,
-       "title": "The Golden Bough",
-       "author": "Frazer, James George, 1854-1941",
-       "lang": "en",
-       "downloads": 5543
-      },
-      {
-       "gid": 1004,
-       "title": "Divine Comedy, Longfellow's Translation, Complete",
-       "author": "Dante Alighieri, 1265-1321; Longfellow, Henry Wadsworth, 1807-1882 [Translator]",
-       "lang": "en",
-       "also": [
-        1000
-       ],
-       "downloads": 4138
-      },
-      {
-       "gid": 130,
-       "title": "Orthodoxy",
-       "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
-       "lang": "en",
-       "downloads": 3886
-      },
-      {
-       "gid": 4928,
-       "title": "Bulfinch's Mythology",
-       "author": "Bulfinch, Thomas, 1796-1867",
-       "lang": "en",
-       "downloads": 3165
-      },
-      {
-       "gid": 7145,
-       "title": "The Book of the Dead",
-       "author": "Budge, E. A. Wallis (Ernest Alfred Wallis), Sir, 1857-1934",
-       "lang": "en",
-       "downloads": 2962
-      },
-      {
-       "gid": 58,
-       "title": "Paradise Regained",
-       "author": "Milton, John, 1608-1674",
-       "lang": "en",
-       "downloads": 1907
-      }
-     ]
-    },
-    {
-     "id": "lit-law",
-     "name": "Law",
-     "books": [
-      {
-       "gid": 1232,
-       "title": "The Prince",
-       "author": "Machiavelli, Niccolò, 1469-1527; Marriott, W. K. (William Kenaz), -1927 [Translator]",
-       "lang": "en",
-       "downloads": 45102
-      },
-      {
-       "gid": 3300,
-       "title": "An Inquiry into the Nature and Causes of the Wealth of Nations",
-       "author": "Smith, Adam, 1723-1790",
-       "lang": "en",
-       "downloads": 27367
-      },
-      {
-       "gid": 147,
-       "title": "Common Sense",
-       "author": "Paine, Thomas, 1737-1809",
-       "lang": "en",
-       "downloads": 14772
-      },
-      {
-       "gid": 1404,
-       "title": "The Federalist Papers",
-       "author": "Hamilton, Alexander, 1757-1804; Jay, John, 1745-1829; Madison, James, 1751-1836",
-       "lang": "en",
-       "downloads": 8081
-      },
-      {
-       "gid": 5,
-       "title": "The United States Constitution",
-       "author": "United States",
-       "lang": "en",
-       "downloads": 3474
-      },
-      {
-       "gid": 2,
-       "title": "The United States Bill of Rights The Ten Original Amendments to the Constitution of the United States",
-       "author": "United States",
-       "lang": "en",
-       "downloads": 2745
-      }
-     ]
-    },
-    {
-     "id": "lit-wars",
-     "name": "Wars",
-     "books": [
-      {
-       "gid": 75201,
-       "title": "A farewell to arms",
-       "author": "Hemingway, Ernest, 1899-1961",
-       "lang": "en",
-       "downloads": 21165
-      },
-      {
-       "gid": 132,
-       "title": "The Art of War",
-       "author": "Sunzi, active 6th century B.C.; Giles, Lionel, 1875-1958 [Translator]",
-       "lang": "en",
-       "downloads": 20613
-      },
-      {
-       "gid": 7142,
-       "title": "The History of the Peloponnesian War",
-       "author": "Thucydides, 456? BCE-396 BCE; Crawley, Richard, 1840-1893 [Translator]",
-       "lang": "en",
-       "downloads": 14393
-      },
-      {
-       "gid": 1946,
-       "title": "On War",
-       "author": "Clausewitz, Carl von, 1780-1831; Graham, J. J. (James John) [Translator]",
-       "lang": "en",
-       "downloads": 10631
-      },
-      {
-       "gid": 73,
-       "title": "The Red Badge of Courage",
-       "author": "Crane, Stephen, 1871-1900",
-       "lang": "en",
-       "downloads": 9601
-      },
-      {
-       "gid": 4367,
-       "title": "Personal Memoirs of U. S. Grant, Complete",
-       "author": "Grant, Ulysses S. (Ulysses Simpson), 1822-1885",
-       "lang": "en",
-       "downloads": 7981
-      },
-      {
-       "gid": 75011,
-       "title": "All quiet on the Western Front",
-       "author": "Remarque, Erich Maria, 1898-1970; Wheen, A. W. (Arthur Wesley), 1897-1971 [Translator]",
-       "lang": "en",
-       "downloads": 5498
-      },
-      {
-       "gid": 10657,
-       "title": "\"De Bello Gallico\" and Other Commentaries",
-       "author": "Caesar, Julius, 100 BCE-44 BCE; De Quincey, Thomas, 1785-1859 [Author of introduction, etc.]; McDevitte, W. A. (William Alexander) [Translator]",
-       "lang": "en",
-       "downloads": 4368
-      },
-      {
-       "gid": 4361,
-       "title": "Memoirs of General William T. Sherman — Complete",
-       "author": "Sherman, William T. (William Tecumseh), 1820-1891",
-       "lang": "en",
-       "downloads": 2794
-      }
-     ]
-    },
-    {
-     "id": "lit-animals",
-     "name": "Animals",
-     "books": [
-      {
-       "gid": 215,
-       "title": "The call of the wild",
-       "author": "London, Jack, 1876-1916",
-       "lang": "en",
-       "downloads": 19679
-      },
-      {
-       "gid": 236,
-       "title": "The Jungle Book",
-       "author": "Kipling, Rudyard, 1865-1936",
-       "lang": "en",
-       "downloads": 18135
-      },
-      {
-       "gid": 271,
-       "title": "Black Beauty",
-       "author": "Sewell, Anna, 1820-1878",
-       "lang": "en",
-       "downloads": 13472
-      },
-      {
-       "gid": 910,
-       "title": "White Fang",
-       "author": "London, Jack, 1876-1916",
-       "lang": "en",
-       "downloads": 12063
-      },
-      {
-       "gid": 2009,
-       "title": "The Origin of Species by Means of Natural Selection Or, the Preservation of Favoured Races in the Struggle for Life, 6th Edition",
-       "author": "Darwin, Charles, 1809-1882",
-       "lang": "en",
-       "downloads": 6846
-      },
-      {
-       "gid": 944,
-       "title": "The Voyage of the Beagle",
-       "author": "Darwin, Charles, 1809-1882",
-       "lang": "en",
-       "downloads": 4232
-      },
-      {
-       "gid": 2818,
-       "title": "Beautiful Joe",
-       "author": "Saunders, Marshall, 1861-1947; Butterworth, Hezekiah, 1839-1905 [Author of introduction, etc.]",
-       "lang": "en",
-       "downloads": 1264
-      },
-      {
-       "gid": 72577,
-       "title": "Bambi",
-       "author": "Salten, Felix, 1869-1945; Galsworthy, John, 1867-1933 [Author of introduction, etc.]; Wiese, Kurt, 1887-1974 [Illustrator]; Chambers, Whittaker, 1901-1961 [Translator]",
-       "lang": "en",
-       "downloads": 895
-      }
-     ]
-    },
-    {
-     "id": "lit-education",
-     "name": "Education",
-     "books": [
-      {
-       "gid": 20203,
-       "title": "Autobiography of Benjamin Franklin",
-       "author": "Franklin, Benjamin, 1706-1790; Pine, Frank Woodworth, 1869- [Editor]; Smith, E. Boyd (Elmer Boyd), 1860-1943 [Illustrator]",
-       "lang": "en",
-       "downloads": 29881
-      },
-      {
-       "gid": 2397,
-       "title": "The Story of My Life With her letters (1887-1901) and a supplementary account of her education, including passages from the reports and letters of her teacher, Anne Mansfield Sullivan, by John Albert Macy",
-       "author": "Keller, Helen, 1880-1968; Macy, John Albert, 1877-1932 [Contributor]; Sullivan, Annie, 1866-1936 [Contributor]",
-       "lang": "en",
-       "downloads": 12097
-      },
-      {
-       "gid": 852,
-       "title": "Democracy and Education",
-       "author": "Dewey, John, 1859-1952",
-       "lang": "en",
-       "downloads": 9129
-      },
-      {
-       "gid": 5427,
-       "title": "Emile",
-       "author": "Rousseau, Jean-Jacques, 1712-1778",
-       "lang": "en",
-       "downloads": 6283
-      },
-      {
-       "gid": 935,
-       "title": "Self Help",
-       "author": "Smiles, Samuel, 1812-1904",
-       "lang": "en",
-       "downloads": 4476
-      },
-      {
-       "gid": 39863,
-       "title": "The Montessori Method Scientific Pedagogy as Applied to Child Education in 'The Children's Houses' with Additions and Revisions by the Author",
-       "author": "Montessori, Maria, 1870-1952; Holmes, Henry W. (Henry Wyman), 1880-1960 [Author of introduction, etc.]; George, Anne E., 1882- [Translator]",
-       "lang": "en",
-       "downloads": 3764
-      },
-      {
-       "gid": 2044,
-       "title": "The Education of Henry Adams",
-       "author": "Adams, Henry, 1838-1918; Lodge, Henry Cabot, 1850-1924 [Editor]",
-       "lang": "en",
-       "downloads": 2591
-      },
-      {
-       "gid": 12439,
-       "title": "Notes on Nursing",
-       "author": "Nightingale, Florence, 1820-1910",
-       "lang": "en",
-       "downloads": 2515
-      }
-     ]
-    },
-    {
-     "id": "lit-music",
-     "name": "Music",
-     "books": [
-      {
-       "gid": 5197,
-       "title": "My Life — Volume 1",
-       "author": "Wagner, Richard, 1813-1883",
-       "lang": "en",
-       "downloads": 37306
-      },
-      {
-       "gid": 175,
-       "title": "The Phantom of the Opera",
-       "author": "Leroux, Gaston, 1868-1927",
-       "lang": "en",
-       "downloads": 23966
-      },
-      {
-       "gid": 3528,
-       "title": "Beethoven, the Man and the Artist, as Revealed in His Own Words",
-       "author": "Beethoven, Ludwig van, 1770-1827; Kerst, Friedrich, 1870-1961 [Editor]; Krehbiel, Henry Edward, 1854-1923 [Editor]",
-       "lang": "en",
-       "downloads": 1064
-      },
-      {
-       "gid": 17474,
-       "title": "How to Listen to Music, 7th ed. Hints and Suggestions to Untaught Lovers of the Art",
-       "author": "Krehbiel, Henry Edward, 1854-1923",
-       "lang": "en",
-       "downloads": 840
-      },
-      {
-       "gid": 16248,
-       "title": "The Opera A Sketch of the Development of Opera. With full Descriptions of all Works in the Modern Repertory.",
-       "author": "Streatfeild, R. A. (Richard Alexander), 1866-1919; Fuller-Maitland, J. A. (John Alexander), 1856-1936 [Commentator]",
-       "lang": "en",
-       "downloads": 840
-      },
-      {
-       "gid": 14968,
-       "title": "The Standard Operas",
-       "author": "Upton, George P. (George Putnam), 1834-1919",
-       "lang": "en",
-       "downloads": 754
-      },
-      {
-       "gid": 17461,
-       "title": "The Great German Composers",
-       "author": "Ferris, George T. (George Titus), 1840-",
-       "lang": "en",
-       "downloads": 720
-      },
-      {
-       "gid": 17462,
-       "title": "Great Italian and French Composers",
-       "author": "Ferris, George T. (George Titus), 1840-",
-       "lang": "en",
-       "downloads": 700
-      }
-     ]
-    },
-    {
-     "id": "lit-science",
-     "name": "Science",
-     "books": [
-      {
-       "gid": 1228,
-       "title": "On the Origin of Species By Means of Natural Selection Or, the Preservation of Favoured Races in the Struggle for Life",
-       "author": "Darwin, Charles, 1809-1882",
-       "lang": "en",
-       "downloads": 21755
-      },
-      {
-       "gid": 33504,
-       "title": "Opticks",
-       "author": "Newton, Isaac, 1642-1727",
-       "lang": "en",
-       "downloads": 5438
-      },
-      {
-       "gid": 2300,
-       "title": "The Descent of Man, and Selection in Relation to Sex",
-       "author": "Darwin, Charles, 1809-1882",
-       "lang": "en",
-       "downloads": 4262
-      },
-      {
-       "gid": 15491,
-       "title": "Micrographia Some Physiological Descriptions of Minute Bodies Made by Magnifying Glasses with Observations and Inquiries Thereupon",
-       "author": "Hooke, Robert, 1635-1703",
-       "lang": "en",
-       "downloads": 3604
-      },
-      {
-       "gid": 14986,
-       "title": "Experimental Researches in Electricity, Volume 1",
-       "author": "Faraday, Michael, 1791-1867",
-       "lang": "en",
-       "downloads": 3413
-      },
-      {
-       "gid": 30775,
-       "title": "Elements of Chemistry, In a New Systematic Order, Containing all the Modern Discoveries",
-       "author": "Lavoisier, Antoine Laurent, 1743-1794; Kerr, Robert, 1755-1813 [Translator]",
-       "lang": "en",
-       "downloads": 2781
-      },
-      {
-       "gid": 25267,
-       "title": "Astronomy for Amateurs",
-       "author": "Flammarion, Camille, 1842-1925; Welby, Frances A. (Frances Alice), 1862-1947 [Translator]",
-       "lang": "en",
-       "downloads": 2265
-      }
-     ]
-    },
-    {
-     "id": "lit-emmy",
-     "name": "Emmy's Picks",
-     "books": [
-      {
-       "gid": 14872,
-       "title": "Tales of Beatrix Potter",
-       "author": "Potter, Beatrix, 1866-1943",
-       "lang": "en",
-       "group": [
-        14872,
-        14407,
-        14814,
-        15137,
-        14220,
-        14797,
-        45264,
-        14868,
-        45265,
-        17089
-       ],
-       "downloads": 3393
-      },
-      {
-       "gid": 39784,
-       "title": "Mother Goose's Nursery Rhymes A Collection of Alphabets, Rhymes, Tales, and Jingles",
-       "author": "Gilbert, John, 1817-1897 [Illustrator]; Crane, Walter, 1845-1915 [Illustrator]; Tenniel, John, 1820-1914 [Illustrator]; Weir, Harrison, 1824-1906 [Illustrator]; Zwecker, Johann Baptist, 1814-1876 [Illustrator]",
-       "lang": "en",
-       "downloads": 3381
-      },
-      {
-       "gid": 27602,
-       "title": "The True Story Book",
-       "author": "Lang, Andrew, 1844-1912 [Editor]",
-       "lang": "en",
-       "downloads": 2646
-      },
-      {
-       "gid": 32488,
-       "title": "Just so stories",
-       "author": "Kipling, Rudyard, 1865-1936; Gleeson, Joseph M. (Joseph Michael), 1861-1917 [Illustrator]",
-       "lang": "en",
-       "downloads": 1999
-      },
-      {
-       "gid": 18190,
-       "title": "Raggedy Ann stories",
-       "author": "Gruelle, Johnny, 1880-1938",
-       "lang": "en",
-       "downloads": 1703
-      },
-      {
-       "gid": 26197,
-       "title": "The Nursery Rhyme Book",
-       "author": "Lang, Andrew, 1844-1912 [Editor]; Brooke, L. Leslie (Leonard Leslie), 1862-1940 [Illustrator]",
-       "lang": "en",
-       "downloads": 1596
-      },
-      {
-       "gid": 5312,
-       "title": "Mother Goose in Prose",
-       "author": "Baum, L. Frank (Lyman Frank), 1856-1919; Parrish, Maxfield, 1870-1966 [Illustrator]",
-       "lang": "en",
-       "downloads": 1199
-      },
-      {
-       "gid": 35555,
-       "title": "Kim",
-       "author": "Kipling, Rudyard, 1865-1936",
-       "lang": "en",
-       "downloads": 1058
-      },
-      {
-       "gid": 17371,
-       "title": "Raggedy Andy stories",
-       "author": "Gruelle, Johnny, 1880-1938",
-       "lang": "en",
-       "downloads": 931
-      },
-      {
-       "gid": 38567,
-       "title": "Eight Cousins",
-       "author": "Alcott, Louisa May, 1832-1888",
-       "lang": "en",
-       "downloads": 818
-      },
-      {
-       "gid": 28308,
-       "title": "The Children's Book of Christmas Stories",
-       "author": "Dickinson, Asa Don, 1876-1960 [Editor]; Skinner, Ada M. (Ada Maria), 1878- [Editor]",
-       "lang": "en",
-       "downloads": 733
-      }
-     ]
-    },
-    {
-     "id": "lit-technology",
-     "name": "Technology",
-     "books": [
-      {
-       "gid": 10136,
-       "title": "The Book of Household Management",
-       "author": "Beeton, Mrs. (Isabella Mary), 1836-1865",
-       "lang": "en",
-       "downloads": 6221
-      },
-      {
-       "gid": 65061,
-       "title": "The Boston cooking-school cook book",
-       "author": "Farmer, Fannie Merritt, 1857-1915",
-       "lang": "en",
-       "downloads": 3558
-      },
-      {
-       "gid": 39272,
-       "title": "The inventions, researches and writings of Nikola Tesla With special reference to his work in polyphase currents and high potential lighting",
-       "author": "Martin, Thomas Commerford, 1856-1924",
-       "lang": "en",
-       "downloads": 2805
-      },
-      {
-       "gid": 21531,
-       "title": "Woodwork joints",
-       "author": "Fairham, William",
-       "lang": "en",
-       "downloads": 2357
-      },
-      {
-       "gid": 15147,
-       "title": "Beeton's Book of Needlework",
-       "author": "Beeton, Mrs. (Isabella Mary), 1836-1865",
-       "lang": "en",
-       "downloads": 1732
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "fiction",
-   "name": "Fiction",
-   "collections": [
-    {
-     "id": "fic-crime",
-     "name": "Crime, Thrillers & Mystery",
-     "books": [
-      {
-       "gid": 1661,
-       "title": "The Adventures of Sherlock Holmes",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 96353
-      },
-      {
-       "gid": 345,
-       "title": "Dracula",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 78131
-      },
-      {
-       "gid": 43,
-       "title": "The strange case of Dr. Jekyll and Mr. Hyde",
-       "author": "Stevenson, Robert Louis, 1850-1894",
-       "lang": "en",
-       "downloads": 71859
-      },
-      {
-       "gid": 2554,
-       "title": "Crime and Punishment",
-       "author": "Dostoyevsky, Fyodor, 1821-1881; Garnett, Constance, 1861-1946 [Translator]",
-       "lang": "en",
-       "downloads": 62172
       },
       {
        "gid": 65238,
@@ -1551,27 +453,6 @@
        "author": "Rymer, James Malcolm, 1814?-1884; Prest, Thomas Peckett, 1810-1859",
        "lang": "en",
        "downloads": 40572
-      },
-      {
-       "gid": 244,
-       "title": "A Study in Scarlet",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 37075
-      },
-      {
-       "gid": 8492,
-       "title": "The King in Yellow",
-       "author": "Chambers, Robert W. (Robert William), 1865-1933",
-       "lang": "en",
-       "downloads": 33392
-      },
-      {
-       "gid": 2148,
-       "title": "The Works of Edgar Allan Poe — Volume 2",
-       "author": "Poe, Edgar Allan, 1809-1849",
-       "lang": "en",
-       "downloads": 30902
       },
       {
        "gid": 69087,
@@ -1658,25 +539,11 @@
        "downloads": 26053
       },
       {
-       "gid": 2852,
-       "title": "The Hound of the Baskervilles",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 25500
-      },
-      {
        "gid": 204,
        "title": "The innocence of Father Brown",
        "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
        "lang": "en",
        "downloads": 25386
-      },
-      {
-       "gid": 863,
-       "title": "The Mysterious Affair at Styles",
-       "author": "Christie, Agatha, 1890-1976",
-       "lang": "en",
-       "downloads": 24963
       },
       {
        "gid": 108,
@@ -1777,32 +644,11 @@
        "downloads": 21915
       },
       {
-       "gid": 155,
-       "title": "The Moonstone",
-       "author": "Collins, Wilkie, 1824-1889",
-       "lang": "en",
-       "downloads": 21740
-      },
-      {
-       "gid": 2097,
-       "title": "The Sign of the Four",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 21668
-      },
-      {
        "gid": 70008,
        "title": "Unnatural death",
        "author": "Sayers, Dorothy L. (Dorothy Leigh), 1893-1957",
        "lang": "en",
        "downloads": 20705
-      },
-      {
-       "gid": 1155,
-       "title": "The Secret Adversary",
-       "author": "Christie, Agatha, 1890-1976",
-       "lang": "en",
-       "downloads": 20657
       },
       {
        "gid": 72824,
@@ -2213,8 +1059,618 @@
      ]
     },
     {
+     "id": "fic-detective",
+     "name": "Detective Fiction",
+     "section": "Fiction",
+     "books": [
+      {
+       "gid": 1661,
+       "title": "The Adventures of Sherlock Holmes",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 96353
+      },
+      {
+       "gid": 244,
+       "title": "A Study in Scarlet",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 37075
+      },
+      {
+       "gid": 2148,
+       "title": "The Works of Edgar Allan Poe — Volume 2",
+       "author": "Poe, Edgar Allan, 1809-1849",
+       "lang": "en",
+       "downloads": 30902
+      },
+      {
+       "gid": 61262,
+       "title": "Poirot Investigates",
+       "author": "Christie, Agatha, 1890-1976",
+       "lang": "en",
+       "downloads": 29928
+      },
+      {
+       "gid": 58866,
+       "title": "The Murder on the Links",
+       "author": "Christie, Agatha, 1890-1976",
+       "lang": "en",
+       "downloads": 29614
+      },
+      {
+       "gid": 61168,
+       "title": "The Man in the Brown Suit",
+       "author": "Christie, Agatha, 1890-1976",
+       "lang": "en",
+       "downloads": 29124
+      },
+      {
+       "gid": 58820,
+       "title": "Whose Body? A Lord Peter Wimsey Novel",
+       "author": "Sayers, Dorothy L. (Dorothy Leigh), 1893-1957",
+       "lang": "en",
+       "downloads": 27392
+      },
+      {
+       "gid": 2852,
+       "title": "The Hound of the Baskervilles",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 25500
+      },
+      {
+       "gid": 204,
+       "title": "The innocence of Father Brown",
+       "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
+       "lang": "en",
+       "downloads": 25386
+      },
+      {
+       "gid": 863,
+       "title": "The Mysterious Affair at Styles",
+       "author": "Christie, Agatha, 1890-1976",
+       "lang": "en",
+       "downloads": 24963
+      },
+      {
+       "gid": 108,
+       "title": "The Return of Sherlock Holmes",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 24396
+      },
+      {
+       "gid": 834,
+       "title": "The Memoirs of Sherlock Holmes",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 23182
+      },
+      {
+       "gid": 223,
+       "title": "The wisdom of Father Brown",
+       "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
+       "lang": "en",
+       "downloads": 22630
+      },
+      {
+       "gid": 155,
+       "title": "The Moonstone",
+       "author": "Collins, Wilkie, 1824-1889",
+       "lang": "en",
+       "downloads": 21740
+      },
+      {
+       "gid": 2097,
+       "title": "The Sign of the Four",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 21668
+      },
+      {
+       "gid": 1155,
+       "title": "The Secret Adversary",
+       "author": "Christie, Agatha, 1890-1976",
+       "lang": "en",
+       "downloads": 20657
+      },
+      {
+       "gid": 2350,
+       "title": "His last bow",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 15605
+      },
+      {
+       "gid": 1685,
+       "title": "The Mystery of the Yellow Room",
+       "author": "Leroux, Gaston, 1868-1927; Simont [Illustrator]",
+       "lang": "en",
+       "downloads": 15288
+      },
+      {
+       "gid": 1686,
+       "title": "The Secret of the Night",
+       "author": "Leroux, Gaston, 1868-1927",
+       "lang": "en",
+       "downloads": 13433
+      },
+      {
+       "gid": 20546,
+       "title": "The Hand in the Dark",
+       "author": "Rees, Arthur J. (Arthur John), 1872-1942",
+       "lang": "en",
+       "downloads": 7147
+      },
+      {
+       "gid": 3289,
+       "title": "The Valley of Fear",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 5622
+      },
+      {
+       "gid": 1872,
+       "title": "The Red House Mystery",
+       "author": "Milne, A. A. (Alan Alexander), 1882-1956",
+       "lang": "en",
+       "downloads": 4752
+      },
+      {
+       "gid": 4047,
+       "title": "The Leavenworth Case",
+       "author": "Green, Anna Katharine, 1846-1935",
+       "lang": "en",
+       "downloads": 1601
+      },
+      {
+       "gid": 28071,
+       "title": "The Red Triangle: Being Some Further Chronicles of Martin Hewitt, Investigator",
+       "author": "Morrison, Arthur, 1863-1945",
+       "lang": "en",
+       "downloads": 1529
+      },
+      {
+       "gid": 10556,
+       "title": "The Old Man in the Corner",
+       "author": "Orczy, Emmuska Orczy, Baroness, 1865-1947",
+       "lang": "en",
+       "downloads": 1294
+      },
+      {
+       "gid": 434,
+       "title": "The Circular Staircase",
+       "author": "Rinehart, Mary Roberts, 1876-1958",
+       "lang": "en",
+       "downloads": 1255
+      },
+      {
+       "gid": 20912,
+       "title": "The Daffodil Mystery",
+       "author": "Wallace, Edgar, 1875-1932",
+       "lang": "en",
+       "downloads": 1205
+      },
+      {
+       "gid": 11128,
+       "title": "The Red Thumb Mark",
+       "author": "Freeman, R. Austin (Richard Austin), 1862-1943",
+       "lang": "en",
+       "downloads": 1197
+      },
+      {
+       "gid": 2346,
+       "title": "The Adventure of the Bruce-Partington Plans",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 1179
+      },
+      {
+       "gid": 13882,
+       "title": "John Thorndyke's Cases related by Christopher Jervis and edited by R. Austin Freeman",
+       "author": "Freeman, R. Austin (Richard Austin), 1862-1943; Brock, H. M. (Henry Matthew), 1875-1960 [Illustrator]",
+       "lang": "en",
+       "downloads": 1172
+      },
+      {
+       "gid": 21530,
+       "title": "The Angel of Terror",
+       "author": "Wallace, Edgar, 1875-1932",
+       "lang": "en",
+       "downloads": 1161
+      },
+      {
+       "gid": 2347,
+       "title": "The Adventure of the Dying Detective",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 1120
+      },
+      {
+       "gid": 3336,
+       "title": "Within an Inch of His Life",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 1082
+      },
+      {
+       "gid": 2344,
+       "title": "The Adventure of the Cardboard Box",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 986
+      },
+      {
+       "gid": 2568,
+       "title": "Trent's Last Case",
+       "author": "Bentley, E. C. (Edmund Clerihew), 1875-1956",
+       "lang": "en",
+       "downloads": 970
+      },
+      {
+       "gid": 2688,
+       "title": "The Clue of the Twisted Candle",
+       "author": "Wallace, Edgar, 1875-1932",
+       "lang": "en",
+       "downloads": 966
+      },
+      {
+       "gid": 2349,
+       "title": "The Adventure of the Devil's Foot",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 933
+      },
+      {
+       "gid": 807,
+       "title": "Hunted Down: The Detective Stories of Charles Dickens",
+       "author": "Dickens, Charles, 1812-1870",
+       "lang": "en",
+       "downloads": 925
+      },
+      {
+       "gid": 305,
+       "title": "The Count's Millions",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 916
+      },
+      {
+       "gid": 11252,
+       "title": "Martin Hewitt, Investigator",
+       "author": "Morrison, Arthur, 1863-1945",
+       "lang": "en",
+       "downloads": 904
+      },
+      {
+       "gid": 2345,
+       "title": "The Adventure of the Red Circle",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 888
+      },
+      {
+       "gid": 2343,
+       "title": "The Adventure of Wisteria Lodge",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 869
+      },
+      {
+       "gid": 19369,
+       "title": "The Triumphs of Eugène Valmont",
+       "author": "Barr, Robert, 1850-1912",
+       "lang": "en",
+       "downloads": 840
+      },
+      {
+       "gid": 10373,
+       "title": "The Middle Temple Murder",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 838
+      },
+      {
+       "gid": 4604,
+       "title": "The Clique of Gold",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 836
+      },
+      {
+       "gid": 37820,
+       "title": "Chronicles of Martin Hewitt",
+       "author": "Morrison, Arthur, 1863-1945",
+       "lang": "en",
+       "downloads": 828
+      },
+      {
+       "gid": 1167,
+       "title": "A Strange Disappearance",
+       "author": "Green, Anna Katharine, 1846-1935",
+       "lang": "en",
+       "downloads": 820
+      },
+      {
+       "gid": 547,
+       "title": "Baron Trigault's Vengeance",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 817
+      },
+      {
+       "gid": 12187,
+       "title": "The Mystery of 31 New Inn",
+       "author": "Freeman, R. Austin (Richard Austin), 1862-1943",
+       "lang": "en",
+       "downloads": 815
+      },
+      {
+       "gid": 5308,
+       "title": "The Paradise Mystery",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 805
+      },
+      {
+       "gid": 34732,
+       "title": "Max Carrados",
+       "author": "Bramah, Ernest, 1868-1942",
+       "lang": "en",
+       "downloads": 790
+      },
+      {
+       "gid": 1651,
+       "title": "The Mystery of Orcival",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 785
+      },
+      {
+       "gid": 3803,
+       "title": "File No. 113",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 771
+      },
+      {
+       "gid": 3802,
+       "title": "The Lerouge Case",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 759
+      },
+      {
+       "gid": 2861,
+       "title": "The Sleuth of St. James's Square",
+       "author": "Post, Melville Davisson, 1869-1930",
+       "lang": "en",
+       "downloads": 749
+      },
+      {
+       "gid": 1748,
+       "title": "Other People's Money",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 741
+      },
+      {
+       "gid": 7884,
+       "title": "In the Fog",
+       "author": "Davis, Richard Harding, 1864-1916",
+       "lang": "en",
+       "downloads": 727
+      },
+      {
+       "gid": 11451,
+       "title": "The Rome Express",
+       "author": "Griffiths, Arthur, 1838-1908",
+       "lang": "en",
+       "downloads": 697
+      },
+      {
+       "gid": 21891,
+       "title": "The Brand of Silence: A Detective Story",
+       "author": "McCulley, Johnston, 1883-1958",
+       "lang": "en",
+       "downloads": 676
+      },
+      {
+       "gid": 2348,
+       "title": "The Disappearance of Lady Frances Carfax",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 674
+      },
+      {
+       "gid": 12932,
+       "title": "Four Max Carrados Detective Stories",
+       "author": "Bramah, Ernest, 1868-1942",
+       "lang": "en",
+       "downloads": 650
+      },
+      {
+       "gid": 17180,
+       "title": "The Riddle of the Frozen Flame",
+       "author": "Hanshew, Mary E.; Hanshew, Thomas W., 1857-1914; DeMaris, Walter, 1877-1947 [Illustrator]",
+       "lang": "en",
+       "downloads": 649
+      },
+      {
+       "gid": 19672,
+       "title": "The Holladay case",
+       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "lang": "en",
+       "downloads": 645
+      },
+      {
+       "gid": 4071,
+       "title": "Monsieur Lecoq, v. 1",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 640
+      },
+      {
+       "gid": 18761,
+       "title": "The Circular Study",
+       "author": "Green, Anna Katharine, 1846-1935",
+       "lang": "en",
+       "downloads": 636
+      },
+      {
+       "gid": 2451,
+       "title": "Caught in the Net",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 620
+      },
+      {
+       "gid": 9902,
+       "title": "The Middle of Things",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 616
+      },
+      {
+       "gid": 2736,
+       "title": "The Champdoce Mystery",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 608
+      },
+      {
+       "gid": 17763,
+       "title": "The Mystery of the Hasty Arrow",
+       "author": "Green, Anna Katharine, 1846-1935",
+       "lang": "en",
+       "downloads": 607
+      },
+      {
+       "gid": 9297,
+       "title": "The Orange-Yellow Diamond",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 595
+      },
+      {
+       "gid": 20494,
+       "title": "The Shrieking Pit",
+       "author": "Rees, Arthur J. (Arthur John), 1872-1942",
+       "lang": "en",
+       "downloads": 595
+      },
+      {
+       "gid": 4002,
+       "title": "The Honor of the Name",
+       "author": "Gaboriau, Emile, 1832-1873",
+       "lang": "en",
+       "downloads": 594
+      },
+      {
+       "gid": 35247,
+       "title": "That Affair at Elizabeth",
+       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "lang": "en",
+       "downloads": 586
+      },
+      {
+       "gid": 13372,
+       "title": "The Gloved Hand",
+       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "lang": "en",
+       "downloads": 581
+      },
+      {
+       "gid": 35304,
+       "title": "The Last Stroke: A Detective Story",
+       "author": "Lynch, Lawrence L.",
+       "lang": "en",
+       "downloads": 580
+      },
+      {
+       "gid": 20630,
+       "title": "The Borough Treasurer",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 529
+      },
+      {
+       "gid": 12509,
+       "title": "The Moon Rock",
+       "author": "Rees, Arthur J. (Arthur John), 1872-1942",
+       "lang": "en",
+       "downloads": 522
+      },
+      {
+       "gid": 20559,
+       "title": "R. Holmes & Co. Being the Remarkable Adventures of Raffles Holmes, Esq., Detective and Amateur Cracksman by Birth",
+       "author": "Bangs, John Kendrick, 1862-1922",
+       "lang": "en",
+       "downloads": 522
+      },
+      {
+       "gid": 12239,
+       "title": "Dead Men's Money",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 518
+      },
+      {
+       "gid": 10443,
+       "title": "The Rayner-Slade Amalgamation",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 514
+      },
+      {
+       "gid": 16339,
+       "title": "The Passenger from Calais",
+       "author": "Griffiths, Arthur, 1838-1908",
+       "lang": "en",
+       "downloads": 499
+      },
+      {
+       "gid": 9807,
+       "title": "Scarhaven Keep",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 463
+      },
+      {
+       "gid": 14332,
+       "title": "Cleek: the Man of the Forty Faces",
+       "author": "Hanshew, Thomas W., 1857-1914",
+       "lang": "en",
+       "downloads": 461
+      },
+      {
+       "gid": 9834,
+       "title": "The Talleyrand Maxim",
+       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "lang": "en",
+       "downloads": 449
+      },
+      {
+       "gid": 10067,
+       "title": "The Mystery of the Boule Cabinet: A Detective Story",
+       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "lang": "en",
+       "downloads": 421
+      },
+      {
+       "gid": 9746,
+       "title": "The Ashiel mystery",
+       "author": "Bryce, Marion",
+       "lang": "en",
+       "downloads": 418
+      }
+     ]
+    },
+    {
      "id": "fic-romance",
      "name": "Romance",
+     "section": "Fiction",
      "books": [
       {
        "gid": 1342,
@@ -2921,6 +2377,7 @@
     {
      "id": "fic-adventure",
      "name": "Adventure",
+     "section": "Fiction",
      "books": [
       {
        "gid": 2701,
@@ -3627,6 +3084,7 @@
     {
      "id": "fic-short",
      "name": "Short Stories",
+     "section": "Fiction",
      "books": [
       {
        "gid": 1661,
@@ -4331,714 +3789,9 @@
      ]
     },
     {
-     "id": "fic-sff",
-     "name": "Science Fiction & Fantasy",
-     "books": [
-      {
-       "gid": 84,
-       "title": "Frankenstein; or, The modern Prometheus",
-       "author": "Shelley, Mary Wollstonecraft, 1797-1851",
-       "lang": "en",
-       "downloads": 182729
-      },
-      {
-       "gid": 345,
-       "title": "Dracula",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 78131
-      },
-      {
-       "gid": 55,
-       "title": "The Wonderful Wizard of Oz",
-       "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
-       "lang": "en",
-       "downloads": 38574
-      },
-      {
-       "gid": 8492,
-       "title": "The King in Yellow",
-       "author": "Chambers, Robert W. (Robert William), 1865-1933",
-       "lang": "en",
-       "downloads": 33392
-      },
-      {
-       "gid": 68283,
-       "title": "The call of Cthulhu",
-       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937",
-       "lang": "en",
-       "downloads": 29992
-      },
-      {
-       "gid": 35,
-       "title": "The Time Machine",
-       "author": "Wells, H. G. (Herbert George), 1866-1946",
-       "lang": "en",
-       "downloads": 27738
-      },
-      {
-       "gid": 70652,
-       "title": "At the mountains of madness",
-       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937; Brown, Howard V., 1878-1945 [Illustrator]",
-       "lang": "en",
-       "downloads": 23727
-      },
-      {
-       "gid": 10007,
-       "title": "Carmilla",
-       "author": "Le Fanu, Joseph Sheridan, 1814-1873",
-       "lang": "en",
-       "downloads": 23320
-      },
-      {
-       "gid": 829,
-       "title": "Gulliver's Travels into Several Remote Nations of the World",
-       "author": "Swift, Jonathan, 1667-1745",
-       "lang": "en",
-       "downloads": 18824
-      },
-      {
-       "gid": 36,
-       "title": "The war of the worlds",
-       "author": "Wells, H. G. (Herbert George), 1866-1946",
-       "lang": "en",
-       "downloads": 17678
-      },
-      {
-       "gid": 72,
-       "title": "Thuvia, maid of Mars",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 17092
-      },
-      {
-       "gid": 1514,
-       "title": "A Midsummer Night's Dream",
-       "author": "Shakespeare, William, 1564-1616",
-       "lang": "en",
-       "downloads": 16224
-      },
-      {
-       "gid": 164,
-       "title": "Twenty Thousand Leagues under the Sea",
-       "author": "Verne, Jules, 1828-1905",
-       "lang": "en",
-       "downloads": 15583
-      },
-      {
-       "gid": 18857,
-       "title": "A Journey to the Centre of the Earth",
-       "author": "Verne, Jules, 1828-1905",
-       "lang": "en",
-       "downloads": 13953
-      },
-      {
-       "gid": 86,
-       "title": "A Connecticut Yankee in King Arthur's Court",
-       "author": "Twain, Mark, 1835-1910",
-       "lang": "en",
-       "downloads": 12657
-      },
-      {
-       "gid": 22541,
-       "title": "The Misplaced Battleship",
-       "author": "Harrison, Harry, 1925-2012; Schoenherr, John, 1935-2010 [Illustrator]",
-       "lang": "en",
-       "downloads": 12574
-      },
-      {
-       "gid": 19476,
-       "title": "A Honeymoon in Space",
-       "author": "Griffith, George Chetwynd, 1857-1906",
-       "lang": "en",
-       "downloads": 12257
-      },
-      {
-       "gid": 1250,
-       "title": "Anthem",
-       "author": "Rand, Ayn, 1905-1982",
-       "lang": "en",
-       "downloads": 11248
-      },
-      {
-       "gid": 62,
-       "title": "A princess of Mars",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 11211
-      },
-      {
-       "gid": 5230,
-       "title": "The Invisible Man: A Grotesque Romance",
-       "author": "Wells, H. G. (Herbert George), 1866-1946",
-       "lang": "en",
-       "downloads": 10964
-      },
-      {
-       "gid": 40284,
-       "title": "The Sex Life of the Gods",
-       "author": "Knerr, M. E. (Michael E.), 1936-1999",
-       "lang": "en",
-       "downloads": 9723
-      },
-      {
-       "gid": 17157,
-       "title": "Gulliver's Travels into Several Remote Regions of the World",
-       "author": "Swift, Jonathan, 1667-1745; Balliet, Thomas M. (Thomas Minard), 1852-1942 [Editor]",
-       "lang": "en",
-       "downloads": 9605
-      },
-      {
-       "gid": 6087,
-       "title": "The Vampyre; a Tale",
-       "author": "Polidori, John William, 1795-1821",
-       "lang": "en",
-       "downloads": 9330
-      },
-      {
-       "gid": 1268,
-       "title": "The Mysterious Island",
-       "author": "Verne, Jules, 1828-1905; Kingston, Agnes Kinloch, 1823-1913 [Translator]",
-       "lang": "en",
-       "downloads": 9034
-      },
-      {
-       "gid": 139,
-       "title": "The Lost World",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 9009
-      },
-      {
-       "gid": 77092,
-       "title": "She who sleeps",
-       "author": "Rohmer, Sax, 1883-1959",
-       "lang": "en",
-       "downloads": 8258
-      },
-      {
-       "gid": 18151,
-       "title": "Time Crime",
-       "author": "Piper, H. Beam, 1904-1964; Freas, Kelly, 1922-2005 [Illustrator]",
-       "lang": "en",
-       "downloads": 7826
-      },
-      {
-       "gid": 1164,
-       "title": "The iron heel",
-       "author": "London, Jack, 1876-1916",
-       "lang": "en",
-       "downloads": 7811
-      },
-      {
-       "gid": 64,
-       "title": "The gods of Mars",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 7582
-      },
-      {
-       "gid": 932,
-       "title": "The Fall of the House of Usher",
-       "author": "Poe, Edgar Allan, 1809-1849",
-       "lang": "en",
-       "downloads": 7384
-      },
-      {
-       "gid": 60976,
-       "title": "Rip Van Winkle",
-       "author": "Irving, Washington, 1783-1859; Rackham, Arthur, 1867-1939 [Illustrator]",
-       "lang": "en",
-       "downloads": 7316
-      },
-      {
-       "gid": 26563,
-       "title": "The Crack of Doom",
-       "author": "Cromie, Robert, 1856-1907",
-       "lang": "en",
-       "downloads": 7301
-      },
-      {
-       "gid": 20121,
-       "title": "Lone Star Planet",
-       "author": "Piper, H. Beam, 1904-1964; McGuire, John J. (John Joseph), 1917-1981",
-       "lang": "en",
-       "downloads": 7297
-      },
-      {
-       "gid": 68,
-       "title": "The warlord of Mars",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 7274
-      },
-      {
-       "gid": 159,
-       "title": "The island of Doctor Moreau",
-       "author": "Wells, H. G. (Herbert George), 1866-1946",
-       "lang": "en",
-       "downloads": 7134
-      },
-      {
-       "gid": 50133,
-       "title": "The Dunwich horror",
-       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937",
-       "lang": "en",
-       "downloads": 7002
-      },
-      {
-       "gid": 24149,
-       "title": "The Ambulance Made Two Trips",
-       "author": "Leinster, Murray, 1896-1975; Schoenherr, John, 1935-2010 [Illustrator]",
-       "lang": "en",
-       "downloads": 6868
-      },
-      {
-       "gid": 23599,
-       "title": "The Big Fix",
-       "author": "Smith, George O. (George Oliver), 1911-1981; Bernklau [Illustrator]",
-       "lang": "en",
-       "downloads": 6782
-      },
-      {
-       "gid": 83,
-       "title": "From the Earth to the moon; and, round the moon",
-       "author": "Verne, Jules, 1828-1905",
-       "lang": "en",
-       "downloads": 6770
-      },
-      {
-       "gid": 57426,
-       "title": "Baron Trump's Marvellous Underground Journey",
-       "author": "Lockwood, Ingersoll, 1841-1918; Johnson, Charles Howard, 1868?-1896 [Illustrator]",
-       "lang": "en",
-       "downloads": 6446
-      },
-      {
-       "gid": 551,
-       "title": "The Land That Time Forgot",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 6413
-      },
-      {
-       "gid": 1153,
-       "title": "The Chessmen of Mars",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 6370
-      },
-      {
-       "gid": 23731,
-       "title": "A Martian Odyssey",
-       "author": "Weinbaum, Stanley G. (Stanley Grauman), 1902-1935",
-       "lang": "en",
-       "downloads": 6315
-      },
-      {
-       "gid": 30434,
-       "title": "Occasion ... for Disaster",
-       "author": "Garrett, Randall, 1927-1987; Janifer, Laurence M., 1933-2002; Van Dongen, H. R., 1920-2010 [Illustrator]",
-       "lang": "en",
-       "downloads": 6173
-      },
-      {
-       "gid": 76411,
-       "title": "The last dragon",
-       "author": "Totheroh, Dan, 1894-1976; Eadie, Eleanor Osborn, 1880-1956 [Illustrator]",
-       "lang": "en",
-       "downloads": 6139
-      },
-      {
-       "gid": 149,
-       "title": "The Lost Continent",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 6111
-      },
-      {
-       "gid": 32759,
-       "title": "Red Nails",
-       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
-       "lang": "en",
-       "downloads": 6046
-      },
-      {
-       "gid": 76391,
-       "title": "Fairy dreams",
-       "author": "Austin, Jane G. (Jane Goodwin), 1831-1894; Billings, Hammatt, 1818-1874 [Illustrator]",
-       "lang": "en",
-       "downloads": 5912
-      },
-      {
-       "gid": 16921,
-       "title": "Plague Ship",
-       "author": "Norton, Andre, 1912-2005",
-       "lang": "en",
-       "downloads": 5816
-      },
-      {
-       "gid": 21638,
-       "title": "Tarrano the Conqueror",
-       "author": "Cummings, Ray, 1887-1957",
-       "lang": "en",
-       "downloads": 5813
-      },
-      {
-       "gid": 23790,
-       "title": "The Ultimate Weapon",
-       "author": "Campbell, John W., Jr. (John Wood), 1910-1971",
-       "lang": "en",
-       "downloads": 5724
-      },
-      {
-       "gid": 32,
-       "title": "Herland",
-       "author": "Gilman, Charlotte Perkins, 1860-1935",
-       "lang": "en",
-       "downloads": 5715
-      },
-      {
-       "gid": 1353,
-       "title": "Off on a Comet! a Journey through Planetary Space",
-       "author": "Verne, Jules, 1828-1905",
-       "lang": "en",
-       "downloads": 5690
-      },
-      {
-       "gid": 50290,
-       "title": "Space Station 1",
-       "author": "Long, Frank Belknap, 1903-1994",
-       "lang": "en",
-       "downloads": 5550
-      },
-      {
-       "gid": 76503,
-       "title": "The man who mastered time",
-       "author": "Cummings, Ray, 1887-1957; Valigursky, Ed, 1926-2009 [Illustrator]",
-       "lang": "en",
-       "downloads": 5538
-      },
-      {
-       "gid": 553,
-       "title": "Out of Time's Abyss",
-       "author": "Burroughs, Edgar Rice, 1875-1950",
-       "lang": "en",
-       "downloads": 5471
-      },
-      {
-       "gid": 76352,
-       "title": "The world below",
-       "author": "Wright, S. Fowler (Sydney Fowler), 1874-1965",
-       "lang": "en",
-       "downloads": 5374
-      },
-      {
-       "gid": 20782,
-       "title": "Triplanetary",
-       "author": "Smith, E. E. (Edward Elmer), 1890-1965",
-       "lang": "en",
-       "downloads": 5331
-      },
-      {
-       "gid": 19027,
-       "title": "The Revolt on Venus",
-       "author": "Rockwell, Carey; Ley, Willy, 1906-1969 [Contributor]; Glanzman, Louis [Illustrator]",
-       "lang": "en",
-       "downloads": 5294
-      },
-      {
-       "gid": 76261,
-       "title": "Tales of terror",
-       "author": "Donovan, Dick, 1843-1934",
-       "lang": "en",
-       "downloads": 5267
-      },
-      {
-       "gid": 76358,
-       "title": "They return at evening",
-       "author": "Wakefield, Herbert Russell, 1888-1964",
-       "lang": "en",
-       "downloads": 5252
-      },
-      {
-       "gid": 24375,
-       "title": "Wizard",
-       "author": "Janifer, Laurence M., 1933-2002; Schoenherr, John, 1935-2010 [Illustrator]",
-       "lang": "en",
-       "downloads": 5175
-      },
-      {
-       "gid": 61963,
-       "title": "We",
-       "author": "Zamiatin, Evgenii Ivanovich, 1884-1937; Zilboorg, Gregory, 1890-1959 [Translator]",
-       "lang": "en",
-       "downloads": 5167
-      },
-      {
-       "gid": 21279,
-       "title": "2 B R 0 2 B",
-       "author": "Vonnegut, Kurt, 1922-2007",
-       "lang": "en",
-       "downloads": 5164
-      },
-      {
-       "gid": 77097,
-       "title": "The magic ring, Vol. 1 (of 3)",
-       "author": "La Motte-Fouqué, Friedrich Heinrich Karl, Freiherr de, 1777-1843; Gillies, R. P. (Robert Pearse), 1788-1858 [Translator]",
-       "lang": "en",
-       "downloads": 5163
-      },
-      {
-       "gid": 76222,
-       "title": "The valley of eyes unseen",
-       "author": "Collins, Gilbert, 1890-1960",
-       "lang": "en",
-       "downloads": 5117
-      },
-      {
-       "gid": 20796,
-       "title": "The Colors of Space",
-       "author": "Bradley, Marion Zimmer, 1930-1999",
-       "lang": "en",
-       "downloads": 5112
-      },
-      {
-       "gid": 76871,
-       "title": "The magnificent possession",
-       "author": "Asimov, Isaac, 1920-1992; Meskin, Mort, 1916-1995 [Illustrator]; Scott, John Walter, 1907-1987 [Illustrator]",
-       "lang": "en",
-       "downloads": 5081
-      },
-      {
-       "gid": 42243,
-       "title": "The Hour of the Dragon",
-       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
-       "lang": "en",
-       "downloads": 5078
-      },
-      {
-       "gid": 201,
-       "title": "Flatland: A Romance of Many Dimensions",
-       "author": "Abbott, Edwin Abbott, 1838-1926",
-       "lang": "en",
-       "downloads": 5065
-      },
-      {
-       "gid": 59112,
-       "title": "R.U.R. (Rossum's Universal Robots) A Fantastic Melodrama in Three Acts and an Epilogue",
-       "author": "Čapek, Karel, 1890-1938; Playfair, Nigel, 1874-1934 [Translator]; Selver, Paul, 1888-1970 [Translator]",
-       "lang": "en",
-       "downloads": 5057
-      },
-      {
-       "gid": 76857,
-       "title": "I, Mars",
-       "author": "Bradbury, Ray, 1920-2012; Bok, Hannes, 1914-1964 [Illustrator]; Stevens, Lawrence Sterne, 1886-1960 [Illustrator]",
-       "lang": "en",
-       "downloads": 5032
-      },
-      {
-       "gid": 76435,
-       "title": "The black kiss",
-       "author": "Bloch, Robert, 1917-1994; Kuttner, Henry, 1915-1958; Brundage, Margaret, 1900-1976 [Illustrator]; Finlay, Virgil, 1914-1971 [Illustrator]",
-       "lang": "en",
-       "downloads": 4976
-      },
-      {
-       "gid": 76539,
-       "title": "The life-eater",
-       "author": "Ward, Harold, 1879-1950; Brundage, Margaret, 1900-1976 [Illustrator]; Napoli, Vincent, 1907-1981 [Illustrator]",
-       "lang": "en",
-       "downloads": 4962
-      },
-      {
-       "gid": 76247,
-       "title": "How joy was found",
-       "author": "Hutchison, Isobel Wylie, 1889-1982; MacDougall, J. (James), 1833-1906 [Contributor]",
-       "lang": "en",
-       "downloads": 4961
-      },
-      {
-       "gid": 33644,
-       "title": "The Secret of the Ninth Planet",
-       "author": "Wollheim, Donald A., 1914-1990",
-       "lang": "en",
-       "downloads": 4960
-      },
-      {
-       "gid": 27609,
-       "title": "The Undersea Tube",
-       "author": "Hansen, L. Taylor (Lucile Taylor), 1897-1976; Wessolowski, Hans Waldemar, 1894?-1948 [Illustrator]",
-       "lang": "en",
-       "downloads": 4947
-      },
-      {
-       "gid": 76533,
-       "title": "Limanora",
-       "author": "Sweven, Godfrey, 1845-1935",
-       "lang": "en",
-       "downloads": 4898
-      },
-      {
-       "gid": 76603,
-       "title": "Karl Grier",
-       "author": "Tracy, Louis, 1863-1928",
-       "lang": "en",
-       "downloads": 4878
-      },
-      {
-       "gid": 76442,
-       "title": "The dryad",
-       "author": "McCarthy, Justin H. (Justin Huntly), 1860-1936",
-       "lang": "en",
-       "downloads": 4824
-      },
-      {
-       "gid": 42259,
-       "title": "The People of the Black Circle",
-       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
-       "lang": "en",
-       "downloads": 4800
-      },
-      {
-       "gid": 76409,
-       "title": "Marigold",
-       "author": "Allonby, Edith, 1875-1905",
-       "lang": "en",
-       "downloads": 4795
-      },
-      {
-       "gid": 76849,
-       "title": "This star shall be free",
-       "author": "Leinster, Murray, 1896-1975; Stevens, Lawrence Sterne, 1886-1960 [Illustrator]",
-       "lang": "en",
-       "downloads": 4745
-      },
-      {
-       "gid": 22342,
-       "title": "Supermind",
-       "author": "Garrett, Randall, 1927-1987; Janifer, Laurence M., 1933-2002",
-       "lang": "en",
-       "downloads": 4726
-      },
-      {
-       "gid": 42188,
-       "title": "Shadows in the Moonlight",
-       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
-       "lang": "en",
-       "downloads": 4711
-      },
-      {
-       "gid": 28885,
-       "title": "Alice's Adventures in Wonderland Illustrated by Arthur Rackham. With a Proem by Austin Dobson",
-       "author": "Carroll, Lewis, 1832-1898; Dobson, Austin, 1840-1921 [Contributor]; Rackham, Arthur, 1867-1939 [Illustrator]",
-       "lang": "en",
-       "downloads": 4691
-      },
-      {
-       "gid": 42196,
-       "title": "Shadows in Zamboula",
-       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
-       "lang": "en",
-       "downloads": 4620
-      },
-      {
-       "gid": 32398,
-       "title": "Brood of the Dark Moon (A Sequel to \"Dark Moon\")",
-       "author": "Diffin, Charles Willard, 1884-1966",
-       "lang": "en",
-       "downloads": 4616
-      },
-      {
-       "gid": 76764,
-       "title": "Landscape with figures",
-       "author": "Fraser, Ronald, 1888-1974",
-       "lang": "en",
-       "downloads": 4604
-      },
-      {
-       "gid": 77109,
-       "title": "A journey to the world under-ground",
-       "author": "Holberg, Ludvig, 1684-1754",
-       "lang": "en",
-       "downloads": 4542
-      },
-      {
-       "gid": 11438,
-       "title": "The Willows",
-       "author": "Blackwood, Algernon, 1869-1951",
-       "lang": "en",
-       "downloads": 4536
-      },
-      {
-       "gid": 76998,
-       "title": "Jonah",
-       "author": "Nathan, Robert, 1894-1985",
-       "lang": "en",
-       "downloads": 4453
-      },
-      {
-       "gid": 76737,
-       "title": "The sociable ghost",
-       "author": "Harper, Olive, 1842-1915; McIlvaine, Thomas, 1854-1933 [Illustrator]; Schwartz, A. W. [Illustrator]",
-       "lang": "en",
-       "downloads": 4443
-      },
-      {
-       "gid": 76899,
-       "title": "The man who saved New York",
-       "author": "Cummings, Ray, 1887-1957; Luros, Milton, 1911-1999 [Illustrator]",
-       "lang": "en",
-       "downloads": 4442
-      },
-      {
-       "gid": 76929,
-       "title": "Maugis, ye sorcerer",
-       "author": "Gilhooley, Lord, 1850-1913",
-       "lang": "en",
-       "downloads": 4429
-      },
-      {
-       "gid": 76960,
-       "title": "The corsair; or, the little fairy at the bottom of the sea",
-       "author": "Brough, William, 1826-1870",
-       "lang": "en",
-       "downloads": 4425
-      },
-      {
-       "gid": 76950,
-       "title": "The ghost of Charlotte Cray, and other stories",
-       "author": "Marryat, Florence, 1833-1899",
-       "lang": "en",
-       "downloads": 4403
-      },
-      {
-       "gid": 2885,
-       "title": "The House of the Wolfings A Tale of the House of the Wolfings and All the Kindreds of the Mark Written in Prose and in Verse",
-       "author": "Morris, William, 1834-1896",
-       "lang": "en",
-       "downloads": 4374
-      },
-      {
-       "gid": 76858,
-       "title": "The spirit-rapper; an autobiography",
-       "author": "Brownson, Orestes Augustus, 1803-1876",
-       "lang": "en",
-       "downloads": 4351
-      },
-      {
-       "gid": 2825,
-       "title": "Undine",
-       "author": "La Motte-Fouqué, Friedrich Heinrich Karl, Freiherr de, 1777-1843; Yonge, Charlotte M. (Charlotte Mary), 1823-1901 [Author of introduction, etc.]",
-       "lang": "en",
-       "downloads": 4333
-      }
-     ]
-    },
-    {
      "id": "fic-historical",
      "name": "Historical Fiction",
+     "section": "Fiction",
      "books": [
       {
        "gid": 145,
@@ -5745,6 +4498,7 @@
     {
      "id": "fic-gothic",
      "name": "Gothic Fiction",
+     "section": "Fiction",
      "books": [
       {
        "gid": 84,
@@ -5924,22 +4678,30 @@
      ]
     },
     {
-     "id": "fic-detective",
-     "name": "Detective Fiction",
+     "id": "fic-horror",
+     "name": "Horror",
+     "section": "Fiction",
      "books": [
       {
-       "gid": 1661,
-       "title": "The Adventures of Sherlock Holmes",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 345,
+       "title": "Dracula",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 96353
+       "downloads": 78131
       },
       {
-       "gid": 244,
-       "title": "A Study in Scarlet",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 43,
+       "title": "The strange case of Dr. Jekyll and Mr. Hyde",
+       "author": "Stevenson, Robert Louis, 1850-1894",
        "lang": "en",
-       "downloads": 37075
+       "downloads": 71859
+      },
+      {
+       "gid": 8492,
+       "title": "The King in Yellow",
+       "author": "Chambers, Robert W. (Robert William), 1865-1933",
+       "lang": "en",
+       "downloads": 33392
       },
       {
        "gid": 2148,
@@ -5949,591 +4711,935 @@
        "downloads": 30902
       },
       {
-       "gid": 61262,
-       "title": "Poirot Investigates",
-       "author": "Christie, Agatha, 1890-1976",
+       "gid": 209,
+       "title": "The Turn of the Screw",
+       "author": "James, Henry, 1843-1916",
        "lang": "en",
-       "downloads": 29928
+       "downloads": 29238
       },
       {
-       "gid": 58866,
-       "title": "The Murder on the Links",
-       "author": "Christie, Agatha, 1890-1976",
+       "gid": 10007,
+       "title": "Carmilla",
+       "author": "Le Fanu, Joseph Sheridan, 1814-1873",
        "lang": "en",
-       "downloads": 29614
+       "downloads": 23320
       },
       {
-       "gid": 61168,
-       "title": "The Man in the Brown Suit",
-       "author": "Christie, Agatha, 1890-1976",
+       "gid": 389,
+       "title": "The Great God Pan",
+       "author": "Machen, Arthur, 1863-1947",
        "lang": "en",
-       "downloads": 29124
+       "downloads": 18963
       },
       {
-       "gid": 58820,
-       "title": "Whose Body? A Lord Peter Wimsey Novel",
-       "author": "Sayers, Dorothy L. (Dorothy Leigh), 1893-1957",
+       "gid": 6087,
+       "title": "The Vampyre; a Tale",
+       "author": "Polidori, John William, 1795-1821",
        "lang": "en",
-       "downloads": 27392
+       "downloads": 9330
       },
       {
-       "gid": 2852,
-       "title": "The Hound of the Baskervilles",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 53419,
+       "title": "Twenty-Five Ghost Stories",
+       "author": "Holland, W. Bob (West Bob), 1868-1932 [Editor]",
        "lang": "en",
-       "downloads": 25500
+       "downloads": 7772
       },
       {
-       "gid": 204,
-       "title": "The innocence of Father Brown",
-       "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
+       "gid": 23172,
+       "title": "The Damned Thing 1898, From \"In the Midst of Life\"",
+       "author": "Bierce, Ambrose, 1842-1914?",
        "lang": "en",
-       "downloads": 25386
+       "downloads": 7761
       },
       {
-       "gid": 863,
-       "title": "The Mysterious Affair at Styles",
-       "author": "Christie, Agatha, 1890-1976",
+       "gid": 31469,
+       "title": "The Shunned House",
+       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937",
        "lang": "en",
-       "downloads": 24963
+       "downloads": 7611
       },
       {
-       "gid": 108,
-       "title": "The Return of Sherlock Holmes",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 375,
+       "title": "An Occurrence at Owl Creek Bridge",
+       "author": "Bierce, Ambrose, 1842-1914?",
        "lang": "en",
-       "downloads": 24396
+       "downloads": 6942
       },
       {
-       "gid": 834,
-       "title": "The Memoirs of Sherlock Holmes",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 10897,
+       "title": "The Wendigo",
+       "author": "Blackwood, Algernon, 1869-1951",
        "lang": "en",
-       "downloads": 23182
+       "downloads": 5320
       },
       {
-       "gid": 223,
-       "title": "The wisdom of Father Brown",
-       "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
+       "gid": 8486,
+       "title": "Ghost Stories of an Antiquary",
+       "author": "James, M. R. (Montague Rhodes), 1862-1936",
        "lang": "en",
-       "downloads": 22630
+       "downloads": 4898
       },
       {
-       "gid": 155,
-       "title": "The Moonstone",
-       "author": "Collins, Wilkie, 1824-1889",
+       "gid": 11438,
+       "title": "The Willows",
+       "author": "Blackwood, Algernon, 1869-1951",
        "lang": "en",
-       "downloads": 21740
+       "downloads": 4536
       },
       {
-       "gid": 2097,
-       "title": "The Sign of the Four",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 10002,
+       "title": "The House on the Borderland",
+       "author": "Hodgson, William Hope, 1877-1918",
        "lang": "en",
-       "downloads": 21668
+       "downloads": 4219
       },
       {
-       "gid": 1155,
-       "title": "The Secret Adversary",
-       "author": "Christie, Agatha, 1890-1976",
+       "gid": 14833,
+       "title": "Varney the vampyre; or, the feast of blood",
+       "author": "Prest, Thomas Peckett, 1810-1859; Rymer, James Malcolm, 1814?-1884",
        "lang": "en",
-       "downloads": 20657
+       "downloads": 3741
       },
       {
-       "gid": 2350,
-       "title": "His last bow",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 10150,
+       "title": "Dracula's Guest",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 15605
+       "downloads": 3502
       },
       {
-       "gid": 1685,
-       "title": "The Mystery of the Yellow Room",
-       "author": "Leroux, Gaston, 1868-1927; Simont [Illustrator]",
+       "gid": 10662,
+       "title": "The Night Land",
+       "author": "Hodgson, William Hope, 1877-1918",
        "lang": "en",
-       "downloads": 15288
+       "downloads": 2438
       },
       {
-       "gid": 1686,
-       "title": "The Secret of the Night",
-       "author": "Leroux, Gaston, 1868-1927",
+       "gid": 25016,
+       "title": "The House of Souls",
+       "author": "Machen, Arthur, 1863-1947",
        "lang": "en",
-       "downloads": 13433
+       "downloads": 1867
       },
       {
-       "gid": 20546,
-       "title": "The Hand in the Dark",
-       "author": "Rees, Arthur J. (Arthur John), 1872-1942",
+       "gid": 3781,
+       "title": "The Jewel of Seven Stars",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 7147
+       "downloads": 1654
       },
       {
-       "gid": 3289,
-       "title": "The Valley of Fear",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 1188,
+       "title": "The Lair of the White Worm",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 5622
+       "downloads": 1534
       },
       {
-       "gid": 1872,
-       "title": "The Red House Mystery",
-       "author": "Milne, A. A. (Alan Alexander), 1882-1956",
+       "gid": 20387,
+       "title": "A Thin Ghost and Others",
+       "author": "James, M. R. (Montague Rhodes), 1862-1936",
        "lang": "en",
-       "downloads": 4752
+       "downloads": 1059
       },
       {
-       "gid": 4047,
-       "title": "The Leavenworth Case",
-       "author": "Green, Anna Katharine, 1846-1935",
+       "gid": 10542,
+       "title": "The Boats of the \"Glen Carrig\" Being an account of their Adventures in the Strange places of the Earth, after the foundering of the good ship Glen Carrig through striking upon a hidden rock in the unknown seas to the Southward; as told by John Winterstraw, Gent., to his son James Winterstraw, in the year 1757, and by him committed very properly and legibly to manuscript",
+       "author": "Hodgson, William Hope, 1877-1918",
        "lang": "en",
-       "downloads": 1601
+       "downloads": 1038
       },
       {
-       "gid": 28071,
-       "title": "The Red Triangle: Being Some Further Chronicles of Martin Hewitt, Investigator",
-       "author": "Morrison, Arthur, 1863-1945",
+       "gid": 3095,
+       "title": "The Lady of the Shroud",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 1529
+       "downloads": 989
       },
       {
-       "gid": 10556,
-       "title": "The Old Man in the Corner",
-       "author": "Orczy, Emmuska Orczy, Baroness, 1865-1947",
+       "gid": 14168,
+       "title": "Widdershins",
+       "author": "Onions, Oliver, 1873-1961",
        "lang": "en",
-       "downloads": 1294
+       "downloads": 958
       },
       {
-       "gid": 434,
-       "title": "The Circular Staircase",
-       "author": "Rinehart, Mary Roberts, 1876-1958",
+       "gid": 16726,
+       "title": "Four Weird Tales",
+       "author": "Blackwood, Algernon, 1869-1951",
        "lang": "en",
-       "downloads": 1255
+       "downloads": 952
       },
       {
-       "gid": 20912,
-       "title": "The Daffodil Mystery",
-       "author": "Wallace, Edgar, 1875-1932",
+       "gid": 20034,
+       "title": "Scottish Ghost Stories",
+       "author": "O'Donnell, Elliott, 1872-1965",
        "lang": "en",
-       "downloads": 1205
+       "downloads": 930
       },
       {
-       "gid": 11128,
-       "title": "The Red Thumb Mark",
-       "author": "Freeman, R. Austin (Richard Austin), 1862-1943",
-       "lang": "en",
-       "downloads": 1197
-      },
-      {
-       "gid": 2346,
-       "title": "The Adventure of the Bruce-Partington Plans",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 1179
-      },
-      {
-       "gid": 13882,
-       "title": "John Thorndyke's Cases related by Christopher Jervis and edited by R. Austin Freeman",
-       "author": "Freeman, R. Austin (Richard Austin), 1862-1943; Brock, H. M. (Henry Matthew), 1875-1960 [Illustrator]",
-       "lang": "en",
-       "downloads": 1172
-      },
-      {
-       "gid": 21530,
-       "title": "The Angel of Terror",
-       "author": "Wallace, Edgar, 1875-1932",
-       "lang": "en",
-       "downloads": 1161
-      },
-      {
-       "gid": 2347,
-       "title": "The Adventure of the Dying Detective",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 1120
-      },
-      {
-       "gid": 3336,
-       "title": "Within an Inch of His Life",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 1082
-      },
-      {
-       "gid": 2344,
-       "title": "The Adventure of the Cardboard Box",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 986
-      },
-      {
-       "gid": 2568,
-       "title": "Trent's Last Case",
-       "author": "Bentley, E. C. (Edmund Clerihew), 1875-1956",
-       "lang": "en",
-       "downloads": 970
-      },
-      {
-       "gid": 2688,
-       "title": "The Clue of the Twisted Candle",
-       "author": "Wallace, Edgar, 1875-1932",
-       "lang": "en",
-       "downloads": 966
-      },
-      {
-       "gid": 2349,
-       "title": "The Adventure of the Devil's Foot",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 933
-      },
-      {
-       "gid": 807,
-       "title": "Hunted Down: The Detective Stories of Charles Dickens",
-       "author": "Dickens, Charles, 1812-1870",
-       "lang": "en",
-       "downloads": 925
-      },
-      {
-       "gid": 305,
-       "title": "The Count's Millions",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 916
-      },
-      {
-       "gid": 11252,
-       "title": "Martin Hewitt, Investigator",
-       "author": "Morrison, Arthur, 1863-1945",
+       "gid": 14107,
+       "title": "The Lost Stradivarius",
+       "author": "Falkner, John Meade, 1858-1932",
        "lang": "en",
        "downloads": 904
       },
       {
-       "gid": 2345,
-       "title": "The Adventure of the Red Circle",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 14154,
+       "title": "The Tale of Terror: A Study of the Gothic Romance",
+       "author": "Birkhead, Edith, 1889-1951",
        "lang": "en",
-       "downloads": 888
+       "downloads": 901
       },
       {
-       "gid": 2343,
-       "title": "The Adventure of Wisteria Lodge",
-       "author": "Doyle, Arthur Conan, 1859-1930",
+       "gid": 18233,
+       "title": "Animal Ghosts; Or, Animal Hauntings and the Hereafter",
+       "author": "O'Donnell, Elliott, 1872-1965",
        "lang": "en",
-       "downloads": 869
+       "downloads": 831
       },
       {
-       "gid": 19369,
-       "title": "The Triumphs of Eugène Valmont",
-       "author": "Barr, Robert, 1850-1912",
+       "gid": 2520,
+       "title": "The Man",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 840
+       "downloads": 829
       },
       {
-       "gid": 10373,
-       "title": "The Middle Temple Murder",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "gid": 17144,
+       "title": "The House of the Vampire",
+       "author": "Viereck, George Sylvester, 1884-1962",
        "lang": "en",
-       "downloads": 838
+       "downloads": 803
       },
       {
-       "gid": 4604,
-       "title": "The Clique of Gold",
-       "author": "Gaboriau, Emile, 1832-1873",
+       "gid": 14317,
+       "title": "The Sorcery Club",
+       "author": "O'Donnell, Elliott, 1872-1965",
        "lang": "en",
-       "downloads": 836
+       "downloads": 788
       },
       {
-       "gid": 37820,
-       "title": "Chronicles of Martin Hewitt",
-       "author": "Morrison, Arthur, 1863-1945",
-       "lang": "en",
-       "downloads": 828
-      },
-      {
-       "gid": 1167,
-       "title": "A Strange Disappearance",
-       "author": "Green, Anna Katharine, 1846-1935",
-       "lang": "en",
-       "downloads": 820
-      },
-      {
-       "gid": 547,
-       "title": "Baron Trigault's Vengeance",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 817
-      },
-      {
-       "gid": 12187,
-       "title": "The Mystery of 31 New Inn",
-       "author": "Freeman, R. Austin (Richard Austin), 1862-1943",
-       "lang": "en",
-       "downloads": 815
-      },
-      {
-       "gid": 5308,
-       "title": "The Paradise Mystery",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
-       "lang": "en",
-       "downloads": 805
-      },
-      {
-       "gid": 34732,
-       "title": "Max Carrados",
-       "author": "Bramah, Ernest, 1868-1942",
-       "lang": "en",
-       "downloads": 790
-      },
-      {
-       "gid": 1651,
-       "title": "The Mystery of Orcival",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 785
-      },
-      {
-       "gid": 3803,
-       "title": "File No. 113",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 771
-      },
-      {
-       "gid": 3802,
-       "title": "The Lerouge Case",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 759
-      },
-      {
-       "gid": 2861,
-       "title": "The Sleuth of St. James's Square",
-       "author": "Post, Melville Davisson, 1869-1930",
-       "lang": "en",
-       "downloads": 749
-      },
-      {
-       "gid": 1748,
-       "title": "Other People's Money",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 741
-      },
-      {
-       "gid": 7884,
-       "title": "In the Fog",
-       "author": "Davis, Richard Harding, 1864-1916",
-       "lang": "en",
-       "downloads": 727
-      },
-      {
-       "gid": 11451,
-       "title": "The Rome Express",
-       "author": "Griffiths, Arthur, 1838-1908",
-       "lang": "en",
-       "downloads": 697
-      },
-      {
-       "gid": 21891,
-       "title": "The Brand of Silence: A Detective Story",
-       "author": "McCulley, Johnston, 1883-1958",
-       "lang": "en",
-       "downloads": 676
-      },
-      {
-       "gid": 2348,
-       "title": "The Disappearance of Lady Frances Carfax",
-       "author": "Doyle, Arthur Conan, 1859-1930",
-       "lang": "en",
-       "downloads": 674
-      },
-      {
-       "gid": 12932,
-       "title": "Four Max Carrados Detective Stories",
-       "author": "Bramah, Ernest, 1868-1942",
-       "lang": "en",
-       "downloads": 650
-      },
-      {
-       "gid": 17180,
-       "title": "The Riddle of the Frozen Flame",
-       "author": "Hanshew, Mary E.; Hanshew, Thomas W., 1857-1914; DeMaris, Walter, 1877-1947 [Illustrator]",
-       "lang": "en",
-       "downloads": 649
-      },
-      {
-       "gid": 19672,
-       "title": "The Holladay case",
-       "author": "Stevenson, Burton Egbert, 1872-1962",
-       "lang": "en",
-       "downloads": 645
-      },
-      {
-       "gid": 4071,
-       "title": "Monsieur Lecoq, v. 1",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 640
-      },
-      {
-       "gid": 18761,
-       "title": "The Circular Study",
-       "author": "Green, Anna Katharine, 1846-1935",
-       "lang": "en",
-       "downloads": 636
-      },
-      {
-       "gid": 2451,
-       "title": "Caught in the Net",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 620
-      },
-      {
-       "gid": 9902,
-       "title": "The Middle of Things",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
-       "lang": "en",
-       "downloads": 616
-      },
-      {
-       "gid": 2736,
-       "title": "The Champdoce Mystery",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 608
-      },
-      {
-       "gid": 17763,
-       "title": "The Mystery of the Hasty Arrow",
-       "author": "Green, Anna Katharine, 1846-1935",
-       "lang": "en",
-       "downloads": 607
-      },
-      {
-       "gid": 9297,
-       "title": "The Orange-Yellow Diamond",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
-       "lang": "en",
-       "downloads": 595
-      },
-      {
-       "gid": 20494,
-       "title": "The Shrieking Pit",
-       "author": "Rees, Arthur J. (Arthur John), 1872-1942",
-       "lang": "en",
-       "downloads": 595
-      },
-      {
-       "gid": 4002,
-       "title": "The Honor of the Name",
-       "author": "Gaboriau, Emile, 1832-1873",
-       "lang": "en",
-       "downloads": 594
-      },
-      {
-       "gid": 35247,
-       "title": "That Affair at Elizabeth",
-       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "gid": 11074,
+       "title": "The Damned",
+       "author": "Blackwood, Algernon, 1869-1951",
        "lang": "en",
        "downloads": 586
+      }
+     ]
+    },
+    {
+     "id": "fic-sff",
+     "name": "Science Fiction & Fantasy",
+     "section": "Fiction",
+     "books": [
+      {
+       "gid": 84,
+       "title": "Frankenstein; or, The modern Prometheus",
+       "author": "Shelley, Mary Wollstonecraft, 1797-1851",
+       "lang": "en",
+       "downloads": 182729
       },
       {
-       "gid": 13372,
-       "title": "The Gloved Hand",
-       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "gid": 345,
+       "title": "Dracula",
+       "author": "Stoker, Bram, 1847-1912",
        "lang": "en",
-       "downloads": 581
+       "downloads": 78131
       },
       {
-       "gid": 35304,
-       "title": "The Last Stroke: A Detective Story",
-       "author": "Lynch, Lawrence L.",
+       "gid": 55,
+       "title": "The Wonderful Wizard of Oz",
+       "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 580
+       "downloads": 38574
       },
       {
-       "gid": 20630,
-       "title": "The Borough Treasurer",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "gid": 8492,
+       "title": "The King in Yellow",
+       "author": "Chambers, Robert W. (Robert William), 1865-1933",
        "lang": "en",
-       "downloads": 529
+       "downloads": 33392
       },
       {
-       "gid": 12509,
-       "title": "The Moon Rock",
-       "author": "Rees, Arthur J. (Arthur John), 1872-1942",
+       "gid": 68283,
+       "title": "The call of Cthulhu",
+       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937",
        "lang": "en",
-       "downloads": 522
+       "downloads": 29992
       },
       {
-       "gid": 20559,
-       "title": "R. Holmes & Co. Being the Remarkable Adventures of Raffles Holmes, Esq., Detective and Amateur Cracksman by Birth",
-       "author": "Bangs, John Kendrick, 1862-1922",
+       "gid": 35,
+       "title": "The Time Machine",
+       "author": "Wells, H. G. (Herbert George), 1866-1946",
        "lang": "en",
-       "downloads": 522
+       "downloads": 27738
       },
       {
-       "gid": 12239,
-       "title": "Dead Men's Money",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "gid": 70652,
+       "title": "At the mountains of madness",
+       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937; Brown, Howard V., 1878-1945 [Illustrator]",
        "lang": "en",
-       "downloads": 518
+       "downloads": 23727
       },
       {
-       "gid": 10443,
-       "title": "The Rayner-Slade Amalgamation",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "gid": 10007,
+       "title": "Carmilla",
+       "author": "Le Fanu, Joseph Sheridan, 1814-1873",
        "lang": "en",
-       "downloads": 514
+       "downloads": 23320
       },
       {
-       "gid": 16339,
-       "title": "The Passenger from Calais",
-       "author": "Griffiths, Arthur, 1838-1908",
+       "gid": 829,
+       "title": "Gulliver's Travels into Several Remote Nations of the World",
+       "author": "Swift, Jonathan, 1667-1745",
        "lang": "en",
-       "downloads": 499
+       "downloads": 18824
       },
       {
-       "gid": 9807,
-       "title": "Scarhaven Keep",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "gid": 36,
+       "title": "The war of the worlds",
+       "author": "Wells, H. G. (Herbert George), 1866-1946",
        "lang": "en",
-       "downloads": 463
+       "downloads": 17678
       },
       {
-       "gid": 14332,
-       "title": "Cleek: the Man of the Forty Faces",
-       "author": "Hanshew, Thomas W., 1857-1914",
+       "gid": 72,
+       "title": "Thuvia, maid of Mars",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
        "lang": "en",
-       "downloads": 461
+       "downloads": 17092
       },
       {
-       "gid": 9834,
-       "title": "The Talleyrand Maxim",
-       "author": "Fletcher, J. S. (Joseph Smith), 1863-1935",
+       "gid": 1514,
+       "title": "A Midsummer Night's Dream",
+       "author": "Shakespeare, William, 1564-1616",
        "lang": "en",
-       "downloads": 449
+       "downloads": 16224
       },
       {
-       "gid": 10067,
-       "title": "The Mystery of the Boule Cabinet: A Detective Story",
-       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "gid": 164,
+       "title": "Twenty Thousand Leagues under the Sea",
+       "author": "Verne, Jules, 1828-1905",
        "lang": "en",
-       "downloads": 421
+       "downloads": 15583
       },
       {
-       "gid": 9746,
-       "title": "The Ashiel mystery",
-       "author": "Bryce, Marion",
+       "gid": 18857,
+       "title": "A Journey to the Centre of the Earth",
+       "author": "Verne, Jules, 1828-1905",
        "lang": "en",
-       "downloads": 418
+       "downloads": 13953
+      },
+      {
+       "gid": 86,
+       "title": "A Connecticut Yankee in King Arthur's Court",
+       "author": "Twain, Mark, 1835-1910",
+       "lang": "en",
+       "downloads": 12657
+      },
+      {
+       "gid": 22541,
+       "title": "The Misplaced Battleship",
+       "author": "Harrison, Harry, 1925-2012; Schoenherr, John, 1935-2010 [Illustrator]",
+       "lang": "en",
+       "downloads": 12574
+      },
+      {
+       "gid": 19476,
+       "title": "A Honeymoon in Space",
+       "author": "Griffith, George Chetwynd, 1857-1906",
+       "lang": "en",
+       "downloads": 12257
+      },
+      {
+       "gid": 1250,
+       "title": "Anthem",
+       "author": "Rand, Ayn, 1905-1982",
+       "lang": "en",
+       "downloads": 11248
+      },
+      {
+       "gid": 62,
+       "title": "A princess of Mars",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 11211
+      },
+      {
+       "gid": 5230,
+       "title": "The Invisible Man: A Grotesque Romance",
+       "author": "Wells, H. G. (Herbert George), 1866-1946",
+       "lang": "en",
+       "downloads": 10964
+      },
+      {
+       "gid": 40284,
+       "title": "The Sex Life of the Gods",
+       "author": "Knerr, M. E. (Michael E.), 1936-1999",
+       "lang": "en",
+       "downloads": 9723
+      },
+      {
+       "gid": 17157,
+       "title": "Gulliver's Travels into Several Remote Regions of the World",
+       "author": "Swift, Jonathan, 1667-1745; Balliet, Thomas M. (Thomas Minard), 1852-1942 [Editor]",
+       "lang": "en",
+       "downloads": 9605
+      },
+      {
+       "gid": 6087,
+       "title": "The Vampyre; a Tale",
+       "author": "Polidori, John William, 1795-1821",
+       "lang": "en",
+       "downloads": 9330
+      },
+      {
+       "gid": 1268,
+       "title": "The Mysterious Island",
+       "author": "Verne, Jules, 1828-1905; Kingston, Agnes Kinloch, 1823-1913 [Translator]",
+       "lang": "en",
+       "downloads": 9034
+      },
+      {
+       "gid": 139,
+       "title": "The Lost World",
+       "author": "Doyle, Arthur Conan, 1859-1930",
+       "lang": "en",
+       "downloads": 9009
+      },
+      {
+       "gid": 77092,
+       "title": "She who sleeps",
+       "author": "Rohmer, Sax, 1883-1959",
+       "lang": "en",
+       "downloads": 8258
+      },
+      {
+       "gid": 18151,
+       "title": "Time Crime",
+       "author": "Piper, H. Beam, 1904-1964; Freas, Kelly, 1922-2005 [Illustrator]",
+       "lang": "en",
+       "downloads": 7826
+      },
+      {
+       "gid": 1164,
+       "title": "The iron heel",
+       "author": "London, Jack, 1876-1916",
+       "lang": "en",
+       "downloads": 7811
+      },
+      {
+       "gid": 64,
+       "title": "The gods of Mars",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 7582
+      },
+      {
+       "gid": 932,
+       "title": "The Fall of the House of Usher",
+       "author": "Poe, Edgar Allan, 1809-1849",
+       "lang": "en",
+       "downloads": 7384
+      },
+      {
+       "gid": 60976,
+       "title": "Rip Van Winkle",
+       "author": "Irving, Washington, 1783-1859; Rackham, Arthur, 1867-1939 [Illustrator]",
+       "lang": "en",
+       "downloads": 7316
+      },
+      {
+       "gid": 26563,
+       "title": "The Crack of Doom",
+       "author": "Cromie, Robert, 1856-1907",
+       "lang": "en",
+       "downloads": 7301
+      },
+      {
+       "gid": 20121,
+       "title": "Lone Star Planet",
+       "author": "Piper, H. Beam, 1904-1964; McGuire, John J. (John Joseph), 1917-1981",
+       "lang": "en",
+       "downloads": 7297
+      },
+      {
+       "gid": 68,
+       "title": "The warlord of Mars",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 7274
+      },
+      {
+       "gid": 159,
+       "title": "The island of Doctor Moreau",
+       "author": "Wells, H. G. (Herbert George), 1866-1946",
+       "lang": "en",
+       "downloads": 7134
+      },
+      {
+       "gid": 50133,
+       "title": "The Dunwich horror",
+       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937",
+       "lang": "en",
+       "downloads": 7002
+      },
+      {
+       "gid": 24149,
+       "title": "The Ambulance Made Two Trips",
+       "author": "Leinster, Murray, 1896-1975; Schoenherr, John, 1935-2010 [Illustrator]",
+       "lang": "en",
+       "downloads": 6868
+      },
+      {
+       "gid": 23599,
+       "title": "The Big Fix",
+       "author": "Smith, George O. (George Oliver), 1911-1981; Bernklau [Illustrator]",
+       "lang": "en",
+       "downloads": 6782
+      },
+      {
+       "gid": 83,
+       "title": "From the Earth to the moon; and, round the moon",
+       "author": "Verne, Jules, 1828-1905",
+       "lang": "en",
+       "downloads": 6770
+      },
+      {
+       "gid": 57426,
+       "title": "Baron Trump's Marvellous Underground Journey",
+       "author": "Lockwood, Ingersoll, 1841-1918; Johnson, Charles Howard, 1868?-1896 [Illustrator]",
+       "lang": "en",
+       "downloads": 6446
+      },
+      {
+       "gid": 551,
+       "title": "The Land That Time Forgot",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 6413
+      },
+      {
+       "gid": 1153,
+       "title": "The Chessmen of Mars",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 6370
+      },
+      {
+       "gid": 23731,
+       "title": "A Martian Odyssey",
+       "author": "Weinbaum, Stanley G. (Stanley Grauman), 1902-1935",
+       "lang": "en",
+       "downloads": 6315
+      },
+      {
+       "gid": 30434,
+       "title": "Occasion ... for Disaster",
+       "author": "Garrett, Randall, 1927-1987; Janifer, Laurence M., 1933-2002; Van Dongen, H. R., 1920-2010 [Illustrator]",
+       "lang": "en",
+       "downloads": 6173
+      },
+      {
+       "gid": 76411,
+       "title": "The last dragon",
+       "author": "Totheroh, Dan, 1894-1976; Eadie, Eleanor Osborn, 1880-1956 [Illustrator]",
+       "lang": "en",
+       "downloads": 6139
+      },
+      {
+       "gid": 149,
+       "title": "The Lost Continent",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 6111
+      },
+      {
+       "gid": 32759,
+       "title": "Red Nails",
+       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
+       "lang": "en",
+       "downloads": 6046
+      },
+      {
+       "gid": 76391,
+       "title": "Fairy dreams",
+       "author": "Austin, Jane G. (Jane Goodwin), 1831-1894; Billings, Hammatt, 1818-1874 [Illustrator]",
+       "lang": "en",
+       "downloads": 5912
+      },
+      {
+       "gid": 16921,
+       "title": "Plague Ship",
+       "author": "Norton, Andre, 1912-2005",
+       "lang": "en",
+       "downloads": 5816
+      },
+      {
+       "gid": 21638,
+       "title": "Tarrano the Conqueror",
+       "author": "Cummings, Ray, 1887-1957",
+       "lang": "en",
+       "downloads": 5813
+      },
+      {
+       "gid": 23790,
+       "title": "The Ultimate Weapon",
+       "author": "Campbell, John W., Jr. (John Wood), 1910-1971",
+       "lang": "en",
+       "downloads": 5724
+      },
+      {
+       "gid": 32,
+       "title": "Herland",
+       "author": "Gilman, Charlotte Perkins, 1860-1935",
+       "lang": "en",
+       "downloads": 5715
+      },
+      {
+       "gid": 1353,
+       "title": "Off on a Comet! a Journey through Planetary Space",
+       "author": "Verne, Jules, 1828-1905",
+       "lang": "en",
+       "downloads": 5690
+      },
+      {
+       "gid": 50290,
+       "title": "Space Station 1",
+       "author": "Long, Frank Belknap, 1903-1994",
+       "lang": "en",
+       "downloads": 5550
+      },
+      {
+       "gid": 76503,
+       "title": "The man who mastered time",
+       "author": "Cummings, Ray, 1887-1957; Valigursky, Ed, 1926-2009 [Illustrator]",
+       "lang": "en",
+       "downloads": 5538
+      },
+      {
+       "gid": 553,
+       "title": "Out of Time's Abyss",
+       "author": "Burroughs, Edgar Rice, 1875-1950",
+       "lang": "en",
+       "downloads": 5471
+      },
+      {
+       "gid": 76352,
+       "title": "The world below",
+       "author": "Wright, S. Fowler (Sydney Fowler), 1874-1965",
+       "lang": "en",
+       "downloads": 5374
+      },
+      {
+       "gid": 20782,
+       "title": "Triplanetary",
+       "author": "Smith, E. E. (Edward Elmer), 1890-1965",
+       "lang": "en",
+       "downloads": 5331
+      },
+      {
+       "gid": 19027,
+       "title": "The Revolt on Venus",
+       "author": "Rockwell, Carey; Ley, Willy, 1906-1969 [Contributor]; Glanzman, Louis [Illustrator]",
+       "lang": "en",
+       "downloads": 5294
+      },
+      {
+       "gid": 76261,
+       "title": "Tales of terror",
+       "author": "Donovan, Dick, 1843-1934",
+       "lang": "en",
+       "downloads": 5267
+      },
+      {
+       "gid": 76358,
+       "title": "They return at evening",
+       "author": "Wakefield, Herbert Russell, 1888-1964",
+       "lang": "en",
+       "downloads": 5252
+      },
+      {
+       "gid": 24375,
+       "title": "Wizard",
+       "author": "Janifer, Laurence M., 1933-2002; Schoenherr, John, 1935-2010 [Illustrator]",
+       "lang": "en",
+       "downloads": 5175
+      },
+      {
+       "gid": 61963,
+       "title": "We",
+       "author": "Zamiatin, Evgenii Ivanovich, 1884-1937; Zilboorg, Gregory, 1890-1959 [Translator]",
+       "lang": "en",
+       "downloads": 5167
+      },
+      {
+       "gid": 21279,
+       "title": "2 B R 0 2 B",
+       "author": "Vonnegut, Kurt, 1922-2007",
+       "lang": "en",
+       "downloads": 5164
+      },
+      {
+       "gid": 77097,
+       "title": "The magic ring, Vol. 1 (of 3)",
+       "author": "La Motte-Fouqué, Friedrich Heinrich Karl, Freiherr de, 1777-1843; Gillies, R. P. (Robert Pearse), 1788-1858 [Translator]",
+       "lang": "en",
+       "downloads": 5163
+      },
+      {
+       "gid": 76222,
+       "title": "The valley of eyes unseen",
+       "author": "Collins, Gilbert, 1890-1960",
+       "lang": "en",
+       "downloads": 5117
+      },
+      {
+       "gid": 20796,
+       "title": "The Colors of Space",
+       "author": "Bradley, Marion Zimmer, 1930-1999",
+       "lang": "en",
+       "downloads": 5112
+      },
+      {
+       "gid": 76871,
+       "title": "The magnificent possession",
+       "author": "Asimov, Isaac, 1920-1992; Meskin, Mort, 1916-1995 [Illustrator]; Scott, John Walter, 1907-1987 [Illustrator]",
+       "lang": "en",
+       "downloads": 5081
+      },
+      {
+       "gid": 42243,
+       "title": "The Hour of the Dragon",
+       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
+       "lang": "en",
+       "downloads": 5078
+      },
+      {
+       "gid": 201,
+       "title": "Flatland: A Romance of Many Dimensions",
+       "author": "Abbott, Edwin Abbott, 1838-1926",
+       "lang": "en",
+       "downloads": 5065
+      },
+      {
+       "gid": 59112,
+       "title": "R.U.R. (Rossum's Universal Robots) A Fantastic Melodrama in Three Acts and an Epilogue",
+       "author": "Čapek, Karel, 1890-1938; Playfair, Nigel, 1874-1934 [Translator]; Selver, Paul, 1888-1970 [Translator]",
+       "lang": "en",
+       "downloads": 5057
+      },
+      {
+       "gid": 76857,
+       "title": "I, Mars",
+       "author": "Bradbury, Ray, 1920-2012; Bok, Hannes, 1914-1964 [Illustrator]; Stevens, Lawrence Sterne, 1886-1960 [Illustrator]",
+       "lang": "en",
+       "downloads": 5032
+      },
+      {
+       "gid": 76435,
+       "title": "The black kiss",
+       "author": "Bloch, Robert, 1917-1994; Kuttner, Henry, 1915-1958; Brundage, Margaret, 1900-1976 [Illustrator]; Finlay, Virgil, 1914-1971 [Illustrator]",
+       "lang": "en",
+       "downloads": 4976
+      },
+      {
+       "gid": 76539,
+       "title": "The life-eater",
+       "author": "Ward, Harold, 1879-1950; Brundage, Margaret, 1900-1976 [Illustrator]; Napoli, Vincent, 1907-1981 [Illustrator]",
+       "lang": "en",
+       "downloads": 4962
+      },
+      {
+       "gid": 76247,
+       "title": "How joy was found",
+       "author": "Hutchison, Isobel Wylie, 1889-1982; MacDougall, J. (James), 1833-1906 [Contributor]",
+       "lang": "en",
+       "downloads": 4961
+      },
+      {
+       "gid": 33644,
+       "title": "The Secret of the Ninth Planet",
+       "author": "Wollheim, Donald A., 1914-1990",
+       "lang": "en",
+       "downloads": 4960
+      },
+      {
+       "gid": 27609,
+       "title": "The Undersea Tube",
+       "author": "Hansen, L. Taylor (Lucile Taylor), 1897-1976; Wessolowski, Hans Waldemar, 1894?-1948 [Illustrator]",
+       "lang": "en",
+       "downloads": 4947
+      },
+      {
+       "gid": 76533,
+       "title": "Limanora",
+       "author": "Sweven, Godfrey, 1845-1935",
+       "lang": "en",
+       "downloads": 4898
+      },
+      {
+       "gid": 76603,
+       "title": "Karl Grier",
+       "author": "Tracy, Louis, 1863-1928",
+       "lang": "en",
+       "downloads": 4878
+      },
+      {
+       "gid": 76442,
+       "title": "The dryad",
+       "author": "McCarthy, Justin H. (Justin Huntly), 1860-1936",
+       "lang": "en",
+       "downloads": 4824
+      },
+      {
+       "gid": 42259,
+       "title": "The People of the Black Circle",
+       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
+       "lang": "en",
+       "downloads": 4800
+      },
+      {
+       "gid": 76409,
+       "title": "Marigold",
+       "author": "Allonby, Edith, 1875-1905",
+       "lang": "en",
+       "downloads": 4795
+      },
+      {
+       "gid": 76849,
+       "title": "This star shall be free",
+       "author": "Leinster, Murray, 1896-1975; Stevens, Lawrence Sterne, 1886-1960 [Illustrator]",
+       "lang": "en",
+       "downloads": 4745
+      },
+      {
+       "gid": 22342,
+       "title": "Supermind",
+       "author": "Garrett, Randall, 1927-1987; Janifer, Laurence M., 1933-2002",
+       "lang": "en",
+       "downloads": 4726
+      },
+      {
+       "gid": 42188,
+       "title": "Shadows in the Moonlight",
+       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
+       "lang": "en",
+       "downloads": 4711
+      },
+      {
+       "gid": 28885,
+       "title": "Alice's Adventures in Wonderland Illustrated by Arthur Rackham. With a Proem by Austin Dobson",
+       "author": "Carroll, Lewis, 1832-1898; Dobson, Austin, 1840-1921 [Contributor]; Rackham, Arthur, 1867-1939 [Illustrator]",
+       "lang": "en",
+       "downloads": 4691
+      },
+      {
+       "gid": 42196,
+       "title": "Shadows in Zamboula",
+       "author": "Howard, Robert E. (Robert Ervin), 1906-1936",
+       "lang": "en",
+       "downloads": 4620
+      },
+      {
+       "gid": 32398,
+       "title": "Brood of the Dark Moon (A Sequel to \"Dark Moon\")",
+       "author": "Diffin, Charles Willard, 1884-1966",
+       "lang": "en",
+       "downloads": 4616
+      },
+      {
+       "gid": 76764,
+       "title": "Landscape with figures",
+       "author": "Fraser, Ronald, 1888-1974",
+       "lang": "en",
+       "downloads": 4604
+      },
+      {
+       "gid": 77109,
+       "title": "A journey to the world under-ground",
+       "author": "Holberg, Ludvig, 1684-1754",
+       "lang": "en",
+       "downloads": 4542
+      },
+      {
+       "gid": 11438,
+       "title": "The Willows",
+       "author": "Blackwood, Algernon, 1869-1951",
+       "lang": "en",
+       "downloads": 4536
+      },
+      {
+       "gid": 76998,
+       "title": "Jonah",
+       "author": "Nathan, Robert, 1894-1985",
+       "lang": "en",
+       "downloads": 4453
+      },
+      {
+       "gid": 76737,
+       "title": "The sociable ghost",
+       "author": "Harper, Olive, 1842-1915; McIlvaine, Thomas, 1854-1933 [Illustrator]; Schwartz, A. W. [Illustrator]",
+       "lang": "en",
+       "downloads": 4443
+      },
+      {
+       "gid": 76899,
+       "title": "The man who saved New York",
+       "author": "Cummings, Ray, 1887-1957; Luros, Milton, 1911-1999 [Illustrator]",
+       "lang": "en",
+       "downloads": 4442
+      },
+      {
+       "gid": 76929,
+       "title": "Maugis, ye sorcerer",
+       "author": "Gilhooley, Lord, 1850-1913",
+       "lang": "en",
+       "downloads": 4429
+      },
+      {
+       "gid": 76960,
+       "title": "The corsair; or, the little fairy at the bottom of the sea",
+       "author": "Brough, William, 1826-1870",
+       "lang": "en",
+       "downloads": 4425
+      },
+      {
+       "gid": 76950,
+       "title": "The ghost of Charlotte Cray, and other stories",
+       "author": "Marryat, Florence, 1833-1899",
+       "lang": "en",
+       "downloads": 4403
+      },
+      {
+       "gid": 2885,
+       "title": "The House of the Wolfings A Tale of the House of the Wolfings and All the Kindreds of the Mark Written in Prose and in Verse",
+       "author": "Morris, William, 1834-1896",
+       "lang": "en",
+       "downloads": 4374
+      },
+      {
+       "gid": 76858,
+       "title": "The spirit-rapper; an autobiography",
+       "author": "Brownson, Orestes Augustus, 1803-1876",
+       "lang": "en",
+       "downloads": 4351
+      },
+      {
+       "gid": 2825,
+       "title": "Undine",
+       "author": "La Motte-Fouqué, Friedrich Heinrich Karl, Freiherr de, 1777-1843; Yonge, Charlotte M. (Charlotte Mary), 1823-1901 [Author of introduction, etc.]",
+       "lang": "en",
+       "downloads": 4333
       }
      ]
     },
     {
      "id": "fic-scifi",
      "name": "Science Fiction",
+     "section": "Fiction",
      "books": [
       {
        "gid": 35,
@@ -7238,384 +6344,9 @@
      ]
     },
     {
-     "id": "fic-horror",
-     "name": "Horror",
-     "books": [
-      {
-       "gid": 345,
-       "title": "Dracula",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 78131
-      },
-      {
-       "gid": 43,
-       "title": "The strange case of Dr. Jekyll and Mr. Hyde",
-       "author": "Stevenson, Robert Louis, 1850-1894",
-       "lang": "en",
-       "downloads": 71859
-      },
-      {
-       "gid": 8492,
-       "title": "The King in Yellow",
-       "author": "Chambers, Robert W. (Robert William), 1865-1933",
-       "lang": "en",
-       "downloads": 33392
-      },
-      {
-       "gid": 2148,
-       "title": "The Works of Edgar Allan Poe — Volume 2",
-       "author": "Poe, Edgar Allan, 1809-1849",
-       "lang": "en",
-       "downloads": 30902
-      },
-      {
-       "gid": 209,
-       "title": "The Turn of the Screw",
-       "author": "James, Henry, 1843-1916",
-       "lang": "en",
-       "downloads": 29238
-      },
-      {
-       "gid": 10007,
-       "title": "Carmilla",
-       "author": "Le Fanu, Joseph Sheridan, 1814-1873",
-       "lang": "en",
-       "downloads": 23320
-      },
-      {
-       "gid": 389,
-       "title": "The Great God Pan",
-       "author": "Machen, Arthur, 1863-1947",
-       "lang": "en",
-       "downloads": 18963
-      },
-      {
-       "gid": 6087,
-       "title": "The Vampyre; a Tale",
-       "author": "Polidori, John William, 1795-1821",
-       "lang": "en",
-       "downloads": 9330
-      },
-      {
-       "gid": 53419,
-       "title": "Twenty-Five Ghost Stories",
-       "author": "Holland, W. Bob (West Bob), 1868-1932 [Editor]",
-       "lang": "en",
-       "downloads": 7772
-      },
-      {
-       "gid": 23172,
-       "title": "The Damned Thing 1898, From \"In the Midst of Life\"",
-       "author": "Bierce, Ambrose, 1842-1914?",
-       "lang": "en",
-       "downloads": 7761
-      },
-      {
-       "gid": 31469,
-       "title": "The Shunned House",
-       "author": "Lovecraft, H. P. (Howard Phillips), 1890-1937",
-       "lang": "en",
-       "downloads": 7611
-      },
-      {
-       "gid": 375,
-       "title": "An Occurrence at Owl Creek Bridge",
-       "author": "Bierce, Ambrose, 1842-1914?",
-       "lang": "en",
-       "downloads": 6942
-      },
-      {
-       "gid": 10897,
-       "title": "The Wendigo",
-       "author": "Blackwood, Algernon, 1869-1951",
-       "lang": "en",
-       "downloads": 5320
-      },
-      {
-       "gid": 8486,
-       "title": "Ghost Stories of an Antiquary",
-       "author": "James, M. R. (Montague Rhodes), 1862-1936",
-       "lang": "en",
-       "downloads": 4898
-      },
-      {
-       "gid": 11438,
-       "title": "The Willows",
-       "author": "Blackwood, Algernon, 1869-1951",
-       "lang": "en",
-       "downloads": 4536
-      },
-      {
-       "gid": 10002,
-       "title": "The House on the Borderland",
-       "author": "Hodgson, William Hope, 1877-1918",
-       "lang": "en",
-       "downloads": 4219
-      },
-      {
-       "gid": 14833,
-       "title": "Varney the vampyre; or, the feast of blood",
-       "author": "Prest, Thomas Peckett, 1810-1859; Rymer, James Malcolm, 1814?-1884",
-       "lang": "en",
-       "downloads": 3741
-      },
-      {
-       "gid": 10150,
-       "title": "Dracula's Guest",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 3502
-      },
-      {
-       "gid": 10662,
-       "title": "The Night Land",
-       "author": "Hodgson, William Hope, 1877-1918",
-       "lang": "en",
-       "downloads": 2438
-      },
-      {
-       "gid": 25016,
-       "title": "The House of Souls",
-       "author": "Machen, Arthur, 1863-1947",
-       "lang": "en",
-       "downloads": 1867
-      },
-      {
-       "gid": 3781,
-       "title": "The Jewel of Seven Stars",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 1654
-      },
-      {
-       "gid": 1188,
-       "title": "The Lair of the White Worm",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 1534
-      },
-      {
-       "gid": 20387,
-       "title": "A Thin Ghost and Others",
-       "author": "James, M. R. (Montague Rhodes), 1862-1936",
-       "lang": "en",
-       "downloads": 1059
-      },
-      {
-       "gid": 10542,
-       "title": "The Boats of the \"Glen Carrig\" Being an account of their Adventures in the Strange places of the Earth, after the foundering of the good ship Glen Carrig through striking upon a hidden rock in the unknown seas to the Southward; as told by John Winterstraw, Gent., to his son James Winterstraw, in the year 1757, and by him committed very properly and legibly to manuscript",
-       "author": "Hodgson, William Hope, 1877-1918",
-       "lang": "en",
-       "downloads": 1038
-      },
-      {
-       "gid": 3095,
-       "title": "The Lady of the Shroud",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 989
-      },
-      {
-       "gid": 14168,
-       "title": "Widdershins",
-       "author": "Onions, Oliver, 1873-1961",
-       "lang": "en",
-       "downloads": 958
-      },
-      {
-       "gid": 16726,
-       "title": "Four Weird Tales",
-       "author": "Blackwood, Algernon, 1869-1951",
-       "lang": "en",
-       "downloads": 952
-      },
-      {
-       "gid": 20034,
-       "title": "Scottish Ghost Stories",
-       "author": "O'Donnell, Elliott, 1872-1965",
-       "lang": "en",
-       "downloads": 930
-      },
-      {
-       "gid": 14107,
-       "title": "The Lost Stradivarius",
-       "author": "Falkner, John Meade, 1858-1932",
-       "lang": "en",
-       "downloads": 904
-      },
-      {
-       "gid": 14154,
-       "title": "The Tale of Terror: A Study of the Gothic Romance",
-       "author": "Birkhead, Edith, 1889-1951",
-       "lang": "en",
-       "downloads": 901
-      },
-      {
-       "gid": 18233,
-       "title": "Animal Ghosts; Or, Animal Hauntings and the Hereafter",
-       "author": "O'Donnell, Elliott, 1872-1965",
-       "lang": "en",
-       "downloads": 831
-      },
-      {
-       "gid": 2520,
-       "title": "The Man",
-       "author": "Stoker, Bram, 1847-1912",
-       "lang": "en",
-       "downloads": 829
-      },
-      {
-       "gid": 17144,
-       "title": "The House of the Vampire",
-       "author": "Viereck, George Sylvester, 1884-1962",
-       "lang": "en",
-       "downloads": 803
-      },
-      {
-       "gid": 14317,
-       "title": "The Sorcery Club",
-       "author": "O'Donnell, Elliott, 1872-1965",
-       "lang": "en",
-       "downloads": 788
-      },
-      {
-       "gid": 11074,
-       "title": "The Damned",
-       "author": "Blackwood, Algernon, 1869-1951",
-       "lang": "en",
-       "downloads": 586
-      }
-     ]
-    },
-    {
-     "id": "fic-precursors",
-     "name": "Precursors of Science Fiction",
-     "books": [
-      {
-       "gid": 84,
-       "title": "Frankenstein; or, The modern Prometheus",
-       "author": "Shelley, Mary Wollstonecraft, 1797-1851",
-       "lang": "en",
-       "downloads": 182729
-      },
-      {
-       "gid": 43,
-       "title": "The strange case of Dr. Jekyll and Mr. Hyde",
-       "author": "Stevenson, Robert Louis, 1850-1894",
-       "lang": "en",
-       "downloads": 71859
-      },
-      {
-       "gid": 86,
-       "title": "A Connecticut Yankee in King Arthur's Court",
-       "author": "Twain, Mark, 1835-1910",
-       "lang": "en",
-       "downloads": 12657
-      },
-      {
-       "gid": 18247,
-       "title": "The Last Man",
-       "author": "Shelley, Mary Wollstonecraft, 1797-1851",
-       "lang": "en",
-       "downloads": 3145
-      },
-      {
-       "gid": 45858,
-       "title": "Lucian's True History",
-       "author": "Lucian, of Samosata, 120-180; Whibley, Charles, 1859-1930 [Author of introduction, etc.]; Beardsley, Aubrey, 1872-1898 [Illustrator]; Clark, Joseph Benwell, 1857-1938 [Illustrator]; Strang, William, 1859-1921 [Illustrator]; Hickes, Francis, 1566-1631 [Translator]",
-       "lang": "en",
-       "downloads": 2795
-      },
-      {
-       "gid": 1951,
-       "title": "The Coming Race",
-       "author": "Lytton, Edward Bulwer Lytton, Baron, 1803-1873",
-       "lang": "en",
-       "downloads": 1930
-      },
-      {
-       "gid": 13944,
-       "title": "After London; Or, Wild England",
-       "author": "Jefferies, Richard, 1848-1887",
-       "lang": "en",
-       "downloads": 1302
-      },
-      {
-       "gid": 6585,
-       "title": "The Works of Lucian of Samosata — Volume 02",
-       "author": "Lucian, of Samosata, 120-180; Fowler, F. G. (Francis George), 1870-1918 [Translator]; Fowler, H. W. (Henry Watson), 1858-1933 [Translator]",
-       "lang": "en",
-       "downloads": 1275
-      },
-      {
-       "gid": 10430,
-       "title": "Trips to the Moon",
-       "author": "Lucian, of Samosata, 120-180; Morley, Henry, 1822-1894 [Editor]; Francklin, Thomas, 1721-1784 [Translator]",
-       "lang": "en",
-       "downloads": 1022
-      },
-      {
-       "gid": 23169,
-       "title": "The Diamond Lens",
-       "author": "O'Brien, Fitz James, 1828-1862",
-       "lang": "en",
-       "downloads": 962
-      },
-      {
-       "gid": 7401,
-       "title": "A Crystal Age",
-       "author": "Hudson, W. H. (William Henry), 1841-1922",
-       "lang": "en",
-       "downloads": 730
-      },
-      {
-       "gid": 60312,
-       "title": "The Germ Growers: An Australian story of adventure and mystery",
-       "author": "Potter, Robert, 1831-1908",
-       "lang": "en",
-       "downloads": 583
-      },
-      {
-       "gid": 33662,
-       "title": "A Republic Without a President, and Other Stories",
-       "author": "Ward, Herbert D. (Herbert Dickinson), 1861-1932",
-       "lang": "en",
-       "downloads": 570
-      },
-      {
-       "gid": 57323,
-       "title": "Hartmann, the Anarchist; Or, The Doom of the Great City",
-       "author": "Fawcett, E. Douglas (Edward Douglas), 1866-1960; Jane, Fred T. (Frederick Thomas), 1865-1916 [Illustrator]",
-       "lang": "en",
-       "downloads": 555
-      },
-      {
-       "gid": 27307,
-       "title": "The Last American A Fragment from The Journal of Khan-li, Prince of Dimph-Yoo-Chur and Admiral in the Persian Navy",
-       "author": "Mitchell, John Ames, 1845-1918; Read, F. W. (Frederick William), 1863- [Illustrator]",
-       "lang": "en",
-       "downloads": 529
-      },
-      {
-       "gid": 61142,
-       "title": "The Electric Man Being the One Act Version of the Three Act Farcical Comedy of the Same Name",
-       "author": "Hannan, Charles, 1863-1922",
-       "lang": "en",
-       "downloads": 464
-      },
-      {
-       "gid": 4290,
-       "title": "The Dominion in 1983",
-       "author": "Centennius, Ralph",
-       "lang": "en",
-       "downloads": 423
-      }
-     ]
-    },
-    {
      "id": "fic-scifi-women",
      "name": "Science Fiction by Women",
+     "section": "Fiction",
      "books": [
       {
        "gid": 84,
@@ -7956,8 +6687,135 @@
      ]
     },
     {
+     "id": "fic-precursors",
+     "name": "Precursors of Science Fiction",
+     "section": "Fiction",
+     "books": [
+      {
+       "gid": 84,
+       "title": "Frankenstein; or, The modern Prometheus",
+       "author": "Shelley, Mary Wollstonecraft, 1797-1851",
+       "lang": "en",
+       "downloads": 182729
+      },
+      {
+       "gid": 43,
+       "title": "The strange case of Dr. Jekyll and Mr. Hyde",
+       "author": "Stevenson, Robert Louis, 1850-1894",
+       "lang": "en",
+       "downloads": 71859
+      },
+      {
+       "gid": 86,
+       "title": "A Connecticut Yankee in King Arthur's Court",
+       "author": "Twain, Mark, 1835-1910",
+       "lang": "en",
+       "downloads": 12657
+      },
+      {
+       "gid": 18247,
+       "title": "The Last Man",
+       "author": "Shelley, Mary Wollstonecraft, 1797-1851",
+       "lang": "en",
+       "downloads": 3145
+      },
+      {
+       "gid": 45858,
+       "title": "Lucian's True History",
+       "author": "Lucian, of Samosata, 120-180; Whibley, Charles, 1859-1930 [Author of introduction, etc.]; Beardsley, Aubrey, 1872-1898 [Illustrator]; Clark, Joseph Benwell, 1857-1938 [Illustrator]; Strang, William, 1859-1921 [Illustrator]; Hickes, Francis, 1566-1631 [Translator]",
+       "lang": "en",
+       "downloads": 2795
+      },
+      {
+       "gid": 1951,
+       "title": "The Coming Race",
+       "author": "Lytton, Edward Bulwer Lytton, Baron, 1803-1873",
+       "lang": "en",
+       "downloads": 1930
+      },
+      {
+       "gid": 13944,
+       "title": "After London; Or, Wild England",
+       "author": "Jefferies, Richard, 1848-1887",
+       "lang": "en",
+       "downloads": 1302
+      },
+      {
+       "gid": 6585,
+       "title": "The Works of Lucian of Samosata — Volume 02",
+       "author": "Lucian, of Samosata, 120-180; Fowler, F. G. (Francis George), 1870-1918 [Translator]; Fowler, H. W. (Henry Watson), 1858-1933 [Translator]",
+       "lang": "en",
+       "downloads": 1275
+      },
+      {
+       "gid": 10430,
+       "title": "Trips to the Moon",
+       "author": "Lucian, of Samosata, 120-180; Morley, Henry, 1822-1894 [Editor]; Francklin, Thomas, 1721-1784 [Translator]",
+       "lang": "en",
+       "downloads": 1022
+      },
+      {
+       "gid": 23169,
+       "title": "The Diamond Lens",
+       "author": "O'Brien, Fitz James, 1828-1862",
+       "lang": "en",
+       "downloads": 962
+      },
+      {
+       "gid": 7401,
+       "title": "A Crystal Age",
+       "author": "Hudson, W. H. (William Henry), 1841-1922",
+       "lang": "en",
+       "downloads": 730
+      },
+      {
+       "gid": 60312,
+       "title": "The Germ Growers: An Australian story of adventure and mystery",
+       "author": "Potter, Robert, 1831-1908",
+       "lang": "en",
+       "downloads": 583
+      },
+      {
+       "gid": 33662,
+       "title": "A Republic Without a President, and Other Stories",
+       "author": "Ward, Herbert D. (Herbert Dickinson), 1861-1932",
+       "lang": "en",
+       "downloads": 570
+      },
+      {
+       "gid": 57323,
+       "title": "Hartmann, the Anarchist; Or, The Doom of the Great City",
+       "author": "Fawcett, E. Douglas (Edward Douglas), 1866-1960; Jane, Fred T. (Frederick Thomas), 1865-1916 [Illustrator]",
+       "lang": "en",
+       "downloads": 555
+      },
+      {
+       "gid": 27307,
+       "title": "The Last American A Fragment from The Journal of Khan-li, Prince of Dimph-Yoo-Chur and Admiral in the Persian Navy",
+       "author": "Mitchell, John Ames, 1845-1918; Read, F. W. (Frederick William), 1863- [Illustrator]",
+       "lang": "en",
+       "downloads": 529
+      },
+      {
+       "gid": 61142,
+       "title": "The Electric Man Being the One Act Version of the Three Act Farcical Comedy of the Same Name",
+       "author": "Hannan, Charles, 1863-1922",
+       "lang": "en",
+       "downloads": 464
+      },
+      {
+       "gid": 4290,
+       "title": "The Dominion in 1983",
+       "author": "Centennius, Ralph",
+       "lang": "en",
+       "downloads": 423
+      }
+     ]
+    },
+    {
      "id": "fic-fantasy",
      "name": "Fantasy",
+     "section": "Fiction",
      "books": [
       {
        "gid": 55,
@@ -8573,6 +7431,7 @@
     {
      "id": "fic-humor",
      "name": "Humor",
+     "section": "Fiction",
      "books": [
       {
        "gid": 308,
@@ -9279,6 +8138,7 @@
     {
      "id": "fic-western",
      "name": "Western",
+     "section": "Fiction",
      "books": [
       {
        "gid": 1300,
@@ -9916,6 +8776,1210 @@
        "author": "Bower, B. M., 1871-1940",
        "lang": "en",
        "downloads": 408
+      }
+     ]
+    },
+    {
+     "id": "lit-poetry",
+     "name": "Poetry",
+     "books": [
+      {
+       "gid": 1322,
+       "title": "Leaves of Grass",
+       "author": "Whitman, Walt, 1819-1892",
+       "lang": "en",
+       "downloads": 12991
+      },
+      {
+       "gid": 1004,
+       "title": "Divine Comedy, Longfellow's Translation, Complete",
+       "author": "Dante Alighieri, 1265-1321; Longfellow, Henry Wadsworth, 1807-1882 [Translator]",
+       "lang": "en",
+       "also": [
+        1000
+       ],
+       "downloads": 4138
+      },
+      {
+       "gid": 26,
+       "title": "Paradise Lost",
+       "author": "Milton, John, 1608-1674",
+       "lang": "en",
+       "downloads": 12923
+      },
+      {
+       "gid": 16328,
+       "title": "Beowulf",
+       "author": "Hall, J. Lesslie (John Lesslie), 1856-1928 [Translator]",
+       "lang": "en",
+       "downloads": 37188
+      },
+      {
+       "gid": 2002,
+       "title": "Sonnets from the Portuguese",
+       "author": "Browning, Elizabeth Barrett, 1806-1861",
+       "lang": "en",
+       "downloads": 15622
+      },
+      {
+       "gid": 2620,
+       "title": "The Home Book of Verse — Volume 2",
+       "author": "Stevenson, Burton Egbert, 1872-1962",
+       "lang": "en",
+       "downloads": 4716
+      },
+      {
+       "gid": 13647,
+       "title": "Nonsense Songs",
+       "author": "Lear, Edward, 1812-1888",
+       "lang": "en",
+       "downloads": 1791
+      },
+      {
+       "gid": 13649,
+       "title": "Laughable Lyrics",
+       "author": "Lear, Edward, 1812-1888",
+       "lang": "en",
+       "downloads": 1157
+      }
+     ]
+    },
+    {
+     "id": "lit-drama",
+     "name": "Drama",
+     "books": [
+      {
+       "gid": 1513,
+       "title": "Romeo and Juliet",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 81893
+      },
+      {
+       "gid": 1524,
+       "title": "Hamlet",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 10535
+      },
+      {
+       "gid": 1533,
+       "title": "Macbeth",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 9275
+      },
+      {
+       "gid": 1514,
+       "title": "A Midsummer Night's Dream",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 16224
+      },
+      {
+       "gid": 1523,
+       "title": "As You Like It",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 14624
+      },
+      {
+       "gid": 1510,
+       "title": "Love's Labour's Lost",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 14099
+      },
+      {
+       "gid": 1534,
+       "title": "Antony and Cleopatra",
+       "author": "Shakespeare, William, 1564-1616",
+       "lang": "en",
+       "downloads": 2277
+      },
+      {
+       "gid": 2542,
+       "title": "A Doll's House",
+       "author": "Ibsen, Henrik, 1828-1906; Sharp, R. Farquharson (Robert Farquharson), 1864-1945 [Translator]",
+       "lang": "en",
+       "downloads": 32656
+      },
+      {
+       "gid": 844,
+       "title": "The Importance of Being Earnest",
+       "author": "Wilde, Oscar, 1854-1900",
+       "lang": "en",
+       "downloads": 31888
+      },
+      {
+       "gid": 14591,
+       "title": "Faust [part 1]. Translated Into English in the Original Metres",
+       "author": "Goethe, Johann Wolfgang von, 1749-1832; Clarke, Harry, 1889-1931 [Illustrator]; Taylor, Bayard, 1825-1878 [Translator]",
+       "lang": "en",
+       "downloads": 12999
+      },
+      {
+       "gid": 59112,
+       "title": "R.U.R. (Rossum's Universal Robots) A Fantastic Melodrama in Three Acts and an Epilogue",
+       "author": "Čapek, Karel, 1890-1938; Playfair, Nigel, 1874-1934 [Translator]; Selver, Paul, 1888-1970 [Translator]",
+       "lang": "en",
+       "downloads": 5057
+      },
+      {
+       "gid": 1311,
+       "title": "If: A Play in Four Acts",
+       "author": "Dunsany, Lord, 1878-1957",
+       "lang": "en",
+       "downloads": 619
+      },
+      {
+       "gid": 19393,
+       "title": "Plays of Near & Far",
+       "author": "Dunsany, Lord, 1878-1957",
+       "lang": "en",
+       "downloads": 581
+      },
+      {
+       "gid": 11283,
+       "title": "Plays of Gods and Men",
+       "author": "Dunsany, Lord, 1878-1957",
+       "lang": "en",
+       "downloads": 579
+      },
+      {
+       "gid": 16435,
+       "title": "The Atlantic Book of Modern Plays",
+       "author": "Leonard, Sterling Andrus, 1888-1931 [Editor]; Bottomley, Gordon, 1874-1948 [Contributor]; Brighouse, Harold, 1882-1958 [Contributor]; Chapin, Harold, 1886-1915 [Contributor]; Dix, Beulah Marie, 1876-1970 [Contributor]; Dunsany, Lord, 1878-1957 [Contributor]; Ferguson, J. A. (John Alexander), 1871-1952 [Contributor]; Galsworthy, John, 1867-1933 [Contributor]; Gregory, Lady, 1852-1932 [Contributor]; MacKaye, Percy, 1875-1956 [Contributor]; Middleton, George, 1880-1967 [Contributor]; O'Neill, Eugene, 1888-1953 [Contributor]; Parkhurst, Winthrop [Contributor]; Saunders, Louise [Contributor]; Synge, J. M. (John Millington), 1871-1909 [Contributor]; Yeats, W. B. (William Butler), 1865-1939 [Contributor]",
+       "lang": "en",
+       "downloads": 918
+      },
+      {
+       "gid": 9829,
+       "title": "The Jewel Merchants: A Comedy in One Act",
+       "author": "Cabell, James Branch, 1879-1958",
+       "lang": "en",
+       "downloads": 479
+      }
+     ]
+    },
+    {
+     "id": "lit-children",
+     "name": "For Children",
+     "books": [
+      {
+       "gid": 11,
+       "title": "Alice's Adventures in Wonderland",
+       "author": "Carroll, Lewis, 1832-1898",
+       "lang": "en",
+       "downloads": 121623
+      },
+      {
+       "gid": 37106,
+       "title": "Little Women",
+       "author": "Alcott, Louisa May, 1832-1888; Merrill, Frank T., 1848-1923 [Illustrator]",
+       "lang": "en",
+       "downloads": 57282
+      },
+      {
+       "gid": 74,
+       "title": "The Adventures of Tom Sawyer, Complete",
+       "author": "Twain, Mark, 1835-1910",
+       "lang": "en",
+       "downloads": 42779
+      },
+      {
+       "gid": 55,
+       "title": "The Wonderful Wizard of Oz",
+       "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
+       "lang": "en",
+       "downloads": 38574
+      },
+      {
+       "gid": 2591,
+       "title": "Grimms' Fairy Tales",
+       "author": "Grimm, Jacob, 1785-1863; Grimm, Wilhelm, 1786-1859",
+       "lang": "en",
+       "downloads": 37383
+      },
+      {
+       "gid": 41,
+       "title": "The Legend of Sleepy Hollow",
+       "author": "Irving, Washington, 1783-1859",
+       "lang": "en",
+       "downloads": 31979
+      },
+      {
+       "gid": 120,
+       "title": "Treasure Island",
+       "author": "Stevenson, Robert Louis, 1850-1894; Rhead, Louis, 1857-1926 [Illustrator]",
+       "lang": "en",
+       "downloads": 31688
+      },
+      {
+       "gid": 45,
+       "title": "Anne of Green Gables",
+       "author": "Montgomery, L. M. (Lucy Maud), 1874-1942",
+       "lang": "en",
+       "downloads": 31124
+      },
+      {
+       "gid": 46,
+       "title": "A Christmas Carol in Prose",
+       "author": "Dickens, Charles, 1812-1870; Leech, John, 1817-1864 [Illustrator]",
+       "lang": "en",
+       "downloads": 28618
+      },
+      {
+       "gid": 16,
+       "title": "Peter Pan",
+       "author": "Barrie, J. M. (James Matthew), 1860-1937",
+       "lang": "en",
+       "downloads": 25701
+      },
+      {
+       "gid": 78017,
+       "title": "The Swiss family Robinson",
+       "author": "Wyss, Johann David, 1743-1818; Robinson, T. H. (Thomas Heath), 1869-1954 [Illustrator]",
+       "lang": "en",
+       "downloads": 25237
+      },
+      {
+       "gid": 113,
+       "title": "The Secret Garden",
+       "author": "Burnett, Frances Hodgson, 1849-1924",
+       "lang": "en",
+       "downloads": 18922
+      },
+      {
+       "gid": 67098,
+       "title": "Winnie-the-Pooh",
+       "author": "Milne, A. A. (Alan Alexander), 1882-1956; Shepard, Ernest H. (Ernest Howard), 1879-1976 [Illustrator]",
+       "lang": "en",
+       "downloads": 16254
+      },
+      {
+       "gid": 14838,
+       "title": "The Tale of Peter Rabbit",
+       "author": "Potter, Beatrix, 1866-1943",
+       "lang": "en",
+       "downloads": 16096
+      },
+      {
+       "gid": 12,
+       "title": "Through the Looking-Glass",
+       "author": "Carroll, Lewis, 1832-1898",
+       "lang": "en",
+       "downloads": 15769
+      },
+      {
+       "gid": 11339,
+       "title": "Aesop's Fables",
+       "author": "Aesop, 621? BCE-565? BCE; Chesterton, G. K. (Gilbert Keith), 1874-1936 [Commentator]; Rackham, Arthur, 1867-1939 [Illustrator]; Vernon Jones, V. S. (Vernon Stanley) [Translator]",
+       "lang": "en",
+       "downloads": 12462
+      },
+      {
+       "gid": 1837,
+       "title": "The Prince and the Pauper",
+       "author": "Twain, Mark, 1835-1910",
+       "lang": "en",
+       "downloads": 12109
+      },
+      {
+       "gid": 1597,
+       "title": "Andersen's Fairy Tales",
+       "author": "Andersen, H. C. (Hans Christian), 1805-1875",
+       "lang": "en",
+       "downloads": 11350
+      },
+      {
+       "gid": 500,
+       "title": "The Adventures of Pinocchio",
+       "author": "Collodi, Carlo, 1826-1890; Della Chiesa, Carol, 1887-1972 [Translator]",
+       "lang": "en",
+       "downloads": 10906
+      },
+      {
+       "gid": 1874,
+       "title": "The Railway Children",
+       "author": "Nesbit, E. (Edith), 1858-1924",
+       "lang": "en",
+       "downloads": 10769
+      },
+      {
+       "gid": 289,
+       "title": "The Wind in the Willows",
+       "author": "Grahame, Kenneth, 1859-1932",
+       "lang": "en",
+       "downloads": 10554
+      },
+      {
+       "gid": 902,
+       "title": "The Happy Prince, and Other Tales",
+       "author": "Wilde, Oscar, 1854-1900",
+       "lang": "en",
+       "downloads": 9425
+      },
+      {
+       "gid": 421,
+       "title": "Kidnapped",
+       "author": "Stevenson, Robert Louis, 1850-1894",
+       "lang": "en",
+       "downloads": 9248
+      },
+      {
+       "gid": 146,
+       "title": "A Little Princess Being the whole story of Sara Crewe now told for the first time",
+       "author": "Burnett, Frances Hodgson, 1849-1924",
+       "lang": "en",
+       "downloads": 7382
+      },
+      {
+       "gid": 11757,
+       "title": "The Velveteen Rabbit",
+       "author": "Bianco, Margery Williams, 1881-1944",
+       "lang": "en",
+       "downloads": 5570
+      },
+      {
+       "gid": 1450,
+       "title": "Pollyanna",
+       "author": "Porter, Eleanor H. (Eleanor Hodgman), 1868-1920",
+       "lang": "en",
+       "downloads": 4225
+      },
+      {
+       "gid": 708,
+       "title": "The Princess and the Goblin",
+       "author": "MacDonald, George, 1824-1905",
+       "lang": "en",
+       "downloads": 3848
+      },
+      {
+       "gid": 128,
+       "title": "The Arabian Nights Entertainments",
+       "author": "Lang, Andrew, 1844-1912",
+       "lang": "en",
+       "downloads": 3845
+      },
+      {
+       "gid": 501,
+       "title": "The Story of Doctor Dolittle",
+       "author": "Lofting, Hugh, 1886-1947; Walpole, Hugh, 1884-1941 [Author of introduction, etc.]",
+       "lang": "en",
+       "downloads": 3390
+      },
+      {
+       "gid": 1448,
+       "title": "Heidi",
+       "author": "Spyri, Johanna, 1827-1901; Edwards, Marion [Translator]",
+       "lang": "en",
+       "downloads": 2239
+      },
+      {
+       "gid": 498,
+       "title": "Rebecca of Sunnybrook Farm",
+       "author": "Wiggin, Kate Douglas Smith, 1856-1923",
+       "lang": "en",
+       "downloads": 1952
+      },
+      {
+       "gid": 2306,
+       "title": "Uncle Remus, His Songs and His Sayings",
+       "author": "Harris, Joel Chandler, 1848-1908",
+       "lang": "en",
+       "downloads": 1646
+      },
+      {
+       "gid": 778,
+       "title": "Five Children and It",
+       "author": "Nesbit, E. (Edith), 1858-1924",
+       "lang": "en",
+       "downloads": 1403
+      },
+      {
+       "gid": 764,
+       "title": "Hans Brinker",
+       "author": "Dodge, Mary Mapes, 1830-1905",
+       "lang": "en",
+       "downloads": 1155
+      }
+     ]
+    },
+    {
+     "id": "lit-social",
+     "name": "Social Sciences",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 23,
+       "title": "Narrative of the Life of Frederick Douglass, an American Slave",
+       "author": "Douglass, Frederick, 1818-1895",
+       "lang": "en",
+       "downloads": 42092
+      },
+      {
+       "gid": 205,
+       "title": "Walden, and On The Duty Of Civil Disobedience",
+       "author": "Thoreau, Henry David, 1817-1862",
+       "lang": "en",
+       "downloads": 33667
+      },
+      {
+       "gid": 408,
+       "title": "The Souls of Black Folk",
+       "author": "Du Bois, W. E. B. (William Edward Burghardt), 1868-1963",
+       "lang": "en",
+       "downloads": 29969
+      },
+      {
+       "gid": 2376,
+       "title": "Up from Slavery",
+       "author": "Washington, Booker T., 1856-1915",
+       "lang": "en",
+       "downloads": 13343
+      },
+      {
+       "gid": 815,
+       "title": "Democracy in America — Volume 1",
+       "author": "Tocqueville, Alexis de, 1805-1859; Reeve, Henry, 1813-1895 [Translator]",
+       "lang": "en",
+       "downloads": 11397
+      },
+      {
+       "gid": 2130,
+       "title": "Utopia",
+       "author": "More, Thomas, Saint, 1478-1535; Morley, Henry, 1822-1894 [Editor]",
+       "lang": "en",
+       "downloads": 10564
+      },
+      {
+       "gid": 11030,
+       "title": "Incidents in the Life of a Slave Girl, Written by Herself",
+       "author": "Jacobs, Harriet A. (Harriet Ann), 1813-1897; Child, Lydia Maria, 1802-1880 [Editor]",
+       "lang": "en",
+       "downloads": 10404
+      },
+      {
+       "gid": 140,
+       "title": "The Jungle",
+       "author": "Sinclair, Upton, 1878-1968",
+       "lang": "en",
+       "downloads": 10305
+      },
+      {
+       "gid": 3420,
+       "title": "A Vindication of the Rights of Woman With Strictures on Political and Moral Subjects",
+       "author": "Wollstonecraft, Mary, 1759-1797",
+       "lang": "en",
+       "downloads": 9937
+      },
+      {
+       "gid": 45502,
+       "title": "How the Other Half Lives",
+       "author": "Riis, Jacob A. (Jacob August), 1849-1914",
+       "lang": "en",
+       "downloads": 9430
+      },
+      {
+       "gid": 27083,
+       "title": "The Subjection of Women",
+       "author": "Mill, John Stuart, 1806-1873",
+       "lang": "en",
+       "downloads": 6636
+      },
+      {
+       "gid": 833,
+       "title": "The Theory of the Leisure Class",
+       "author": "Veblen, Thorstein, 1857-1929",
+       "lang": "en",
+       "downloads": 5227
+      },
+      {
+       "gid": 1080,
+       "title": "A Modest Proposal For preventing the children of poor people in Ireland, from being a burden on their parents or country, and for making them beneficial to the publick",
+       "author": "Swift, Jonathan, 1667-1745",
+       "lang": "en",
+       "downloads": 37350
+      }
+     ]
+    },
+    {
+     "id": "lit-countries",
+     "name": "Countries",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 2641,
+       "title": "A Room with a View",
+       "author": "Forster, E. M. (Edward Morgan), 1879-1970",
+       "lang": "en",
+       "downloads": 52959
+      },
+      {
+       "gid": 2160,
+       "title": "The Expedition of Humphry Clinker",
+       "author": "Smollett, T. (Tobias), 1721-1771",
+       "lang": "en",
+       "downloads": 43773
+      },
+      {
+       "gid": 103,
+       "title": "Around the World in Eighty Days",
+       "author": "Verne, Jules, 1828-1905; Towle, George M. (George Makepeace), 1841-1893 [Translator]",
+       "lang": "en",
+       "downloads": 20292
+      },
+      {
+       "gid": 829,
+       "title": "Gulliver's Travels into Several Remote Nations of the World",
+       "author": "Swift, Jonathan, 1667-1745",
+       "lang": "en",
+       "downloads": 18824
+      },
+      {
+       "gid": 61,
+       "title": "The Communist Manifesto",
+       "author": "Marx, Karl, 1818-1883; Engels, Friedrich, 1820-1895",
+       "lang": "en",
+       "downloads": 13596
+      },
+      {
+       "gid": 10636,
+       "title": "The Travels of Marco Polo — Volume 1",
+       "author": "Polo, Marco, 1254-1324; Rusticiano, da Pisa; Cordier, Henri, 1849-1925 [Editor]; Yule, Henry, Sir, 1820-1889 [Translator]",
+       "lang": "en",
+       "downloads": 11950
+      },
+      {
+       "gid": 1,
+       "title": "The Declaration of Independence of the United States of America",
+       "author": "Jefferson, Thomas, 1743-1826",
+       "lang": "en",
+       "downloads": 8535
+      },
+      {
+       "gid": 3176,
+       "title": "The Innocents Abroad",
+       "author": "Twain, Mark, 1835-1910",
+       "lang": "en",
+       "downloads": 7302
+      },
+      {
+       "gid": 61221,
+       "title": "A passage to India",
+       "author": "Forster, E. M. (Edward Morgan), 1879-1970",
+       "lang": "en",
+       "downloads": 3556
+      },
+      {
+       "gid": 535,
+       "title": "Travels with a donkey in the Cevennes",
+       "author": "Stevenson, Robert Louis, 1850-1894; Crane, Walter, 1845-1915 [Illustrator]",
+       "lang": "en",
+       "downloads": 2148
+      }
+     ]
+    },
+    {
+     "id": "lit-religion",
+     "name": "Religion",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 16328,
+       "title": "Beowulf",
+       "author": "Hall, J. Lesslie (John Lesslie), 1856-1928 [Translator]",
+       "lang": "en",
+       "downloads": 37188
+      },
+      {
+       "gid": 27827,
+       "title": "The Kama Sutra of Vatsyayana Translated From the Sanscrit in Seven Parts With Preface, Introduction and Concluding Remarks",
+       "author": "Vatsyayana; Bhide, Shivaram Parashuram [Translator]; Burton, Richard Francis, Sir, 1821-1890 [Translator]; Indrajit, Bhagavanlal [Translator]",
+       "lang": "en",
+       "downloads": 23608
+      },
+      {
+       "gid": 72679,
+       "title": "The lesser Key of Solomon, Goetia, the book of evil spirits",
+       "author": "De Laurence, L. W. (Lauron William), 1868-1936 [Editor]",
+       "lang": "en",
+       "downloads": 19420
+      },
+      {
+       "gid": 58585,
+       "title": "The Prophet",
+       "author": "Gibran, Kahlil, 1883-1931",
+       "lang": "en",
+       "downloads": 16019
+      },
+      {
+       "gid": 26,
+       "title": "Paradise Lost",
+       "author": "Milton, John, 1608-1674",
+       "lang": "en",
+       "downloads": 12923
+      },
+      {
+       "gid": 2500,
+       "title": "Siddhartha",
+       "author": "Hesse, Hermann, 1877-1962",
+       "lang": "en",
+       "downloads": 10102
+      },
+      {
+       "gid": 131,
+       "title": "The Pilgrim's Progress from this world to that which is to come Delivered under the similitude of a dream, by John Bunyan",
+       "author": "Bunyan, John, 1628-1688",
+       "lang": "en",
+       "downloads": 6427
+      },
+      {
+       "gid": 3623,
+       "title": "The Golden Bough",
+       "author": "Frazer, James George, 1854-1941",
+       "lang": "en",
+       "downloads": 5543
+      },
+      {
+       "gid": 1004,
+       "title": "Divine Comedy, Longfellow's Translation, Complete",
+       "author": "Dante Alighieri, 1265-1321; Longfellow, Henry Wadsworth, 1807-1882 [Translator]",
+       "lang": "en",
+       "also": [
+        1000
+       ],
+       "downloads": 4138
+      },
+      {
+       "gid": 130,
+       "title": "Orthodoxy",
+       "author": "Chesterton, G. K. (Gilbert Keith), 1874-1936",
+       "lang": "en",
+       "downloads": 3886
+      },
+      {
+       "gid": 4928,
+       "title": "Bulfinch's Mythology",
+       "author": "Bulfinch, Thomas, 1796-1867",
+       "lang": "en",
+       "downloads": 3165
+      },
+      {
+       "gid": 7145,
+       "title": "The Book of the Dead",
+       "author": "Budge, E. A. Wallis (Ernest Alfred Wallis), Sir, 1857-1934",
+       "lang": "en",
+       "downloads": 2962
+      },
+      {
+       "gid": 58,
+       "title": "Paradise Regained",
+       "author": "Milton, John, 1608-1674",
+       "lang": "en",
+       "downloads": 1907
+      }
+     ]
+    },
+    {
+     "id": "lit-law",
+     "name": "Law",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 1232,
+       "title": "The Prince",
+       "author": "Machiavelli, Niccolò, 1469-1527; Marriott, W. K. (William Kenaz), -1927 [Translator]",
+       "lang": "en",
+       "downloads": 45102
+      },
+      {
+       "gid": 3300,
+       "title": "An Inquiry into the Nature and Causes of the Wealth of Nations",
+       "author": "Smith, Adam, 1723-1790",
+       "lang": "en",
+       "downloads": 27367
+      },
+      {
+       "gid": 147,
+       "title": "Common Sense",
+       "author": "Paine, Thomas, 1737-1809",
+       "lang": "en",
+       "downloads": 14772
+      },
+      {
+       "gid": 1404,
+       "title": "The Federalist Papers",
+       "author": "Hamilton, Alexander, 1757-1804; Jay, John, 1745-1829; Madison, James, 1751-1836",
+       "lang": "en",
+       "downloads": 8081
+      },
+      {
+       "gid": 5,
+       "title": "The United States Constitution",
+       "author": "United States",
+       "lang": "en",
+       "downloads": 3474
+      },
+      {
+       "gid": 2,
+       "title": "The United States Bill of Rights The Ten Original Amendments to the Constitution of the United States",
+       "author": "United States",
+       "lang": "en",
+       "downloads": 2745
+      }
+     ]
+    },
+    {
+     "id": "lit-wars",
+     "name": "Wars",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 75201,
+       "title": "A farewell to arms",
+       "author": "Hemingway, Ernest, 1899-1961",
+       "lang": "en",
+       "downloads": 21165
+      },
+      {
+       "gid": 132,
+       "title": "The Art of War",
+       "author": "Sunzi, active 6th century B.C.; Giles, Lionel, 1875-1958 [Translator]",
+       "lang": "en",
+       "downloads": 20613
+      },
+      {
+       "gid": 7142,
+       "title": "The History of the Peloponnesian War",
+       "author": "Thucydides, 456? BCE-396 BCE; Crawley, Richard, 1840-1893 [Translator]",
+       "lang": "en",
+       "downloads": 14393
+      },
+      {
+       "gid": 1946,
+       "title": "On War",
+       "author": "Clausewitz, Carl von, 1780-1831; Graham, J. J. (James John) [Translator]",
+       "lang": "en",
+       "downloads": 10631
+      },
+      {
+       "gid": 73,
+       "title": "The Red Badge of Courage",
+       "author": "Crane, Stephen, 1871-1900",
+       "lang": "en",
+       "downloads": 9601
+      },
+      {
+       "gid": 4367,
+       "title": "Personal Memoirs of U. S. Grant, Complete",
+       "author": "Grant, Ulysses S. (Ulysses Simpson), 1822-1885",
+       "lang": "en",
+       "downloads": 7981
+      },
+      {
+       "gid": 75011,
+       "title": "All quiet on the Western Front",
+       "author": "Remarque, Erich Maria, 1898-1970; Wheen, A. W. (Arthur Wesley), 1897-1971 [Translator]",
+       "lang": "en",
+       "downloads": 5498
+      },
+      {
+       "gid": 10657,
+       "title": "\"De Bello Gallico\" and Other Commentaries",
+       "author": "Caesar, Julius, 100 BCE-44 BCE; De Quincey, Thomas, 1785-1859 [Author of introduction, etc.]; McDevitte, W. A. (William Alexander) [Translator]",
+       "lang": "en",
+       "downloads": 4368
+      },
+      {
+       "gid": 4361,
+       "title": "Memoirs of General William T. Sherman — Complete",
+       "author": "Sherman, William T. (William Tecumseh), 1820-1891",
+       "lang": "en",
+       "downloads": 2794
+      }
+     ]
+    },
+    {
+     "id": "lit-animals",
+     "name": "Animals",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 215,
+       "title": "The call of the wild",
+       "author": "London, Jack, 1876-1916",
+       "lang": "en",
+       "downloads": 19679
+      },
+      {
+       "gid": 236,
+       "title": "The Jungle Book",
+       "author": "Kipling, Rudyard, 1865-1936",
+       "lang": "en",
+       "downloads": 18135
+      },
+      {
+       "gid": 271,
+       "title": "Black Beauty",
+       "author": "Sewell, Anna, 1820-1878",
+       "lang": "en",
+       "downloads": 13472
+      },
+      {
+       "gid": 910,
+       "title": "White Fang",
+       "author": "London, Jack, 1876-1916",
+       "lang": "en",
+       "downloads": 12063
+      },
+      {
+       "gid": 2009,
+       "title": "The Origin of Species by Means of Natural Selection Or, the Preservation of Favoured Races in the Struggle for Life, 6th Edition",
+       "author": "Darwin, Charles, 1809-1882",
+       "lang": "en",
+       "downloads": 6846
+      },
+      {
+       "gid": 944,
+       "title": "The Voyage of the Beagle",
+       "author": "Darwin, Charles, 1809-1882",
+       "lang": "en",
+       "downloads": 4232
+      },
+      {
+       "gid": 2818,
+       "title": "Beautiful Joe",
+       "author": "Saunders, Marshall, 1861-1947; Butterworth, Hezekiah, 1839-1905 [Author of introduction, etc.]",
+       "lang": "en",
+       "downloads": 1264
+      },
+      {
+       "gid": 72577,
+       "title": "Bambi",
+       "author": "Salten, Felix, 1869-1945; Galsworthy, John, 1867-1933 [Author of introduction, etc.]; Wiese, Kurt, 1887-1974 [Illustrator]; Chambers, Whittaker, 1901-1961 [Translator]",
+       "lang": "en",
+       "downloads": 895
+      }
+     ]
+    },
+    {
+     "id": "lit-education",
+     "name": "Education",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 20203,
+       "title": "Autobiography of Benjamin Franklin",
+       "author": "Franklin, Benjamin, 1706-1790; Pine, Frank Woodworth, 1869- [Editor]; Smith, E. Boyd (Elmer Boyd), 1860-1943 [Illustrator]",
+       "lang": "en",
+       "downloads": 29881
+      },
+      {
+       "gid": 2397,
+       "title": "The Story of My Life With her letters (1887-1901) and a supplementary account of her education, including passages from the reports and letters of her teacher, Anne Mansfield Sullivan, by John Albert Macy",
+       "author": "Keller, Helen, 1880-1968; Macy, John Albert, 1877-1932 [Contributor]; Sullivan, Annie, 1866-1936 [Contributor]",
+       "lang": "en",
+       "downloads": 12097
+      },
+      {
+       "gid": 852,
+       "title": "Democracy and Education",
+       "author": "Dewey, John, 1859-1952",
+       "lang": "en",
+       "downloads": 9129
+      },
+      {
+       "gid": 5427,
+       "title": "Emile",
+       "author": "Rousseau, Jean-Jacques, 1712-1778",
+       "lang": "en",
+       "downloads": 6283
+      },
+      {
+       "gid": 935,
+       "title": "Self Help",
+       "author": "Smiles, Samuel, 1812-1904",
+       "lang": "en",
+       "downloads": 4476
+      },
+      {
+       "gid": 39863,
+       "title": "The Montessori Method Scientific Pedagogy as Applied to Child Education in 'The Children's Houses' with Additions and Revisions by the Author",
+       "author": "Montessori, Maria, 1870-1952; Holmes, Henry W. (Henry Wyman), 1880-1960 [Author of introduction, etc.]; George, Anne E., 1882- [Translator]",
+       "lang": "en",
+       "downloads": 3764
+      },
+      {
+       "gid": 2044,
+       "title": "The Education of Henry Adams",
+       "author": "Adams, Henry, 1838-1918; Lodge, Henry Cabot, 1850-1924 [Editor]",
+       "lang": "en",
+       "downloads": 2591
+      },
+      {
+       "gid": 12439,
+       "title": "Notes on Nursing",
+       "author": "Nightingale, Florence, 1820-1910",
+       "lang": "en",
+       "downloads": 2515
+      }
+     ]
+    },
+    {
+     "id": "lit-music",
+     "name": "Music",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 5197,
+       "title": "My Life — Volume 1",
+       "author": "Wagner, Richard, 1813-1883",
+       "lang": "en",
+       "downloads": 37306
+      },
+      {
+       "gid": 175,
+       "title": "The Phantom of the Opera",
+       "author": "Leroux, Gaston, 1868-1927",
+       "lang": "en",
+       "downloads": 23966
+      },
+      {
+       "gid": 3528,
+       "title": "Beethoven, the Man and the Artist, as Revealed in His Own Words",
+       "author": "Beethoven, Ludwig van, 1770-1827; Kerst, Friedrich, 1870-1961 [Editor]; Krehbiel, Henry Edward, 1854-1923 [Editor]",
+       "lang": "en",
+       "downloads": 1064
+      },
+      {
+       "gid": 17474,
+       "title": "How to Listen to Music, 7th ed. Hints and Suggestions to Untaught Lovers of the Art",
+       "author": "Krehbiel, Henry Edward, 1854-1923",
+       "lang": "en",
+       "downloads": 840
+      },
+      {
+       "gid": 16248,
+       "title": "The Opera A Sketch of the Development of Opera. With full Descriptions of all Works in the Modern Repertory.",
+       "author": "Streatfeild, R. A. (Richard Alexander), 1866-1919; Fuller-Maitland, J. A. (John Alexander), 1856-1936 [Commentator]",
+       "lang": "en",
+       "downloads": 840
+      },
+      {
+       "gid": 14968,
+       "title": "The Standard Operas",
+       "author": "Upton, George P. (George Putnam), 1834-1919",
+       "lang": "en",
+       "downloads": 754
+      },
+      {
+       "gid": 17461,
+       "title": "The Great German Composers",
+       "author": "Ferris, George T. (George Titus), 1840-",
+       "lang": "en",
+       "downloads": 720
+      },
+      {
+       "gid": 17462,
+       "title": "Great Italian and French Composers",
+       "author": "Ferris, George T. (George Titus), 1840-",
+       "lang": "en",
+       "downloads": 700
+      }
+     ]
+    },
+    {
+     "id": "lit-science",
+     "name": "Science",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 1228,
+       "title": "On the Origin of Species By Means of Natural Selection Or, the Preservation of Favoured Races in the Struggle for Life",
+       "author": "Darwin, Charles, 1809-1882",
+       "lang": "en",
+       "downloads": 21755
+      },
+      {
+       "gid": 33504,
+       "title": "Opticks",
+       "author": "Newton, Isaac, 1642-1727",
+       "lang": "en",
+       "downloads": 5438
+      },
+      {
+       "gid": 2300,
+       "title": "The Descent of Man, and Selection in Relation to Sex",
+       "author": "Darwin, Charles, 1809-1882",
+       "lang": "en",
+       "downloads": 4262
+      },
+      {
+       "gid": 15491,
+       "title": "Micrographia Some Physiological Descriptions of Minute Bodies Made by Magnifying Glasses with Observations and Inquiries Thereupon",
+       "author": "Hooke, Robert, 1635-1703",
+       "lang": "en",
+       "downloads": 3604
+      },
+      {
+       "gid": 14986,
+       "title": "Experimental Researches in Electricity, Volume 1",
+       "author": "Faraday, Michael, 1791-1867",
+       "lang": "en",
+       "downloads": 3413
+      },
+      {
+       "gid": 30775,
+       "title": "Elements of Chemistry, In a New Systematic Order, Containing all the Modern Discoveries",
+       "author": "Lavoisier, Antoine Laurent, 1743-1794; Kerr, Robert, 1755-1813 [Translator]",
+       "lang": "en",
+       "downloads": 2781
+      },
+      {
+       "gid": 25267,
+       "title": "Astronomy for Amateurs",
+       "author": "Flammarion, Camille, 1842-1925; Welby, Frances A. (Frances Alice), 1862-1947 [Translator]",
+       "lang": "en",
+       "downloads": 2265
+      }
+     ]
+    },
+    {
+     "id": "lit-technology",
+     "name": "Technology",
+     "section": "Non-fiction",
+     "books": [
+      {
+       "gid": 10136,
+       "title": "The Book of Household Management",
+       "author": "Beeton, Mrs. (Isabella Mary), 1836-1865",
+       "lang": "en",
+       "downloads": 6221
+      },
+      {
+       "gid": 65061,
+       "title": "The Boston cooking-school cook book",
+       "author": "Farmer, Fannie Merritt, 1857-1915",
+       "lang": "en",
+       "downloads": 3558
+      },
+      {
+       "gid": 39272,
+       "title": "The inventions, researches and writings of Nikola Tesla With special reference to his work in polyphase currents and high potential lighting",
+       "author": "Martin, Thomas Commerford, 1856-1924",
+       "lang": "en",
+       "downloads": 2805
+      },
+      {
+       "gid": 21531,
+       "title": "Woodwork joints",
+       "author": "Fairham, William",
+       "lang": "en",
+       "downloads": 2357
+      },
+      {
+       "gid": 15147,
+       "title": "Beeton's Book of Needlework",
+       "author": "Beeton, Mrs. (Isabella Mary), 1836-1865",
+       "lang": "en",
+       "downloads": 1732
+      }
+     ]
+    },
+    {
+     "id": "lit-emmy",
+     "name": "Emmy's Picks",
+     "books": [
+      {
+       "gid": 14872,
+       "title": "Tales of Beatrix Potter",
+       "author": "Potter, Beatrix, 1866-1943",
+       "lang": "en",
+       "group": [
+        14872,
+        14407,
+        14814,
+        15137,
+        14220,
+        14797,
+        45264,
+        14868,
+        45265,
+        17089
+       ],
+       "downloads": 3393
+      },
+      {
+       "gid": 39784,
+       "title": "Mother Goose's Nursery Rhymes A Collection of Alphabets, Rhymes, Tales, and Jingles",
+       "author": "Gilbert, John, 1817-1897 [Illustrator]; Crane, Walter, 1845-1915 [Illustrator]; Tenniel, John, 1820-1914 [Illustrator]; Weir, Harrison, 1824-1906 [Illustrator]; Zwecker, Johann Baptist, 1814-1876 [Illustrator]",
+       "lang": "en",
+       "downloads": 3381
+      },
+      {
+       "gid": 27602,
+       "title": "The True Story Book",
+       "author": "Lang, Andrew, 1844-1912 [Editor]",
+       "lang": "en",
+       "downloads": 2646
+      },
+      {
+       "gid": 32488,
+       "title": "Just so stories",
+       "author": "Kipling, Rudyard, 1865-1936; Gleeson, Joseph M. (Joseph Michael), 1861-1917 [Illustrator]",
+       "lang": "en",
+       "downloads": 1999
+      },
+      {
+       "gid": 18190,
+       "title": "Raggedy Ann stories",
+       "author": "Gruelle, Johnny, 1880-1938",
+       "lang": "en",
+       "downloads": 1703
+      },
+      {
+       "gid": 26197,
+       "title": "The Nursery Rhyme Book",
+       "author": "Lang, Andrew, 1844-1912 [Editor]; Brooke, L. Leslie (Leonard Leslie), 1862-1940 [Illustrator]",
+       "lang": "en",
+       "downloads": 1596
+      },
+      {
+       "gid": 5312,
+       "title": "Mother Goose in Prose",
+       "author": "Baum, L. Frank (Lyman Frank), 1856-1919; Parrish, Maxfield, 1870-1966 [Illustrator]",
+       "lang": "en",
+       "downloads": 1199
+      },
+      {
+       "gid": 35555,
+       "title": "Kim",
+       "author": "Kipling, Rudyard, 1865-1936",
+       "lang": "en",
+       "downloads": 1058
+      },
+      {
+       "gid": 17371,
+       "title": "Raggedy Andy stories",
+       "author": "Gruelle, Johnny, 1880-1938",
+       "lang": "en",
+       "downloads": 931
+      },
+      {
+       "gid": 38567,
+       "title": "Eight Cousins",
+       "author": "Alcott, Louisa May, 1832-1888",
+       "lang": "en",
+       "downloads": 818
+      },
+      {
+       "gid": 28308,
+       "title": "The Children's Book of Christmas Stories",
+       "author": "Dickinson, Asa Don, 1876-1960 [Editor]; Skinner, Ada M. (Ada Maria), 1878- [Editor]",
+       "lang": "en",
+       "downloads": 733
       }
      ]
     }

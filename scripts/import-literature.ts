@@ -70,7 +70,8 @@ async function rawBookText(id: number): Promise<string | null> {
 }
 
 type Entry = { gid: number; title: string; author: string; lang: string; also?: number[]; group?: number[]; name?: string; year?: number };
-type List = { collections: { id: string; name: string; books: Entry[] }[] };
+/** `section`: a group inside the shelf (Literature › Fiction › Romance); shelves without one sit directly under it. */
+type List = { collections: { id: string; name: string; section?: string; books: Entry[] }[] };
 
 /* ---------- names, authors, years ---------- */
 
@@ -657,7 +658,7 @@ function lifespan(authors: string): [number, number] | null {
   return m ? [Number(m[1]), Number(m[2])] : null;
 }
 
-type ShelfOut = { id: string; name: string; collections: { id: string; name: string; items: Record<string, unknown>[] }[] };
+type ShelfOut = { id: string; name: string; collections: { id: string; name: string; section?: string; items: Record<string, unknown>[] }[] };
 
 async function main() {
   const raw = JSON.parse(await readFile(path.join(ROOT, "data", "literature-list.json"), "utf8")) as List & { shelves?: { id: string; name: string; collections: List["collections"] }[] };
@@ -682,7 +683,7 @@ async function main() {
         const b = done.get(e.gid);
         if (b) items.push({ id: b.bookSlug, name: b.title, work: b.work, chapters: b.chapters, chapterName: b.title });
       }
-      if (items.length) out.collections.push({ id: col.id, name: col.name, items });
+      if (items.length) out.collections.push({ id: col.id, name: col.name, ...(col.section ? { section: col.section } : {}), items });
     }
     shelvesOut.push(out);
   }
@@ -811,9 +812,9 @@ async function main() {
   });
   const lit = {
     $comment:
-      "The Literature and Fiction shelves (Project Gutenberg, public domain in the US). Written by scripts/import-literature.ts; expanded into works, versions and shelves by src/lib/catalog.ts. books: [work, book id, title, chapters, editions: [Gutenberg number, language, column label, year, author, translator, year note]].",
+      "The Literature shelf with its sections (Fiction, Poetry, Drama, Non-fiction…; Project Gutenberg, public domain in the US). Written by scripts/import-literature.ts; expanded into works, versions and shelves by src/lib/catalog.ts. books: [work, book id, title, chapters, editions: [Gutenberg number, language, column label, year, author, translator, year note]].",
     books,
-    shelves: shelvesOut.map((sh) => ({ id: sh.id, name: sh.name, collections: sh.collections.map((c) => ({ id: c.id, name: c.name, books: c.items.map((it) => it.work as string).filter((wk) => byWork.has(wk)) })) })),
+    shelves: shelvesOut.map((sh) => ({ id: sh.id, name: sh.name, collections: sh.collections.map((c) => ({ id: c.id, name: c.name, ...(c.section ? { section: c.section } : {}), books: c.items.map((it) => it.work as string).filter((wk) => byWork.has(wk)) })) })),
   };
   await writeFile(path.join(ROOT, "data", "literature-catalog.json"), JSON.stringify(lit).replace(/\],\["lit-/g, '],\n["lit-') + "\n");
   // Text folders of books no longer on a shelf (or renamed) go, so they aren't packed and served.

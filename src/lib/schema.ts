@@ -56,6 +56,8 @@ export const itemSchema = z.object({
 export const collectionSchema = z.object({
   id: idSchema,
   name: z.string().min(1),
+  /** A group inside the tradition/shelf (Literature › Fiction › Romance); the library shows it as one more level. */
+  section: z.string().min(1).optional(),
   items: z.array(itemSchema),
 });
 
