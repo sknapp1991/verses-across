@@ -1,5 +1,5 @@
 // The private team hub (hub.versesacross.com): a separate Worker from the public site.
-// Locked by Cloudflare Access (Zero Trust, team tight-leaf-77cd; only the two team emails), and the Worker
+// Locked by Cloudflare Access (Zero Trust, team tight-leaf-77ed; only the two team emails), and the Worker
 // checks the Access token itself on every request. The two emails are secrets, never in this file:
 //   npx wrangler secret put TEAM_EMAILS   (both emails, comma-separated)
 //   npx wrangler secret put OWNER_EMAIL   (the one who approves)
@@ -13,7 +13,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "vars": {
-    "TEAM_DOMAIN": "tight-leaf-77cd.cloudflareaccess.com",
+    "TEAM_DOMAIN": "tight-leaf-77ed.cloudflareaccess.com",
     "POLICY_AUD": "39ff06db220e1d12871310c408e16ca691c6948a6410796d1a9de007683d5032",
     "REPO": "sknapp1991/snoopwiggy",
     "SITE": "https://versesacross.com"

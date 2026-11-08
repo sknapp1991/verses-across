@@ -9,7 +9,7 @@ import { createServer } from "node:http";
 import { generateKeyPairSync, createSign, randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
-const TEAM = "tight-leaf-77cd.cloudflareaccess.com";
+const TEAM = "tight-leaf-77ed.cloudflareaccess.com";
 const AUD = "39ff06db220e1d12871310c408e16ca691c6948a6410796d1a9de007683d5032";
 const KEYFILE = new URL("./.test-key.json", import.meta.url);
 const HUB = "http://127.0.0.1:8788";
