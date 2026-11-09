@@ -31,6 +31,7 @@
     { "binding": "MEDIA", "bucket_name": "va-hub-media" }
   ],
   "observability": { "enabled": true },
-  // Once a day, 13:07 UTC (8:07 AM Eastern): Live tickets with no reply for 3 days are closed (see autoClose).
-  "triggers": { "crons": ["7 13 * * *"] }
+  // Once a day, 13:07 UTC (8:07 AM Eastern): Live tickets with no reply for 3 days are closed (see autoClose), and on
+  // Sundays a backup of the databases goes to the private bucket. Every hour at :17, a check that the site answers.
+  "triggers": { "crons": ["7 13 * * *", "17 * * * *"] }
 }

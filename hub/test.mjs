@@ -182,6 +182,35 @@ if (process.argv[2] === "serve") {
   check("closing with no body works too", (await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live" }) }), (await call(OWNER, `/api/reports/${rid}/resolve`, { method: "POST" })).status === 200));
   check("Claude adds a shipped line", (await call(CLAUDE, "/api/shipped", { method: "POST", body: JSON.stringify({ text: "Note delete is live" }) })).status === 200);
 
+  // Sorting (HB1): priority, area, device; duplicates
+  r = await J(await call(TEAMMATE, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "urgent one", priority: "urgent", area: "reader", device: "iPhone" }) }));
+  const sid = r.body.id;
+  r = await J(await call(TEAMMATE, `/api/reports/${sid}`));
+  check("new report keeps priority, area and device", r.body.priority === "urgent" && r.body.area === "reader" && r.body.device === "iPhone");
+  r = await J(await call(TEAMMATE, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Idea", body: "junk sorting", priority: "nope", area: "<b>", device: "fridge" }) }));
+  const jid = r.body.id;
+  r = await J(await call(TEAMMATE, `/api/reports/${jid}`));
+  check("unknown sorting values fall back", r.body.priority === "normal" && r.body.area === "" && r.body.device === "");
+  check("reporter changes their own sorting", (await call(TEAMMATE, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ priority: "someday", area: "" }) })).status === 200);
+  check("bad priority refused", (await call(TEAMMATE, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ priority: "" }) })).status === 400);
+  check("bad area refused", (await call(OWNER, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ area: "kitchen" }) })).status === 400);
+  check("Claude (the owner's helper) can set sorting", (await call(CLAUDE, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ area: "search" }) })).status === 200);
+  check("teammate can't mark duplicates", (await call(TEAMMATE, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: sid.slice(0, 6) }) })).status === 403);
+  check("duplicate needs a real number", (await call(OWNER, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: "#zzzz" }) })).status === 400);
+  check("can't be a duplicate of itself", (await call(OWNER, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: jid }) })).status === 400);
+  check("owner marks a duplicate", (await call(OWNER, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: "#" + sid.slice(0, 8) }) })).status === 200);
+  r = await J(await call(OWNER, `/api/reports/${jid}`));
+  check("duplicate is closed and points to the other", r.body.status === "Done" && r.body.dup_of === sid);
+  await call(TEAMMATE, `/api/reports/${jid}/reopen`, { method: "POST", body: JSON.stringify({ note: "not the same" }) });
+  r = await J(await call(OWNER, `/api/reports/${jid}`));
+  check("reopening a duplicate unlinks it", r.body.status === "Reopened" && r.body.dup_of === "");
+  // Audit, health, backups (HB5, HB6)
+  r = await J(await call(TEAMMATE, "/api/audit"));
+  check("audit lists status changes", r.status === 200 && r.body.log.some((d) => d.what === `report:${jid}` && d.decision === "Done"));
+  check("teammate can't run a backup", (await call(TEAMMATE, "/api/backup", { method: "POST", body: "{}" })).status === 403);
+  r = await J(await call(TEAMMATE, "/api/health"));
+  check("health answers", r.status === 200 && Array.isArray(r.body.checks) && Array.isArray(r.body.weeks));
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

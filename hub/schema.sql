@@ -12,7 +12,11 @@ CREATE TABLE IF NOT EXISTS reports (
   status TEXT NOT NULL DEFAULT 'New', -- New | Seen | Working | Question (open) · Live | Done | Roadmap (history)
   notes TEXT NOT NULL DEFAULT '',     -- Claude's plain note (what changed / the question)
   live_url TEXT NOT NULL DEFAULT '',  -- where to test it once Live
-  updated TEXT NOT NULL
+  updated TEXT NOT NULL,
+  priority TEXT NOT NULL DEFAULT 'normal', -- urgent | normal | someday
+  area TEXT NOT NULL DEFAULT '',
+  device TEXT NOT NULL DEFAULT '',
+  dup_of TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS reports_status ON reports (status, created);
 
@@ -76,4 +80,20 @@ CREATE TABLE IF NOT EXISTS shipped (
   created TEXT NOT NULL,
   text TEXT NOT NULL,
   url TEXT NOT NULL DEFAULT ''
+);
+
+-- Sorting (Nov 9, HB1): the last four columns of reports. A database made before then gets them with:
+--   priority: urgent | normal | someday   area: reader, library, search, audio, study, phone, hub, other
+--   device: iPhone | Android | computer | ''   dup_of: the id of the ticket this one is the same as
+-- ALTER TABLE reports ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal';
+-- ALTER TABLE reports ADD COLUMN area TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE reports ADD COLUMN device TEXT NOT NULL DEFAULT '';
+-- ALTER TABLE reports ADD COLUMN dup_of TEXT NOT NULL DEFAULT '';
+
+-- Site health (HB5): the hourly check of the public site
+CREATE TABLE IF NOT EXISTS health (
+  at TEXT PRIMARY KEY,            -- ISO time of the check
+  ok INTEGER NOT NULL,            -- 1 = every page answered 200
+  ms INTEGER NOT NULL,            -- slowest page, milliseconds
+  detail TEXT NOT NULL DEFAULT '' -- which page failed and how
 );

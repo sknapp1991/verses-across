@@ -20,7 +20,9 @@ type R2 = {
   head(key: string): Promise<{ size: number; httpMetadata?: { contentType?: string } } | null>;
   createMultipartUpload(key: string, o?: { httpMetadata?: { contentType?: string } }): Promise<{ uploadId: string; key: string }>;
   resumeMultipartUpload(key: string, uploadId: string): R2Upload;
-  delete(key: string): Promise<void>;
+  delete(key: string | string[]): Promise<void>;
+  put(key: string, body: string, o?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
+  list(o: { prefix: string; limit?: number }): Promise<{ objects: { key: string; size: number; uploaded: Date }[] }>;
 };
 /**
  * CLAUDE_TOKEN_ID: the Client ID of the Cloudflare Access service token named "Claude" (not secret by itself;
@@ -32,6 +34,10 @@ type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: st
 const TYPES = new Set(["Bug", "Idea", "Content", "Question"]);
 /** Open: New, Seen, Working, Question, Reopened. History: Live (shipped), Done (closed), Roadmap (later). */
 const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap", "Done", "Reopened"]);
+/** Sorting (HB1): how soon, which part of the site, and which device it happened on. */
+const PRIORITIES = new Set(["urgent", "normal", "someday"]);
+const AREAS = new Set(["reader", "library", "search", "audio", "study", "phone", "hub", "other"]);
+const DEVICES = new Set(["iPhone", "Android", "computer"]);
 const PART = 10 * 1024 * 1024; // upload parts (the page sends 10 MB at a time)
 const MAX_FILE = 2 * 1024 * 1024 * 1024; // 2 GB per file
 /** Exactly these: photos and phone videos. Never SVG or HTML (they could run code on the hub's address). */
@@ -111,6 +117,10 @@ async function whoIs(req: Request, env: Env): Promise<string | null> {
  */
 const AUTO_CLOSE_DAYS = 3;
 const AUTO_CLOSED = "Closed automatically";
+/** Who changed what, for the audit list (tickets' status changes go in the decisions log too). */
+const logged = (env: Env, what: string, decision: string, note: string, by: string, at = now()) =>
+  env.DB.prepare("INSERT INTO decisions (id, what, decision, note, by, at) VALUES (?, ?, ?, ?, ?, ?)").bind(uid(), what, decision, note.slice(0, 300), by, at);
+
 async function autoClose(env: Env, at = new Date()) {
   const cutoff = new Date(at.getTime() - AUTO_CLOSE_DAYS * 86_400_000).toISOString();
   const { results } = await env.DB.prepare("SELECT id FROM reports WHERE status = 'Live' AND updated < ?").bind(cutoff).all<{ id: string }>();
@@ -128,14 +138,17 @@ async function autoClose(env: Env, at = new Date()) {
         `${AUTO_CLOSED}: Live for ${AUTO_CLOSE_DAYS} days with no reply, so it's counted as fixed. If it isn't, tap "Not fixed? Reopen it".`,
         t,
       ),
+      logged(env, `report:${r.id}`, "Done", AUTO_CLOSED, "claude", t),
     ]);
   }
   return results?.length ?? 0;
 }
 
 export default {
-  async scheduled(_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
+  async scheduled(event: { cron: string }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
+    if (event.cron === HEALTH_CRON) return ctx.waitUntil(checkSite(env));
     ctx.waitUntil(autoClose(env));
+    if (new Date().getUTCDay() === 0) ctx.waitUntil(backup(env)); // Sundays
   },
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
@@ -207,6 +220,12 @@ export default {
       if (path === "/api/shipped" && m === "GET") return shipped(env);
       if (path === "/api/shipped" && m === "POST") return worker ? addShipped(env, await req.json()) : bad("Only the owner or Claude can add", 403);
 
+      // Site health, the audit list and backups (HB5, HB6)
+      if (path === "/api/health" && m === "GET") return health(env);
+      if (path === "/api/audit" && m === "GET") return audit(env);
+      if (path === "/api/backup" && m === "POST") return worker ? json(await backup(env)) : bad("Only the owner or Claude", 403);
+      if (path === "/api/check" && m === "POST") return worker ? json(await checkSite(env)) : bad("Only the owner or Claude", 403);
+
       return bad("Not found", 404);
     } catch (e) {
       console.error(path, (e as Error).message);
@@ -220,8 +239,8 @@ export default {
 async function listReports(env: Env, url: URL) {
   const status = url.searchParams.get("status");
   const q = status && STATUSES.has(status)
-    ? env.DB.prepare("SELECT * FROM reports WHERE status = ? ORDER BY created DESC LIMIT 200").bind(status)
-    : env.DB.prepare("SELECT * FROM reports ORDER BY created DESC LIMIT 200");
+    ? env.DB.prepare("SELECT * FROM reports WHERE status = ? ORDER BY created DESC LIMIT 500").bind(status)
+    : env.DB.prepare("SELECT * FROM reports ORDER BY created DESC LIMIT 500");
   const { results } = await q.all();
   const counts = await env.DB.prepare("SELECT thread, COUNT(*) AS n FROM comments WHERE thread LIKE 'report:%' GROUP BY thread").all<{ thread: string; n: number }>();
   const media = await env.DB.prepare("SELECT owner_id, COUNT(*) AS n FROM media WHERE owner_kind = 'report' AND state = 'done' GROUP BY owner_id").all<{ owner_id: string; n: number }>();
@@ -237,8 +256,11 @@ async function createReport(env: Env, me: string, b: Row) {
   if (!body) return bad("Write what it is");
   const id = uid();
   const t = now();
-  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, t, me, type, clip(b.place, 500), body, t)
+  const priority = PRIORITIES.has(String(b.priority)) ? String(b.priority) : "normal";
+  const area = AREAS.has(String(b.area)) ? String(b.area) : "";
+  const device = DEVICES.has(String(b.device)) ? String(b.device) : "";
+  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device)
     .run();
   return json({ id });
 }
@@ -252,15 +274,46 @@ async function getReport(env: Env, id: string) {
 
 /** Status, note and test link are Claude's (posted from the owner's session); either of you can edit your own text. */
 async function patchReport(env: Env, me: string, owner: boolean /* owner or Claude */, id: string, b: Row) {
-  const report = await env.DB.prepare("SELECT author FROM reports WHERE id = ?").bind(id).first<{ author: string }>();
+  const report = await env.DB.prepare("SELECT author, status FROM reports WHERE id = ?").bind(id).first<{ author: string; status: string }>();
   if (!report) return bad("Not found", 404);
   const sets: string[] = [];
   const vals: unknown[] = [];
+  const extra: D1Stmt[] = [];
+  // Sorting: the reporter or the owner's session (Claude) may set these.
+  const mine = me !== "claude" && report.author === me;
+  for (const [k, allowed] of [["priority", PRIORITIES], ["area", AREAS], ["device", DEVICES]] as const) {
+    if (b[k] === undefined) continue;
+    if (!owner && !mine) return bad("Not your report", 403);
+    const v = String(b[k]);
+    if ((v || k === "priority") && !allowed.has(v)) return bad(`Unknown ${k}`);
+    sets.push(`${k} = ?`);
+    vals.push(v);
+  }
+  // "Same as #…": closes this one and points to the other (Claude, from the owner's session).
+  if (b.dup_of !== undefined) {
+    if (!owner) return bad("Only the owner's session marks duplicates", 403);
+    const other = String(b.dup_of).replace(/^#/, "").trim().toLowerCase();
+    if (other) {
+      if (!/^[a-f0-9]{4,16}$/.test(other)) return bad("Give the other ticket's number, e.g. #3fa2c1");
+      const match = await env.DB.prepare("SELECT id FROM reports WHERE id LIKE ? AND id != ? LIMIT 2").bind(`${other}%`, id).all<{ id: string }>();
+      if (match.results.length !== 1) return bad("No single ticket starts with that number");
+      const to = match.results[0].id;
+      const t = now();
+      sets.push("dup_of = ?", "status = 'Done'");
+      vals.push(to);
+      extra.push(
+        env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, "claude", `Same as #${to.slice(0, 6)}: closed here, followed there.`, t),
+        logged(env, `report:${id}`, "Done", `same as #${to.slice(0, 6)}`, me, t),
+      );
+    } else sets.push("dup_of = ''");
+  }
   if (b.status !== undefined) {
     if (!owner) return bad("Only the owner's session sets status", 403);
     if (!STATUSES.has(String(b.status))) return bad("Unknown status");
+    if (b.dup_of) return bad("Set the status or the duplicate, not both");
     sets.push("status = ?");
     vals.push(String(b.status));
+    if (String(b.status) !== report.status) extra.push(logged(env, `report:${id}`, String(b.status), clip(b.notes, 300), me));
   }
   if (b.notes !== undefined) {
     if (!owner) return bad("Only the owner's session sets notes", 403);
@@ -283,8 +336,9 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
     vals.push(body);
   }
   if (!sets.length) return bad("Nothing to change");
-  await env.DB.prepare(`UPDATE reports SET ${sets.join(", ")}, updated = ? WHERE id = ?`).bind(...vals, now(), id).run();
-  return json({ ok: true });
+  const t = now();
+  await env.DB.batch([env.DB.prepare(`UPDATE reports SET ${sets.join(", ")}, updated = ? WHERE id = ?`).bind(...vals, t, id), ...extra]);
+  return json({ ok: true, updated: t });
 }
 
 /** "Not fixed": either of you can send a finished report (Live or Done) back with a note; it shows as Reopened. */
@@ -296,8 +350,9 @@ async function reopenReport(env: Env, me: string, id: string, b: Row) {
   if (report.status !== "Live" && report.status !== "Done") return bad("Only finished reports can be reopened");
   const t = now();
   await env.DB.batch([
-    env.DB.prepare("UPDATE reports SET status = 'Reopened', updated = ? WHERE id = ?").bind(t, id),
+    env.DB.prepare("UPDATE reports SET status = 'Reopened', dup_of = '', updated = ? WHERE id = ?").bind(t, id),
     env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, me, `Reopened, not fixed: ${note}`, t),
+    logged(env, `report:${id}`, "Reopened", note, me, t),
   ]);
   return json({ ok: true });
 }
@@ -312,6 +367,7 @@ async function resolveReport(env: Env, me: string, id: string, b: Row) {
   await env.DB.batch([
     env.DB.prepare("UPDATE reports SET status = 'Done', updated = ? WHERE id = ?").bind(t, id),
     env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, me, note ? `Fixed, closed: ${note}` : "Fixed, closed.", t),
+    logged(env, `report:${id}`, "Done", note || "fixed, closed by the reporter", me, t),
   ]);
   return json({ ok: true });
 }
@@ -529,7 +585,7 @@ async function shipped(env: Env) {
   const notes = await env.DB.prepare("SELECT * FROM shipped ORDER BY created DESC LIMIT 50").all();
   // Anonymous reading totals from the public site (chapters read, read-alongs started, downloads), last 7 and 30 days
   const totals = await env.SITE_DB.prepare(
-    "SELECT kind, SUM(CASE WHEN day >= date('now', '-7 day') THEN n ELSE 0 END) AS week, SUM(CASE WHEN day >= date('now', '-30 day') THEN n ELSE 0 END) AS month FROM daily GROUP BY kind",
+    "SELECT kind, SUM(CASE WHEN day >= date('now', '-7 day') THEN n ELSE 0 END) AS week, SUM(CASE WHEN day >= date('now', '-30 day') THEN n ELSE 0 END) AS month FROM daily WHERE version = '*' GROUP BY kind",
   )
     .all()
     .catch(() => ({ results: [] }));
@@ -542,4 +598,79 @@ async function addShipped(env: Env, b: Row) {
   const u = clip(b.url, 500);
   await env.DB.prepare("INSERT INTO shipped (id, created, text, url) VALUES (?, ?, ?, ?)").bind(uid(), now(), text, /^https:\/\/(www\.)?versesacross\.com(\/|$)/.test(u) ? u : "").run();
   return json({ ok: true });
+}
+
+/* ---------------- Site health, audit and backups (HB5, HB6) ---------------- */
+
+/** The hourly cron in wrangler.jsonc (the daily one closes tickets and, on Sundays, backs up). */
+const HEALTH_CRON = "17 * * * *";
+/** What the hourly check opens: the home page, a chapter, a search index and the cross references. */
+const CHECK_PAGES = ["/", "/read/bible/genesis/1", "/search/kjv/meta.json", "/api/xref/bible/gen.json"];
+
+async function checkSite(env: Env) {
+  let ok = 1;
+  let slowest = 0;
+  const failed: string[] = [];
+  for (const page of CHECK_PAGES) {
+    const t0 = Date.now();
+    try {
+      const r = await fetch(env.SITE + page, { headers: { "user-agent": "va-hub health check" } });
+      await r.arrayBuffer();
+      if (!r.ok) {
+        ok = 0;
+        failed.push(`${page} answered ${r.status}`);
+      }
+    } catch (e) {
+      ok = 0;
+      failed.push(`${page}: ${(e as Error).message.slice(0, 80)}`);
+    }
+    slowest = Math.max(slowest, Date.now() - t0);
+  }
+  const at = now();
+  await env.DB.batch([
+    env.DB.prepare("INSERT OR REPLACE INTO health (at, ok, ms, detail) VALUES (?, ?, ?, ?)").bind(at, ok, slowest, failed.join("; ")),
+    env.DB.prepare("DELETE FROM health WHERE at < ?").bind(new Date(Date.now() - 60 * 86_400_000).toISOString()),
+  ]);
+  return { at, ok: !!ok, ms: slowest, detail: failed.join("; ") };
+}
+
+async function health(env: Env) {
+  const checks = await env.DB.prepare("SELECT at, ok, ms, detail FROM health ORDER BY at DESC LIMIT 400").all();
+  // Reading totals by week (8 weeks) and website feedback (7 and 30 days), from the public site's database
+  const weeks = await env.SITE_DB.prepare(
+    "SELECT date(day, '-' || ((strftime('%w', day) + 6) % 7) || ' days') AS week, kind, SUM(n) AS n FROM daily WHERE version = '*' AND day >= date('now', '-56 day') GROUP BY week, kind ORDER BY week",
+  )
+    .all()
+    .catch(() => ({ results: [] }));
+  const feedback = await env.SITE_DB.prepare(
+    "SELECT topic, SUM(CASE WHEN received >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-7 day') THEN 1 ELSE 0 END) AS week, COUNT(*) AS month FROM feedback_queue WHERE spam = 0 AND received >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 day') GROUP BY topic",
+  )
+    .all()
+    .catch(() => ({ results: [] }));
+  return json({ checks: checks.results, weeks: weeks.results, feedback: feedback.results, pages: CHECK_PAGES });
+}
+
+async function audit(env: Env) {
+  const { results } = await env.DB.prepare("SELECT what, decision, note, by, at FROM decisions ORDER BY at DESC LIMIT 150").all();
+  const backups = await env.MEDIA.list({ prefix: "backups/", limit: 100 }).catch(() => ({ objects: [] as { key: string; size: number; uploaded: Date }[] }));
+  return json({
+    log: results,
+    backups: backups.objects.map((o) => ({ key: o.key, size: o.size, at: new Date(o.uploaded).toISOString() })).sort((a, z) => z.at.localeCompare(a.at)),
+  });
+}
+
+/** Weekly (Sundays): every table of the hub's database, plus the site's feedback queue and reading totals, as one
+ * JSON file in the hub's private storage (backups/…). The newest 12 are kept. */
+async function backup(env: Env) {
+  const tables: Record<string, unknown[]> = {};
+  for (const t of ["reports", "comments", "media", "approvals", "decisions", "votes", "shipped", "health"])
+    tables[t] = (await env.DB.prepare(`SELECT * FROM ${t}`).all()).results;
+  for (const t of ["feedback_queue", "daily"])
+    tables[`site.${t}`] = (await env.SITE_DB.prepare(`SELECT * FROM ${t}`).all().catch(() => ({ results: [] }))).results;
+  const key = `backups/hub-${now().slice(0, 19).replace(/:/g, "-")}.json`;
+  const body = JSON.stringify({ at: now(), tables });
+  await env.MEDIA.put(key, body, { httpMetadata: { contentType: "application/json" } });
+  const old = (await env.MEDIA.list({ prefix: "backups/", limit: 1000 })).objects.map((o) => o.key).sort().slice(0, -12);
+  if (old.length) await env.MEDIA.delete(old);
+  return { key, bytes: body.length, removed: old.length };
 }

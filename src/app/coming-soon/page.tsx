@@ -40,8 +40,8 @@ const PLANNED: { title: string; tag?: string; text: string; points?: string[] }[
     text: "Plans for the literature shelves, and short questions after a chapter to check your understanding and think about its themes.",
   },
   {
-    title: "Themes, study guides and lesson plans",
-    text: "Follow one theme (forgiveness, suffering, creation…) across every tradition and book, built from the cross references.",
+    title: "Study guides and lesson plans from the themes",
+    text: "Themes are here: one theme (forgiveness, suffering, creation…) across every tradition and book. Next, study material built on them.",
     points: ["A study guide for each theme: the key passages side by side, with questions", "Quizzes on a theme", "Lesson plans for a class or study group, week by week"],
   },
   {
@@ -61,7 +61,14 @@ export default function ComingSoonPage() {
             ← Back to reading
           </Link>
           <h1 className="font-serif text-3xl font-semibold text-ink">Coming soon</h1>
-          <p>What we&rsquo;re working on next. Everything stays free, with no ads and no account.</p>
+          <p>
+            What we&rsquo;re working on next. Everything stays free, with no ads and no account. For what&rsquo;s already
+            changed, see{" "}
+            <Link href="/whats-new" className={a}>
+              What&rsquo;s new
+            </Link>
+            .
+          </p>
         </header>
 
         <ul className="space-y-4">
