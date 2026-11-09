@@ -64,6 +64,8 @@ export const collectionSchema = z.object({
 export const religionSchema = z.object({
   id: idSchema,
   name: z.string().min(1),
+  /** One or two neutral sentences shown under the name in the library when it is open (Freethought). */
+  intro: z.string().optional(),
   collections: z.array(collectionSchema),
 });
 

@@ -8,7 +8,7 @@ import type { Catalog, CatalogItem, Collection, Religion, Version } from "./sche
 
 type LitEdition = [gid: number, language: string, abbr: string, year: number, author: string, translator: string | null, yearNote: string | null];
 type LitBook = [work: string, book: string, title: string, chapters: number, editions: LitEdition[]];
-type LitCatalog = { books: LitBook[]; shelves: { id: string; name: string; collections: { id: string; name: string; section?: string; books: string[] }[] }[] };
+type LitCatalog = { books: LitBook[]; refs?: Record<string, CatalogItem>; shelves: { id: string; name: string; intro?: string; collections: { id: string; name: string; section?: string; books: string[] }[] }[] };
 
 /**
  * The scripture catalog, plus the Literature shelf (and its sections) expanded from its compact file
@@ -42,9 +42,12 @@ function withLiterature(base: Catalog, l: LitCatalog): Catalog {
       } as Version);
     }
   }
+  // "ref:<work>/<book>": a book whose texts aren't a Gutenberg import (Paine's Age of Reason on Freethought).
+  for (const [key, it] of Object.entries(l.refs ?? {})) items.set(key, it);
   const shelves: Religion[] = l.shelves.map((sh) => ({
     id: sh.id,
     name: sh.name,
+    ...(sh.intro ? { intro: sh.intro } : {}),
     collections: sh.collections.map((c) => ({
       id: c.id,
       name: c.name,
@@ -158,7 +161,7 @@ export function getVersion(id: string): Version | undefined {
  * it stays out of the verse of the day, "traditions" counts and badges, reference links and cross-reference
  * targets. A book can be on several of its shelves (Frankenstein: Gothic, Horror, Science Fiction…).
  */
-export const BOOK_SHELVES = new Set(["literature", "fiction"]);
+export const BOOK_SHELVES = new Set(["literature", "fiction", "freethought"]);
 export const isLiteratureWork = (work: string) => work.startsWith("lit-");
 export const scriptureShelves = catalog.religions.filter((r) => !BOOK_SHELVES.has(r.id));
 

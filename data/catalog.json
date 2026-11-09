@@ -2370,9 +2370,7 @@
               "work": "hume-dialogues",
               "chapters": 12,
               "chapterName": "Dialogues, Part"
-            },
-            { "id": "aor1", "name": "Paine, The Age of Reason, Part I", "work": "age-of-reason", "chapters": 17, "chapterName": "Age of Reason I, Chapter" },
-            { "id": "aor2", "name": "Paine, The Age of Reason, Part II", "work": "age-of-reason", "chapters": 3, "chapterName": "Age of Reason II, Chapter" }
+            }
           ]
         },
         { "id": "classical-philosophy", "name": "Classical Philosophy", "items": [

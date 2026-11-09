@@ -177,6 +177,11 @@ def literature(emb, refs, dev):
         en = [e for e in editions if e[1] == "en"]
         if en:
             main_version[work] = f"pg{en[0][0]}"
+    # Works shelved here by reference (Paine's Age of Reason on the Freethought shelf): matched one way too,
+    # like the books (they are no longer on a scripture shelf, so the scripture pass skips them).
+    for it in lit.get("refs", {}).values():
+        if it["work"] in EMBED:
+            main_version.setdefault(it["work"], EMBED[it["work"]])
     lrefs, ltexts = [], []
     for work, ver in sorted(main_version.items()):
         d = os.path.join(TEXTS, work, ver)

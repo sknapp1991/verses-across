@@ -9978,6 +9978,345 @@
      ]
     }
    ]
+  },
+  {
+   "id": "freethought",
+   "name": "Freethought",
+   "collections": [
+    {
+     "id": "ft-atheism",
+     "name": "Atheism",
+     "books": [
+      {
+       "gid": 7319,
+       "title": "Good Sense",
+       "author": "Holbach, Paul Henri Thiry, baron d', 1723-1789",
+       "lang": "en",
+       "year": 1772
+      },
+      {
+       "gid": 8909,
+       "title": "The System of Nature, or, the Laws of the Moral and Physical World. Volume 1",
+       "author": "Holbach, Paul Henri Thiry, baron d', 1723-1789",
+       "lang": "en",
+       "name": "The System of Nature, Volume 1",
+       "year": 1770
+      },
+      {
+       "gid": 8910,
+       "title": "The System of Nature, or, the Laws of the Moral and Physical World. Volume 2",
+       "author": "Holbach, Paul Henri Thiry, baron d', 1723-1789",
+       "lang": "en",
+       "name": "The System of Nature, Volume 2",
+       "year": 1770
+      },
+      {
+       "gid": 40770,
+       "title": "Christianity Unveiled Being an Examination of the Principles and Effects of the Christian Religion",
+       "author": "Holbach, Paul Henri Thiry, baron d', 1723-1789; Johnson, W. M. (William Martin), 1771?-1797 [Translator]",
+       "lang": "en",
+       "name": "Christianity Unveiled",
+       "year": 1766
+      },
+      {
+       "gid": 17607,
+       "title": "Superstition in all ages",
+       "author": "Meslier, Jean, 1664-1729; Knoop, Anna, -1889 [Translator]; Holbach, Paul Henri Thiry, baron d', 1723-1789 [Editor]; Voltaire, 1694-1778 [Commentator]",
+       "lang": "en",
+       "name": "Superstition in All Ages",
+       "year": 1729
+      },
+      {
+       "gid": 47025,
+       "title": "The Essence of Christianity Translated from the second German edition",
+       "author": "Feuerbach, Ludwig, 1804-1872; Eliot, George, 1819-1880 [Translator]",
+       "lang": "en",
+       "name": "The Essence of Christianity",
+       "year": 1841
+      },
+      {
+       "gid": 19322,
+       "title": "The Antichrist",
+       "author": "Nietzsche, Friedrich Wilhelm, 1844-1900; Mencken, H. L. (Henry Louis), 1880-1956 [Translator]",
+       "lang": "en",
+       "year": 1895
+      },
+      {
+       "gid": 36568,
+       "title": "God and the State",
+       "author": "Bakunin, Mikhail Aleksandrovich, 1814-1876",
+       "lang": "en",
+       "year": 1882
+      },
+      {
+       "gid": 30206,
+       "title": "Humanity's Gain from Unbelief Reprinted from the \"North American Review\" of March, 1889",
+       "author": "Bradlaugh, Charles, 1833-1891",
+       "lang": "en",
+       "name": "Humanity's Gain from Unbelief",
+       "year": 1889
+      },
+      {
+       "gid": 36266,
+       "title": "The Bible: What It Is!",
+       "author": "Bradlaugh, Charles, 1833-1891",
+       "lang": "en",
+       "year": 1861
+      },
+      {
+       "gid": 36268,
+       "title": "Heresy: Its Utility And Morality. A Plea And A Justification",
+       "author": "Bradlaugh, Charles, 1833-1891",
+       "lang": "en",
+       "name": "Heresy: Its Utility and Morality",
+       "year": 1882
+      },
+      {
+       "gid": 30209,
+       "title": "Bible Romances, First Series",
+       "author": "Foote, G. W. (George William), 1850-1915",
+       "lang": "en",
+       "year": 1882
+      },
+      {
+       "gid": 25291,
+       "title": "Theism or Atheism: The Great Alternative",
+       "author": "Cohen, Chapman, 1868-1954",
+       "lang": "en",
+       "name": "Theism or Atheism",
+       "year": 1921
+      },
+      {
+       "gid": 36882,
+       "title": "A Grammar of Freethought",
+       "author": "Cohen, Chapman, 1868-1954",
+       "lang": "en",
+       "year": 1921
+      }
+     ]
+    },
+    {
+     "id": "ft-agnosticism",
+     "name": "Agnosticism",
+     "books": [
+      {
+       "gid": 38099,
+       "title": "Mistakes of Moses",
+       "author": "Ingersoll, Robert Green, 1833-1899",
+       "lang": "en",
+       "year": 1879
+      },
+      {
+       "gid": 30208,
+       "title": "The Ghosts, and Other Lectures",
+       "author": "Ingersoll, Robert Green, 1833-1899",
+       "lang": "en",
+       "year": 1878
+      },
+      {
+       "gid": 38107,
+       "title": "The Gods From 'The Gods and Other Lectures'",
+       "author": "Ingersoll, Robert Green, 1833-1899",
+       "lang": "en",
+       "name": "The Gods",
+       "year": 1872
+      },
+      {
+       "gid": 38095,
+       "title": "Heretics And Heresies From 'The Gods and Other Lectures'",
+       "author": "Ingersoll, Robert Green, 1833-1899",
+       "lang": "en",
+       "name": "Heretics and Heresies",
+       "year": 1874
+      },
+      {
+       "gid": 15905,
+       "title": "Collected Essays, Volume V Science and Christian Tradition: Essays",
+       "author": "Huxley, Thomas Henry, 1825-1895",
+       "lang": "en",
+       "name": "Science and Christian Tradition",
+       "year": 1894
+      },
+      {
+       "gid": 50189,
+       "title": "The Scientific Basis of Morals, and Other Essays Viz.: Right and Wrong, The Ethics of Belief, The Ethics of Religion",
+       "author": "Clifford, William Kingdon, 1845-1879",
+       "lang": "en",
+       "name": "The Scientific Basis of Morals, and Other Essays",
+       "year": 1879
+      },
+      {
+       "gid": 70,
+       "title": "What Is Man? and Other Essays",
+       "author": "Twain, Mark, 1835-1910",
+       "lang": "en",
+       "year": 1906
+      }
+     ]
+    },
+    {
+     "id": "ft-deism",
+     "name": "Deism & Biblical criticism",
+     "books": [
+      {
+       "gid": 989,
+       "title": "Theologico-Political Treatise — Part 1",
+       "author": "Spinoza, Benedictus de, 1632-1677; Elwes, R. H. M. (Robert Harvey Monro), 1853-1892 [Translator]",
+       "lang": "en",
+       "name": "Theologico-Political Treatise, Part 1",
+       "year": 1670
+      },
+      {
+       "gid": 990,
+       "title": "Theologico-Political Treatise — Part 2",
+       "author": "Spinoza, Benedictus de, 1632-1677; Elwes, R. H. M. (Robert Harvey Monro), 1853-1892 [Translator]",
+       "lang": "en",
+       "name": "Theologico-Political Treatise, Part 2",
+       "year": 1670
+      },
+      {
+       "gid": 991,
+       "title": "A Theological-Political Treatise [Part III]",
+       "author": "Spinoza, Benedictus de, 1632-1677; Elwes, R. H. M. (Robert Harvey Monro), 1853-1892 [Translator]",
+       "lang": "en",
+       "name": "Theologico-Political Treatise, Part 3",
+       "year": 1670
+      },
+      {
+       "gid": 992,
+       "title": "A Theological-Political Treatise [Part IV]",
+       "author": "Spinoza, Benedictus de, 1632-1677; Elwes, R. H. M. (Robert Harvey Monro), 1853-1892 [Translator]",
+       "lang": "en",
+       "name": "Theologico-Political Treatise, Part 4",
+       "year": 1670
+      },
+      {
+       "gid": 1397,
+       "title": "The Ruins; Or, Meditation on the Revolutions of Empires and the Law of Nature",
+       "author": "Volney, C.-F. (Constantin-François), 1757-1820",
+       "lang": "en",
+       "name": "The Ruins",
+       "year": 1791
+      },
+      {
+       "gid": 18569,
+       "title": "Voltaire's Philosophical Dictionary",
+       "author": "Voltaire, 1694-1778",
+       "lang": "en",
+       "year": 1764
+      },
+      {
+       "gid": 36267,
+       "title": "When Were Our Gospels Written?",
+       "author": "Bradlaugh, Charles, 1833-1891",
+       "lang": "en",
+       "year": 1881
+      }
+     ]
+    },
+    {
+     "id": "ft-ancient",
+     "name": "Ancient critics",
+     "books": [
+      {
+       "gid": 37696,
+       "title": "Arguments of Celsus, Porphyry, and the Emperor Julian, Against the Christians Also Extracts from Diodorus Siculus, Josephus, and Tacitus, Relating to the Jews, Together with an Appendix",
+       "author": "Celsus (Platonic philosopher), active 180; Porphyry, 234?-305?; Julian, Emperor of Rome, 331-363 [Contributor]; Taylor, Thomas, 1758-1835 [Translator]",
+       "lang": "en",
+       "name": "Arguments of Celsus, Porphyry and Julian Against the Christians",
+       "year": 1830
+      }
+     ]
+    },
+    {
+     "id": "ft-women",
+     "name": "Women freethinkers",
+     "books": [
+      {
+       "gid": 9880,
+       "title": "The Woman's Bible",
+       "author": "Stanton, Elizabeth Cady, 1815-1902",
+       "lang": "en",
+       "year": 1895
+      },
+      {
+       "gid": 45580,
+       "title": "Woman, Church & State The Original Exposé of Male Collaboration Against the Female Sex",
+       "author": "Gage, Matilda Joslyn, 1826-1898",
+       "lang": "en",
+       "name": "Woman, Church and State",
+       "year": 1893
+      },
+      {
+       "gid": 2162,
+       "title": "Anarchism and Other Essays",
+       "author": "Goldman, Emma, 1869-1940; Havel, Hippolyte, 1871-1950 [Contributor]",
+       "lang": "en",
+       "year": 1910
+      }
+     ]
+    },
+    {
+     "id": "ft-history",
+     "name": "History of freethought",
+     "books": [
+      {
+       "gid": 10684,
+       "title": "A History of Freedom of Thought",
+       "author": "Bury, J. B. (John Bagnell), 1861-1927",
+       "lang": "en",
+       "year": 1913
+      },
+      {
+       "gid": 51793,
+       "title": "A Short History of Freethought Ancient and Modern, Volume 1 of 2 Third edition, Revised and Expanded, in two volumes",
+       "author": "Robertson, J. M. (John Mackinnon), 1856-1933",
+       "lang": "en",
+       "name": "A Short History of Freethought, Volume 1",
+       "year": 1915
+      },
+      {
+       "gid": 52160,
+       "title": "A Short History of Freethought Ancient and Modern, Volume 2 of 2 Third edition, Revised and Expanded, in two volumes",
+       "author": "Robertson, J. M. (John Mackinnon), 1856-1933",
+       "lang": "en",
+       "name": "A Short History of Freethought, Volume 2",
+       "year": 1915
+      },
+      {
+       "gid": 1185,
+       "title": "History of the Conflict Between Religion and Science",
+       "author": "Draper, John William, 1811-1882",
+       "lang": "en",
+       "year": 1874
+      },
+      {
+       "gid": 505,
+       "title": "History of the Warfare of Science with Theology in Christendom",
+       "author": "White, Andrew Dickson, 1832-1918",
+       "lang": "en",
+       "name": "A History of the Warfare of Science with Theology in Christendom",
+       "year": 1896
+      },
+      {
+       "gid": 44932,
+       "title": "Free Thought and Official Propaganda",
+       "author": "Russell, Bertrand, 1872-1970",
+       "lang": "en",
+       "year": 1922
+      },
+      {
+       "gid": 73782,
+       "title": "What I believe",
+       "author": "Russell, Bertrand, 1872-1970",
+       "lang": "en",
+       "name": "What I Believe",
+       "year": 1925
+      }
+     ]
+    }
+   ],
+   "intro": "Atheist, agnostic, deist and skeptic writers. Verses Across shows each tradition in its own words. This section holds the classic public-domain writing of those who questioned or rejected religion."
   }
  ]
 }

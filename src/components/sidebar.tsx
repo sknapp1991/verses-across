@@ -295,6 +295,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                     {!available && <Soon />}
                     <Progress {...progressOf(r.collections.flatMap((c) => c.items))} />
                   </TreeButton>
+                  {isOpen(rid) && r.intro && <p className="px-3 pb-1 pl-8 text-xs leading-relaxed text-muted">{r.intro}</p>}
                   {isOpen(rid) && (
                     <ul className="space-y-0.5">
                       {sectionsOf(r.collections).map((g) => {

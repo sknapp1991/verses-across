@@ -122,10 +122,10 @@ const META: Record<number, [string | null, number]> = {
   4367: [null, 1885], 7142: [null, -400], 10657: ["The Gallic Wars", -50], 4361: ["Memoirs of General William T. Sherman", 1875], 75201: ["A Farewell to Arms", 1929],
 };
 
-const ROLE = /\[(Translator|Illustrator|Editor|Commentator|Author of introduction, etc\.|Contributor|Compiler|Annotator|Photographer)\]/i;
+const ROLE = /\[(Translator|Illustrator|Editor|Commentator|Author of introduction, etc\.|Contributor|Compiler|Annotator|Photographer|Unknown role|Other|Publisher|Printer|Adapter|Redactor)\]/i;
 /** "Carroll, Lewis, 1832-1898" → "Lewis Carroll"; "Baum, L. Frank (Lyman Frank), 1856-1919" → "L. Frank Baum". */
 function personName(s: string) {
-  const t = s.replace(ROLE, "").replace(/\([^)]*\)/g, "").replace(/,?\s*-?\d{1,4}\??\s*(BCE|CE)?\s*-\s*-?\d{0,4}\??\s*(BCE|CE)?/g, "").replace(/\s+/g, " ").trim();
+  const t = s.replace(ROLE, "").replace(/\([^)]*\)/g, "").replace(/,?\s*(active|fl\.|flourished)\s+\d+\s*(BCE|CE)?\??\s*$/i, "").replace(/,?\s*-?\d{1,4}\??\s*(BCE|CE)?\s*-\s*-?\d{0,4}\??\s*(BCE|CE)?/g, "").replace(/\s+/g, " ").trim();
   const parts = t.split(/,\s*/).filter(Boolean);
   if (parts.length >= 2 && !/^(Saint|Sir|of|the)/i.test(parts[1])) return `${parts[1]} ${parts[0]}`.replace(/\s+/g, " ").trim();
   return parts.join(" ").trim();
@@ -182,6 +182,49 @@ async function catalogRows() {
 /* ---------- cleaning ---------- */
 
 /** Drop transcriber notes, illustration captions, footnote marks; keep the words. */
+/** Set per book: footnote marks that run past 999 ("[1000]") are removed too. */
+let longNoteMarks = false;
+/** Set per book: the volunteer's sentence numbers "(12)", "(17:83)" in the Spinoza files are removed. */
+let sentenceNumbers = false;
+/** Set per book: numbered headings must stand alone (see the headings scan). */
+let strictNumbered = false;
+/** The shelf being imported (the Freethought shelf, added after the rest were checked, uses the stricter rules). */
+let shelfNow = "";
+/** Per book: where its text really starts / ends (a contents list read as chapters, pages of endnotes). */
+const BODY_CUT: Record<number, { from?: RegExp; to?: RegExp; drop?: [RegExp, RegExp] }> = {
+  51793: { to: /^NOTES\s*$/m }, // Robertson: about a quarter of each volume is endnotes
+  52160: { from: /^CHAPTER XIII\s*$/m, to: /^NOTES\s*$/m },
+  45580: { to: /^Notes\s*$/m }, // Gage: the notes, then the index
+  36568: { to: /^FOOTNOTES:\s*$/m }, // Bakunin: footnotes, then the publisher's advertisements
+  992: { from: /^\[16:0\] CHAPTER XVI - OF THE FOUNDATIONS/m }, // Spinoza IV: after its list of chapters
+  505: { drop: [/^CONTENTS OF THE FIRST VOLUME\.\s*$/m, /^CHAPTER I\.\s+FROM CREATION TO EVOLUTION\./m] }, // White: the long contents between the introduction and chapter one
+};
+/** (stricter books) Paragraphs that are an edition's or Gutenberg's notes, not the book. */
+const EDITION_NOTE = /^(\[?Italics are (marked|shown)|Ex Libris\b|Sentence Numbers, shown thus|PRODUCTION NOTES:|――|p\. \d+: |Advertisements: \S+ to )|^(?=[\s\S]{0,200}$)[\s\S]*\b(spelling|hyphenation|punctuation|typographical|misprints?|errors?)\b[\s\S]*(silently corrected|have been preserved|been retained as (printed|in the original))\.?$/i; // (the second kind: a short note about the edition's spelling, not prose that ends "…have been preserved.")
+/** (stricter books) A contents or index line run into a paragraph: every line ends in a page number. */
+const pageListy = (p: string) => {
+  const ls = p.split(/\n| \/ |\s{3,}/).map((l) => l.trim()).filter(Boolean);
+  // (a page number has no full stop after it and at most three digits: "…in 1859." is a sentence)
+  return ls.length >= 1 && ls.every((l) => l.length <= 70 && /\s(\d{1,3}|[xvi]{1,6})$/.test(l)) && !/[a-z]{3}[.!?]\s/.test(p);
+};
+function cutBody(body: string, gid: number) {
+  const c = BODY_CUT[gid];
+  if (!c) return body;
+  if (c.drop) {
+    const a = body.search(c.drop[0]);
+    const b = a >= 0 ? body.slice(a).search(c.drop[1]) : -1;
+    if (b > 0) body = body.slice(0, a) + body.slice(a + b);
+  }
+  if (c.from) {
+    const at = body.search(c.from);
+    if (at > 0) body = body.slice(at);
+  }
+  if (c.to) {
+    const m = [...body.matchAll(new RegExp(c.to.source, c.to.flags.includes("g") ? c.to.flags : c.to.flags + "g"))].pop();
+    if (m && m.index! > body.length * 0.5) body = body.slice(0, m.index);
+  }
+  return body;
+}
 function cleanBlock(b: string) {
   const t = b.trim();
   // Whole blocks that are not the book: captions, notes, image files, Gutenberg's own lines.
@@ -190,12 +233,13 @@ function cleanBlock(b: string) {
   if (/^F\s+I\s+N\s+I\s+S\.?$/.test(t)) return "";
   if (/^\S+\.(jpg|jpeg|png|gif)\b/i.test(t)) return "";
   if (/^\[?\s*(Full Size|Enlarge|Larger image)\s*\]?$/i.test(t)) return ""; // a picture link's leftover text
+  if (sentenceNumbers) b = b.replace(/^\s*\[\d{1,3}:\d{1,3}\]\s*/gm, "").replace(/\s?\((\d{1,3}:)?\d{1,3}\)\s?/g, " ").replace(/ {2,}/g, " ");
   return b
     .replace(/\[Illustration[\s\S]*?\]\s*\]?/gi, "")
     .replace(/\[_?(Copyright|Picture)[^\]]*\]\]?/gi, "")
     .replace(/\[Illustration[^\]]*\]/gi, "")
     .replace(/\[(Footnote|Note)[^\]]*\]/gi, "")
-    .replace(/\[(\d{1,3}|[A-Z]|[*†‡])\]/g, "")
+    .replace(longNoteMarks ? /\[(\d{1,4}|[A-Z]|[*†‡])\]/g : /\[(\d{1,3}|[A-Z]|[*†‡])\]/g, "")
     .replace(/\{\d{1,3}\}/g, "")
     .replace(/\s*\[(Pg|Page|p\.)\s*[\divxlcIVXLC]+\]\s*/g, " ") // page markers: [Pg 12], [Pg xix]
     .replace(/_(?=\S)([^_\n]{1,200}?)_/g, "$1") // _italics_ (Gutenberg's plain-text italics)
@@ -243,10 +287,12 @@ const romanUpper = (s: string) =>
   s.replace(/\b([IVXLCivxlc]{2,8})\b/g, (w, _m, at: number) => {
     if (!/^(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/i.test(w) || !/^[IVXL]/.test(w)) return w;
     // Words that are also names or ordinary words ("Ill", "Li", "Liv", "Xi") only after "Chapter", "Book"…
-    if (/^(Ill|Li|Liv|Lix|Xi)$/.test(w) && !/(Chapter|Book|Part|Letter|Canto|Section|Act|Scene|Volume|Stave)\s$/i.test(s.slice(0, at))) return w;
+    // (or as the title's own number: "XI: Illustrations…", "LIV.--No!")
+    if (/^(Ill|Li|Liv|Lix|Xi)$/.test(w) && !/(Chapter|Book|Part|Letter|Canto|Section|Act|Scene|Volume|Stave)\s$/i.test(s.slice(0, at)) && !(at === 0 && /^[:.]/.test(s.slice(w.length)))) return w;
     return w.toUpperCase();
   });
-const titleCase = (s: string) => (isUpperish(s) && s.length > 3 ? romanUpper(s.toLowerCase().replace(/(^|[\s(“"'-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()).replace(/\b(Of|The|And|A|An|In|On|To|For|With|At|By|From)\b/g, (w, _a, i) => (i ? w.toLowerCase() : w))) : romanUpper(s));
+// "NOAH'S FLOOD" → "Noah's Flood" (not "Noah'S"): a single letter after an apostrophe stays small.
+const titleCase = (s: string) => (isUpperish(s) && s.length > 3 ? romanUpper(s.toLowerCase().replace(/(^|[\s(“"'-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase()).replace(/(\p{L})(['’])(\p{Lu})(?![\p{L}])/gu, (_, a, q, b) => a + q + b.toLowerCase()).replace(/\b(Of|The|And|A|An|In|On|To|For|With|At|By|From)\b/g, (w, _a, i) => (i ? w.toLowerCase() : w))) : romanUpper(s));
 
 function numberWord(s: string) {
   const u = s.toUpperCase();
@@ -297,6 +343,10 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     if (at > 0 && body.length - at < Math.max(20_000, body.length * 0.08)) body = body.slice(0, re.source.includes("THE END") ? body.indexOf("\n", at) + 1 || body.length : at);
   }
   const lines = body.split("\n");
+  // (stricter books) a heading in italics or bold marks, "_Chapter One_", "+The Matriarchate+", "_CONTENTS_".
+  if (strictNumbered) for (let i = 0; i < lines.length; i++) lines[i] = lines[i].replace(/^(\s*)[_+=]+([^_+=]{2,80}?)[_+=]+\s*$/, "$1$2");
+  // (Spinoza) "[16:0] CHAPTER XVI - Of the Foundations…": the volunteer's number in front of a heading.
+  if (sentenceNumbers) for (let i = 0; i < lines.length; i++) lines[i] = lines[i].replace(/^\s*\[\d{1,3}:\d{1,3}\]\s*/, "");
   // "CHAPTER" on one line and its number on the next ("CHAPTER\n   1"): one heading line.
   for (let i = 0; i < lines.length - 1; i++) {
     if (!new RegExp(`^\\s*(${WORDS})\\s*$`, "i").test(lines[i])) continue;
@@ -308,10 +358,17 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
   }
   const blankBefore = (i: number) => i === 0 || !lines[i - 1].trim();
 
+  // Footnote marks the text refers to ("…the older world. [1000] Whether"): a block that starts with one of
+  // these is the note itself. (A "[7]" that only ever starts a line is a page number, as in Bury's book.)
+  const cited = new Set(strictNumbered ? [...body.matchAll(/[\p{L}\p{P}] ?\[(\d{1,4})\]/gu)].map((m) => m[1]) : []);
   const paras = (from: number, to: number) => {
     const blocks = lines.slice(from, to).join("\n").split(/\n\s*\n/);
     const out: string[] = [];
     for (const b of blocks) {
+      // (stricter books) a footnote or endnote block, "[12] Rev. J. B. Stair, Old Samoa…": not the text.
+      const mark = /^\s*\[(\d{1,4})\]\s/.exec(b);
+      if (strictNumbered && mark && cited.has(mark[1])) continue;
+      if (strictNumbered && EDITION_NOTE.test(b.trim())) continue;
       const c = cleanBlock(b);
       const first = c.trim().split("\n")[0]?.trim() ?? "";
       if (!c.trim() || SEPARATOR.test(c.trim()) || NOISE.test(first) || /^\[\d+\]|^Footnote\b/i.test(first)) continue;
@@ -351,7 +408,55 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
   /** Chapters longer than a phone reads comfortably → parts of about 60k characters. */
   const finish = (chs: { title: string; paras: string[] }[], how: string): Found => {
     const out: { title: string; paras: string[] }[] = [];
+    // (stricter books) every chapter but a preface under the same part ("Volume 1 · …" in a book that is
+    // volume 1): the part name says nothing.
+    if (strictNumbered) {
+      const front = (t: string) => /^(Preface|Introduction|Opening pages|Foreword)/i.test(t);
+      const shared = /^(.+?) · /.exec(chs.find((c) => !front(c.title))?.title ?? "")?.[1];
+      if (shared && chs.length > 2 && chs.every((c) => front(c.title) || c.title.startsWith(shared + " · "))) for (const c of chs) if (c.title.startsWith(shared + " · ")) c.title = c.title.slice(shared.length + 3);
+    }
+    if (strictNumbered) {
+      // The author's endnotes, one "chapter" per chapter they belong to ("Endnote 4. In Gen. xv…"): one
+      // chapter of endnotes at the end.
+      const isNotes = (c: { paras: string[] }) => /^\[?Endnote \d/.test(c.paras[0]?.trim() ?? "");
+      const first = chs.findIndex(isNotes);
+      if (first > 0 && chs.slice(first).every(isNotes)) chs = [...chs.slice(0, first), { title: "Endnotes", paras: chs.slice(first).flatMap((c) => c.paras) }];
+    }
+    if (strictNumbered && chs.length) {
+      // Contents lines left at the start of the first chapter, an index at the end of the last.
+      const a = chs[0];
+      while (a.paras.length > 1 && pageListy(a.paras[0])) a.paras.shift();
+      // A title page's line taken for the first chapter's title ("By Thomas H. Huxley", "MDCCCXXX."): the
+      // preface or introduction it holds names it.
+      if (/^(By\s|[MDCLXVI]+\.?$)/i.test(a.title)) {
+        const named = a.paras.slice(0, 6).find((p) => /^(PREFACE|INTRODUCTION|FOREWORD)\.?$/i.test(p.trim()));
+        a.title = named ? titleCase(named.trim().replace(/\.$/, "").toUpperCase()) : "Opening pages";
+      }
+      const z = chs[chs.length - 1];
+      const at = z.paras.findIndex((p, k) => k > 0 && z.paras.slice(k, k + 10).length === 10 && z.paras.slice(k, k + 10).every(pageListy));
+      if (at > 0) z.paras = z.paras.slice(0, at);
+    }
     for (const [ci, c] of chs.entries()) {
+      if (strictNumbered) {
+        // A plain number for a title, and the chapter opens with a short line that names it ("Genesis xxi."):
+        // that line is the title.
+        const first = c.paras[0]?.trim() ?? "";
+        if (/^(Part \d+ · )?(Chapter|Section) \d+$/.test(c.title) && c.paras.length > 1 && first.length <= 60 && !first.includes("\n") && !/[a-z]{2}[.!?]["’”]?\s+\S/.test(first)) {
+          c.title = first.replace(/[.:]$/, "");
+          c.paras = c.paras.slice(1);
+        }
+        // A heading that runs on into the next line ("It Is Shown That No One Can, Or" / "NEED, TRANSFER ALL…").
+        const next = c.paras[0]?.trim() ?? ""; // (after the step above may have used the first line)
+        if (/(,|\b(or|and|of|the|that|to|in|a))$/i.test(c.title) && c.paras.length > 1 && next.length <= 160 && !/[a-z]/.test(next)) {
+          c.title = `${c.title} ${next.replace(/[.:]$/, "")}`;
+          c.paras = c.paras.slice(1);
+        }
+        c.title = c.title
+          .replace(/\s*\[\d{1,4}\]/g, "") // a footnote mark in a heading
+          .replace(/\b[A-Z][A-Z’']+(?:[ ,-]+[A-Z][A-Z’']*)+\b/g, (w) => (w.replace(/[^A-Z]/g, "").length >= 4 ? titleCase(w) : w)) // CAPITALS inside a title
+          .replace(/--/g, "—")
+          .trim();
+      }
       // Gutenberg's own notes at the end are not a chapter.
       if (/transcriber/i.test(c.title) && ci >= chs.length - 2) continue;
       // A picture caption taken for a heading: a plain chapter number instead.
@@ -466,6 +571,12 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     {
       {
         const chs: { title: string; paras: string[] }[] = [];
+        // (stricter books) a preface printed before the contents list (Voltaire's): kept, from its heading on.
+        if (strictNumbered && tocAt > 0) {
+          const h = lines.slice(0, tocAt).findIndex((l) => /^\s*(PREFACE|INTRODUCTION|FOREWORD)\b[^a-z]*$/.test(l));
+          const ps = h >= 0 ? paras(h + 1, tocAt) : [];
+          if (ps.join(" ").length >= 800) chs.push({ title: titleCase(tidyTitle(lines[h].trim())), paras: ps });
+        }
         // Text before the first chapter after the contents list: a preface or introduction, if real.
         const pre = paras(tocEnd, starts[0].line);
         if (pre.join(" ").length >= 1500 && /^(PREFACE|INTRODUCTION|FOREWORD|PROLOGUE|TO THE READER|AUTHOR)/i.test(norm(lines.slice(tocEnd, starts[0].line).join(" ").trim()).toUpperCase())) {
@@ -501,7 +612,10 @@ export function findChapters(body: string, opts: { poem?: boolean; title?: strin
     if ((m = ROMAN_TITLE.exec(l))) return void heads.push({ line: i, family: "ROMAN", label: m[1], title: titleCase(tidyTitle(m[2])) });
     if ((m = ROMAN_ALONE.exec(l))) return void heads.push({ line: i, family: "ROMAN", label: m[1], title: "" });
     if ((m = NUM_ALONE.exec(l))) return void heads.push({ line: i, family: "NUM", label: m[1], title: "" });
-    if ((m = /^\s*(\d{1,3})\.?\s{1,8}([A-Z][^.!?]{2,70})$/.exec(l))) return void heads.push({ line: i, family: "NUM", label: m[1], title: tidyTitle(m[2]) });
+    // "12. The Title" — in the books listed in STRICT_NUMBERED a heading stands alone (a blank line after it):
+    // "1. The Latin letter of Gaspar Schopp, dated February" running on into the next line is a numbered note.
+    // (Not for every book: the books already on the site were checked with the looser rule.)
+    if ((m = /^\s*(\d{1,3})\.?\s{1,8}([A-Z][^.!?]{2,70})$/.exec(l)) && (!strictNumbered || i + 1 >= lines.length || !lines[i + 1].trim())) return void heads.push({ line: i, family: "NUM", label: m[1], title: tidyTitle(m[2]) });
     if ((m = CAPS_TITLE.exec(l)) && (i + 1 >= lines.length || !lines[i + 1].trim()) && !/^(THE END|CONTENTS|FINIS|PREFACE|INTRODUCTION)/.test(m[1])) {
       heads.push({ line: i, family: "CAPS", label: "", title: titleCase(tidyTitle(m[1])) });
     }
@@ -658,10 +772,10 @@ function lifespan(authors: string): [number, number] | null {
   return m ? [Number(m[1]), Number(m[2])] : null;
 }
 
-type ShelfOut = { id: string; name: string; collections: { id: string; name: string; section?: string; items: Record<string, unknown>[] }[] };
+type ShelfOut = { id: string; name: string; intro?: string; collections: { id: string; name: string; section?: string; items: Record<string, unknown>[] }[] };
 
 async function main() {
-  const raw = JSON.parse(await readFile(path.join(ROOT, "data", "literature-list.json"), "utf8")) as List & { shelves?: { id: string; name: string; collections: List["collections"] }[] };
+  const raw = JSON.parse(await readFile(path.join(ROOT, "data", "literature-list.json"), "utf8")) as List & { shelves?: { id: string; name: string; intro?: string; collections: List["collections"] }[] };
   const shelvesIn = raw.shelves ?? [{ id: "literature", name: "Literature", collections: raw.collections }];
   const pg = await catalogRows();
   const only = new Set(process.argv.slice(2).map(Number).filter(Boolean));
@@ -672,13 +786,29 @@ async function main() {
   /** Each Gutenberg book is imported once, however many shelves it is on. */
   const done = new Map<number, { work: string; bookSlug: string; title: string; chapters: number } | null>();
   const slugOwner = new Map<string, number>();
+  // A book keeps the id it already has on the site (links, notes and highlights point at it), whatever
+  // order the shelves are read in: two books called "Kim" must not swap ids when the shelves are rearranged.
+  const pinned = new Map<number, string>();
+  // Works shelved by reference (Paine on the Freethought shelf, set by scripts/arrange-literature.mts): kept.
+  let prevRefs: Record<string, unknown> | undefined;
+  const prevColRefs = new Map<string, string[]>();
+  try {
+    const prev = JSON.parse(await readFile(path.join(ROOT, "data", "literature-catalog.json"), "utf8")) as { books: [string, string, string, number, [number][]][]; refs?: Record<string, unknown>; shelves?: { collections: { id: string; books: string[] }[] }[] };
+    prevRefs = prev.refs;
+    for (const sh of prev.shelves ?? []) for (const c of sh.collections) if (c.books.some((b) => b.startsWith("ref:"))) prevColRefs.set(c.id, c.books.filter((b) => b.startsWith("ref:")));
+    for (const b of prev.books) if (b[4]?.[0]) pinned.set(b[4][0][0], b[1]);
+    for (const [gid, s] of pinned) slugOwner.set(s, gid);
+  } catch {
+    /* first import: no ids yet */
+  }
   const shelvesOut: ShelfOut[] = [];
 
   for (const sh of shelvesIn) {
-    const out: ShelfOut = { id: sh.id, name: sh.name, collections: [] };
+    const out: ShelfOut = { id: sh.id, name: sh.name, ...(sh.intro ? { intro: sh.intro } : {}), collections: [] };
     for (const col of sh.collections) {
       const items: Record<string, unknown>[] = [];
       for (const e of col.books) {
+        shelfNow = sh.id;
         if (!done.has(e.gid)) done.set(e.gid, await importBook(e, col.name));
         const b = done.get(e.gid);
         if (b) items.push({ id: b.bookSlug, name: b.title, work: b.work, chapters: b.chapters, chapterName: b.title });
@@ -689,10 +819,11 @@ async function main() {
   }
 
   async function importBook(e: Entry, colName: string) {
-    const [nameOverride, knownYear] = META[e.gid] ?? [null, 0];
+    const [nameOverride, metaYear] = META[e.gid] ?? [null, 0];
+    const knownYear = e.year ?? metaYear; // the list's own "year" (first published) wins
     const title = e.name ?? nameOverride ?? autoTitle(e.title);
     const { author, translator } = people(e.author);
-    let bookSlug = slug(title) || `book-${e.gid}`;
+    let bookSlug = pinned.get(e.gid) ?? (slug(title) || `book-${e.gid}`);
     if (slugOwner.has(bookSlug) && slugOwner.get(bookSlug) !== e.gid) bookSlug = `${bookSlug}-${slug(author.split(/\s+/).pop() ?? String(e.gid)) || e.gid}`.slice(0, 48);
     if (slugOwner.has(bookSlug) && slugOwner.get(bookSlug) !== e.gid) bookSlug = `${bookSlug}-${e.gid}`;
     slugOwner.set(bookSlug, e.gid);
@@ -711,6 +842,9 @@ async function main() {
     let mainTitles: string[] = [];
     for (const [ei, ed] of editions.entries()) {
       const version = `pg${ed.gid}`;
+      longNoteMarks = [51793, 52160].includes(ed.gid);
+      strictNumbered = shelfNow === "freethought";
+      sentenceNumbers = [989, 990, 991, 992].includes(ed.gid);
       let found: Found;
       if (ei === 0 && e.group) {
         // Several short books read as one: each is a chapter.
@@ -734,7 +868,7 @@ async function main() {
           if (ei === 0) return null;
           continue;
         }
-        found = findChapters(gutenbergBody(t), { poem: [1322, 26, 58, 1004, 1000, 16328, 39784, 26197].includes(ed.gid), whole: [132, 14986, 10136, 44833, 20352].includes(ed.gid), noOpening: ei > 0, title }); // a second edition lines up chapter by chapter
+        found = findChapters(cutBody(gutenbergBody(t), ed.gid), { poem: [1322, 26, 58, 1004, 1000, 16328, 39784, 26197].includes(ed.gid), whole: [132, 14986, 10136, 44833, 20352].includes(ed.gid), noOpening: ei > 0, title }); // a second edition lines up chapter by chapter
       }
       if (!found.chapters.length) {
         report.push(`${String(ed.gid).padStart(6)} ${title}: no text found, skipped`);
@@ -814,7 +948,8 @@ async function main() {
     $comment:
       "The Literature shelf with its sections (Fiction, Poetry, Drama, Non-fiction…; Project Gutenberg, public domain in the US). Written by scripts/import-literature.ts; expanded into works, versions and shelves by src/lib/catalog.ts. books: [work, book id, title, chapters, editions: [Gutenberg number, language, column label, year, author, translator, year note]].",
     books,
-    shelves: shelvesOut.map((sh) => ({ id: sh.id, name: sh.name, collections: sh.collections.map((c) => ({ id: c.id, name: c.name, ...(c.section ? { section: c.section } : {}), books: c.items.map((it) => it.work as string).filter((wk) => byWork.has(wk)) })) })),
+    shelves: shelvesOut.map((sh) => ({ id: sh.id, name: sh.name, ...(sh.intro ? { intro: sh.intro } : {}), collections: sh.collections.map((c) => ({ id: c.id, name: c.name, ...(c.section ? { section: c.section } : {}), books: [...c.items.map((it) => it.work as string).filter((wk) => byWork.has(wk)), ...(prevColRefs.get(c.id) ?? [])] })) })),
+    ...(prevRefs ? { refs: prevRefs } : {}),
   };
   await writeFile(path.join(ROOT, "data", "literature-catalog.json"), JSON.stringify(lit).replace(/\],\["lit-/g, '],\n["lit-') + "\n");
   // Text folders of books no longer on a shelf (or renamed) go, so they aren't packed and served.

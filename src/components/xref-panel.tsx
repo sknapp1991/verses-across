@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { selectXref, useUi } from "@/lib/ui-store";
 import { useReaderState } from "./use-reader-state";
 import { askAboutVerse, sendAi, useAiChat } from "@/lib/ai-chat";
-import { catalog, chapterTitle, isLiteratureWork, scriptureShelves, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
+import { BOOK_SHELVES, catalog, chapterTitle, isLiteratureWork, scriptureShelves, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { CloseIcon, SparkIcon } from "./icons";
@@ -233,7 +233,8 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
   }, [key]);
 
   const own = religionOf(bookRef.work, bookRef.book);
-  const book = isLiteratureWork(bookRef.work);
+  // (a book shelf by reference too: Paine on the Freethought shelf)
+  const book = isLiteratureWork(bookRef.work) || (!!own && BOOK_SHELVES.has(own.id));
   const others = scriptureShelves.filter((r) => r.id !== own?.id);
   const hits = data?.k === key ? data.hits : null;
   const groups = useMemo(() => {

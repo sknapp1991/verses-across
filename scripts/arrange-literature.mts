@@ -34,7 +34,10 @@ type Shelf<B> = { id: string; name: string; collections: Col<B>[] };
 const FICTION_ORDER = ["lit-fiction", "fic-crime", "fic-detective", "fic-romance", "fic-adventure", "fic-short", "fic-historical", "fic-gothic", "fic-horror", "fic-sff", "fic-scifi", "fic-scifi-women", "fic-precursors", "fic-fantasy", "fic-humor", "fic-western"];
 const NONFICTION_ORDER = ["lit-social", "lit-countries", "lit-religion", "lit-law", "lit-wars", "lit-animals", "lit-education", "lit-music", "lit-science", "lit-technology"];
 
-function arrange<B>(shelves: Shelf<B>[], gidOf: (b: B) => number, byGid: (gid: number) => B | undefined): Shelf<B>[] {
+function arrange<B>(shelvesIn: Shelf<B>[], gidOf: (b: B) => number, byGid: (gid: number) => B | undefined): Shelf<B>[] {
+  // Only Literature (and the old separate Fiction shelf) are arranged; other shelves (Freethought) pass through.
+  const shelves = shelvesIn.filter((s) => s.id === "literature" || s.id === "fiction");
+  const others = shelvesIn.filter((s) => s.id !== "literature" && s.id !== "fiction");
   const all = new Map(shelves.flatMap((s) => s.collections).map((c) => [c.id, c]));
   const get = (id: string) => all.get(id);
   const pick = (gids: number[]) => gids.map(byGid).filter((b): b is B => !!b);
@@ -71,15 +74,36 @@ function arrange<B>(shelves: Shelf<B>[], gidOf: (b: B) => number, byGid: (gid: n
   // Anything not placed above (a shelf added later) stays, at the end.
   const placed = new Set(out.map((c) => c.id).concat(["lit-crime", "lit-emmy"]));
   for (const c of all.values()) if (!placed.has(c.id)) out.push(c);
-  return [{ id: "literature", name: "Literature", collections: out.map((c) => (c.section ? c : { id: c.id, name: c.name, books: c.books })) }];
+  return [{ id: "literature", name: "Literature", collections: out.map((c) => (c.section ? c : { id: c.id, name: c.name, books: c.books })) }, ...others];
 }
+
+/**
+ * Books whose texts are not Gutenberg imports but belong on a book shelf: Paine's Age of Reason (work
+ * "age-of-reason", moved from Philosophy to Freethought › Deism & Biblical criticism on Nov 8). In
+ * literature-catalog.json the shelf entry "ref:<work>/<book>" names it, and `refs` holds its catalog item
+ * (src/lib/catalog.ts reads both). The importer's list doesn't need them.
+ */
+type Item = { id: string; name: string; work: string; chapters: number; chapterName: string };
+/** Neutral intros shown under a shelf's name in the library (HQ framing, OK'd by Skylar Nov 8). */
+const INTROS: Record<string, string> = {
+  freethought:
+    "Atheist, agnostic, deist and skeptic writers. Verses Across shows each tradition in its own words. This section holds the classic public-domain writing of those who questioned or rejected religion.",
+};
+const withIntros = <S extends { id: string; intro?: string }>(shelves: S[]) => shelves.map((s) => (INTROS[s.id] ? { ...s, intro: INTROS[s.id] } : s));
+
+const REFS: Record<string, Item[]> = {
+  "ft-deism": [
+    { id: "aor1", name: "Paine, The Age of Reason, Part I", work: "age-of-reason", chapters: 17, chapterName: "Age of Reason I, Chapter" },
+    { id: "aor2", name: "Paine, The Age of Reason, Part II", work: "age-of-reason", chapters: 3, chapterName: "Age of Reason II, Chapter" },
+  ],
+};
 
 // The importer's list: books are entries with a Gutenberg number.
 type Entry = { gid: number };
 const list = JSON.parse(await readFile(LIST, "utf8")) as { shelves: Shelf<Entry>[] };
 const entries = new Map<number, Entry>();
 for (const s of list.shelves) for (const c of s.collections) for (const b of c.books) if (!entries.has(b.gid)) entries.set(b.gid, b);
-list.shelves = arrange(list.shelves, (b) => b.gid, (g) => entries.get(g));
+list.shelves = withIntros(arrange(list.shelves, (b) => b.gid, (g) => entries.get(g)));
 await writeFile(LIST, JSON.stringify(list, null, 1) + "\n");
 
 // The site's catalog: books are work ids; their Gutenberg number is the first edition's.
@@ -87,7 +111,16 @@ const cat = JSON.parse(await readFile(CAT, "utf8")) as { books: [string, string,
 const gidOfWork = new Map(cat.books.map((b) => [b[0], b[4][0][0]]));
 const workOfGid = new Map<number, string>();
 for (const b of cat.books) for (const ed of b[4]) if (!workOfGid.has(ed[0])) workOfGid.set(ed[0], b[0]);
-cat.shelves = arrange(cat.shelves, (w) => gidOfWork.get(w) ?? -1, (g) => workOfGid.get(g));
+cat.shelves = withIntros(arrange(cat.shelves, (w) => gidOfWork.get(w) ?? -1, (g) => workOfGid.get(g)));
+const refs: Record<string, Item> = {};
+for (const s of cat.shelves)
+  for (const c of s.collections)
+    for (const it of [...(REFS[c.id] ?? [])].reverse()) {
+      const key = `ref:${it.work}/${it.id}`;
+      refs[key] = it;
+      if (!c.books.includes(key)) c.books.unshift(key);
+    }
+(cat as { refs?: Record<string, Item> }).refs = refs;
 const text = JSON.stringify(cat).replace(/\],\["lit-/g, '],\n["lit-');
 await writeFile(CAT, text + "\n");
 
