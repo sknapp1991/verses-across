@@ -14,6 +14,7 @@ import { askAboutVerse, sendAi, useAiChat } from "@/lib/ai-chat";
 import { LIBRARY_SHELVES, shelvesOf, sideOfWork } from "@/lib/side";
 import { BOOK_SHELVES, catalog, chapterTitle, isLiteratureWork, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
+import { loadThemeIndex, loadThemeRefs } from "@/lib/themes";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { CloseIcon, SparkIcon } from "./icons";
 import { modeButtonClass } from "./highlight-mode";
@@ -327,6 +328,7 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
           )}
         </div>
       )}
+      {sel.length > 0 && <ThemeChips refs={sel.map((x) => `${x.work}/${x.book}/${x.chapter}:${x.verse}`)} />}
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-2 text-sm">
         {/* Which religions to look in: one line until opened (the full list of 20 would fill a phone's sheet).
             A book of literature always looks in every scripture, so it has none. */}
@@ -457,5 +459,34 @@ function HitRow({ h, versions }: { h: Hit; versions?: string[] }) {
         {text === undefined ? "…" : (text ?? "")}
       </p>
     </li>
+  );
+}
+
+/** The themes a chosen verse is one of the strongest passages for (public/themes/refs.json), as links to /themes/<id>. */
+function ThemeChips({ refs }: { refs: string[] }) {
+  const key = refs.join("|");
+  const [got, setGot] = useState<{ key: string; list: { id: string; name: string }[] } | null>(null);
+  useEffect(() => {
+    let live = true;
+    Promise.all([loadThemeRefs(), loadThemeIndex()]).then(([m, index]) => {
+      const ids = [...new Set(key.split("|").flatMap((r) => m[r] ?? []))];
+      const names = new Map(index.map((t) => [t.id, t.name]));
+      if (live) setGot({ key, list: ids.filter((id) => names.has(id)).map((id) => ({ id, name: names.get(id)! })) });
+    });
+    return () => {
+      live = false;
+    };
+  }, [key]);
+  const list = got?.key === key ? got.list : [];
+  if (!list.length) return null;
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-line px-3 py-2 text-xs">
+      <span className="mr-1 font-semibold uppercase tracking-wide text-faint">Themes</span>
+      {list.map((t) => (
+        <Link key={t.id} href={`/themes/${t.id}`} className="flex min-h-8 items-center rounded-full border border-line px-2.5 text-muted hover:border-accent hover:text-accent">
+          {t.name}
+        </Link>
+      ))}
+    </div>
   );
 }

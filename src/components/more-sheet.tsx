@@ -19,6 +19,7 @@ import {
   CalendarIcon,
   CloseIcon,
   RocketIcon,
+  StarIcon,
   ShareIcon,
   SparkIcon,
   TrophyIcon,
@@ -265,6 +266,15 @@ function Tiles() {
         onClick={() => {
           closeSheet();
           void share();
+        }}
+      />
+      <Tile
+        icon={<StarIcon />}
+        label="Themes"
+        title="One theme (forgiveness, the flood, exile…) across every tradition and book, side by side"
+        onClick={() => {
+          closeSheet();
+          router.push("/themes");
         }}
       />
       <Tile

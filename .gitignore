@@ -86,3 +86,5 @@ next-env.d.ts
 hub/.test-key.json
 hub/.wrangler/
 hub/.dev.vars
+
+__pycache__/
