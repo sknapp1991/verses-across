@@ -25,7 +25,7 @@ function Passage({ p }: { p: ThemePassage }) {
   );
 }
 
-export function ThemeView({ id }: { id: string }) {
+export function ThemeView({ id, librarySide = false }: { id: string; librarySide?: boolean }) {
   const [got, setGot] = useState<{ id: string; theme?: Theme; error?: string } | null>(null);
   const side = useSide();
   useEffect(() => {
@@ -45,10 +45,11 @@ export function ThemeView({ id }: { id: string }) {
   const scriptures = (
     <section key="s" className="space-y-4" aria-labelledby="th-s">
       <h2 id="th-s" className="font-serif text-xl font-semibold text-ink">
-        In the scriptures <span className="font-sans text-sm font-normal text-faint">· {t.traditions.length} traditions</span>
+        {librarySide ? "Echoes in the scriptures" : "In the scriptures"}{" "}
+        <span className="font-sans text-sm font-normal text-faint">· {t.traditions.length} {t.traditions.length === 1 ? "tradition" : "traditions"}</span>
       </h2>
       {t.traditions.map((tr) => (
-        <details key={tr.id} open className="group rounded-2xl border border-line bg-raised/40 p-4">
+        <details key={tr.id} open={!librarySide} className="group rounded-2xl border border-line bg-raised/40 p-4">
           <summary className="cursor-pointer list-none text-sm font-semibold uppercase tracking-wide text-faint">
             <span className="mr-1 inline-block transition-transform group-open:rotate-90">›</span>
             {tr.name}
@@ -72,15 +73,18 @@ export function ThemeView({ id }: { id: string }) {
         <div key={b.work} className="rounded-2xl border border-line bg-raised/40 p-4">
           <p className="text-sm font-semibold text-ink">{b.title}</p>
           <ul className="mt-3 space-y-4">
-            {b.passages.map((p) => (
+            {b.passages.slice(0, 1).map((p) => (
               <Passage key={p.ref} p={p} />
             ))}
           </ul>
+          {b.passages.length > 1 && <More list={b.passages.slice(1)} />}
         </div>
       ))}
     </section>
   ) : null;
-  return <div className="space-y-8">{side === "library" ? [library, scriptures] : [scriptures, library]}</div>;
+  // A Library theme always leads with its books; a scripture theme with the scriptures (or the books, on the Library side)
+  const booksFirst = librarySide || side === "library";
+  return <div className="space-y-8">{t.traditions.length || !librarySide ? (booksFirst ? [library, scriptures] : [scriptures, library]) : library}</div>;
 }
 
 function More({ list }: { list: ThemePassage[] }) {

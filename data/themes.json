@@ -1,76 +1,792 @@
 [
-  {"id": "forgiveness", "name": "Forgiveness", "group": "Love and mercy", "text": "Forgiving those who wrong us, pardon of sins, letting go of resentment and revenge, being forgiven."},
-  {"id": "mercy", "name": "Mercy and compassion", "group": "Love and mercy", "text": "Mercy, compassion and kindness toward the suffering; pity for the weak; tender care for others."},
-  {"id": "love", "name": "Love", "group": "Love and mercy", "text": "Love for others, for one's neighbour and for God; love that is patient, kind and gives itself."},
-  {"id": "enemies", "name": "Loving enemies", "group": "Love and mercy", "text": "Returning good for evil, loving and blessing one's enemies, not repaying hatred with hatred."},
-  {"id": "hospitality", "name": "Hospitality and the stranger", "group": "Love and mercy", "text": "Welcoming the stranger, the guest and the foreigner; giving food and shelter to travellers."},
-  {"id": "charity", "name": "Giving and charity", "group": "Love and mercy", "text": "Giving to the poor, generosity, alms and sharing what one has with those in need."},
-  {"id": "friendship", "name": "Friendship", "group": "Love and mercy", "text": "True friendship, loyalty between friends, the value and duties of a faithful friend."},
-  {"id": "family", "name": "Parents and children", "group": "Love and mercy", "text": "Honouring father and mother, raising children, the bond and duties between parents and children."},
-
-  {"id": "justice", "name": "Justice", "group": "Right and wrong", "text": "Justice and fairness, judging rightly, defending the oppressed, the righteous judge and just laws."},
-  {"id": "truth", "name": "Truth and honesty", "group": "Right and wrong", "text": "Speaking the truth, honesty, avoiding lies and deceit, the value of truthfulness."},
-  {"id": "pride", "name": "Pride and humility", "group": "Right and wrong", "text": "Pride goes before a fall; humility, the humble are raised up and the proud brought low."},
-  {"id": "greed", "name": "Greed and contentment", "group": "Right and wrong", "text": "Greed and the love of money against contentment with little; desire that is never satisfied."},
-  {"id": "anger", "name": "Anger and patience", "group": "Right and wrong", "text": "Controlling anger, patience, being slow to wrath, calming rage and keeping one's temper."},
-  {"id": "temptation", "name": "Temptation", "group": "Right and wrong", "text": "Temptation and resisting it, being led astray by desire, the struggle against sin and evil impulses."},
-  {"id": "envy", "name": "Envy and jealousy", "group": "Right and wrong", "text": "Envy of others' good fortune, jealousy and coveting what belongs to one's neighbour."},
-  {"id": "repentance", "name": "Repentance", "group": "Right and wrong", "text": "Turning back from wrongdoing, remorse, confessing faults and starting again on the right path."},
-  {"id": "conscience", "name": "Conscience and duty", "group": "Right and wrong", "text": "The inner voice of conscience, doing one's duty, moral law within, acting rightly when no one sees."},
-  {"id": "golden-rule", "name": "The golden rule", "group": "Right and wrong", "text": "Do to others as you would have them do to you; do not do to others what you would not want done to yourself."},
-
-  {"id": "suffering", "name": "Suffering", "group": "Life and death", "text": "Why we suffer, pain and affliction, enduring hardship and grief, finding meaning in suffering."},
-  {"id": "death", "name": "Death", "group": "Life and death", "text": "Death and dying, mortality, the shortness of life, facing one's own death without fear."},
-  {"id": "afterlife", "name": "Afterlife", "group": "Life and death", "text": "What happens after death: heaven, the underworld, paradise, judgment of the dead, rebirth."},
-  {"id": "rebirth", "name": "Rebirth and karma", "group": "Life and death", "text": "Rebirth into new lives, karma, deeds that bear fruit in the next life, the cycle of birth and death."},
-  {"id": "grief", "name": "Grief and mourning", "group": "Life and death", "text": "Mourning the dead, weeping and lament, comfort for those who grieve a loved one."},
-  {"id": "old-age", "name": "Youth and old age", "group": "Life and death", "text": "Growing old, the strength of youth and the wisdom of age, the seasons of a life."},
-  {"id": "time", "name": "Time and change", "group": "Life and death", "text": "Everything passes, impermanence, a time for everything, the changing seasons and fleeting days."},
-  {"id": "fate", "name": "Fate and free will", "group": "Life and death", "text": "Destiny and fate, whether our lives are fixed or chosen, providence and human freedom."},
-
-  {"id": "creation", "name": "Creation", "group": "God and the world", "text": "How the world began, the creation of heaven and earth, the first light, the making of the first humans."},
-  {"id": "flood", "name": "The great flood", "group": "God and the world", "text": "A great flood that covers the earth, a boat or ark that saves a few, the waters going down."},
-  {"id": "nature", "name": "Nature", "group": "God and the world", "text": "The beauty of nature, mountains, rivers, trees, animals and the sky; the natural world as a sign or teacher."},
-  {"id": "god", "name": "The nature of God", "group": "God and the world", "text": "What God is: one, eternal, all-powerful, beyond understanding, the source of all things."},
-  {"id": "doubt", "name": "Doubt and questioning", "group": "God and the world", "text": "Doubting religion, questioning God's existence, reason against faith, scepticism about miracles and scripture."},
-  {"id": "evil", "name": "The problem of evil", "group": "God and the world", "text": "Why a good God allows evil and suffering; the existence of evil in the world."},
-  {"id": "miracles", "name": "Miracles and signs", "group": "God and the world", "text": "Miracles, wonders and signs: healing the sick, parting waters, the dead raised."},
-  {"id": "angels", "name": "Spirits, angels and demons", "group": "God and the world", "text": "Angels, spirits, demons and gods who visit people, messengers from heaven, evil spirits."},
-  {"id": "end-times", "name": "The end of the world", "group": "God and the world", "text": "The end of the world, the last days, final judgment, the destruction and renewal of all things."},
-
-  {"id": "prayer", "name": "Prayer", "group": "The spiritual life", "text": "Praying, calling on God, words addressed to the divine, asking, thanking and praising in prayer."},
-  {"id": "meditation", "name": "Meditation and stillness", "group": "The spiritual life", "text": "Meditation, stilling the mind, silence, contemplation and inner calm."},
-  {"id": "the-soul", "name": "The soul", "group": "The spiritual life", "text": "The soul or self within: what it is, whether it is immortal, its relation to the body."},
-  {"id": "faith", "name": "Faith and trust", "group": "The spiritual life", "text": "Faith and trust in God, believing without seeing, relying on the divine in danger."},
-  {"id": "thanksgiving", "name": "Gratitude", "group": "The spiritual life", "text": "Giving thanks, gratitude for blessings received, praise for the good things of life."},
-  {"id": "fasting", "name": "Fasting and self-denial", "group": "The spiritual life", "text": "Fasting, giving up food and comforts, discipline of the body, ascetic practice."},
-  {"id": "sacrifice", "name": "Sacrifice and offering", "group": "The spiritual life", "text": "Offerings and sacrifices to God or the gods, burnt offerings, giving up something precious."},
-  {"id": "pilgrimage", "name": "Journey and pilgrimage", "group": "The spiritual life", "text": "A sacred journey, pilgrimage to a holy place, wandering in search of something."},
-  {"id": "detachment", "name": "Desire and detachment", "group": "The spiritual life", "text": "Letting go of desire and attachment, freedom from craving, equanimity in pleasure and pain."},
-  {"id": "enlightenment", "name": "Awakening", "group": "The spiritual life", "text": "Enlightenment and awakening, seeing reality as it is, liberation of the mind."},
-
-  {"id": "wisdom", "name": "Wisdom", "group": "Wisdom and knowledge", "text": "True wisdom, its worth above gold, the wise and the fool, how to gain understanding."},
-  {"id": "knowledge", "name": "Knowledge and learning", "group": "Wisdom and knowledge", "text": "Study and learning, the pursuit of knowledge, teachers and students, books and instruction."},
-  {"id": "speech", "name": "Words and the tongue", "group": "Wisdom and knowledge", "text": "The power of words, guarding the tongue, gossip and slander, speaking kindly and little."},
-  {"id": "self-knowledge", "name": "Know yourself", "group": "Wisdom and knowledge", "text": "Knowing oneself, self-examination, the examined life, mastering oneself before others."},
-  {"id": "happiness", "name": "Happiness", "group": "Wisdom and knowledge", "text": "What true happiness is, the good life, joy, contentment and peace of mind."},
-  {"id": "virtue", "name": "Virtue and character", "group": "Wisdom and knowledge", "text": "Virtue and good character, courage, temperance, self-control, the habits of a good person."},
-
-  {"id": "war-peace", "name": "War and peace", "group": "People together", "text": "War and battle, violence and bloodshed, against peace, swords into ploughshares, making peace."},
-  {"id": "wealth-poverty", "name": "Wealth and poverty", "group": "People together", "text": "The rich and the poor, riches that do not last, the dignity of the poor, oppression by the wealthy."},
-  {"id": "rulers", "name": "Kings and rulers", "group": "People together", "text": "Kings, rulers and government; good and wicked rulers, power and its abuse, how to govern."},
-  {"id": "freedom", "name": "Freedom and slavery", "group": "People together", "text": "Slavery and liberation, captives set free, bondage and freedom, the escape of an enslaved people."},
-  {"id": "exile", "name": "Exile and homeland", "group": "People together", "text": "Exile from home, being driven out, longing for one's homeland, the return of exiles."},
-  {"id": "work", "name": "Work and labour", "group": "People together", "text": "Honest work, labour and the fruits of toil, laziness and diligence, the dignity of work."},
-  {"id": "marriage", "name": "Marriage", "group": "People together", "text": "Husband and wife, marriage and faithfulness, weddings, the love between spouses."},
-  {"id": "women", "name": "Women", "group": "People together", "text": "A wise and strong woman: a mother, daughter, queen or prophetess, her courage and her words, and how women are honoured."},
-  {"id": "law", "name": "Law and commandments", "group": "People together", "text": "Laws and commandments, rules for living given to a people, keeping or breaking the law."},
-
-  {"id": "light-darkness", "name": "Light and darkness", "group": "Images and symbols", "text": "Light shining in darkness, day and night, light as truth and goodness, darkness as ignorance or evil."},
-  {"id": "water", "name": "Water and rivers", "group": "Images and symbols", "text": "Living water: rivers and springs, rain on dry land, washing clean, the thirsty given water to drink."},
-  {"id": "journey-sea", "name": "The sea and storms", "group": "Images and symbols", "text": "Sailing on the sea, storms and shipwreck, the deep ocean, calming the waves."},
-  {"id": "garden", "name": "Gardens, trees and harvest", "group": "Images and symbols", "text": "Gardens, trees and seeds, sowing and harvest, fruit that a good tree bears."},
-  {"id": "animals", "name": "Animals", "group": "Images and symbols", "text": "Animals and how to treat them: sheep and shepherds, lions, birds, serpents and beasts."},
-  {"id": "dreams", "name": "Dreams and visions", "group": "Images and symbols", "text": "Dreams and visions, a vision in the night, interpreting dreams, prophecy given in sleep."},
-  {"id": "heroes", "name": "Heroes and trials", "group": "Images and symbols", "text": "A hero sets out on a great quest, faces danger with courage, fights a monster or a giant, and comes home victorious."}
+{
+"id": "forgiveness",
+"name": "Forgiveness",
+"group": "Love and mercy",
+"text": "Forgiving those who wrong us, pardon of sins, letting go of resentment and revenge, being forgiven.",
+"side": "scriptures"
+},
+{
+"id": "mercy",
+"name": "Mercy and compassion",
+"group": "Love and mercy",
+"text": "Mercy, compassion and kindness toward the suffering; pity for the weak; tender care for others.",
+"side": "scriptures"
+},
+{
+"id": "love",
+"name": "Love",
+"group": "Love and mercy",
+"text": "Love for others, for one's neighbour and for God; love that is patient, kind and gives itself.",
+"side": "scriptures"
+},
+{
+"id": "enemies",
+"name": "Loving enemies",
+"group": "Love and mercy",
+"text": "Returning good for evil, loving and blessing one's enemies, not repaying hatred with hatred.",
+"side": "scriptures"
+},
+{
+"id": "hospitality",
+"name": "Hospitality and the stranger",
+"group": "Love and mercy",
+"text": "Welcoming the stranger, the guest and the foreigner; giving food and shelter to travellers.",
+"side": "scriptures"
+},
+{
+"id": "charity",
+"name": "Giving and charity",
+"group": "Love and mercy",
+"text": "Giving to the poor, generosity, alms and sharing what one has with those in need.",
+"side": "scriptures"
+},
+{
+"id": "friendship",
+"name": "Friendship",
+"group": "Love and mercy",
+"text": "True friendship, loyalty between friends, the value and duties of a faithful friend.",
+"side": "scriptures"
+},
+{
+"id": "family",
+"name": "Parents and children",
+"group": "Love and mercy",
+"text": "Honouring father and mother, raising children, the bond and duties between parents and children.",
+"side": "scriptures"
+},
+{
+"id": "justice",
+"name": "Justice",
+"group": "Right and wrong",
+"text": "Justice and fairness, judging rightly, defending the oppressed, the righteous judge and just laws.",
+"side": "scriptures"
+},
+{
+"id": "truth",
+"name": "Truth and honesty",
+"group": "Right and wrong",
+"text": "Speaking the truth, honesty, avoiding lies and deceit, the value of truthfulness.",
+"side": "scriptures"
+},
+{
+"id": "pride",
+"name": "Pride and humility",
+"group": "Right and wrong",
+"text": "Pride goes before a fall; humility, the humble are raised up and the proud brought low.",
+"side": "scriptures"
+},
+{
+"id": "greed",
+"name": "Greed and contentment",
+"group": "Right and wrong",
+"text": "Greed and the love of money against contentment with little; desire that is never satisfied.",
+"side": "scriptures"
+},
+{
+"id": "anger",
+"name": "Anger and patience",
+"group": "Right and wrong",
+"text": "Controlling anger, patience, being slow to wrath, calming rage and keeping one's temper.",
+"side": "scriptures"
+},
+{
+"id": "temptation",
+"name": "Temptation",
+"group": "Right and wrong",
+"text": "Temptation and resisting it, being led astray by desire, the struggle against sin and evil impulses.",
+"side": "scriptures"
+},
+{
+"id": "envy",
+"name": "Envy and jealousy",
+"group": "Right and wrong",
+"text": "Envy of others' good fortune, jealousy and coveting what belongs to one's neighbour.",
+"side": "scriptures"
+},
+{
+"id": "repentance",
+"name": "Repentance",
+"group": "Right and wrong",
+"text": "Turning back from wrongdoing, remorse, confessing faults and starting again on the right path.",
+"side": "scriptures"
+},
+{
+"id": "conscience",
+"name": "Conscience and duty",
+"group": "Right and wrong",
+"text": "The inner voice of conscience, doing one's duty, moral law within, acting rightly when no one sees.",
+"side": "scriptures"
+},
+{
+"id": "golden-rule",
+"name": "The golden rule",
+"group": "Right and wrong",
+"text": "Do to others as you would have them do to you; do not do to others what you would not want done to yourself.",
+"side": "scriptures"
+},
+{
+"id": "suffering",
+"name": "Suffering",
+"group": "Life and death",
+"text": "Why we suffer, pain and affliction, enduring hardship and grief, finding meaning in suffering.",
+"side": "scriptures"
+},
+{
+"id": "death",
+"name": "Death",
+"group": "Life and death",
+"text": "Death and dying, mortality, the shortness of life, facing one's own death without fear.",
+"side": "scriptures"
+},
+{
+"id": "afterlife",
+"name": "Afterlife",
+"group": "Life and death",
+"text": "What happens after death: heaven, the underworld, paradise, judgment of the dead, rebirth.",
+"side": "scriptures"
+},
+{
+"id": "rebirth",
+"name": "Rebirth and karma",
+"group": "Life and death",
+"text": "Rebirth into new lives, karma, deeds that bear fruit in the next life, the cycle of birth and death.",
+"side": "scriptures"
+},
+{
+"id": "grief",
+"name": "Grief and mourning",
+"group": "Life and death",
+"text": "Mourning the dead, weeping and lament, comfort for those who grieve a loved one.",
+"side": "scriptures"
+},
+{
+"id": "old-age",
+"name": "Youth and old age",
+"group": "Life and death",
+"text": "Growing old, the strength of youth and the wisdom of age, the seasons of a life.",
+"side": "scriptures"
+},
+{
+"id": "time",
+"name": "Time and change",
+"group": "Life and death",
+"text": "Everything passes, impermanence, a time for everything, the changing seasons and fleeting days.",
+"side": "scriptures"
+},
+{
+"id": "fate",
+"name": "Fate and free will",
+"group": "Life and death",
+"text": "Destiny and fate, whether our lives are fixed or chosen, providence and human freedom.",
+"side": "scriptures"
+},
+{
+"id": "creation",
+"name": "Creation",
+"group": "God and the world",
+"text": "How the world began, the creation of heaven and earth, the first light, the making of the first humans.",
+"side": "scriptures"
+},
+{
+"id": "flood",
+"name": "The great flood",
+"group": "God and the world",
+"text": "A great flood that covers the earth, a boat or ark that saves a few, the waters going down.",
+"side": "scriptures"
+},
+{
+"id": "nature",
+"name": "Nature",
+"group": "God and the world",
+"text": "The beauty of nature, mountains, rivers, trees, animals and the sky; the natural world as a sign or teacher.",
+"side": "scriptures"
+},
+{
+"id": "god",
+"name": "The nature of God",
+"group": "God and the world",
+"text": "What God is: one, eternal, all-powerful, beyond understanding, the source of all things.",
+"side": "scriptures"
+},
+{
+"id": "doubt",
+"name": "Doubt and questioning",
+"group": "God and the world",
+"text": "Doubting religion, questioning God's existence, reason against faith, scepticism about miracles and scripture.",
+"side": "scriptures"
+},
+{
+"id": "evil",
+"name": "The problem of evil",
+"group": "God and the world",
+"text": "Why a good God allows evil and suffering; the existence of evil in the world.",
+"side": "scriptures"
+},
+{
+"id": "miracles",
+"name": "Miracles and signs",
+"group": "God and the world",
+"text": "Miracles, wonders and signs: healing the sick, parting waters, the dead raised.",
+"side": "scriptures"
+},
+{
+"id": "angels",
+"name": "Spirits, angels and demons",
+"group": "God and the world",
+"text": "Angels, spirits, demons and gods who visit people, messengers from heaven, evil spirits.",
+"side": "scriptures"
+},
+{
+"id": "end-times",
+"name": "The end of the world",
+"group": "God and the world",
+"text": "The end of the world, the last days, final judgment, the destruction and renewal of all things.",
+"side": "scriptures"
+},
+{
+"id": "prayer",
+"name": "Prayer",
+"group": "The spiritual life",
+"text": "Praying, calling on God, words addressed to the divine, asking, thanking and praising in prayer.",
+"side": "scriptures"
+},
+{
+"id": "meditation",
+"name": "Meditation and stillness",
+"group": "The spiritual life",
+"text": "Meditation, stilling the mind, silence, contemplation and inner calm.",
+"side": "scriptures"
+},
+{
+"id": "the-soul",
+"name": "The soul",
+"group": "The spiritual life",
+"text": "The soul or self within: what it is, whether it is immortal, its relation to the body.",
+"side": "scriptures"
+},
+{
+"id": "faith",
+"name": "Faith and trust",
+"group": "The spiritual life",
+"text": "Faith and trust in God, believing without seeing, relying on the divine in danger.",
+"side": "scriptures"
+},
+{
+"id": "thanksgiving",
+"name": "Gratitude",
+"group": "The spiritual life",
+"text": "Giving thanks, gratitude for blessings received, praise for the good things of life.",
+"side": "scriptures"
+},
+{
+"id": "fasting",
+"name": "Fasting and self-denial",
+"group": "The spiritual life",
+"text": "Fasting, giving up food and comforts, discipline of the body, ascetic practice.",
+"side": "scriptures"
+},
+{
+"id": "sacrifice",
+"name": "Sacrifice and offering",
+"group": "The spiritual life",
+"text": "Offerings and sacrifices to God or the gods, burnt offerings, giving up something precious.",
+"side": "scriptures"
+},
+{
+"id": "pilgrimage",
+"name": "Journey and pilgrimage",
+"group": "The spiritual life",
+"text": "A sacred journey, pilgrimage to a holy place, wandering in search of something.",
+"side": "scriptures"
+},
+{
+"id": "detachment",
+"name": "Desire and detachment",
+"group": "The spiritual life",
+"text": "Letting go of desire and attachment, freedom from craving, equanimity in pleasure and pain.",
+"side": "scriptures"
+},
+{
+"id": "enlightenment",
+"name": "Awakening",
+"group": "The spiritual life",
+"text": "Enlightenment and awakening, seeing reality as it is, liberation of the mind.",
+"side": "scriptures"
+},
+{
+"id": "wisdom",
+"name": "Wisdom",
+"group": "Wisdom and knowledge",
+"text": "True wisdom, its worth above gold, the wise and the fool, how to gain understanding.",
+"side": "scriptures"
+},
+{
+"id": "knowledge",
+"name": "Knowledge and learning",
+"group": "Wisdom and knowledge",
+"text": "Study and learning, the pursuit of knowledge, teachers and students, books and instruction.",
+"side": "scriptures"
+},
+{
+"id": "speech",
+"name": "Words and the tongue",
+"group": "Wisdom and knowledge",
+"text": "The power of words, guarding the tongue, gossip and slander, speaking kindly and little.",
+"side": "scriptures"
+},
+{
+"id": "self-knowledge",
+"name": "Know yourself",
+"group": "Wisdom and knowledge",
+"text": "Knowing oneself, self-examination, the examined life, mastering oneself before others.",
+"side": "scriptures"
+},
+{
+"id": "happiness",
+"name": "Happiness",
+"group": "Wisdom and knowledge",
+"text": "What true happiness is, the good life, joy, contentment and peace of mind.",
+"side": "scriptures"
+},
+{
+"id": "virtue",
+"name": "Virtue and character",
+"group": "Wisdom and knowledge",
+"text": "Virtue and good character, courage, temperance, self-control, the habits of a good person.",
+"side": "scriptures"
+},
+{
+"id": "war-peace",
+"name": "War and peace",
+"group": "People together",
+"text": "War and battle, violence and bloodshed, against peace, swords into ploughshares, making peace.",
+"side": "scriptures"
+},
+{
+"id": "wealth-poverty",
+"name": "Wealth and poverty",
+"group": "People together",
+"text": "The rich and the poor, riches that do not last, the dignity of the poor, oppression by the wealthy.",
+"side": "scriptures"
+},
+{
+"id": "rulers",
+"name": "Kings and rulers",
+"group": "People together",
+"text": "Kings, rulers and government; good and wicked rulers, power and its abuse, how to govern.",
+"side": "scriptures"
+},
+{
+"id": "freedom",
+"name": "Freedom and slavery",
+"group": "People together",
+"text": "Slavery and liberation, captives set free, bondage and freedom, the escape of an enslaved people.",
+"side": "scriptures"
+},
+{
+"id": "exile",
+"name": "Exile and homeland",
+"group": "People together",
+"text": "Exile from home, being driven out, longing for one's homeland, the return of exiles.",
+"side": "scriptures"
+},
+{
+"id": "work",
+"name": "Work and labour",
+"group": "People together",
+"text": "Honest work, labour and the fruits of toil, laziness and diligence, the dignity of work.",
+"side": "scriptures"
+},
+{
+"id": "marriage",
+"name": "Marriage",
+"group": "People together",
+"text": "Husband and wife, marriage and faithfulness, weddings, the love between spouses.",
+"side": "scriptures"
+},
+{
+"id": "women",
+"name": "Women",
+"group": "People together",
+"text": "A wise and strong woman: a mother, daughter, queen or prophetess, her courage and her words, and how women are honoured.",
+"side": "scriptures"
+},
+{
+"id": "law",
+"name": "Law and commandments",
+"group": "People together",
+"text": "Laws and commandments, rules for living given to a people, keeping or breaking the law.",
+"side": "scriptures"
+},
+{
+"id": "light-darkness",
+"name": "Light and darkness",
+"group": "Images and symbols",
+"text": "Light shining in darkness, day and night, light as truth and goodness, darkness as ignorance or evil.",
+"side": "scriptures"
+},
+{
+"id": "water",
+"name": "Water and rivers",
+"group": "Images and symbols",
+"text": "Living water: rivers and springs, rain on dry land, washing clean, the thirsty given water to drink.",
+"side": "scriptures"
+},
+{
+"id": "journey-sea",
+"name": "The sea and storms",
+"group": "Images and symbols",
+"text": "Sailing on the sea, storms and shipwreck, the deep ocean, calming the waves.",
+"side": "scriptures"
+},
+{
+"id": "garden",
+"name": "Gardens, trees and harvest",
+"group": "Images and symbols",
+"text": "Gardens, trees and seeds, sowing and harvest, fruit that a good tree bears.",
+"side": "scriptures"
+},
+{
+"id": "animals",
+"name": "Animals",
+"group": "Images and symbols",
+"text": "Animals and how to treat them: sheep and shepherds, lions, birds, serpents and beasts.",
+"side": "scriptures"
+},
+{
+"id": "dreams",
+"name": "Dreams and visions",
+"group": "Images and symbols",
+"text": "Dreams and visions, a vision in the night, interpreting dreams, prophecy given in sleep.",
+"side": "scriptures"
+},
+{
+"id": "heroes",
+"name": "Heroes and trials",
+"group": "Images and symbols",
+"text": "A hero sets out on a great quest, faces danger with courage, fights a monster or a giant, and comes home victorious.",
+"side": "scriptures"
+},
+{
+"id": "coming-of-age",
+"name": "Coming of age",
+"group": "Growing up",
+"text": "A young person grows up: first lessons of the world, leaving childhood behind, learning who they are.",
+"side": "library"
+},
+{
+"id": "school-days",
+"name": "School days",
+"group": "Growing up",
+"text": "Life at school: teachers and lessons, classmates, rivalries and friendships, mischief and examinations.",
+"side": "library",
+"query": "In the schoolroom the boys sat at their desks while the master heard their lessons and caned the idle; at recess in the playground there were fights, pranks, and best friends."
+},
+{
+"id": "orphans",
+"name": "Orphans and foundlings",
+"group": "Growing up",
+"text": "An orphan or abandoned child alone in the world, taken in by strangers, searching for where they belong.",
+"side": "library"
+},
+{
+"id": "first-love",
+"name": "First love",
+"group": "Love and family",
+"text": "Falling in love for the first time: a stolen glance, a beating heart, shy words, the beloved's face.",
+"side": "library"
+},
+{
+"id": "courtship",
+"name": "Courtship and marriage plots",
+"group": "Love and family",
+"text": "A proposal of marriage, suitors and fortunes, families arranging matches, love against money and rank.",
+"side": "library"
+},
+{
+"id": "forbidden-love",
+"name": "Forbidden love",
+"group": "Love and family",
+"text": "Lovers kept apart by family, rank or law; secret meetings, elopement, love that cannot be.",
+"side": "library"
+},
+{
+"id": "jealousy-betrayal",
+"name": "Betrayal",
+"group": "Love and family",
+"text": "A friend or lover betrays a trust: deceit, infidelity, a secret revealed, the pain of being betrayed.",
+"side": "library"
+},
+{
+"id": "siblings",
+"name": "Brothers and sisters",
+"group": "Love and family",
+"text": "Brothers and sisters: their quarrels and loyalty, rivalry over an inheritance, a sister's devotion.",
+"side": "library"
+},
+{
+"id": "homecoming",
+"name": "Homecoming",
+"group": "Love and family",
+"text": "Returning home after many years away: the changed house, old faces, being recognised or not.",
+"side": "library",
+"query": "After many years away he came home again: the old house, familiar faces grown older, a welcome or a stranger's look."
+},
+{
+"id": "adventure-quest",
+"name": "Adventure and quests",
+"group": "Adventure",
+"text": "Setting out on a daring adventure, a quest for treasure or a lost city, danger at every turn.",
+"side": "library",
+"query": "They set out on a daring journey in search of treasure, facing wild country, enemies and danger at every turn."
+},
+{
+"id": "sea-voyage",
+"name": "Voyages at sea",
+"group": "Adventure",
+"text": "A ship at sea: sailors and captains, storms, whales, mutiny, shipwreck and desert islands.",
+"side": "library"
+},
+{
+"id": "castaway",
+"name": "Castaways and survival",
+"group": "Adventure",
+"text": "Shipwrecked or lost in the wild, surviving alone: building shelter, finding food, waiting for rescue.",
+"side": "library",
+"query": "Shipwrecked and alone on an island, he built a shelter, hunted for food and watched the sea for a ship."
+},
+{
+"id": "exploration",
+"name": "Exploration and lost worlds",
+"group": "Adventure",
+"text": "Explorers reach unknown lands: jungles, poles, hidden valleys, lost races and strange creatures.",
+"side": "library"
+},
+{
+"id": "battle",
+"name": "Battle and soldiers",
+"group": "Adventure",
+"text": "Soldiers in battle: the charge, the wounded and the dead, courage and fear under fire.",
+"side": "library"
+},
+{
+"id": "pirates-outlaws",
+"name": "Outlaws and pirates",
+"group": "Adventure",
+"text": "Pirates, highwaymen and outlaws: robbery, hidden treasure, the gallows, life outside the law.",
+"side": "library"
+},
+{
+"id": "revenge",
+"name": "Revenge",
+"group": "Crime and justice",
+"text": "A wrong that must be avenged: plotting revenge for years, the avenger's patience, justice or cruelty.",
+"side": "library",
+"query": "He swore he would have his revenge on the man who wronged him, and waited years to make him pay."
+},
+{
+"id": "murder-mystery",
+"name": "Murder and detection",
+"group": "Crime and justice",
+"text": "A murder is discovered; a detective examines clues, questions suspects and reveals the culprit.",
+"side": "library"
+},
+{
+"id": "crime-punishment",
+"name": "Crime and guilt",
+"group": "Crime and justice",
+"text": "A crime committed and its guilt: a troubled conscience, fear of discovery, confession and punishment.",
+"side": "library"
+},
+{
+"id": "prison",
+"name": "Prison and captivity",
+"group": "Crime and justice",
+"text": "Locked in a cell or dungeon: prisoners, chains, the long years, escape and release.",
+"side": "library"
+},
+{
+"id": "trial",
+"name": "Trials and courtrooms",
+"group": "Crime and justice",
+"text": "A trial in court: the judge and jury, witnesses, lawyers' speeches, the verdict.",
+"side": "library"
+},
+{
+"id": "ambition",
+"name": "Ambition and success",
+"group": "Society",
+"text": "Ambition to rise in the world: climbing from poverty to wealth and fame, and what it costs.",
+"side": "library",
+"query": "A young man from nowhere is determined to rise: he schemes and works his way up to wealth, power or fame, and pays for it."
+},
+{
+"id": "class",
+"name": "Rich and poor, class and rank",
+"group": "Society",
+"text": "The gulf between rich and poor, aristocrats and servants, snobbery, the struggle of the working poor.",
+"side": "library"
+},
+{
+"id": "city-life",
+"name": "City life",
+"group": "Society",
+"text": "The great city: crowded streets, fog and gaslight, shops and slums, the noise and loneliness of London or Paris.",
+"side": "library",
+"query": "The crowded streets of the great city: fog and gaslight, carriages and crowds, shops, slums and lonely rooms."
+},
+{
+"id": "country-life",
+"name": "Country life",
+"group": "Society",
+"text": "Life in the countryside and villages: farms and harvest, the squire and the parson, quiet rural days.",
+"side": "library"
+},
+{
+"id": "money-inheritance",
+"name": "Money and inheritance",
+"group": "Society",
+"text": "A will and an inheritance, a fortune lost or won, debts, misers and the power of money.",
+"side": "library"
+},
+{
+"id": "women-independence",
+"name": "A woman's independence",
+"group": "Society",
+"text": "A woman wants her own life and work, refuses to marry for money, and claims her independence.",
+"side": "library"
+},
+{
+"id": "slavery-freedom",
+"name": "Slavery and the fight for freedom",
+"group": "Society",
+"text": "Enslaved people, the cruelty of slavery, escape to freedom, the struggle for emancipation.",
+"side": "library"
+},
+{
+"id": "war-home",
+"name": "War and those at home",
+"group": "Society",
+"text": "War seen from home: waiting for news, soldiers who do not return, families and towns changed by war.",
+"side": "library",
+"query": "At home they waited for letters from the front; the telegram came, and the young men did not return from the war."
+},
+{
+"id": "utopia",
+"name": "Utopias and ideal societies",
+"group": "Ideas and imagination",
+"text": "An ideal society or a perfect commonwealth, how it is governed, and what it says about our own world.",
+"side": "library"
+},
+{
+"id": "dystopia",
+"name": "Tyranny and dystopia",
+"group": "Ideas and imagination",
+"text": "A future state that controls every life: surveillance, and rebellion against a tyrannical order.",
+"side": "library",
+"query": "In a future state the government watches and controls every citizen, and one person dares to rebel against it."
+},
+{
+"id": "science-invention",
+"name": "Science and invention",
+"group": "Ideas and imagination",
+"text": "A scientist's invention or experiment: machines, discoveries, time travel and the dangers of knowledge.",
+"side": "library"
+},
+{
+"id": "journey-to-space",
+"name": "Other worlds",
+"group": "Ideas and imagination",
+"text": "Voyages to the moon or other planets, beings from other worlds, the vastness of space.",
+"side": "library"
+},
+{
+"id": "fairy-magic",
+"name": "Magic and fairy tales",
+"group": "Ideas and imagination",
+"text": "Fairies, witches, enchanted forests, spells and wishes, a magic kingdom where animals talk.",
+"side": "library"
+},
+{
+"id": "monsters",
+"name": "Monsters and the uncanny",
+"group": "Dark and strange",
+"text": "A monster or creature of horror: vampires, ghouls, a creature made by a man, terror in the night.",
+"side": "library"
+},
+{
+"id": "ghosts",
+"name": "Ghosts and haunted houses",
+"group": "Dark and strange",
+"text": "A haunted house, ghosts that walk at midnight, strange noises, the dead who return.",
+"side": "library",
+"query": "At midnight in the old haunted house a pale ghost appeared, footsteps on the stair, a cold breath in the dark."
+},
+{
+"id": "madness",
+"name": "Madness and the double",
+"group": "Dark and strange",
+"text": "Madness, a mind breaking down, a double or second self, obsession and delusion.",
+"side": "library"
+},
+{
+"id": "obsession",
+"name": "Obsession",
+"group": "Dark and strange",
+"text": "A single fixed idea that consumes a person and drives them to ruin.",
+"side": "library",
+"query": "He could think of nothing else: one fixed idea possessed him day and night and drove him to ruin."
+},
+{
+"id": "loneliness",
+"name": "Loneliness and the outsider",
+"group": "The inner life",
+"text": "An outsider who does not belong, loneliness, being misunderstood and shut out by others.",
+"side": "library"
+},
+{
+"id": "memory",
+"name": "Memory and the past",
+"group": "The inner life",
+"text": "Remembering the past: childhood memories, regret, how the past shapes the present.",
+"side": "library",
+"query": "She remembered it all: the house of her childhood, faces long gone, the regret of what might have been."
+},
+{
+"id": "nature-solitude",
+"name": "Solitude in nature",
+"group": "The inner life",
+"text": "Living simply alone in nature: woods, lakes and seasons, reflection away from society.",
+"side": "library"
+},
+{
+"id": "art-artist",
+"name": "Art and the artist",
+"group": "The inner life",
+"text": "A painter, poet or musician and their art: inspiration, beauty, the artist's struggle and genius.",
+"side": "library",
+"query": "The painter stood before his canvas; the poet and the musician lived for their art, for beauty and inspiration, poor and misunderstood."
+},
+{
+"id": "humour-satire",
+"name": "Satire and comedy",
+"group": "The inner life",
+"text": "Satire mocking society's follies: comic absurd situations, foolish characters, wit and irony.",
+"side": "library"
+},
+{
+"id": "faith-doubt-novel",
+"name": "Faith and doubt in a life",
+"group": "The inner life",
+"text": "A character's religious faith tested: losing or finding belief, the clergy, conscience and God.",
+"side": "library"
+},
+{
+"id": "animals-companions",
+"name": "Animals as companions",
+"group": "The inner life",
+"text": "A loyal dog or horse, animals told from their own point of view, kindness and cruelty to animals.",
+"side": "library"
+}
 ]

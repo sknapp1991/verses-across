@@ -6,7 +6,7 @@
 import { chapterTitle, findBook } from "./catalog";
 
 export type ThemePassage = { ref: string; text: string; score: number };
-export type ThemeSummary = { id: string; name: string; group: string; text: string; traditions: number; books: number; passages: number };
+export type ThemeSummary = { id: string; name: string; group: string; text: string; side: "scriptures" | "library"; traditions: number; books: number; passages: number };
 export type Theme = Omit<ThemeSummary, "traditions" | "books" | "passages"> & {
   traditions: { id: string; name: string; passages: ThemePassage[] }[];
   books: { work: string; title: string; shelf: string; passages: ThemePassage[] }[];

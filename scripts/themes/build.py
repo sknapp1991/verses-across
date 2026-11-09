@@ -15,6 +15,7 @@ labelled so on the page; the passages are the texts' own words.
 """
 import hashlib
 import json
+import math
 import os
 import shutil
 import sys
@@ -35,6 +36,13 @@ MIN_CHARS = 40
 BOOKS = 8
 BOOK_CANDIDATES = 30
 BOOK_THEMES = 5  # a book appears in at most this many themes
+# Library themes ("side": "library": coming of age, revenge, voyages at sea…): the books are the point, so many more
+# of them, ranked by how much of the book carries the theme; the scriptures only echo it (a few traditions).
+LIB_BOOKS = 24
+LIB_MIN_SCORE = 0.52  # a story's paragraph matches an abstract description less tightly than an essay's
+LIB_BOOK_THEMES = 6
+LIB_TRADITIONS = 4
+LIB_PER_TRADITION = 2
 BOOK_PARAS = 2
 EXCERPT = 420
 QUERY = "Represent this sentence for searching relevant passages: "
@@ -117,7 +125,7 @@ def main():
     print(f"{len(refs)} verses, {len(lrefs)} book paragraphs")
 
     model = SentenceTransformer(xref.MODEL, device=dev)
-    q = model.encode([QUERY + t["name"] + ": " + t["text"] for t in themes], normalize_embeddings=True, convert_to_tensor=True).half().to(dev)
+    q = model.encode([QUERY + t["name"] + ": " + t.get("query", t["text"]) for t in themes], normalize_embeddings=True, convert_to_tensor=True).half().to(dev)
     del model
 
     title = {b[0]: b[2] for b in lit["books"]}
@@ -127,6 +135,8 @@ def main():
             for w in c["books"]:
                 shelf_of.setdefault(w, s["id"])
     library = {w for w, s in shelf_of.items() if s in ("literature", "fiction", "freethought")}
+    # Library themes are about stories: fiction, poetry, drama and children's books (not essays or non-fiction)
+    stories = {w for s in lit["shelves"] if s["id"] == "literature" for c in s["collections"] if c.get("section") != "Non-fiction" for w in c["books"]}
 
     by_rel = defaultdict(list)
     for i, r in enumerate(rels):
@@ -134,6 +144,7 @@ def main():
     rel_idx = {r: torch.tensor(ix, device=dev) for r, ix in by_rel.items()}
     lwork = [r[0] for r in lrefs]
     lib_mask = torch.tensor([w in library for w in lwork], device=dev)
+    story_mask = torch.tensor([w in stories for w in lwork], device=dev)
 
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
@@ -142,6 +153,8 @@ def main():
     index = []
     cands, docs = [], []
     for ti, th in enumerate(themes):
+        lib_side = th.get("side") == "library"
+        per_trad = LIB_PER_TRADITION if lib_side else PER_TRADITION
         sims = (emb @ q[ti]).float()
         traditions = []
         for r, ix in rel_idx.items():
@@ -149,7 +162,7 @@ def main():
             val, pos = s.topk(min(200, len(ix)))
             got, per_ch = [], defaultdict(int)
             for sc, p in zip(val.tolist(), pos.tolist()):
-                if sc < MIN_SCORE or len(got) >= PER_TRADITION:
+                if sc < MIN_SCORE or len(got) >= per_trad:
                     break
                 j = ix[p].item()
                 w, b, c, v = refs[j]
@@ -163,29 +176,39 @@ def main():
         traditions.sort(key=lambda x: -sum(p["score"] for p in x["passages"][:3]) / min(3, len(x["passages"])))
         for t in traditions:
             del t["best"]
+        if lib_side:
+            traditions = traditions[:LIB_TRADITIONS]
         # Library: books ranked by the mean of their 3 best paragraphs
         ls = (lemb @ q[ti]).float()
-        ls = torch.where(lib_mask, ls, torch.full_like(ls, -1))
-        val, pos = ls.topk(4000)
+        ls = torch.where(story_mask if lib_side else lib_mask, ls, torch.full_like(ls, -1))
+        val, pos = ls.topk(20000 if lib_side else 4000)
         per_book = defaultdict(list)
         for sc, j in zip(val.tolist(), pos.tolist()):
-            if sc < MIN_SCORE:
+            if sc < (LIB_MIN_SCORE if lib_side else MIN_SCORE):
                 break
             per_book[lwork[j]].append((sc, j))
-        ranked = sorted(per_book.items(), key=lambda kv: -sum(s for s, _ in kv[1][:3]) / 3)[:BOOK_CANDIDATES]
-        cands.append([(w, sum(s for s, _ in hits[:3]) / 3, hits) for w, hits in ranked])
-        docs.append({**th, "traditions": traditions})
+        if lib_side:
+            # how strongly (the best 5 paragraphs) and how much of the book (a little extra for many matches)
+            key = lambda hits: sum(s for s, _ in hits[:5]) / 5 + 0.01 * math.log1p(len(hits))
+        else:
+            key = lambda hits: sum(s for s, _ in hits[:3]) / 3
+        ranked = sorted(per_book.items(), key=lambda kv: -key(kv[1]))[: BOOK_CANDIDATES * (3 if lib_side else 1)]
+        cands.append([(w, key(hits), hits) for w, hits in ranked])
+        docs.append({**{k: v for k, v in th.items() if k != "query"}, "traditions": traditions})
     # A book that echoes many themes (a broad essay on religion) is kept only for the BOOK_THEMES it fits best,
     # so each theme's books are its own, not the same few everywhere.
+    # (each side on its own: a book may be in 5 scripture themes and 6 Library themes)
     best_for = defaultdict(list)
     for ti, lst in enumerate(cands):
+        side = docs[ti].get("side", "scriptures")
         for w, sc, _ in lst:
-            best_for[w].append((sc, ti))
-    allowed = {w: {ti for _, ti in sorted(v, reverse=True)[:BOOK_THEMES]} for w, v in best_for.items()}
+            best_for[(side, w)].append((sc, ti))
+    allowed = {k: {ti for _, ti in sorted(v, reverse=True)[: LIB_BOOK_THEMES if k[0] == "library" else BOOK_THEMES]} for k, v in best_for.items()}
     for ti, doc in enumerate(docs):
+        side = doc.get("side", "scriptures")
         books = []
         for w, _, hits in cands[ti]:
-            if ti not in allowed[w] or len(books) >= BOOKS:
+            if ti not in allowed[(side, w)] or len(books) >= (LIB_BOOKS if side == "library" else BOOKS):
                 continue
             ps = []
             for sc, j in hits[:BOOK_PARAS]:
@@ -197,7 +220,8 @@ def main():
         with open(os.path.join(OUT, f"{doc['id']}.json"), "w", encoding="utf8") as fh:
             json.dump(doc, fh, ensure_ascii=False, separators=(",", ":"))
         traditions = doc["traditions"]
-        index.append({**{k: doc[k] for k in ("id", "name", "group", "text")}, "traditions": len(traditions), "books": len(books), "passages": sum(len(t["passages"]) for t in traditions) + sum(len(b["passages"]) for b in books)})
+        doc.setdefault("side", "scriptures")
+        index.append({**{k: doc[k] for k in ("id", "name", "group", "text", "side")}, "traditions": len(traditions), "books": len(books), "passages": sum(len(t["passages"]) for t in traditions) + sum(len(b["passages"]) for b in books)})
         print(f"  {doc['name']}: {len(traditions)} traditions, {len(books)} books · " + ", ".join(t["name"] for t in traditions[:4]) + " · " + ", ".join(b["title"] for b in books[:4]), flush=True)
     with open(os.path.join(OUT, "index.json"), "w", encoding="utf8") as fh:
         json.dump(index, fh, ensure_ascii=False, separators=(",", ":"))
