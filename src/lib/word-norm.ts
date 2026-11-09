@@ -106,6 +106,10 @@ export type WordEntry = {
   est?: 1;
   /** Equivalents in the site's other languages (headwords there, so they can be looked up too). */
   tr?: Record<string, string[]>;
+  /** How to say each word in tr (same order; "" when not known), for Hebrew, Arabic, Chinese, Greek, Russian. */
+  trr?: Record<string, string[]>;
+  /** Languages in tr that are a near match (from a closely related word), not a direct translation. */
+  tra?: string[];
   /** This word is also a form of these headwords ("saw" → ["see"]): show "also: past of see". */
   of?: string[];
   /** English: the older meaning it usually has in these texts ("quick" → "living, alive …"). */

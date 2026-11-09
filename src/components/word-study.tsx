@@ -191,9 +191,10 @@ const LEVEL_NOTE: Record<string, string> = {
   archaic: "old-fashioned English",
 };
 
-/** "(lyubóv)" after a Russian, Greek, Hebrew or Arabic word: how to say it. */
-function Say({ word, lang, className = "" }: { word: string; lang: string; className?: string }) {
-  const t = translit(word, lang);
+/** "(lyubóv)" after a Russian, Greek, Hebrew, Arabic or Chinese word: how to say it (read out by rule, or the
+ * romanization given with the translation when the word has no vowel marks, and pinyin for Chinese). */
+function Say({ word, lang, given, className = "" }: { word: string; lang: string; given?: string; className?: string }) {
+  const t = translit(word, lang) ?? (given || null);
   if (!t) return null;
   return (
     <span lang="en" dir="ltr" className={`ml-1 italic text-muted ${className}`} title="How to say it (approximate)">
@@ -205,6 +206,7 @@ function Say({ word, lang, className = "" }: { word: string; lang: string; class
 function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
   const e = card.entry;
   const tr = Object.entries(e.tr ?? {}).filter(([l]) => l !== lang);
+  const [han, setHan] = useState<string | null>(null);
   return (
     <div className="mt-2 space-y-1.5 text-sm">
       {card.archaic && (
@@ -236,20 +238,96 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
       {e.of && e.of.length > 0 && <p className="text-xs text-muted">Also a form of: {e.of.join(", ")}</p>}
       {tr.length > 0 && (
         <div className="flex flex-wrap gap-1 pt-0.5">
-          {tr.slice(0, 10).map(([l, words]) => (
-            <span key={l} className="rounded-full bg-raised px-2 py-0.5 text-xs" lang={l}>
-              <span className="text-faint">{getLanguage(l).name}:</span>{" "}
-              {words.slice(0, 2).map((w, i) => (
-                <span key={`${i}:${w}`}>
-                  {i > 0 && ", "}
-                  {w}
-                  <Say word={w} lang={l} />
-                </span>
-              ))}
-            </span>
-          ))}
+          {tr.slice(0, 11).map(([l, words]) => {
+            const nearOnly = e.tra?.includes(l);
+            return (
+              <span key={l} className="rounded-full bg-raised px-2 py-0.5 text-xs" lang={l} title={nearOnly ? "A near match: from a closely related word" : undefined}>
+                <span className="text-faint">
+                  {getLanguage(l).name}
+                  {nearOnly ? " ≈" : ""}:
+                </span>{" "}
+                {words.slice(0, 2).map((w, i) => (
+                  <span key={`${i}:${w}`}>
+                    {i > 0 && ", "}
+                    {l === "zh" ? (
+                      <button type="button" onClick={() => setHan(han === w ? null : w)} className="underline decoration-dotted underline-offset-2" aria-expanded={han === w} title="What these characters mean">
+                        {w}
+                      </button>
+                    ) : (
+                      w
+                    )}
+                    <Say word={w} lang={l} given={e.trr?.[l]?.[i]} />
+                  </span>
+                ))}
+              </span>
+            );
+          })}
         </div>
       )}
+      {han && <HanChars word={han} onClose={() => setHan(null)} />}
+    </div>
+  );
+}
+
+/** The Chinese characters of a word, one by one: pinyin and what each means (Wiktionary). */
+const hanParts = new Map<number, Promise<Record<string, { p: string[]; d: string[] }>>>();
+function hanPart(c: string) {
+  const i = c.codePointAt(0)! % 16;
+  if (!hanParts.has(i))
+    hanParts.set(
+      i,
+      fetch(`/words/zh-chars/${i.toString(16)}.json`)
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => {
+          hanParts.delete(i);
+          return {};
+        }),
+    );
+  return hanParts.get(i)!;
+}
+function HanChars({ word, onClose }: { word: string; onClose: () => void }) {
+  const chars = [...word].filter((c) => /\p{Script=Han}/u.test(c));
+  const [info, setInfo] = useState<{ word: string; list: ({ p: string[]; d: string[] } | undefined)[] } | null>(null);
+  useEffect(() => {
+    let live = true;
+    Promise.all(chars.map((c) => hanPart(c).then((part) => part[c]))).then((list) => live && setInfo({ word, list }));
+    return () => {
+      live = false;
+    };
+    // chars come from word
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [word]);
+  return (
+    <div className="mt-1 rounded-lg border border-line bg-raised p-2 text-xs" role="region" aria-label={`The characters of ${word}`}>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="font-medium">
+          The characters of <span lang="zh">{word}</span>
+        </span>
+        <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-surface">
+          <CloseIcon width={14} height={14} />
+        </button>
+      </div>
+      {info?.word !== word ? (
+        <p className="text-muted">Looking up…</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {chars.map((c, i) => {
+            const z = info.list[i];
+            return (
+              <li key={`${i}:${c}`} className="flex gap-2">
+                <span lang="zh" className="w-8 shrink-0 text-center text-2xl leading-8">
+                  {c}
+                </span>
+                <span className="min-w-0">
+                  {z?.p.length ? <span className="font-medium">{z.p.join(", ")}</span> : null}
+                  {z?.d.length ? <span className="block text-muted">{z.d.join(" · ")}</span> : <span className="block text-muted">No meaning on record for this character.</span>}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="mt-1.5 text-[11px] text-faint">Pinyin and meanings: Wiktionary (CC BY-SA 4.0). A word&apos;s meaning can differ from its characters&apos; meanings put together.</p>
     </div>
   );
 }
@@ -293,7 +371,7 @@ export function WordStudy({ scroller, rowsKey, versions, raised }: { scroller: R
         </button>
       </div>
 
-      {dict && <Dictionary card={dict} lang={getVersion(pick.version)?.language ?? "en"} />}
+      {dict && <Dictionary key={dict.head} card={dict} lang={getVersion(pick.version)?.language ?? "en"} />}
       {dict === null && !bible && (
         <p className="mt-2 text-sm text-muted">
           {hasWords(getVersion(pick.version)?.language ?? "")

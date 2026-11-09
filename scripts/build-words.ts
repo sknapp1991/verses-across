@@ -97,8 +97,62 @@ function shardsOf(keys: string[], size: (k: string) => number): Map<string, stri
   return out;
 }
 
+/* ---------- other languages: near matches and how to say them (data/words/rom.json) ---------- */
+
+/** The languages a reader studying across traditions most wants on every card. */
+const ALWAYS = ["el", "he", "ar", "zh", "ru"];
+const SAY_LANGS = new Set(["el", "he", "ar", "zh", "ru"]);
+type Rom = { r: Record<string, string>; zh: Record<string, { p: string[]; d: string[] }> };
+let rom: Rom = { r: {}, zh: {} };
+let enWords: Src["w"] = {};
+const PINYIN = /^[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü' ]+$/i;
+const TONED = /[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/;
+
+/** How to say a translation word: the romanization Wiktionary gives with it; Chinese from its characters. */
+function sayOf(l: string, w: string): string {
+  const given = rom.r[`${l}:${w}`] ?? "";
+  if (l !== "zh") return given;
+  if (given && PINYIN.test(given) && TONED.test(given)) return given;
+  const chars = [...w].map((c) => rom.zh[c]?.p[0]);
+  return chars.every(Boolean) ? chars.join("") : "";
+}
+
+/**
+ * Every card gets a word in Greek, Hebrew, Arabic, Chinese and Russian when one can be found: a direct
+ * translation first; otherwise the word this one is a form of, then its closest synonyms (shown as a near
+ * match); for a card in another language, its English meaning's translations. Then each word's pronunciation.
+ */
+function fillTranslations(lang: string, src: Src) {
+  const near = (e: WordEntry & { arch?: 1 }, k: string) => {
+    const tr = (e.tr ??= {});
+    for (const l of ALWAYS) {
+      if (l === lang || tr[l]?.length) continue;
+      // a form of another headword: that headword's translation is this word's too (not a near match)
+      let got: string[] | undefined;
+      for (const h of e.of ?? []) if (src.w[h]?.tr?.[l]?.length && !src.w[h].tra?.includes(l)) { got = src.w[h].tr![l]; break; }
+      if (got) { tr[l] = got.slice(0, 2); continue; }
+      const via = lang === "en" ? (e.syn ?? []).map((s) => src.w[s]) : (e.tr?.en ?? []).map((s) => enWords[s]);
+      for (const x of via) if (x?.tr?.[l]?.length && !x.tra?.includes(l)) { tr[l] = x.tr[l].slice(0, 1); (e.tra ??= []).push(l); break; }
+    }
+    if (!Object.keys(tr).length) delete e.tr;
+    void k;
+  };
+  for (const [k, e] of Object.entries(src.w)) {
+    if (e.defs.length || e.of?.length) near(e, k); // (cards with nothing to say get no near matches, but still pronunciations)
+    const trr: Record<string, string[]> = {};
+    for (const [l, ws] of Object.entries(e.tr ?? {})) {
+      if (!SAY_LANGS.has(l)) continue;
+      const says = ws.map((w) => sayOf(l, w));
+      if (says.some(Boolean)) trr[l] = says;
+    }
+    if (Object.keys(trr).length) e.trr = trr;
+  }
+}
+
 async function main() {
   await rm(OUT, { recursive: true, force: true });
+  if (existsSync(path.join(SRC, "rom.json"))) rom = JSON.parse(await readFile(path.join(SRC, "rom.json"), "utf8"));
+  enWords = JSON.parse(await readFile(path.join(SRC, "en.json"), "utf8")).w;
   const cefr: Record<string, string> = JSON.parse(await readFile(path.join(SRC, "cefr-en.json"), "utf8"));
   const enFreq: Record<string, number> = JSON.parse(await readFile(path.join(SRC, "freq-en.json"), "utf8"));
   const cut = calibrate(cefr, enFreq);
@@ -120,6 +174,7 @@ async function main() {
         e.est = 1;
       }
     }
+    fillTranslations(lang, src);
     // one key space: headwords and forms share shards by their own first letters
     const keys = [...new Set([...Object.keys(src.w), ...Object.keys(src.f), ...Object.keys(src.a)])];
     const size = (k: string) =>
@@ -165,6 +220,16 @@ async function main() {
     await writeFile(path.join(OUT, lang, "meta.json"), JSON.stringify(meta));
     files++;
     console.log(`  ${lang}: ${meta.entries} headwords, ${meta.forms} forms, ${groups.size} shards`);
+  }
+  // Chinese characters (pinyin + meanings), in 16 small files by code point (the "characters" pop-up).
+  const zhParts: Rom["zh"][] = Array.from({ length: 16 }, () => ({}));
+  for (const [c, z] of Object.entries(rom.zh)) zhParts[c.codePointAt(0)! % 16][c] = z;
+  await mkdir(path.join(OUT, "zh-chars"), { recursive: true });
+  for (const [i, part] of zhParts.entries()) {
+    const body = JSON.stringify(part);
+    await writeFile(path.join(OUT, "zh-chars", `${i.toString(16)}.json`), body);
+    files++;
+    bytes += body.length;
   }
   console.log(`build-words: ${files} files, ${(bytes / 1e6).toFixed(1)} MB → public/words`);
 }
