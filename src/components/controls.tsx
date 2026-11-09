@@ -23,6 +23,7 @@ import type { Version } from "@/lib/schema";
 import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PaletteIcon, PencilIcon, RowsIcon, SunIcon, WidthIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 import { LevelMarksControl } from "./reading-levels";
+import { sideOfWork } from "@/lib/side";
 
 /** An on/off switch (a sliding pill), used for the yes/no settings. */
 export function Switch({ checked, onChange, label, hint }: { checked: boolean; onChange: (on: boolean) => void; label: React.ReactNode; hint?: React.ReactNode }) {
@@ -538,7 +539,10 @@ export function SavedSetups() {
 
 /** Swipe-to-change-chapter setting and the floating ‹ › buttons. */
 export function ChapterSwipeControl() {
-  const { chapterSwipe, floatingNav, continuousScroll, autoStudied } = useSettings();
+  const { chapterSwipe, floatingNav, continuousScroll, continuousLibrary, autoStudied } = useSettings();
+  // each side keeps its own choice: the Library's books flow as one long scroll by default
+  const onLibrary = sideOfWork(useReaderState().ref.work) === "library"; // the side of the page being read (as the reader uses)
+  const flow = onLibrary ? continuousLibrary : continuousScroll;
   const opts = [
     { id: "one" as const, label: "One finger" },
     { id: "two" as const, label: "Two fingers" },
@@ -567,12 +571,12 @@ export function ChapterSwipeControl() {
           : `Swipe ${chapterSwipe === "two" ? "with two fingers " : ""}sideways across most of the screen and let go. In Column view, swipe past the first or last column.`}
       </p>
       <Switch
-        checked={continuousScroll}
-        onChange={(on) => updateSettings({ continuousScroll: on })}
-        label="Continuous scroll"
-        hint="The next chapter follows below as you read"
+        checked={flow}
+        onChange={(on) => updateSettings(onLibrary ? { continuousLibrary: on } : { continuousScroll: on })}
+        label={onLibrary ? "Continuous scroll in the Library" : "Continuous scroll"}
+        hint={onLibrary ? "A book reads as one long scroll: the next chapter follows below" : "The next chapter follows below as you read"}
       />
-      {continuousScroll && (
+      {flow && (
         <Switch
           checked={autoStudied}
           onChange={(on) => updateSettings({ autoStudied: on })}

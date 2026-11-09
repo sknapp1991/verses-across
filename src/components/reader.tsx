@@ -43,6 +43,7 @@ import { useReaderState } from "./use-reader-state";
 import { countOnce } from "@/lib/count";
 import { useSpeech } from "@/lib/speech";
 import { gestureLock, useChapterSwipe, useScrollIdle, type SwipeHint } from "./use-chapter-swipe";
+import { sideOfWork } from "@/lib/side";
 
 type Col = { version: Version; entry: ChapterEntry; retry: () => void };
 
@@ -91,6 +92,77 @@ function shouldResume(chapter: string) {
  * top of the screen we move on to that chapter, which then shows at the top: the same picture, now the
  * real (tappable) chapter. While read-aloud is playing we wait, so reading isn't interrupted.
  */
+/**
+ * How far through the chapter: a thin bar under the top bar that fills to the end of this chapter's text (the next
+ * chapter flowing below doesn't count), and while scrolling, a small note with the percentage and the minutes left
+ * at an average reading pace (230 words a minute), in the bottom corner.
+ */
+function ReadingProgress({ scroller, end, chapter, versions }: { scroller: RefObject<HTMLDivElement | null>; end: RefObject<HTMLDivElement | null>; chapter: string; versions: number }) {
+  const bar = useRef<HTMLDivElement>(null);
+  const note = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const sc = scroller.current;
+    if (!sc) return;
+    let frame = 0;
+    let hide = 0;
+    // the chapter's words, counted once (the text above the Studied box)
+    let words = 0;
+    const count = () => {
+      const stop = end.current;
+      let n = 0;
+      for (const el of sc.querySelectorAll<HTMLElement>("[data-text]")) {
+        if (stop && el.compareDocumentPosition(stop) & Node.DOCUMENT_POSITION_PRECEDING) break; // past this chapter
+        n += (el.textContent ?? "").split(/\s+/).length;
+      }
+      return Math.round(n / Math.max(1, versions)); // one version's words (several are shown side by side)
+    };
+    const update = (showNote: boolean) => {
+      frame = 0;
+      const stop = end.current;
+      if (!stop || !bar.current) return;
+      // (down the page in every view: side-by-side columns scroll down too)
+      const endAt = stop.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop; // the text's end, in scroll px
+      const span = endAt - sc.clientHeight * 0.85; // done when the last lines are on screen
+      let f = span > 0 ? sc.scrollTop / span : 1;
+      f = Math.max(0, Math.min(1, f));
+      bar.current.style.transform = `scaleX(${f})`;
+      if (!note.current) return;
+      if (!words) words = count();
+      const left = Math.round(((1 - f) * words) / 230);
+      note.current.textContent = f >= 0.995 ? "End of chapter" : `${Math.round(f * 100)}%${words > 150 ? ` · ${left < 1 ? "under a minute" : `${left} min`} left` : ""}`;
+      if (showNote) {
+        note.current.style.opacity = "1";
+        clearTimeout(hide);
+        hide = window.setTimeout(() => note.current && (note.current.style.opacity = "0"), 1400);
+      }
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(() => update(true));
+    };
+    update(false);
+    const settle = window.setTimeout(() => update(false), 600); // after the text and pictures are laid out
+    sc.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      sc.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+      clearTimeout(hide);
+      clearTimeout(settle);
+    };
+  }, [scroller, end, chapter, versions]);
+  return (
+    <>
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-40 h-[3px] bg-line/40">
+        <div ref={bar} className="h-full origin-left bg-accent/80 transition-transform duration-150 ease-out" style={{ transform: "scaleX(0)" }} />
+      </div>
+      <div
+        ref={note}
+        aria-hidden
+        className="pointer-events-none absolute bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] right-3 z-40 rounded-full border border-line bg-panel/95 px-2.5 py-1 text-xs tabular-nums text-muted opacity-0 shadow-sm transition-opacity duration-300"
+      />
+    </>
+  );
+}
+
 function NextChapterFlow({
   next,
   versions,
@@ -249,11 +321,15 @@ export function ReaderView() {
   }, [speech.status, speech.chapterKey, speech.version, versionsKey]);
   const view = useViewMode();
   const settings = useSettings();
+  // continuous scroll: its own switch on each side (the Library's books flow as one long scroll by default)
+  const flow = sideOfWork(ref.work) === "library" ? settings.continuousLibrary : settings.continuousScroll;
   const { fontSize } = settings;
   const wide = useMediaQuery(WIDE_QUERY, true);
   const landscape = useMediaQuery(PHONE_LANDSCAPE_QUERY, false);
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
+  // where this chapter's text ends (the Studied box below it): the progress bar measures up to here
+  const chapterEnd = useRef<HTMLDivElement>(null);
   // Size readout while pinching: "Text 18", "Text 10 · smallest".
   const [pinchSize, setPinchSize] = useState<number | null>(null);
   const pinchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -531,6 +607,8 @@ export function ReaderView() {
     {/* Desktop: the chapter's name and the text settings stay at the top while the text scrolls. */}
     <ReaderToolbar title={title} subtitle={subtitle} bookRef={ref} versions={versions} prev={prev} next={next} />
     <div className="relative min-h-0 flex-1">
+    {/* under the chapter's toolbar: how far through the chapter */}
+    {allLoaded && <ReadingProgress scroller={scroller} end={chapterEnd} chapter={chapterId} versions={cols.length} />}
     <div
       ref={scroller}
       style={style}
@@ -566,13 +644,13 @@ export function ReaderView() {
       </VerseCtx.Provider>
       </ListenCtx.Provider>
 
-      <div className={column ? "sticky left-0 w-[100cqw]" : ""}>
+      <div ref={chapterEnd} className={column ? "sticky left-0 w-[100cqw]" : ""}>
         {allLoaded && <StudiedBox bookRef={ref} title={title} />}
         <ChapterNav prev={prev} next={next} versions={versions} />
         <Attribution versions={cols.map((c) => c.version)} />
-        {!(settings.continuousScroll && next) && <ReadAlongSpacer ra={ra} />}
+        {!(flow && next) && <ReadAlongSpacer ra={ra} />}
       </div>
-      {settings.continuousScroll && next && (
+      {flow && next && (
         <NextChapterFlow
           next={next}
           versions={versions}
@@ -592,7 +670,7 @@ export function ReaderView() {
           }}
         />
       )}
-      {settings.continuousScroll && next && <ReadAlongSpacer ra={ra} />}
+      {flow && next && <ReadAlongSpacer ra={ra} />}
       </div>
     </div>
     </div>
