@@ -189,22 +189,27 @@ function Preview({ r, versions, columns = false }: { r: FoundRef; versions: stri
         ) : list.length === 0 ? (
           <p className="text-muted">Couldn’t load this passage.</p>
         ) : columns ? (
-          // Column view: each version in its own column, like the reader.
-          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${versions.length}, minmax(0, 1fr))` }}>
-            {versions.map((id) => {
-              const own = list.filter((x) => x.id === id);
-              return (
-                <div key={id} className="min-w-0 space-y-1.5">
-                  <p className="font-sans text-[10px] font-semibold uppercase tracking-wide text-faint">{getVersion(id)?.abbr ?? id}</p>
-                  {own.map((x) => (
-                    <p key={x.v} dir={x.dir}>
-                      <span className="mr-1 font-sans text-[10px] font-semibold text-faint">{x.v}</span>
-                      {x.t}
-                    </p>
-                  ))}
-                </div>
-              );
-            })}
+          // Column view: each version in its own column, like the reader, one row per verse so a verse starts on
+          // the same line in every version (the row is as tall as its longest translation).
+          <div className="grid gap-x-3 gap-y-1.5" style={{ gridTemplateColumns: `repeat(${versions.length}, minmax(0, 1fr))` }}>
+            {versions.map((id) => (
+              <p key={`h:${id}`} className="font-sans text-[10px] font-semibold uppercase tracking-wide text-faint">
+                {getVersion(id)?.abbr ?? id}
+              </p>
+            ))}
+            {[...new Set(list.map((x) => x.v))].flatMap((v) =>
+              versions.map((id) => {
+                const x = list.find((y) => y.id === id && y.v === v);
+                return x ? (
+                  <p key={`${id}:${v}`} dir={x.dir} className="min-w-0">
+                    <span className="mr-1 font-sans text-[10px] font-semibold text-faint">{x.v}</span>
+                    {x.t}
+                  </p>
+                ) : (
+                  <span key={`${id}:${v}`} />
+                );
+              }),
+            )}
           </div>
         ) : (
           // Stacked view: verse by verse, each version under the other.
