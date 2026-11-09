@@ -15,6 +15,7 @@
 //   node hub/cli.mjs approvals | feedback
 //   node hub/cli.mjs shipped <text> [url]
 //   node hub/cli.mjs get <media id> <save to path>   (download a report's photo/video to look at)
+//   node hub/cli.mjs autoreview                     (tickets closed automatically a week+ ago, to check they stayed fixed)
 import { readFileSync, statSync, openSync, readSync, closeSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -91,6 +92,22 @@ try {
     if (r.live_url) console.log(`Test link: ${r.live_url}`);
     for (const f of r.files) console.log(`File: ${f.id}  ${f.name}  ${f.type}  ${(f.size / 1048576).toFixed(1)} MB`);
     for (const c of cs) console.log(`\n— ${c.author === "claude" ? "Claude" : c.author.split("@")[0]} (${c.created.slice(0, 16).replace("T", " ")}): ${c.body}`);
+  } else if (cmd === "autoreview") {
+    // Tickets the hub closed by itself (Live 3 days, no reply) at least a week ago and not yet reviewed:
+    // read each one; still fine → `say <id> "Reviewed: …"`; not resolved → tell HQ (and reopen if clearly broken).
+    const week = Date.now() - 7 * 86_400_000;
+    const done = await api("/api/reports?status=Done");
+    let n = 0;
+    for (const r of done) {
+      const cs = await api(`/api/comments?thread=report:${r.id}`);
+      const auto = cs.filter((c) => c.author === "claude" && c.body.startsWith("Closed automatically")).pop();
+      if (!auto || Date.parse(auto.created) > week) continue;
+      if (cs.some((c) => c.author === "claude" && c.body.startsWith("Reviewed") && c.created > auto.created)) continue;
+      n++;
+      const after = cs.filter((c) => c.created > auto.created);
+      console.log(`${line(r)}\n   closed automatically ${auto.created.slice(0, 10)}; ${after.length ? after.length + " message(s) since: " + after.map((c) => c.body.replace(/\s+/g, " ").slice(0, 80)).join(" | ") : "nothing since"}`);
+    }
+    console.log(n ? `\n${n} to review (mark each with: say <id> "Reviewed: …")` : "(nothing to review)");
   } else if (cmd === "status") {
     await send(`/api/reports/${a[0]}`, { status: a[1], ...(a.length > 2 ? { notes: a.slice(2).join(" ") } : {}) }, "PATCH");
     console.log("ok");

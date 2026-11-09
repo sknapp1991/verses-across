@@ -30,5 +30,7 @@
     // Photos and videos attached to reports, and clips waiting for approval (private)
     { "binding": "MEDIA", "bucket_name": "va-hub-media" }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // Once a day, 13:07 UTC (8:07 AM Eastern): Live tickets with no reply for 3 days are closed (see autoClose).
+  "triggers": { "crons": ["7 13 * * *"] }
 }

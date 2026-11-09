@@ -167,8 +167,10 @@ function go(tab, arg) {
   const hash = "#" + tab + (arg ? "/" + arg : "");
   if (location.hash !== hash) { skipHash = true; location.hash = hash; } // a history entry, so the phone's Back goes back
   caseOpen = tab === "inbox" && !!arg;
-  show(h("p.faint", {}, "Loading…"));
-  if (!backTo) window.scrollTo(0, 0);
+  if (!(backTo && lastList)) {
+    show(h("p.faint", {}, "Loading…"));
+    window.scrollTo(0, 0);
+  }
   (Object.hasOwn(TABS, tab) ? TABS[tab] : showReport)(arg).catch((e) => show(h("p.muted", {}, e.message)));
 }
 document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
@@ -191,6 +193,7 @@ document.addEventListener("touchend", (e) => {
 }, { passive: true });
 // Back / Forward (and links to #inbox/<id>) open what the address says.
 let skipHash = false;
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.addEventListener("hashchange", () => {
   if (skipHash) { skipHash = false; return; }
   const [tab, arg] = location.hash.slice(1).split("/");
@@ -232,7 +235,27 @@ async function showReport() {
 /* ---------- Tickets (the "inbox" tab; Cases Closed below the open ones) ---------- */
 async function showInbox(id) {
   if (id) return showOne(id);
-  const list = await api("/api/reports");
+  // Coming back from a ticket: draw the list at once from what was loaded (no "Loading…" in between, so the
+  // phone has nothing to jump to the top for), put that ticket in view, then refresh it quietly.
+  const target = backTo;
+  backTo = null;
+  if (target && lastList) {
+    renderTickets(lastList, target);
+    placeTicket(target);
+    const fresh = await api("/api/reports").catch(() => null);
+    if (fresh && JSON.stringify(fresh) !== JSON.stringify(lastList) && here.tab === "inbox" && !here.arg) {
+      const y = window.scrollY;
+      renderTickets(fresh, target);
+      window.scrollTo(0, y);
+    }
+    return;
+  }
+  renderTickets(await api("/api/reports"), target);
+  if (target) placeTicket(target);
+}
+let lastList = null;
+function renderTickets(list, target) {
+  lastList = list;
   const card = (r) => h("div.card.tap", { "data-id": r.id, onclick: () => go("inbox", r.id) },
     h("div.row", {}, status(r.status), h("span.faint", {}, r.type + " · " + who(r.author) + " · " + when(r.created)),
       r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null),
@@ -245,19 +268,25 @@ async function showInbox(id) {
   const past = list.filter((r) => DONE.has(r.status)).sort((a, z) => (z.updated || "").localeCompare(a.updated || ""));
   show(h("h2", {}, "Tickets"),
     open.length ? h("div", {}, open.map(card)) : h("p.muted", {}, list.length ? "Nothing open. Everything is in Cases Closed below." : "Nothing yet. Reports you send show up here with their status."),
-    past.length ? h("details.card.closed-cases", { style: "padding:0;border:0;background:none", open: closedOpen || past.some((r) => r.id === backTo) },
+    past.length ? h("details.card.closed-cases", { style: "padding:0;border:0;background:none", open: closedOpen || past.some((r) => r.id === target) },
       h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "Cases Closed: " + past.length + " (resolved or on the roadmap)"),
       h("div", {}, past.map(card))) : null);
-  // Coming back from a ticket: that ticket in view (outlined for a moment), else where the list was.
-  if (backTo) {
-    const el = document.querySelector('[data-id="' + backTo + '"]');
-    if (el) {
-      el.scrollIntoView({ block: "center" });
-      el.classList.add("was-open");
-      setTimeout(() => el.classList.remove("was-open"), 1500);
-    } else window.scrollTo(0, listY);
-    backTo = null;
+}
+/** The ticket just closed, in view and outlined for a moment (again a moment later, in case the browser moved the page). */
+function placeTicket(id) {
+  const put = () => {
+    const el = document.querySelector('[data-id="' + id + '"]');
+    if (el) el.scrollIntoView({ block: "center" });
+    else window.scrollTo(0, listY);
+    return el;
+  };
+  const el = put();
+  if (el) {
+    el.classList.add("was-open");
+    setTimeout(() => el.classList.remove("was-open"), 1500);
   }
+  requestAnimationFrame(put);
+  setTimeout(() => { if (here.tab === "inbox" && !here.arg) put(); }, 150);
 }
 
 async function showOne(id) {

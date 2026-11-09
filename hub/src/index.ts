@@ -104,7 +104,39 @@ async function whoIs(req: Request, env: Env): Promise<string | null> {
 
 /* ---------------- Routes ---------------- */
 
+/**
+ * Once a day (the cron in wrangler.jsonc): a ticket that has been Live for 3 days with no reply is closed
+ * (Done, shown as Resolved) with a note saying so; it can be reopened any time. A week later Claude reviews the
+ * ones closed this way (`node hub/cli.mjs autoreview`) and tells HQ about any that don't look resolved.
+ */
+const AUTO_CLOSE_DAYS = 3;
+const AUTO_CLOSED = "Closed automatically";
+async function autoClose(env: Env, at = new Date()) {
+  const cutoff = new Date(at.getTime() - AUTO_CLOSE_DAYS * 86_400_000).toISOString();
+  const { results } = await env.DB.prepare("SELECT id FROM reports WHERE status = 'Live' AND updated < ?").bind(cutoff).all<{ id: string }>();
+  const t = at.toISOString();
+  for (const r of results ?? []) {
+    // a reply from anyone since it went Live means someone is still talking about it: leave it open
+    const last = await env.DB.prepare("SELECT created FROM comments WHERE thread = ? ORDER BY created DESC LIMIT 1").bind(`report:${r.id}`).first<{ created: string }>();
+    if (last && last.created > cutoff) continue;
+    await env.DB.batch([
+      env.DB.prepare("UPDATE reports SET status = 'Done', updated = ? WHERE id = ? AND status = 'Live'").bind(t, r.id),
+      env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(
+        uid(),
+        `report:${r.id}`,
+        "claude",
+        `${AUTO_CLOSED}: Live for ${AUTO_CLOSE_DAYS} days with no reply, so it's counted as fixed. If it isn't, tap "Not fixed? Reopen it".`,
+        t,
+      ),
+    ]);
+  }
+  return results?.length ?? 0;
+}
+
 export default {
+  async scheduled(_event: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
+    ctx.waitUntil(autoClose(env));
+  },
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const me = await whoIs(req, env);
