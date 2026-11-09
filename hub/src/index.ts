@@ -143,6 +143,8 @@ export default {
       if (r && m === "PATCH") return patchReport(env, me, worker, r[1], await req.json());
       r = /^\/api\/reports\/([a-f0-9]{16})\/reopen$/.exec(path);
       if (r && m === "POST") return me === "claude" ? bad("Only people reopen", 403) : reopenReport(env, me, r[1], await req.json());
+      r = /^\/api\/reports\/([a-f0-9]{16})\/resolve$/.exec(path);
+      if (r && m === "POST") return me === "claude" ? bad("Only people close their tickets (Claude sets Done)", 403) : resolveReport(env, me, r[1], await req.json().catch(() => ({})));
 
       // Comments (report, roadmap item or approval threads)
       if (path === "/api/comments" && m === "GET") return listComments(env, url.searchParams.get("thread") ?? "");
@@ -264,6 +266,20 @@ async function reopenReport(env: Env, me: string, id: string, b: Row) {
   await env.DB.batch([
     env.DB.prepare("UPDATE reports SET status = 'Reopened', updated = ? WHERE id = ?").bind(t, id),
     env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, me, `Reopened, not fixed: ${note}`, t),
+  ]);
+  return json({ ok: true });
+}
+
+/** "Fixed, close it": the reporter (or Skylar) confirms a Live fix works → Done (shown as Resolved, in Cases Closed). */
+async function resolveReport(env: Env, me: string, id: string, b: Row) {
+  const note = clip(b?.note, 4000);
+  const report = await env.DB.prepare("SELECT status FROM reports WHERE id = ?").bind(id).first<{ status: string }>();
+  if (!report) return bad("Not found", 404);
+  if (report.status !== "Live") return bad("Only a Live ticket can be closed this way");
+  const t = now();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE reports SET status = 'Done', updated = ? WHERE id = ?").bind(t, id),
+    env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, me, note ? `Fixed, closed: ${note}` : "Fixed, closed.", t),
   ]);
   return json({ ok: true });
 }

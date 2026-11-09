@@ -170,6 +170,16 @@ if (process.argv[2] === "serve") {
   r = await J(await call(OWNER, `/api/comments?thread=report:${rid}`));
   check("the note is in the conversation", r.body.at(-1).body.includes("fix not verified") && r.body.at(-1).author === TEAMMATE);
   check("can't reopen twice", (await call(TEAMMATE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "again" }) })).status === 400);
+  // Close a Live ticket ("Fixed, close it")
+  check("can't close a ticket that isn't Live", (await call(TEAMMATE, `/api/reports/${rid}/resolve`, { method: "POST", body: "{}" })).status === 400);
+  await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live" }) });
+  check("Claude can't close it for them", (await call(CLAUDE, `/api/reports/${rid}/resolve`, { method: "POST", body: "{}" })).status === 403);
+  check("teammate closes a Live ticket", (await call(TEAMMATE, `/api/reports/${rid}/resolve`, { method: "POST", body: JSON.stringify({ note: "works on my phone" }) })).status === 200);
+  r = await J(await call(OWNER, `/api/reports/${rid}`));
+  check("status is Done (Resolved)", r.body.status === "Done");
+  r = await J(await call(OWNER, `/api/comments?thread=report:${rid}`));
+  check("the closing note is in the conversation", r.body.at(-1).body === "Fixed, closed: works on my phone" && r.body.at(-1).author === TEAMMATE);
+  check("closing with no body works too", (await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live" }) }), (await call(OWNER, `/api/reports/${rid}/resolve`, { method: "POST" })).status === 200));
   check("Claude adds a shipped line", (await call(CLAUDE, "/api/shipped", { method: "POST", body: JSON.stringify({ text: "Note delete is live" }) })).status === 200);
 
   console.log(`\n${pass} passed, ${fail} failed`);

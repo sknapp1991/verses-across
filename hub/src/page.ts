@@ -104,7 +104,8 @@ async function api(path, opts = {}) {
 const post = (p, b, m = "POST") => api(p, { method: m, body: JSON.stringify(b) });
 const when = (iso) => { const d = new Date(iso); const s = (Date.now() - d) / 1000; return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : d.toLocaleDateString(); };
 const who = (email) => email === "claude" ? "Claude" : email === ME.email ? "You" : (email || "").split("@")[0];
-const status = (s) => h("span.status.s-" + s, {}, s === "sheet" ? "Waiting" : s === "go" ? "Go" : s === "no" ? "No" : s);
+// Done shows as "Resolved"; Live means shipped and waiting for the reporter to check it.
+const status = (s) => h("span.status.s-" + s, {}, s === "sheet" ? "Waiting" : s === "go" ? "Go" : s === "no" ? "No" : s === "Done" ? "Resolved" : s === "Live" ? "Live · check it" : s);
 
 /* ---------- uploads: 10 MB parts straight into the hub's private storage, with progress ---------- */
 async function uploadFiles(files, ownerKind, ownerId, onProgress) {
@@ -224,13 +225,14 @@ async function showInbox(id) {
     h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
     r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude: " + r.notes) : null);
   // Open tickets on top; finished ones (shipped, closed, or put on the roadmap) in Cases Closed, newest change first.
-  const DONE = new Set(["Live", "Done", "Roadmap"]);
+  // Live stays in Tickets until the reporter closes it ("Fixed, close it") or confirms it works.
+  const DONE = new Set(["Done", "Roadmap"]);
   const open = list.filter((r) => !DONE.has(r.status));
   const past = list.filter((r) => DONE.has(r.status)).sort((a, z) => (z.updated || "").localeCompare(a.updated || ""));
   show(h("h2", {}, "Tickets"),
     open.length ? h("div", {}, open.map(card)) : h("p.muted", {}, list.length ? "Nothing open. Everything is in Cases Closed below." : "Nothing yet. Reports you send show up here with their status."),
     past.length ? h("details.card", { style: "padding:0;border:0;background:none" },
-      h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "Cases Closed: " + past.length + " (shipped, closed or on the roadmap)"),
+      h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "Cases Closed: " + past.length + " (resolved or on the roadmap)"),
       h("div", {}, past.map(card))) : null);
 }
 
@@ -273,6 +275,15 @@ async function showOne(id) {
     catch (e) { toast(e.message); addFiles.disabled = false; }
   } }, "Upload");
 
+  // Live: the reporter checks it on the site, then closes it (Resolved) or reopens it with a note.
+  let close = null;
+  if (r.status === "Live" && ME.email !== "claude") {
+    const ok = h("input", { placeholder: "Anything to add? (optional)" });
+    close = h("div.card", {}, h("div", { style: "font-weight:600" }, "Does it work now?"), ok,
+      h("button.btn.primary", { type: "button", style: "margin-top:8px", onclick: async () => {
+        try { await post("/api/reports/" + id + "/resolve", { note: ok.value }); toast("Closed. Thanks!"); go("inbox", id); } catch (e) { toast(e.message); }
+      } }, "Fixed, close it"));
+  }
   // A finished report that isn't really fixed: either of you sends it back with a note.
   let reopen = null;
   if (r.status === "Live" || r.status === "Done") {
@@ -292,6 +303,7 @@ async function showOne(id) {
       r.files && r.files.length ? h("div.thumbs", {}, r.files.map(mediaEl)) : null,
       r.notes ? h("div.pre", { style: "margin-top:10px;border-top:1px solid var(--line);padding-top:8px" }, h("b", {}, "Claude: "), r.notes) : null,
       r.status === "Live" && r.live_url ? h("p", {}, h("a", { href: r.live_url, target: "_blank", rel: "noopener" }, "Try it on the site →")) : null),
+    close,
     reopen,
     tools,
     h("h3", {}, "Conversation"), thread, reply,
