@@ -67,7 +67,7 @@ a { color:var(--accent); }
 <main id="view"></main>
 <nav class="tabs" aria-label="Sections">
   <button data-tab="report"><span class="i" aria-hidden="true">✚</span>Report</button>
-  <button data-tab="inbox"><span class="i" aria-hidden="true">☰</span>Inbox</button>
+  <button data-tab="inbox"><span class="i" aria-hidden="true">☰</span>Tickets</button>
   <button data-tab="approvals"><span class="i" aria-hidden="true">✓</span>Approvals<span class="badge hidden" id="apBadge"></span></button>
   <button data-tab="roadmap"><span class="i" aria-hidden="true">➜</span>Roadmap</button>
   <button data-tab="shipped"><span class="i" aria-hidden="true">★</span>Shipped</button>
@@ -151,11 +151,29 @@ function go(tab, arg) {
   }
   const hash = "#" + tab + (arg ? "/" + arg : "");
   if (location.hash !== hash) { skipHash = true; location.hash = hash; } // a history entry, so the phone's Back goes back
+  caseOpen = tab === "inbox" && !!arg;
   show(h("p.faint", {}, "Loading…"));
   window.scrollTo(0, 0);
   (Object.hasOwn(TABS, tab) ? TABS[tab] : showReport)(arg).catch((e) => show(h("p.muted", {}, e.message)));
 }
 document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
+// Phone: on an open ticket, a sideways swipe (left or right) goes back to Tickets. Not while typing, choosing
+// text, or swiping a video's controls; a mostly sideways move of 90px or more only, so scrolling isn't caught.
+let caseOpen = false;
+let swipe = null;
+document.addEventListener("touchstart", (e) => {
+  const t = e.touches[0];
+  const el = e.target;
+  swipe = caseOpen && e.touches.length === 1 && !(el.closest && el.closest("textarea, input, select, video, .thumbs")) ? { x: t.clientX, y: t.clientY, at: Date.now() } : null;
+}, { passive: true });
+document.addEventListener("touchend", (e) => {
+  if (!swipe || !caseOpen) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+  const quick = Date.now() - swipe.at < 800;
+  swipe = null;
+  if (quick && Math.abs(dx) >= 90 && Math.abs(dy) < Math.abs(dx) * 0.5 && !String(window.getSelection() || "")) go("inbox");
+}, { passive: true });
 // Back / Forward (and links to #inbox/<id>) open what the address says.
 let skipHash = false;
 window.addEventListener("hashchange", () => {
@@ -193,10 +211,10 @@ async function showReport() {
     h("label", {}, "What is it?"), body,
     h("label", {}, "Where? (optional)"), place,
     h("label", {}, "Photos or a screen recording (optional)"), picker.el, bar, send);
-  show(h("h2", {}, "Report a bug or idea"), h("p.muted", {}, "Claude checks this about every hour, builds it, and you can follow it in the Inbox."), form);
+  show(h("h2", {}, "Report a bug or idea"), h("p.muted", {}, "Claude checks this about every hour, builds it, and you can follow it in Tickets."), form);
 }
 
-/* ---------- Inbox ---------- */
+/* ---------- Tickets (the "inbox" tab; Cases Closed below the open ones) ---------- */
 async function showInbox(id) {
   if (id) return showOne(id);
   const list = await api("/api/reports");
@@ -205,14 +223,14 @@ async function showInbox(id) {
       r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null),
     h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
     r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude: " + r.notes) : null);
-  // Open things on top; finished ones (shipped, closed, or put on the roadmap) in History, newest change first.
+  // Open tickets on top; finished ones (shipped, closed, or put on the roadmap) in Cases Closed, newest change first.
   const DONE = new Set(["Live", "Done", "Roadmap"]);
   const open = list.filter((r) => !DONE.has(r.status));
   const past = list.filter((r) => DONE.has(r.status)).sort((a, z) => (z.updated || "").localeCompare(a.updated || ""));
-  show(h("h2", {}, "Inbox"),
-    open.length ? h("div", {}, open.map(card)) : h("p.muted", {}, list.length ? "Nothing open. Everything is in History below." : "Nothing yet. Reports you send show up here with their status."),
+  show(h("h2", {}, "Tickets"),
+    open.length ? h("div", {}, open.map(card)) : h("p.muted", {}, list.length ? "Nothing open. Everything is in Cases Closed below." : "Nothing yet. Reports you send show up here with their status."),
     past.length ? h("details.card", { style: "padding:0;border:0;background:none" },
-      h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "History: " + past.length + " finished (shipped, closed or on the roadmap)"),
+      h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "Cases Closed: " + past.length + " (shipped, closed or on the roadmap)"),
       h("div", {}, past.map(card))) : null);
 }
 
@@ -266,7 +284,7 @@ async function showOne(id) {
       } }, "Reopen"));
   }
   show(
-    h("button.back", { onclick: () => go("inbox") }, "← Inbox"),
+    h("button.back", { onclick: () => go("inbox") }, "← Tickets"),
     h("div.card", {},
       h("div.row", {}, status(r.status), h("span.faint", {}, r.type + " · " + who(r.author) + " · " + when(r.created))),
       r.place ? h("div.faint", { style: "margin-top:6px" }, "Where: " + r.place) : null,
