@@ -133,7 +133,9 @@ export function verdict(raw: string, from: string, headerFrom = ""): string | nu
 
 export default {
   async email(message: Email, env: Env) {
-    if (!env.FORWARD_TO) {
+    // The secret may carry an invisible byte-order mark or line break (piped in from PowerShell): clean it.
+    const forwardTo = (env.FORWARD_TO ?? "").replace(HIDDEN_CHARS, "").trim();
+    if (!forwardTo) {
       // Never drop mail silently: without a destination, bounce so the sender knows.
       message.setReject("This address can't take mail right now. Please try again later.");
       return;
@@ -154,10 +156,11 @@ export default {
     const h = new Headers();
     h.set("X-Mail-Guard", "checked");
     try {
-      await message.forward(env.FORWARD_TO, h);
+      await message.forward(forwardTo, h);
     } catch (e) {
       // Never lose a message silently: a temporary bounce makes the sender's server try again later.
-      console.error("forward failed", (e as Error).message);
+      // Never the address itself in the log: only its length and whether it looks like one.
+      console.error("forward failed", (e as Error).message, `destination length ${forwardTo.length}, looks valid: ${/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(forwardTo)}`);
       message.setReject("Temporary problem delivering this message. Please try again later.");
     }
   },
