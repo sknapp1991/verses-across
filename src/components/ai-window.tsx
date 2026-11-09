@@ -16,6 +16,7 @@ import {
   PROVIDER_NAMES,
   sendAi,
   setAiBox,
+  setAiDeep,
   setAiProvider,
   stopAi,
   useAiChat,
@@ -415,6 +416,20 @@ export function AiWindow() {
           )}
         </div>
         <p className="flex flex-wrap items-center gap-x-1 px-1 text-[11px] leading-snug text-faint">
+          {/* Standard answers are short; "In depth" gives longer, more thorough ones (it thinks longer first). */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={chat.deep}
+            onClick={() => setAiDeep(!chat.deep)}
+            title={chat.deep ? "In depth: longer, more thorough answers (slower). Tap for standard answers." : "Standard answers. Tap for longer, more in-depth answers."}
+            className={`mr-1 inline-flex h-7 items-center gap-1.5 rounded-full border px-2 text-[11px] ${chat.deep ? "border-accent bg-accent-soft text-accent" : "border-line bg-raised text-ink"}`}
+          >
+            <span className={`relative h-3.5 w-6 rounded-full ${chat.deep ? "bg-accent" : "bg-line"}`} aria-hidden>
+              <span className={`absolute top-0.5 h-2.5 w-2.5 rounded-full bg-surface transition-all ${chat.deep ? "left-3" : "left-0.5"}`} />
+            </span>
+            In depth
+          </button>
           {chat.providers.length > 1 ? (
             <select
               aria-label="AI model"

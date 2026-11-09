@@ -35,6 +35,8 @@ type Chat = {
   /** The models the server offers, and the one chosen here. */
   providers: AiProvider[];
   provider: AiProvider;
+  /** "In depth": longer, more thorough answers (slower). */
+  deep: boolean;
 };
 export type AiProvider = "gemini" | "openai";
 export const PROVIDER_NAMES: Record<AiProvider, { name: string; by: string }> = {
@@ -43,7 +45,7 @@ export const PROVIDER_NAMES: Record<AiProvider, { name: string; by: string }> = 
 };
 
 const KEY = "gs:ai:v1";
-let chat: Chat = { open: false, minimized: false, busy: false, messages: [], attached: null, box: null, ready: null, providers: [], provider: "gemini" };
+let chat: Chat = { open: false, minimized: false, busy: false, messages: [], attached: null, box: null, ready: null, providers: [], provider: "gemini", deep: false };
 const SERVER = chat;
 let loaded = false;
 let readingCtx: ReadingContext | null = null;
@@ -51,8 +53,8 @@ const subs = new Set<() => void>();
 
 function persist() {
   try {
-    const { open, minimized, messages, box, provider } = chat;
-    localStorage.setItem(KEY, JSON.stringify({ open, minimized, messages: messages.slice(-40), box, provider }));
+    const { open, minimized, messages, box, provider, deep } = chat;
+    localStorage.setItem(KEY, JSON.stringify({ open, minimized, messages: messages.slice(-40), box, provider, deep }));
   } catch {
     /* private mode */
   }
@@ -80,6 +82,7 @@ function load() {
         : [],
       box: s.box ?? null,
       provider: s.provider === "openai" ? "openai" : "gemini",
+      deep: s.deep === true,
     };
   } catch {
     /* ignore */
@@ -116,6 +119,7 @@ export const minimizeAi = () => set({ minimized: true });
 export const closeAi = () => set({ open: false, minimized: false });
 export const setAiBox = (box: WinBox) => set({ box });
 export const setAiProvider = (provider: AiProvider) => set({ provider });
+export const setAiDeep = (deep: boolean) => set({ deep });
 export const detachVerse = () => set({ attached: null }, false);
 export const clearAiChat = () => set({ messages: [], attached: null });
 export function askAboutVerse(v: AttachedVerse) {
@@ -155,6 +159,7 @@ export async function sendAi(question: string) {
           : null,
         verse: attached,
         provider: chat.provider,
+        depth: chat.deep ? "deep" : "standard",
         // Earlier turns: text only, the newest last (the server trims further).
         messages: history.slice(-16).map((m) => ({ role: m.role, text: (m.ref ? `[About ${m.ref}] ` : "") + m.text.slice(0, 4000) })),
       }),

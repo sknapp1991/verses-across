@@ -33,6 +33,8 @@ const body = z.object({
     .optional(),
   messages: z.array(z.object({ role: z.enum(["user", "model"]), text: z.string().max(8000) })).min(1).max(30),
   provider: z.enum(["gemini", "openai"]).optional(),
+  /** "deep": a longer, more thorough answer (more thinking, more room); slower. */
+  depth: z.enum(["standard", "deep"]).optional(),
 });
 
 type WorkersAI = { run(model: string, input: unknown): Promise<unknown> };
@@ -99,7 +101,7 @@ const textResponse = (body: ReadableStream<Uint8Array>) =>
   new Response(body, { headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
 
 /** OpenAI gpt-oss on Workers AI, streamed. Null when it isn't available or fails. */
-async function askOpenAI(system: string, turns: { role: "user" | "model"; text: string }[]) {
+async function askOpenAI(system: string, turns: { role: "user" | "model"; text: string }[], deep = false) {
   const ai = env().AI;
   if (!ai) return null;
   try {
@@ -109,8 +111,8 @@ async function askOpenAI(system: string, turns: { role: "user" | "model"; text: 
         ...turns.map((t) => ({ role: t.role === "model" ? "assistant" : "user", content: t.text })),
       ],
       stream: true,
-      max_tokens: 4096,
-      reasoning: { effort: "low" },
+      max_tokens: deep ? 8192 : 4096,
+      reasoning: { effort: deep ? "medium" : "low" },
     });
     if (!(out instanceof ReadableStream)) return null;
     // Events are either Workers AI's {"response": "…"} or OpenAI-style {"choices":[{"delta":{"content":"…"}}]}.
@@ -145,11 +147,17 @@ export async function POST(request: Request) {
 
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "Bad request" }, { status: 400 });
-  const { context, verse, messages, provider } = parsed.data;
+  const { context, verse, messages, provider, depth } = parsed.data;
+  const deep = depth === "deep";
 
   // The reader's screen goes in the system prompt, so follow-up questions keep it.
   const sys = [
-    ASK_SYSTEM,
+    deep
+      ? ASK_SYSTEM.replace(
+          "Be concise (under 300 words unless asked for more).",
+          "In-depth mode: give a thorough answer (about 600–1,000 words): the historical and literary context, the key original-language words, how the main traditions and scholars read it, and connections to related passages.",
+        )
+      : ASK_SYSTEM,
     "Format with short paragraphs; use **bold** sparingly and simple '-' lists when helpful (no tables). Give scripture references in the usual form (e.g. Numbers 21:4–9, Surah 2:255, MN 10).",
     // The app turns this line into tappable suggestion bubbles (src/components/ai-window.tsx).
     "End with one final line in exactly this form: 'Next: <follow-up question> | <follow-up question>' — two short questions (under 12 words each) the reader might like to explore next, written as the reader would ask them.",
@@ -180,7 +188,7 @@ export async function POST(request: Request) {
   const plain = turns.map((t) => ({ role: t.role, text: t.parts[0].text }));
   // OpenAI chosen (or no Gemini key): Workers AI.
   if (provider === "openai" || !key) {
-    const r = await askOpenAI(sys.join("\n"), plain);
+    const r = await askOpenAI(sys.join("\n"), plain, deep);
     return r ?? Response.json({ error: "The OpenAI model is unavailable right now — try Gemini instead." }, { status: 502 });
   }
 
@@ -193,7 +201,7 @@ export async function POST(request: Request) {
     JSON.stringify({
       systemInstruction: { parts: [{ text: sys.join("\n") }] },
       contents: turns,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 4096, ...(thinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}) },
+      generationConfig: { temperature: 0.4, maxOutputTokens: deep ? 8192 : 4096, ...(thinking ? { thinkingConfig: { thinkingLevel: deep ? "medium" : "low" } } : {}) },
     });
   let upstream: Response | null = null;
   let status = 0;
@@ -204,8 +212,8 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: payload(thinking),
-      // No first byte within 25 s: try the next model rather than leave the reader waiting.
-      signal: AbortSignal.timeout(25_000),
+      // No first byte within 25 s (40 s in depth: it thinks longer first): try the next model rather than leave the reader waiting.
+      signal: AbortSignal.timeout(deep ? 40_000 : 25_000),
     }).catch(() => null);
     if (upstream?.ok && upstream.body) break;
     status = upstream?.status ?? 0;
@@ -222,7 +230,7 @@ export async function POST(request: Request) {
   }
   if (!upstream?.body) {
     // Gemini is busy or out of its free quota: answer with the OpenAI model instead, if it's there.
-    const r = await askOpenAI(sys.join("\n"), plain);
+    const r = await askOpenAI(sys.join("\n"), plain, deep);
     if (r) return r;
     return Response.json(
       { error: status === 429 ? "The free AI has reached its limit for now — please try again later." : "The AI service is unavailable right now." },
