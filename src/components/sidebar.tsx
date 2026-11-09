@@ -141,8 +141,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     requestAnimationFrame(() => requestAnimationFrame(() => activeRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })));
   };
 
-  // (the Library side has one shelf, Literature: open, so its sections show straight away)
-  const isOpen = (id: string) => toggled[id] ?? (currentPath.has(id) || (side === "library" && shelves.length === 1 && id === `r:${shelves[0].id}`));
+  // (on the Library side its first shelf, Literature, is open, so its sections show straight away)
+  const isOpen = (id: string) => toggled[id] ?? (currentPath.has(id) || (side === "library" && id === `r:${shelves[0]?.id}`));
   // Reading progress: chapters marked studied, per book ("work/book" → count).
   const { items: studyItems } = useStudy();
   const studiedPerBook = new Map<string, number>();

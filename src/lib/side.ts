@@ -1,8 +1,8 @@
 "use client";
 /**
- * Two spaces in one app (Skylar, Nov 8): the **Scriptures** (every tradition's texts, with Philosophy and
- * Freethought beside them) and the **Library** (Literature: fiction, poetry, drama, children's books,
- * non-fiction). The same reader underneath; each side lists its own shelves, finds its own books and has its
+ * Two spaces in one app (Skylar, Nov 8): the **Scriptures** (every tradition's texts, with Philosophy beside
+ * them) and the **Library** (Literature: fiction, poetry, drama, children's books, non-fiction; and Freethought,
+ * moved here on Nov 9). The same reader underneath; each side lists its own shelves, finds its own books and has its
  * own "continue reading".
  *
  * Which side shows: the side of the page being read, unless the reader flipped the switch ("Scriptures |
@@ -17,11 +17,11 @@ import { catalog } from "./catalog";
 export type Side = "scriptures" | "library";
 
 /** The shelves that make up the Library side (everything else is the Scriptures side). */
-export const LIBRARY_SHELVES = new Set(["literature", "fiction"]);
+export const LIBRARY_SHELVES = new Set(["literature", "fiction", "freethought"]);
 const LIBRARY_WORKS = new Set(
   catalog.religions.filter((r) => LIBRARY_SHELVES.has(r.id)).flatMap((r) => r.collections.flatMap((c) => c.items.map((i) => i.work).filter(Boolean) as string[])),
 );
-/** A work's side: the Library for Literature's books (not Freethought's, which sit with the Scriptures). */
+/** A work's side: the Library for the books on the Literature and Freethought shelves (Paine's Age of Reason too). */
 export const sideOfWork = (work: string): Side => (LIBRARY_WORKS.has(work) ? "library" : "scriptures");
 export const shelvesOf = (side: Side) => catalog.religions.filter((r) => LIBRARY_SHELVES.has(r.id) === (side === "library"));
 export const SIDE_NAME: Record<Side, string> = { scriptures: "Scriptures", library: "Library" };

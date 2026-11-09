@@ -236,7 +236,7 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
   const own = religionOf(bookRef.work, bookRef.book);
   // (a book shelf by reference too: Paine on the Freethought shelf)
   const book = isLiteratureWork(bookRef.work) || (!!own && BOOK_SHELVES.has(own.id));
-  // the Scriptures side's shelves (with Philosophy and Freethought), the page's own one left out
+  // the Scriptures side's shelves (with Philosophy), the page's own one left out
   const others = shelvesOf("scriptures").filter((r) => r.id !== own?.id);
   const hits = data?.k === key ? data.hits : null;
   // Scriptures | Library: the page's own side first; the other side's matches only when asked.
@@ -261,7 +261,7 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
     const library = !showLibrary
       ? []
       : shelvesOf("library")
-          .map((r) => ({ religion: r, hits: hits.filter((h) => sideOfWork(h.work) === "library").slice(0, per) }))
+          .map((r) => ({ religion: r, hits: hits.filter((h) => sideOfWork(h.work) === "library" && religionOf(h.work, h.book)?.id === r.id).slice(0, per) }))
           .filter((g) => g.hits.length > 0);
     return pageSide === "library" ? [...library, ...scripture] : [...scripture, ...library];
     // others is derived from own

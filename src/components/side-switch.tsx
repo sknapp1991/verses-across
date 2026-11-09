@@ -71,7 +71,7 @@ export function SideTip() {
           <p className="font-semibold">Scriptures and Library</p>
           <p className="mt-1 text-sm text-muted">
             Verses Across has two sides now. <strong className="text-ink">Scriptures</strong> holds every tradition&apos;s texts.{" "}
-            <strong className="text-ink">Library</strong> holds the classic books: fiction, poetry, drama, children&apos;s books and more. Switch between
+            <strong className="text-ink">Library</strong> holds the classic books: fiction, poetry, drama, children&apos;s books, freethought and more. Switch between
             them at the top
             <span className="desk:hidden"> of the menu (☰)</span>. Each side keeps its own shelves and your place.
           </p>
