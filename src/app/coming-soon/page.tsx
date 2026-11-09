@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 /**
  * "Coming soon" (the top-bar icon on a computer, a tile in the ⋯ sheet on a phone): what's planned, in plain
- * words. Children and Teachers are placeholders for now (brother's list, Nov 8). Keep it to things that are
+ * words. Children and Teachers are placeholders for now (feature list, Nov 8). Keep it to things that are
  * really planned (ROADMAP.md), without dates.
  */
 const PLANNED: { title: string; tag?: string; text: string; points?: string[] }[] = [

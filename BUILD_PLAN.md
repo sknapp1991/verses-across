@@ -123,7 +123,7 @@ For non-Bible texts, use the original language where it fits (Arabic Quran, Hebr
 - Tell me exactly what to install if anything is missing (e.g., Node.js LTS) and how to add my API key to `.env.local` (`GEMINI_API_KEY` from Google AI Studio for development; free tier).
 - Keep explanations short and practical; I'm comfortable with tech but new to app development.
 
-## Feature requests (Nov 2026, from Skylar's brother) — to schedule into Phases 3–5
+## Feature requests (Nov 2026, from testing) — to schedule into Phases 3–5
 
 - **Word highlight across versions:** select a word and the matching word in every visible translation is highlighted. Approach: use Strong's-number tagging where a public-domain tagged text exists (KJV, some others) to link words to the original Hebrew/Greek lemma. Versions without tags get AI word alignment later. Show "no link available" rather than guessing.
 - **Word study / search:** double-click a word → panel with occurrences (count, list of verses), the original-language lemma and its range of meanings (concordance), and full-text search across the library.
