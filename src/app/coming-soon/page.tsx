@@ -45,6 +45,11 @@ const PLANNED: { title: string; tag?: string; text: string; points?: string[] }[
     points: ["A study guide for each theme: the key passages side by side, with questions", "Quizzes on a theme", "Lesson plans for a class or study group, week by week"],
   },
   {
+    title: "History",
+    text: "A timeline and a map through time: zoom from millennia down to years, switch on cultures, empires and events, and see where and when each text was written and what it tells of, linked both ways to the reading.",
+    points: ["A timeline with layers (empires, religions, rulers, wars, writings)", "A world map that changes as you move through the years", "From a chapter: when and where it happened, and what else was going on"],
+  },
+  {
     title: "More languages and recordings",
     text: "More translations, more read-aloud voices, and the original languages side by side.",
   },

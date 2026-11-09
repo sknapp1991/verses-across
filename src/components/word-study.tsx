@@ -216,7 +216,7 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
       <button
         type="button"
         onClick={() => setSpell(spell?.word === w && spell.lang === l ? null : { word: w, lang: l })}
-        className="underline decoration-dotted underline-offset-2"
+        className="font-medium text-accent hover:underline"
         aria-expanded={spell?.word === w && spell.lang === l}
         title={l === "zh" ? "What these characters mean" : "Letter by letter"}
       >

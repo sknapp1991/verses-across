@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { lexicon, type LexEntry } from "@/lib/strongs";
+import { lookupWord } from "@/lib/words";
 import { scriptOf, wordKey } from "@/lib/lexicon-key";
 import { CloseIcon } from "./icons";
 import { SayAloud } from "./say-aloud";
@@ -20,18 +21,30 @@ const loadIndex = () =>
     }));
 
 /** Italic or Hebrew / Greek words worth checking: one to three words, letters only. */
-export const looksForeign = (w: string) => !!scriptOf(w) || /^[\p{L}\p{M}ʼʽʾʿ'’-]{2,24}$/u.test(w.trim());
+export const looksForeign = (w: string) => !!scriptOf(w) || /^[\p{L}\p{M}ʼʽʾʿ'’‘-]{2,24}$/u.test(w.trim());
 
-export function AiWord({ word, italic = false }: { word: string; italic?: boolean }) {
+/** An everyday English word (a learner level up to C1): *very*, *holy*, *time*. Rare words (cherem, parthenos) aren't. */
+async function everyday(w: string) {
+  const card = await lookupWord(w.toLowerCase().replace(/[‘’']/g, ""), "en").catch(() => null);
+  return !!card && /^(A1|A2|B1|B2|C1)$/.test(card.entry.level ?? "");
+}
+
+export function AiWord({ word, italic = false, notEnglish = false }: { word: string; italic?: boolean; notEnglish?: boolean }) {
   const [nums, setNums] = useState<string[] | null>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => {
     let live = true;
-    loadIndex().then((i) => live && setNums(i[wordKey(word)] ?? []));
+    loadIndex()
+      .then(async (i) => {
+        const found = i[wordKey(word)] ?? [];
+        // a plain spelling: only if it isn't an everyday English word
+        return found.length && notEnglish && (await everyday(word)) ? [] : found;
+      })
+      .then((found) => live && setNums(found));
     return () => {
       live = false;
     };
-  }, [word]);
+  }, [word, notEnglish]);
   const plain = italic ? <em>{word}</em> : <>{word}</>;
   if (!nums?.length) return plain;
   return (
@@ -41,7 +54,7 @@ export function AiWord({ word, italic = false }: { word: string; italic?: boolea
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         title="What this word means"
-        className={`underline decoration-accent decoration-dotted underline-offset-4 ${italic ? "italic" : ""}`}
+        className={`font-medium text-accent hover:underline ${italic ? "italic" : ""}`}
       >
         {word}
       </button>

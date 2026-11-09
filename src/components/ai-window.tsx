@@ -533,7 +533,7 @@ function Rich({ text, preferWork }: { text: string; preferWork?: string }) {
 
 /** **bold**, *emphasis* in italics, Hebrew / Greek words tappable (a word card), and scripture references as links. */
 function inlineRich(s: string, preferWork?: string): ReactNode {
-  return s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+  return s.split(/(\*\*(?:[^*]|\*(?!\*)|\*(?=\*\*))+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
       <strong key={i}>{withWords(part.slice(2, -2), preferWork)}</strong>
     ) : (
@@ -547,8 +547,11 @@ function inlineRich(s: string, preferWork?: string): ReactNode {
 const FOREIGN = /(^|[\s(“"'‘])\*([^*\s][^*]{0,60}?)\*(?=[\s.,;:!?)”"'’]|$)|([֐-׿Ͱ-Ͽἀ-῿][֐-׿Ͱ-Ͽἀ-῿̀-ͯ]*)/g;
 /** A romanized italic word worth looking up: marked like a transliteration (ḥ, ē, ʼ…), or just after the word
  * "Hebrew", "Greek" or "Aramaic" ("the Greek *logos*"). Plain English italics (*very*, *holy*) stay italics. */
-const lookupable = (w: string, before: string) =>
-  looksForeign(w) && w.length >= 3 && (/[^\x00-\x7F]|['’]/.test(w) || /\b(Hebrew|Greek|Aramaic)\b[^.!?]{0,40}$/i.test(before));
+const marked = (w: string, before: string) => /[^\x00-\x7F]|['’‘]/.test(w) || /\b(Hebrew|Greek|Aramaic)\b[^.!?]{0,40}$/i.test(before);
+/** "sure": marked like a transliteration or named as Hebrew / Greek; otherwise a plain spelling (cherem, parthenos)
+ * that is looked up only if it isn't an everyday English word (*very*, *holy*). */
+const lookupable = (w: string, before: string): "sure" | "check" | null =>
+  !looksForeign(w) || w.length < 3 ? null : marked(w, before) ? "sure" : w.length >= 4 ? "check" : null;
 function withWords(s: string, preferWork?: string): ReactNode {
   const refs = findRefs(s, preferWork);
   type Piece = { start: number; end: number; node: (k: number) => ReactNode };
@@ -561,8 +564,8 @@ function withWords(s: string, preferWork?: string): ReactNode {
     if (m[3]) pieces.push({ start, end, node: (k) => <AiWord key={k} word={m[3]} /> });
     else {
       const inner = m[2];
-      const word = !/\s/.test(inner) && lookupable(inner, s.slice(0, start));
-      pieces.push({ start, end, node: (k) => (word ? <AiWord key={k} word={inner} italic /> : <em key={k}>{inner}</em>) });
+      const how = /\s/.test(inner) ? null : lookupable(inner, s.slice(0, start));
+      pieces.push({ start, end, node: (k) => (how ? <AiWord key={k} word={inner} italic notEnglish={how === "check"} /> : <em key={k}>{inner}</em>) });
     }
   }
   pieces.sort((x, y) => x.start - y.start);

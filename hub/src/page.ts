@@ -145,28 +145,35 @@ async function uploadFiles(files, ownerKind, ownerId, onProgress) {
 function filePicker() {
   const input = h("input", { type: "file", accept: "image/*,video/*", multiple: true, class: "hidden" });
   const list = h("div.file");
-  // A small preview of each photo or video picked (only on this device until it's sent), with its name and size.
+  // Files add up (pick one, then another…), each with a preview (only on this device until sent) and a remove button.
   const previews = h("div.thumbs");
+  let chosen = [];
   let urls = [];
   const draw = () => {
     for (const u of urls) URL.revokeObjectURL(u);
     urls = [];
-    const files = [...input.files];
-    list.textContent = files.map((f) => f.name + " (" + Math.round(f.size / 1048576 * 10) / 10 + " MB)").join(", ");
-    previews.replaceChildren(...files.map((f) => {
+    list.textContent = chosen.length ? chosen.length + (chosen.length === 1 ? " file, " : " files, ") + Math.round(chosen.reduce((n, f) => n + f.size, 0) / 1048576 * 10) / 10 + " MB" : "";
+    previews.replaceChildren(...chosen.map((f, i) => {
       const url = URL.createObjectURL(f);
       urls.push(url);
-      const name = h("div.faint", { style: "font-size:11px;overflow-wrap:anywhere" }, f.name);
+      const name = h("div.faint", { style: "font-size:11px;overflow-wrap:anywhere" }, f.name + " (" + Math.round(f.size / 1048576 * 10) / 10 + " MB)");
       // (a photo the browser can't show, like some HEIC files, shows just its name)
       const media = (f.type || "").startsWith("video/") || /[.](mov|mp4|m4v|webm)$/i.test(f.name)
         ? h("video", { src: url, muted: true, playsinline: true, preload: "metadata", controls: true })
         : h("img", { src: url, alt: f.name, onerror: (e) => e.currentTarget.remove() });
-      return h("div", {}, media, name);
+      const remove = h("button.btn.small", { type: "button", "aria-label": "Remove " + f.name, style: "width:100%;margin-top:4px", onclick: () => { chosen.splice(i, 1); draw(); } }, "✕ Remove");
+      return h("div", {}, media, name, remove);
     }));
+    btn.textContent = chosen.length ? "📎 Add another photo or video" : "📎 Add photos or a screen recording";
   };
-  input.addEventListener("change", draw);
+  input.addEventListener("change", () => {
+    // the same file picked twice counts once
+    for (const f of input.files) if (!chosen.some((c) => c.name === f.name && c.size === f.size && c.lastModified === f.lastModified)) chosen.push(f);
+    input.value = ""; // so the next pick (even the same file again after removing it) is seen
+    draw();
+  });
   const btn = h("button.btn", { type: "button", onclick: () => input.click() }, "📎 Add photos or a screen recording");
-  return { el: h("div", {}, btn, input, previews, list), files: () => [...input.files], clear: () => { input.value = ""; draw(); } };
+  return { el: h("div", {}, btn, input, previews, list), files: () => [...chosen], clear: () => { chosen = []; draw(); } };
 }
 function mediaEl(f) {
   const src = "/api/media/" + f.id;
