@@ -767,7 +767,8 @@
        "title": "The Extraordinary Adventures of Arsène Lupin, Gentleman-Burglar",
        "author": "Leblanc, Maurice, 1864-1941",
        "lang": "en",
-       "downloads": 10828
+       "downloads": 10828,
+       "name": "Arsène Lupin, Gentleman-Burglar"
       },
       {
        "gid": 22163,
@@ -1271,7 +1272,8 @@
        "title": "John Thorndyke's Cases related by Christopher Jervis and edited by R. Austin Freeman",
        "author": "Freeman, R. Austin (Richard Austin), 1862-1943; Brock, H. M. (Henry Matthew), 1875-1960 [Illustrator]",
        "lang": "en",
-       "downloads": 1172
+       "downloads": 1172,
+       "name": "John Thorndyke's Cases"
       },
       {
        "gid": 21530,
@@ -1607,7 +1609,8 @@
        "title": "R. Holmes & Co. Being the Remarkable Adventures of Raffles Holmes, Esq., Detective and Amateur Cracksman by Birth",
        "author": "Bangs, John Kendrick, 1862-1922",
        "lang": "en",
-       "downloads": 522
+       "downloads": 522,
+       "name": "R. Holmes & Co."
       },
       {
        "gid": 12239,
@@ -1894,7 +1897,8 @@
        "title": "The Love Letters of Mary Wollstonecraft to Gilbert Imlay",
        "author": "Wollstonecraft, Mary, 1759-1797; Ingpen, Roger, 1869?-1936 [Contributor]",
        "lang": "en",
-       "downloads": 13366
+       "downloads": 13366,
+       "name": "Mary Wollstonecraft's Love Letters to Gilbert Imlay"
       },
       {
        "gid": 19476,
@@ -2013,7 +2017,8 @@
        "title": "Robert Orange Being a Continuation of the History of Robert Orange",
        "author": "Hobbes, John Oliver, 1867-1906",
        "lang": "en",
-       "downloads": 8555
+       "downloads": 8555,
+       "name": "Robert Orange"
       },
       {
        "gid": 18875,
@@ -2055,7 +2060,8 @@
        "title": "Chambers's Edinburgh Journal, No. 452 Volume 18, New Series, August 28, 1852",
        "author": "Various; Chambers, Robert, 1802-1871 [Editor]; Chambers, William, 1800-1883 [Editor]",
        "lang": "en",
-       "downloads": 7753
+       "downloads": 7753,
+       "name": "Chambers's Edinburgh Journal, August 28, 1852"
       },
       {
        "gid": 42389,
@@ -2237,7 +2243,8 @@
        "title": "The Works of Robert Louis Stevenson - Swanston Edition, Vol. 20",
        "author": "Stevenson, Robert Louis, 1850-1894; Quiller-Couch, Arthur, 1863-1944 [Contributor]",
        "lang": "en",
-       "downloads": 6062
+       "downloads": 6062,
+       "name": "The Works of Robert Louis Stevenson, Vol. 20"
       },
       {
        "gid": 53154,
@@ -2300,7 +2307,8 @@
        "title": "Chambers's Journal of Popular Literature, Science, and Art, fifth series, no. 153, vol. III, December 4, 1886",
        "author": "Various",
        "lang": "en",
-       "downloads": 4870
+       "downloads": 4870,
+       "name": "Chambers's Journal, December 4, 1886"
       },
       {
        "gid": 76413,
@@ -2622,7 +2630,8 @@
        "title": "The Extraordinary Adventures of Arsène Lupin, Gentleman-Burglar",
        "author": "Leblanc, Maurice, 1864-1941",
        "lang": "en",
-       "downloads": 10828
+       "downloads": 10828,
+       "name": "Arsène Lupin, Gentleman-Burglar"
       },
       {
        "gid": 1874,
@@ -2650,7 +2659,8 @@
        "title": "Gulliver's Travels into Several Remote Regions of the World",
        "author": "Swift, Jonathan, 1667-1745; Balliet, Thomas M. (Thomas Minard), 1852-1942 [Editor]",
        "lang": "en",
-       "downloads": 9605
+       "downloads": 9605,
+       "name": "Gulliver's Travels"
       },
       {
        "gid": 940,
@@ -3266,7 +3276,8 @@
        "title": "The Monkey's Paw The Lady of the Barge and Others, Part 2.",
        "author": "Jacobs, W. W. (William Wymark), 1863-1943; Greiffenhagen, Maurice, 1862-1931 [Illustrator]; Richards, Amy, active 1896-1918 [Illustrator]",
        "lang": "en",
-       "downloads": 13536
+       "downloads": 13536,
+       "name": "The Monkey's Paw and Other Stories, Part 2"
       },
       {
        "gid": 1597,
@@ -3322,7 +3333,8 @@
        "title": "The best short stories of 1920, and the yearbook of the American short story",
        "author": "O'Brien, Edward J. (Edward Joseph), 1890-1941 [Editor]",
        "lang": "en",
-       "downloads": 8468
+       "downloads": 8468,
+       "name": "The Best Short Stories of 1920"
       },
       {
        "gid": 12116,
@@ -3574,7 +3586,8 @@
        "title": "Chambers's Journal of Popular Literature, Science, and Art, fifth series, no. 153, vol. III, December 4, 1886",
        "author": "Various",
        "lang": "en",
-       "downloads": 4870
+       "downloads": 4870,
+       "name": "Chambers's Journal, December 4, 1886"
       },
       {
        "gid": 76541,
@@ -3595,7 +3608,8 @@
        "title": "The Works of Edgar Allan Poe, The Raven Edition Table Of Contents And Index Of The Five Volumes",
        "author": "Poe, Edgar Allan, 1809-1849",
        "lang": "en",
-       "downloads": 4828
+       "downloads": 4828,
+       "name": "The Works of Edgar Allan Poe: Contents and Index"
       },
       {
        "gid": 76849,
@@ -3714,7 +3728,8 @@
        "title": "The Fables of Aesop Selected, Told Anew, and Their History Traced",
        "author": "Aesop, 621? BCE-565? BCE; Jacobs, Joseph, 1854-1916 [Editor]",
        "lang": "en",
-       "downloads": 4286
+       "downloads": 4286,
+       "name": "The Fables of Aesop"
       },
       {
        "gid": 76713,
@@ -4064,7 +4079,8 @@
        "title": "The Works of Robert Louis Stevenson - Swanston Edition, Vol. 20",
        "author": "Stevenson, Robert Louis, 1850-1894; Quiller-Couch, Arthur, 1863-1944 [Contributor]",
        "lang": "en",
-       "downloads": 6062
+       "downloads": 6062,
+       "name": "The Works of Robert Louis Stevenson, Vol. 20"
       },
       {
        "gid": 53154,
@@ -4134,7 +4150,8 @@
        "title": "The House of the Wolfings A Tale of the House of the Wolfings and All the Kindreds of the Mark Written in Prose and in Verse",
        "author": "Morris, William, 1834-1896",
        "lang": "en",
-       "downloads": 4374
+       "downloads": 4374,
+       "name": "The House of the Wolfings"
       },
       {
        "gid": 76903,
@@ -4204,7 +4221,8 @@
        "title": "A Journal of the Plague Year Being Observations or Memorials of the Most Remarkable Occurrences, as Well Public as Private, Which Happened in London During the Last Great Visitation in 1665. Written by a Citizen Who Continued All the While in London",
        "author": "Defoe, Daniel, 1661?-1731",
        "lang": "en",
-       "downloads": 3399
+       "downloads": 3399,
+       "name": "A Journal of the Plague Year"
       },
       {
        "gid": 28357,
@@ -4344,7 +4362,8 @@
        "title": "Le Morte Darthur Sir Thomas Malory's Book of King Arthur and his Noble Knights of the Round Table",
        "author": "Malory, Thomas, Sir, -1471; Caxton, William, 1422?-1492? [Editor]; Strachey, Edward, Sir, 1812-1901 [Editor]",
        "lang": "en",
-       "downloads": 2268
+       "downloads": 2268,
+       "name": "Le Morte d'Arthur"
       },
       {
        "gid": 5998,
@@ -4582,7 +4601,8 @@
        "title": "The Monkey's Paw The Lady of the Barge and Others, Part 2.",
        "author": "Jacobs, W. W. (William Wymark), 1863-1943; Greiffenhagen, Maurice, 1862-1931 [Illustrator]; Richards, Amy, active 1896-1918 [Illustrator]",
        "lang": "en",
-       "downloads": 13536
+       "downloads": 13536,
+       "name": "The Monkey's Paw and Other Stories, Part 2"
       },
       {
        "gid": 121,
@@ -4652,7 +4672,8 @@
        "title": "The Private Memoirs and Confessions of a Justified Sinner",
        "author": "Hogg, James, 1770-1835",
        "lang": "en",
-       "downloads": 1436
+       "downloads": 1436,
+       "name": "Confessions of a Justified Sinner"
       },
       {
        "gid": 1831,
@@ -4848,7 +4869,8 @@
        "title": "The Boats of the \"Glen Carrig\" Being an account of their Adventures in the Strange places of the Earth, after the foundering of the good ship Glen Carrig through striking upon a hidden rock in the unknown seas to the Southward; as told by John Winterstraw, Gent., to his son James Winterstraw, in the year 1757, and by him committed very properly and legibly to manuscript",
        "author": "Hodgson, William Hope, 1877-1918",
        "lang": "en",
-       "downloads": 1038
+       "downloads": 1038,
+       "name": "The Boats of the Glen Carrig"
       },
       {
        "gid": 3095,
@@ -5086,7 +5108,8 @@
        "title": "Gulliver's Travels into Several Remote Regions of the World",
        "author": "Swift, Jonathan, 1667-1745; Balliet, Thomas M. (Thomas Minard), 1852-1942 [Editor]",
        "lang": "en",
-       "downloads": 9605
+       "downloads": 9605,
+       "name": "Gulliver's Travels"
       },
       {
        "gid": 6087,
@@ -5429,7 +5452,8 @@
        "title": "R.U.R. (Rossum's Universal Robots) A Fantastic Melodrama in Three Acts and an Epilogue",
        "author": "Čapek, Karel, 1890-1938; Playfair, Nigel, 1874-1934 [Translator]; Selver, Paul, 1888-1970 [Translator]",
        "lang": "en",
-       "downloads": 5057
+       "downloads": 5057,
+       "name": "R.U.R. (Rossum's Universal Robots)"
       },
       {
        "gid": 76857,
@@ -5534,7 +5558,8 @@
        "title": "Alice's Adventures in Wonderland Illustrated by Arthur Rackham. With a Proem by Austin Dobson",
        "author": "Carroll, Lewis, 1832-1898; Dobson, Austin, 1840-1921 [Contributor]; Rackham, Arthur, 1867-1939 [Illustrator]",
        "lang": "en",
-       "downloads": 4691
+       "downloads": 4691,
+       "name": "Alice's Adventures in Wonderland (illustrated by Arthur Rackham)"
       },
       {
        "gid": 42196,
@@ -5618,7 +5643,8 @@
        "title": "The House of the Wolfings A Tale of the House of the Wolfings and All the Kindreds of the Mark Written in Prose and in Verse",
        "author": "Morris, William, 1834-1896",
        "lang": "en",
-       "downloads": 4374
+       "downloads": 4374,
+       "name": "The House of the Wolfings"
       },
       {
        "gid": 76858,
@@ -6171,7 +6197,8 @@
        "title": "The Sleeper Awakes A Revised Edition of When the Sleeper Wakes",
        "author": "Wells, H. G. (Herbert George), 1866-1946",
        "lang": "en",
-       "downloads": 1563
+       "downloads": 1563,
+       "name": "The Sleeper Awakes"
       },
       {
        "gid": 42182,
@@ -6794,14 +6821,16 @@
        "title": "The Last American A Fragment from The Journal of Khan-li, Prince of Dimph-Yoo-Chur and Admiral in the Persian Navy",
        "author": "Mitchell, John Ames, 1845-1918; Read, F. W. (Frederick William), 1863- [Illustrator]",
        "lang": "en",
-       "downloads": 529
+       "downloads": 529,
+       "name": "The Last American"
       },
       {
        "gid": 61142,
        "title": "The Electric Man Being the One Act Version of the Three Act Farcical Comedy of the Same Name",
        "author": "Hannan, Charles, 1863-1922",
        "lang": "en",
-       "downloads": 464
+       "downloads": 464,
+       "name": "The Electric Man"
       },
       {
        "gid": 4290,
@@ -6857,7 +6886,8 @@
        "title": "The House of the Wolfings A Tale of the House of the Wolfings and All the Kindreds of the Mark Written in Prose and in Verse",
        "author": "Morris, William, 1834-1896",
        "lang": "en",
-       "downloads": 4374
+       "downloads": 4374,
+       "name": "The House of the Wolfings"
       },
       {
        "gid": 10002,
@@ -6962,7 +6992,8 @@
        "title": "Ozma of Oz A Record of Her Adventures with Dorothy Gale of Kansas, the Yellow Hen, the Scarecrow, the Tin Woodman, Tiktok, the Cowardly Lion, and the Hungry Tiger; Besides Other Good People too Numerous to Mention Faithfully Recorded Herein",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 1285
+       "downloads": 1285,
+       "name": "Ozma of Oz"
       },
       {
        "gid": 959,
@@ -7004,14 +7035,16 @@
        "title": "The Tin Woodman of Oz A Faithful Story of the Astonishing Adventure Undertaken by the Tin Woodman, Assisted by Woot the Wanderer, the Scarecrow of Oz, and Polychrome, the Rainbow's Daughter",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 1148
+       "downloads": 1148,
+       "name": "The Tin Woodman of Oz"
       },
       {
        "gid": 436,
        "title": "The Master Key An Electrical Fairy Tale Founded Upon the Mysteries of Electricity",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 1135
+       "downloads": 1135,
+       "name": "The Master Key"
       },
       {
        "gid": 1605,
@@ -7025,7 +7058,8 @@
        "title": "The Story of Sigurd the Volsung and the Fall of the Niblungs",
        "author": "Morris, William, 1834-1896",
        "lang": "en",
-       "downloads": 1132
+       "downloads": 1132,
+       "name": "Sigurd the Volsung"
       },
       {
        "gid": 956,
@@ -7046,7 +7080,8 @@
        "title": "The Enchanted Island of Yew Whereon Prince Marvel Encountered the High Ki of Twi and Other Surprising People",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 1080
+       "downloads": 1080,
+       "name": "The Enchanted Island of Yew"
       },
       {
        "gid": 8183,
@@ -7102,21 +7137,24 @@
        "title": "Rinkitink in Oz Wherein Is Recorded the Perilous Quest of Prince Inga of Pingaree and King Rinkitink in the Magical Isles That Lie Beyond the Borderland of Oz",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 977
+       "downloads": 977,
+       "name": "Rinkitink in Oz"
       },
       {
        "gid": 961,
        "title": "Glinda of Oz In Which Are Related the Exciting Experiences of Princess Ozma of Oz, and Dorothy, in Their Hazardous Journey to the Home of the Flatheads, and to the Magic Isle of the Skeezers, and How They Were Rescued from Dire Peril by the Sorcery of Glinda the Good",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 954
+       "downloads": 954,
+       "name": "Glinda of Oz"
       },
       {
        "gid": 6050,
        "title": "The Roots of the Mountains Wherein Is Told Somewhat of the Lives of the Men of Burgdale, Their Friends, Their Neighbours, Their Foemen, and Their Fellows in Arms",
        "author": "Morris, William, 1834-1896",
        "lang": "en",
-       "downloads": 953
+       "downloads": 953,
+       "name": "The Roots of the Mountains"
       },
       {
        "gid": 19976,
@@ -7165,7 +7203,8 @@
        "title": "The Surprising Adventures of the Magical Monarch of Mo and His People",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919; Ver Beck, Frank, 1858-1933 [Illustrator]",
        "lang": "en",
-       "downloads": 895
+       "downloads": 895,
+       "name": "The Magical Monarch of Mo"
       },
       {
        "gid": 1267,
@@ -7228,7 +7267,8 @@
        "title": "Sky Island Being the further exciting adventures of Trot and Cap'n Bill after their visit to the sea fairies",
        "author": "Baum, L. Frank (Lyman Frank), 1856-1919",
        "lang": "en",
-       "downloads": 797
+       "downloads": 797,
+       "name": "Sky Island"
       },
       {
        "gid": 1751,
@@ -7263,7 +7303,8 @@
        "title": "The Story of the Glittering Plain Which Has Been Also Called the Land of Living Men or the Acre of the Undying",
        "author": "Morris, William, 1834-1896",
        "lang": "en",
-       "downloads": 757
+       "downloads": 757,
+       "name": "The Story of the Glittering Plain"
       },
       {
        "gid": 11639,
@@ -7340,7 +7381,8 @@
        "title": "Taboo A Legend Retold from the Dirghic of Sævius Nicanor, with Prolegomena, Notes, and a Preliminary Memoir",
        "author": "Cabell, James Branch, 1879-1958",
        "lang": "en",
-       "downloads": 579
+       "downloads": 579,
+       "name": "Taboo"
       },
       {
        "gid": 15948,
@@ -7592,7 +7634,8 @@
        "title": "The Foolish Dictionary An exhausting work of reference to un-certain English words, their origin, meaning, legitimate and illegitimate use, confused by a few pictures [not included]",
        "author": "Wurdz, Gideon, 1875-",
        "lang": "en",
-       "downloads": 1186
+       "downloads": 1186,
+       "name": "The Foolish Dictionary"
       },
       {
        "gid": 2042,
@@ -7718,7 +7761,8 @@
        "title": "Behind the Beyond, and Other Contributions to Human Knowledge",
        "author": "Leacock, Stephen, 1869-1944",
        "lang": "en",
-       "downloads": 918
+       "downloads": 918,
+       "name": "Behind the Beyond"
       },
       {
        "gid": 2005,
@@ -7746,7 +7790,8 @@
        "title": "Love Among the Chickens A Story of the Haps and Mishaps on an English Chicken Farm",
        "author": "Wodehouse, P. G. (Pelham Grenville), 1881-1975; Both, Armand, 1881-1922 [Illustrator]",
        "lang": "en",
-       "downloads": 882
+       "downloads": 882,
+       "name": "Love Among the Chickens"
       },
       {
        "gid": 18091,
@@ -7788,14 +7833,16 @@
        "title": "Mr. Punch's Book of Sport The Humour of Cricket, Football, Tennis, Polo, Croquet, Hockey, Racing, &c",
        "author": "Hammerton, J. A. (John Alexander), 1871-1949 [Editor]; Sambourne, Linley, 1844-1910 [Illustrator]",
        "lang": "en",
-       "downloads": 857
+       "downloads": 857,
+       "name": "Mr. Punch's Book of Sport"
       },
       {
        "gid": 20113,
        "title": "Nonsense Drolleries The Owl & The Pussy-Cat—The Duck & The Kangaroo.",
        "author": "Lear, Edward, 1812-1888",
        "lang": "en",
-       "downloads": 853
+       "downloads": 853,
+       "name": "Nonsense Drolleries"
       },
       {
        "gid": 4020,
@@ -7865,7 +7912,8 @@
        "title": "Mr. Munchausen Being a True Account of Some of the Recent Adventures beyond the Styx of the Late Hieronymus Carl Friedrich, Sometime Baron Munchausen of Bodenwerder",
        "author": "Bangs, John Kendrick, 1862-1922; Newell, Peter, 1862-1924 [Illustrator]",
        "lang": "en",
-       "downloads": 802
+       "downloads": 802,
+       "name": "Mr. Munchausen"
       },
       {
        "gid": 38683,
@@ -7956,7 +8004,8 @@
        "title": "The Ten Pleasures of Marriage and the Second Part, The Confession of the New Married Couple",
        "author": "Marsh, A.; Behn, Aphra, 1640-1689 [Dubious author]; Harvey, John, 1938- [Editor]",
        "lang": "en",
-       "downloads": 749
+       "downloads": 749,
+       "name": "The Ten Pleasures of Marriage"
       },
       {
        "gid": 20533,
@@ -8243,7 +8292,8 @@
        "title": "Spinifex and Sand A Narrative of Five Years' Pioneering and Exploration in Western Ausralia",
        "author": "Carnegie, David Wynford, 1871-1900",
        "lang": "en",
-       "downloads": 891
+       "downloads": 891,
+       "name": "Spinifex and Sand"
       },
       {
        "gid": 1881,
@@ -8481,7 +8531,8 @@
        "title": "A Deal in Wheat and Other Stories of the New and Old West",
        "author": "Norris, Frank, 1870-1902",
        "lang": "en",
-       "downloads": 631
+       "downloads": 631,
+       "name": "A Deal in Wheat and Other Stories"
       },
       {
        "gid": 538,
@@ -8923,7 +8974,8 @@
        "title": "R.U.R. (Rossum's Universal Robots) A Fantastic Melodrama in Three Acts and an Epilogue",
        "author": "Čapek, Karel, 1890-1938; Playfair, Nigel, 1874-1934 [Translator]; Selver, Paul, 1888-1970 [Translator]",
        "lang": "en",
-       "downloads": 5057
+       "downloads": 5057,
+       "name": "R.U.R. (Rossum's Universal Robots)"
       },
       {
        "gid": 1311,
@@ -9361,7 +9413,8 @@
        "title": "A Vindication of the Rights of Woman With Strictures on Political and Moral Subjects",
        "author": "Wollstonecraft, Mary, 1759-1797",
        "lang": "en",
-       "downloads": 9937
+       "downloads": 9937,
+       "name": "A Vindication of the Rights of Woman"
       },
       {
        "gid": 45502,
@@ -9445,7 +9498,8 @@
        "title": "The Declaration of Independence of the United States of America",
        "author": "Jefferson, Thomas, 1743-1826",
        "lang": "en",
-       "downloads": 8535
+       "downloads": 8535,
+       "name": "The Declaration of Independence"
       },
       {
        "gid": 3176,
@@ -9616,7 +9670,8 @@
        "title": "The United States Bill of Rights The Ten Original Amendments to the Constitution of the United States",
        "author": "United States",
        "lang": "en",
-       "downloads": 2745
+       "downloads": 2745,
+       "name": "The United States Bill of Rights"
       }
      ]
     },
@@ -9910,7 +9965,8 @@
        "title": "Micrographia Some Physiological Descriptions of Minute Bodies Made by Magnifying Glasses with Observations and Inquiries Thereupon",
        "author": "Hooke, Robert, 1635-1703",
        "lang": "en",
-       "downloads": 3604
+       "downloads": 3604,
+       "name": "Micrographia"
       },
       {
        "gid": 14986,
@@ -10223,7 +10279,7 @@
        "title": "Arguments of Celsus, Porphyry, and the Emperor Julian, Against the Christians Also Extracts from Diodorus Siculus, Josephus, and Tacitus, Relating to the Jews, Together with an Appendix",
        "author": "Celsus (Platonic philosopher), active 180; Porphyry, 234?-305?; Julian, Emperor of Rome, 331-363 [Contributor]; Taylor, Thomas, 1758-1835 [Translator]",
        "lang": "en",
-       "name": "Arguments of Celsus, Porphyry and Julian Against the Christians",
+       "name": "Celsus, Porphyry and Julian Against the Christians",
        "year": 1830
       }
      ]
@@ -10295,7 +10351,7 @@
        "title": "History of the Warfare of Science with Theology in Christendom",
        "author": "White, Andrew Dickson, 1832-1918",
        "lang": "en",
-       "name": "A History of the Warfare of Science with Theology in Christendom",
+       "name": "A History of the Warfare of Science with Theology",
        "year": 1896
       },
       {
