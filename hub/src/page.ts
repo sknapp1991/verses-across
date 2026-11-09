@@ -260,7 +260,7 @@ function renderTickets(list, target) {
     h("div.row", {}, status(r.status), h("span.faint", {}, r.type + " · " + who(r.author) + " · " + when(r.created)),
       r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null),
     h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
-    r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude: " + r.notes) : null);
+    r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude" + (r.updated ? " · " + when(r.updated) : "") + ": " + r.notes) : null);
   // Open tickets on top; finished ones (shipped, closed, or put on the roadmap) in Cases Closed, newest change first.
   // Live stays in Tickets until the reporter closes it ("Fixed, close it") or confirms it works.
   const DONE = new Set(["Done", "Roadmap"]);
@@ -354,7 +354,7 @@ async function showOne(id) {
       r.place ? h("div.faint", { style: "margin-top:6px" }, "Where: " + r.place) : null,
       h("div.pre", { style: "margin-top:8px" }, r.body),
       r.files && r.files.length ? h("div.thumbs", {}, r.files.map(mediaEl)) : null,
-      r.notes ? h("div.pre", { style: "margin-top:10px;border-top:1px solid var(--line);padding-top:8px" }, h("b", {}, "Claude: "), r.notes) : null,
+      r.notes ? h("div.pre", { style: "margin-top:10px;border-top:1px solid var(--line);padding-top:8px" }, h("b", {}, "Claude"), r.updated ? h("span.faint", {}, " · " + when(r.updated)) : null, h("b", {}, ": "), r.notes) : null,
       r.status === "Live" && r.live_url ? h("p", {}, h("a", { href: r.live_url, target: "_blank", rel: "noopener" }, "Try it on the site →")) : null),
     close,
     reopen,
