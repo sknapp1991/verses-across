@@ -29,6 +29,8 @@ h2 { font:600 20px Georgia, serif; margin:8px 0 12px; }
 h3 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); margin:22px 0 8px; }
 .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin:0 0 10px; }
 .card.tap { cursor:pointer; }
+.tap { cursor:pointer; }
+.linkish { background:none; border:0; padding:6px 2px; min-height:32px; color:var(--blue); font:inherit; font-size:13px; cursor:pointer; }
 .card.was-open { outline:2px solid var(--blue); outline-offset:2px; }
 .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .grow { flex:1; min-width:0; }
@@ -397,7 +399,29 @@ async function showRoadmap(item) {
         } }, "👍 " + (it.votes || 0)),
         h("button.btn.small", { type: "button", onclick: () => go("roadmap", it.id) }, "💬 " + (it.comments || 0))),
       it.status ? h("div.faint", { style: "margin-top:4px" }, it.status) : null,
-      h("div.muted", { style: "margin-top:4px;font-size:14px" }, it.notes.length > 260 ? it.notes.slice(0, 260) + "…" : it.notes)))]));
+      notesText(it.notes)))]));
+}
+/** A roadmap card's notes: the first lines, and a tap on the text (or "Show more") opens the rest; tap again to close. */
+function notesText(notes) {
+  const long = notes.length > 260;
+  const short = long ? notes.slice(0, 260).replace(/\s+\S*$/, "") + "…" : notes;
+  const text = h("span", {}, short);
+  const more = long ? h("button.linkish", { type: "button", "aria-expanded": "false" }, "Show more") : null;
+  const box = h("div.muted" + (long ? ".tap" : ""), { style: "margin-top:4px;font-size:14px" }, text, more ? " " : null, more);
+  if (long) {
+    const toggle = (e) => {
+      if (String(window.getSelection() || "")) return; // choosing text to copy, not tapping
+      e.stopPropagation();
+      const open = more.getAttribute("aria-expanded") !== "true";
+      text.textContent = open ? notes : short;
+      more.textContent = open ? "Show less" : "Show more";
+      more.setAttribute("aria-expanded", open ? "true" : "false");
+      // closing a long note: keep the card in view
+      if (!open) box.closest(".card")?.scrollIntoView({ block: "nearest" });
+    };
+    box.addEventListener("click", toggle);
+  }
+  return box;
 }
 async function showRoadmapItem(id) {
   const sections = await api("/api/roadmap");
