@@ -31,3 +31,8 @@ export function savePosition(chapterKey: string, verse: string) {
 export function getPosition(chapterKey: string): string | undefined {
   return read()[chapterKey];
 }
+
+/** The chapters read on this device, most recent first ("work/book/chapter"). */
+export function recentChapters(): string[] {
+  return Object.keys(read()).reverse();
+}

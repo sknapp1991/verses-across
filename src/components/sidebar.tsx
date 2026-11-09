@@ -3,6 +3,9 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
+import { recentChapters } from "@/lib/reading-position";
+import { getSettings } from "@/lib/settings";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, isLiteratureWork, readHref, type BookRef } from "@/lib/catalog";
 import { findRefs } from "@/lib/refs";
 import { DailyVerse } from "./daily-verse";
@@ -62,6 +65,26 @@ function sectionsOf(cols: Collection[]): { section?: string; cols: Collection[] 
   return out;
 }
 
+/** The last chapter read on a side (from the saved reading positions), other than the one on screen. */
+function lastRead(side: Side, now: BookRef): { ref: BookRef; title: string } | null {
+  // saved reading places (most recent first), then the open tabs (a chapter opened but not scrolled yet)
+  let tabs: string[] = [];
+  try {
+    tabs = [...getSettings().tabs].reverse();
+  } catch {
+    /* settings unavailable */
+  }
+  for (const key of [...recentChapters(), ...tabs]) {
+    const [work, book, ch] = key.split("/");
+    const chapter = Number(ch);
+    if (!work || !book || !chapter || sideOfWork(work) !== side) continue;
+    if (work === now.work && book === now.book && chapter === now.chapter) continue;
+    const item = catalog.religions.flatMap((r) => r.collections.flatMap((c) => c.items)).find((i) => i.work === work && i.id === book);
+    if (item) return { ref: { work, book, chapter }, title: chapterTitle(item, chapter) };
+  }
+  return null;
+}
+
 function whereIs(ref: BookRef) {
   for (const r of catalog.religions)
     for (const c of r.collections)
@@ -73,7 +96,18 @@ function whereIs(ref: BookRef) {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { ref, versions } = useReaderState();
+  const side = useSide();
+  const other: Side = side === "library" ? "scriptures" : "library";
+  const shelves = shelvesOf(side);
   const [query, setQuery] = useState("");
+  // The book finder looks on this side only, unless asked to look on the other one too.
+  const [bothSides, setBothSides] = useState(false);
+  // Continue reading on this side (read from this device's saved places after the page is on screen).
+  const [cont, setCont] = useState<{ ref: BookRef; title: string } | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable in the browser
+    setCont(lastRead(side, ref));
+  }, [side, ref.work, ref.book, ref.chapter]); // eslint-disable-line react-hooks/exhaustive-deps
   // User toggles override the default (which is: the path to the current book is open).
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   const activeRef = useRef<HTMLAnchorElement>(null);
@@ -107,7 +141,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     requestAnimationFrame(() => requestAnimationFrame(() => activeRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })));
   };
 
-  const isOpen = (id: string) => toggled[id] ?? currentPath.has(id);
+  // (the Library side has one shelf, Literature: open, so its sections show straight away)
+  const isOpen = (id: string) => toggled[id] ?? (currentPath.has(id) || (side === "library" && shelves.length === 1 && id === `r:${shelves[0].id}`));
   // Reading progress: chapters marked studied, per book ("work/book" → count).
   const { items: studyItems } = useStudy();
   const studiedPerBook = new Map<string, number>();
@@ -130,13 +165,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // Expand all opens every religion and collection (not every book's chapter grid);
   // collapse all closes everything, including the current book.
   const setAll = (open: boolean) => {
-    const next: Record<string, boolean> = {};
-    for (const r of catalog.religions) {
+    const next: Record<string, boolean> = { ...toggled };
+    for (const r of shelves) {
       next[`r:${r.id}`] = open;
       for (const c of r.collections) {
         if (c.section) next[`s:${r.id}/${c.section}`] = open;
         next[`c:${r.id}/${c.id}`] = open;
-        if (!open) for (const it of c.items) next[`b:${it.work}/${it.id}`] = false;
+        // collapse closes every book too; expand forgets those, so the current book opens again by default
+        for (const it of c.items) {
+          if (!open) next[`b:${it.work}/${it.id}`] = false;
+          else delete next[`b:${it.work}/${it.id}`];
+        }
       }
     }
     setToggled(next);
@@ -153,8 +192,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, []);
 
   const q = norm(query);
-  const jump = q ? (parseJump(query) ?? refJump(query, ref.work)) : null;
-  const hits = q ? ALL.filter((h) => norm(h.item.name).includes(q) || norm(h.collection.name).includes(q)) : [];
+  const anyJump = q ? (parseJump(query) ?? refJump(query, ref.work)) : null;
+  // "John 3:16" from the Library side: only with "Include the Scriptures" (otherwise it counts as a match there)
+  const jumpHere = !!anyJump && (bothSides || LIBRARY_SHELVES.has(anyJump.hit.religion.id) === (side === "library"));
+  const jump = jumpHere ? anyJump : null;
+  const hits = q ? ALL.filter((h) => (bothSides || LIBRARY_SHELVES.has(h.religion.id) === (side === "library")) && (norm(h.item.name).includes(q) || norm(h.collection.name).includes(q))) : [];
+  const elsewhere = q && !bothSides ? ALL.filter((h) => LIBRARY_SHELVES.has(h.religion.id) !== (side === "library") && (norm(h.item.name).includes(q) || norm(h.collection.name).includes(q))).length + (anyJump && !jumpHere ? 1 : 0) : 0;
 
   const href = (r: BookRef, verse?: string) => readHref(r, versions, verse);
 
@@ -214,14 +257,24 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search books, or “John 3:16”"
+            placeholder={side === "library" ? "Search the Library’s books" : "Search books, or “John 3:16”"}
             className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint md:text-sm"
           />
         </label>
       </div>
 
-      {!q && <DailyVerse versionsFor={(w) => (w === ref.work ? versions : (DEFAULT_VERSIONS[w] ?? []))} onNavigate={onNavigate} />}
-      {!q && here && (
+      {!q && side === "scriptures" && <DailyVerse versionsFor={(w) => (w === ref.work ? versions : (DEFAULT_VERSIONS[w] ?? []))} onNavigate={onNavigate} />}
+      {!q && cont && (
+        <Link
+          href={readHref(cont.ref, cont.ref.work === ref.work ? versions : (DEFAULT_VERSIONS[cont.ref.work] ?? []))}
+          onClick={onNavigate}
+          className="flex min-h-11 w-full items-center gap-1.5 border-b border-line px-4 text-left text-sm hover:bg-raised"
+        >
+          <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-faint">Continue</span>
+          <span className="min-w-0 truncate font-medium">{cont.title}</span>
+        </Link>
+      )}
+      {!q && here && sideOfWork(ref.work) === side && (
         <button
           type="button"
           onClick={showHere}
@@ -267,7 +320,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 </Link>
               </li>
             )}
-            {hits.length === 0 && !jump && <li className="px-3 py-6 text-center text-sm text-faint">No matches</li>}
+            {hits.length === 0 && !jump && <li className="px-3 py-6 text-center text-sm text-faint">No matches{side === "library" ? " in the Library" : " in the Scriptures"}</li>}
             {hits.map((h) => (
               <li key={`${h.religion.id}/${h.collection.id}/${h.item.id}`}>
                 <ItemRow
@@ -282,10 +335,17 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 />
               </li>
             ))}
+            <li className="px-1 pt-2">
+              <label className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted hover:bg-raised">
+                <input type="checkbox" checked={bothSides} onChange={(e) => setBothSides(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
+                Include the {SIDE_NAME[other]}
+                {elsewhere > 0 && <span className="text-faint">({elsewhere} {elsewhere === 1 ? "match" : "matches"} there)</span>}
+              </label>
+            </li>
           </ul>
         ) : (
           <ul className="space-y-0.5">
-            {catalog.religions.map((r) => {
+            {shelves.map((r) => {
               const rid = `r:${r.id}`;
               const available = r.collections.some((c) => c.items.some((i) => i.status !== "coming-soon"));
               return (

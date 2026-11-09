@@ -22,6 +22,7 @@ import { closeXref, XrefDockPanel } from "./xref-panel";
 import { PlansPanel } from "./plans-panel";
 import { DockPanelContext } from "./panel-header";
 import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon, UsersIcon } from "./icons";
+import { SideSwitch, SideTip } from "./side-switch";
 
 /** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"). */
 function useThemeSync() {
@@ -88,17 +89,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Tour />
       <GroupInvite />
       <InstallCard />
+      <SideTip />
 
       {toast && <Toast key={toast.id} text={toast.text} />}
 
-      <Modal open={drawerOpen} onClose={() => setDrawerOpen(false)} variant="drawer" label="Library">
+      <Modal open={drawerOpen} onClose={() => setDrawerOpen(false)} variant="drawer" label="Scriptures and Library">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
-            <h2 className="font-serif text-lg font-semibold">Library</h2>
+            {/* the drawer's title is the Scriptures | Library switch */}
+            <SideSwitch />
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}
-              aria-label="Close library"
+              aria-label="Close menu"
               className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised"
             >
               <CloseIcon />
