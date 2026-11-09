@@ -44,6 +44,7 @@ import { countOnce } from "@/lib/count";
 import { useSpeech } from "@/lib/speech";
 import { gestureLock, useChapterSwipe, useScrollIdle, type SwipeHint } from "./use-chapter-swipe";
 import { sideOfWork } from "@/lib/side";
+import { SimilarBooks } from "./similar-books";
 
 type Col = { version: Version; entry: ChapterEntry; retry: () => void };
 
@@ -646,6 +647,8 @@ export function ReaderView() {
 
       <div ref={chapterEnd} className={column ? "sticky left-0 w-[100cqw]" : ""}>
         {allLoaded && <StudiedBox bookRef={ref} title={title} />}
+        {/* the end of a Library book: books like it */}
+        {allLoaded && sideOfWork(ref.work) === "library" && ref.chapter === (findBook(ref.work, ref.book)?.chapters ?? 0) && <SimilarBooks work={ref.work} />}
         <ChapterNav prev={prev} next={next} versions={versions} />
         <Attribution versions={cols.map((c) => c.version)} />
         {!(flow && next) && <ReadAlongSpacer ra={ra} />}

@@ -5,8 +5,10 @@
  * when it is expanded, from the same cached book files the reader uses.
  */
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { catalog, findBook, getVersion, isLiteratureWork, readHref, type BookEntry } from "@/lib/catalog";
+import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
+import { catalog, DEFAULT_VERSIONS, findBook, getVersion, isLiteratureWork, readHref, type BookEntry } from "@/lib/catalog";
+import { searchLibrary, type LibraryResult } from "@/lib/library-search";
+import { sideOfWork } from "@/lib/side";
 import { fetchBook, type BookFile } from "@/lib/chapter-store";
 import { getLanguage } from "@/lib/languages";
 import { markMatches, search, suggest, type SearchResult, type VerseHit } from "@/lib/search";
@@ -27,14 +29,16 @@ type UiState = {
   allVersions: boolean;
   /** Equivalents the user switched off ("version:word"). */
   exclude: string[];
+  /** On a Library book: search every book in the Library (by chapter) instead of this one. */
+  allBooks: boolean;
 };
-let ui: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [] };
+let ui: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [], allBooks: false };
 const subs = new Set<() => void>();
 const setUi = (patch: Partial<UiState>) => {
   ui = { ...ui, ...patch };
   subs.forEach((l) => l());
 };
-const SERVER_UI: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [] };
+const SERVER_UI: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [], allBooks: false };
 
 export function useSearchUi() {
   return useSyncExternalStore(
@@ -52,6 +56,8 @@ export function openSearch(query?: string, versions?: string[]) {
   setUi({
     ...(query !== undefined ? { query } : {}),
     ...(versions ? { versions } : {}),
+    // a word double-clicked (or sent from Word study) is searched in this book
+    ...(query !== undefined || versions ? { allBooks: false } : {}),
     nonce: ui.nonce + 1,
   });
   openPanel("search");
@@ -90,8 +96,10 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
   }, [input]);
 
   // Debounced search.
+  const onLibrary = sideOfWork(ref.work) === "library";
+  const libMode = onLibrary && state.allBooks;
   const excludeKey = state.exclude.join(",");
-  const searchKey = query ? `${query}|${versionKey}|${state.crossLanguage}|${excludeKey}` : "";
+  const searchKey = query && !libMode ? `${query}|${versionKey}|${state.crossLanguage}|${excludeKey}` : "";
   useEffect(() => {
     if (!searchKey) return;
     let live = true;
@@ -117,7 +125,7 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
 
   // Completions for the word being typed (from the first selected versions).
   const lastWord = /([\p{L}\p{M}\p{N}]+)$/u.exec(input)?.[1] ?? "";
-  const suggestKey = lastWord && !input.endsWith("*") ? `${lastWord}|${versionKey}` : "";
+  const suggestKey = lastWord && !libMode && !input.endsWith("*") ? `${lastWord}|${versionKey}` : "";
   useEffect(() => {
     if (!suggestKey) return;
     let live = true;
@@ -174,12 +182,29 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             />
           </label>
         </div>
-        <VersionFilter work={work} selected={selected} perVersion={result?.perVersion} />
+        {onLibrary && (
+          <div role="radiogroup" aria-label="Search in" className="flex rounded-lg border border-line bg-raised p-0.5 text-sm">
+            {([false, true] as const).map((all) => (
+              <button
+                key={String(all)}
+                type="button"
+                role="radio"
+                aria-checked={state.allBooks === all}
+                onClick={() => setUi({ allBooks: all })}
+                className={`min-h-9 flex-1 rounded-md px-2 ${state.allBooks === all ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-ink"}`}
+              >
+                {all ? "All books in the Library" : "This book"}
+              </button>
+            ))}
+          </div>
+        )}
+        {!libMode && <VersionFilter work={work} selected={selected} perVersion={result?.perVersion} />}
       </div>
 
       {/* Everything under the "In:" line scrolls with the results, so the options and word suggestions
           don't take fixed space on a small screen. */}
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2" aria-busy={busy}>
+        {!libMode && (
         <div className="space-y-2 px-1 pb-2">
         <div className="flex flex-wrap gap-1">
           <Toggle on={state.crossLanguage} onChange={(v) => setUi({ crossLanguage: v })} title="Find the same word in the other languages (e.g. sacrifice → sacrificio)">
@@ -204,7 +229,11 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         )}
         </div>
+        )}
 
+        {libMode ? (
+          <LibraryResults query={query} onNavigate={onNavigate} />
+        ) : (
         <div aria-live="polite">
         {!query && <Help />}
         {query && error && <p className="px-3 py-6 text-center text-sm text-red-700 dark:text-red-400">{error}</p>}
@@ -265,7 +294,100 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
         )}
         {query && !result && !error && <p className="px-3 py-6 text-center text-sm text-faint">Searching…</p>}
         </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/** Results across the Library's books: books with the chapters that contain every word. */
+function LibraryResults({ query, onNavigate }: { query: string; onNavigate?: () => void }) {
+  const [got, setGot] = useState<{ q: string; result?: LibraryResult; error?: string } | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => {
+    if (!query) return;
+    let live = true;
+    const t = setTimeout(() => {
+      searchLibrary(query)
+        .then((result) => live && setGot({ q: query, result }))
+        .catch((e: Error) => live && setGot({ q: query, error: e.message }));
+    }, 300);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [query]);
+  if (!query)
+    return (
+      <div className="space-y-2 px-3 py-4 text-sm text-muted" aria-live="polite">
+        <p>Find which books mention something, e.g. <em>whale</em>, <em>lighthouse</em> or <em>dragon* gold</em>.</p>
+        <p className="text-faint">Every word must be in the same chapter. Results show each book with the chapters to open.</p>
+      </div>
+    );
+  const cur = got?.q === query ? got : null;
+  if (!cur) return <p className="px-3 py-6 text-center text-sm text-faint" aria-live="polite">Searching the Library…</p>;
+  if (cur.error) return <p className="px-3 py-6 text-center text-sm text-red-700 dark:text-red-400">{cur.error}</p>;
+  const r = cur.result!;
+  const go = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // opened in a new tab: this panel stays as it is
+    setUi({ allBooks: false }); // the chapter's own matches show in the panel
+    onNavigate?.();
+  };
+  return (
+    <div aria-live="polite" className="space-y-2 px-1">
+      <p className="px-1 text-sm text-muted">
+        {r.books.length ? (
+          <>
+            In <span className="font-semibold tabular-nums text-ink">{r.books.length.toLocaleString()}</span> {r.books.length === 1 ? "book" : "books"} (
+            {r.chapters.toLocaleString()} {r.chapters === 1 ? "chapter" : "chapters"})
+          </>
+        ) : (
+          "No book in the Library has all of these words in one chapter."
+        )}
+        {r.skipped.length > 0 && (
+          <span className="block text-xs text-faint">
+            Left out (too common, or a number): {r.skipped.join(", ")}
+          </span>
+        )}
+      </p>
+      <ul className="space-y-1.5">
+        {r.books.slice(0, 200).map((b) => {
+          const all = open === b.work;
+          const shown = all ? b.chapters : b.chapters.slice(0, 12);
+          return (
+            <li key={b.work} className="rounded-lg border border-line p-2">
+              <div className="flex items-baseline justify-between gap-2">
+                <Link href={readHref({ work: b.work, book: b.book, chapter: b.chapters[0] }, DEFAULT_VERSIONS[b.work] ?? [])} onClick={go} className="min-w-0 font-medium text-accent hover:underline">
+                  {b.title}
+                </Link>
+                <span className="shrink-0 text-xs tabular-nums text-faint">
+                  {b.chapters.length} of {b.total} ch.
+                </span>
+              </div>
+              {b.total > 1 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {shown.map((c) => (
+                    <Link
+                      key={c}
+                      href={readHref({ work: b.work, book: b.book, chapter: c }, DEFAULT_VERSIONS[b.work] ?? [])}
+                      onClick={go}
+                      className="flex min-h-8 min-w-8 items-center justify-center rounded-md border border-line px-1.5 text-xs tabular-nums hover:border-accent hover:text-accent"
+                    >
+                      {c}
+                    </Link>
+                  ))}
+                  {b.chapters.length > shown.length && (
+                    <button type="button" onClick={() => setOpen(b.work)} className="min-h-8 px-1.5 text-xs text-accent hover:underline">
+                      +{b.chapters.length - shown.length} more
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {r.books.length > 200 && <p className="px-1 text-xs text-faint">The 200 books with the most matching chapters are shown. Add a word to narrow it down.</p>}
     </div>
   );
 }

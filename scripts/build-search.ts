@@ -20,6 +20,7 @@ const SRC = path.join(ROOT, "data", "texts");
 const OUT = path.join(ROOT, "public", "search");
 const SHARD_BYTES = 150_000;
 const LIT_ONE_FILE = 2_000_000;
+const LIBRARY_SHARD_BYTES = 400_000;
 
 type Chapter = { verses: { v: string; t: string }[] };
 
@@ -140,10 +141,94 @@ async function buildVersion(work: string, version: string) {
   return { files: shards.size + 1, bytes, words: all.length, verses: ordinal };
 }
 
+/**
+ * The Library's search across all its books (public/search/_library/): which chapters of which books contain a
+ * word, for "which books mention a whale?". One index for every book on the Library side (each book's main
+ * English edition), by chapter (not paragraph, so it stays ~50 MB). Words in more than half of all chapters
+ * ("the", "and"… about 200) are left out and listed in meta.json as `common`, so the search can say so.
+ *
+ *   meta.json   { books: [work, book, title, chapters][], shards, words, common }   (chapter ordinals run book by
+ *               book, chapter by chapter, in this order)
+ *   <hex>.json  { word: [delta-encoded chapter ordinals] }
+ */
+async function buildLibrary() {
+  const { LIBRARY_SHELVES } = await import("../src/lib/side");
+  const lit = JSON.parse(await readFile(path.join(ROOT, "data", "literature-catalog.json"), "utf8")) as {
+    books: [string, string, string, number, [number, ...unknown[]][]][];
+    shelves: { id: string; collections: { books: string[] }[] }[];
+  };
+  const onLibrary = new Set(lit.shelves.filter((s) => LIBRARY_SHELVES.has(s.id)).flatMap((s) => s.collections.flatMap((c) => c.books)));
+  const postings = new Map<string, number[]>();
+  sizes.clear();
+  const books: [string, string, string, number][] = [];
+  let ordinal = 0;
+  for (const [work, book, title, chapters, eds] of lit.books) {
+    if (!onLibrary.has(work)) continue;
+    const dir = path.join(SRC, work, `pg${eds[0][0]}`, book);
+    books.push([work, book, title, chapters]);
+    for (let ch = 1; ch <= chapters; ch++, ordinal++) {
+      let c: Chapter;
+      try {
+        c = JSON.parse(await readFile(path.join(dir, `${ch}.json`), "utf8"));
+      } catch {
+        continue;
+      }
+      const seen = new Set<string>();
+      for (const v of c.verses) for (const w of words(v.t)) if (w.length >= 2 && !/^\d+$/.test(w)) seen.add(w);
+      for (const w of seen) (postings.get(w) ?? postings.set(w, []).get(w)!).push(ordinal);
+    }
+  }
+  const common: string[] = [];
+  for (const [w, list] of postings)
+    if (list.length > ordinal / 2) {
+      common.push(w);
+      postings.delete(w);
+    }
+  // Words in sorted order, cut into files of ~400 KB (about 130 files, not thousands): `shards` lists each
+  // file's first word, so the browser finds a word's file by where it sorts (file i = s<i>.json).
+  const all = [...postings.keys()].sort();
+  const dir = path.join(OUT, "_library");
+  await mkdir(dir, { recursive: true });
+  const firsts: string[] = [];
+  let bytes = 0;
+  let data: SearchShard = {};
+  let size = 0;
+  const flush = async () => {
+    if (!size) return;
+    const body = JSON.stringify(data);
+    bytes += body.length;
+    await writeFile(path.join(dir, `s${firsts.length - 1}.json`), body);
+    data = {};
+    size = 0;
+  };
+  for (const w of all) {
+    if (!size) firsts.push(w);
+    const enc = encode(postings.get(w)!);
+    data[w] = enc;
+    size += w.length + 4 + JSON.stringify(enc).length;
+    if (size >= LIBRARY_SHARD_BYTES) await flush();
+  }
+  await flush();
+  await writeFile(path.join(dir, "meta.json"), JSON.stringify({ books, shards: firsts, words: all.length, common: common.sort() }));
+  console.log(`  _library    ${String(all.length).padStart(7)} words  ${String(ordinal).padStart(6)} chapters in ${books.length} books  ${firsts.length + 1} files, ${(bytes / 1e6).toFixed(1)} MB (${common.length} common words left out)`);
+  return { files: firsts.length + 1, bytes };
+}
+
 async function main() {
+  // --library-only: just the Library's all-books index (the rest of public/search is left as it is)
+  if (process.argv.includes("--library-only")) {
+    await rm(path.join(OUT, "_library"), { recursive: true, force: true });
+    await buildLibrary();
+    return;
+  }
   await rm(OUT, { recursive: true, force: true });
   let files = 0;
   let bytes = 0;
+  {
+    const r = await buildLibrary();
+    files += r.files;
+    bytes += r.bytes;
+  }
   for (const v of catalog.versions) {
     if (!(await exists(path.join(SRC, v.work, v.id)))) continue;
     const r = await buildVersion(v.work, v.id);
