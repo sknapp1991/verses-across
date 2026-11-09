@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { openAi } from "@/lib/ai-chat";
 import { openPanel } from "@/lib/ui-store";
 import { openDownloads } from "./downloads-dialog";
-import { BookIcon, ColumnsIcon, HeadphonesIcon, LanguagesIcon, RocketIcon, SparkIcon, StarIcon, TrophyIcon } from "./icons";
+import { BookIcon, ColumnsIcon, HeadphonesIcon, LanguagesIcon, LibraryIcon, RocketIcon, SparkIcon, StarIcon, TrophyIcon } from "./icons";
 import { Modal } from "./modal";
 import { openSyncDialog } from "./sync-dialog";
 
@@ -59,6 +59,12 @@ const STEPS: Step[] = [
     title: "Scriptures side by side",
     body: "Read the Bible, Quran, Torah, Gita, Pali Canon and more, with several translations and the original language next to each other.",
     where: "Versions (at the top, or the versions chip under the chapter name on a phone) adds or removes columns. Swipe sideways for the next chapter.",
+  },
+  {
+    icon: <LibraryIcon />,
+    title: "Scriptures and Library",
+    body: "Two sides in one app: the Scriptures, and a Library of classic books (novels, poetry, drama, children's books and more). Each side keeps its own shelves and your place.",
+    where: "The Scriptures | Library switch at the top (at the top of the menu ☰ on a phone).",
   },
   {
     icon: <HeadphonesIcon />,
