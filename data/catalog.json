@@ -69,6 +69,7 @@
     { "id": "second-treatise", "name": "Second Treatise of Government", "versification": "second-treatise" },
     { "id": "social-contract", "name": "The Social Contract", "versification": "social-contract" },
     { "id": "great-learning", "name": "The Great Learning", "versification": "great-learning" },
+    { "id": "i-ching", "name": "I Ching", "versification": "i-ching" },
     { "id": "mean", "name": "The Doctrine of the Mean", "versification": "mean" },
     { "id": "vendidad", "name": "Vendidad", "versification": "vendidad" },
     { "id": "yashts", "name": "Yashts", "versification": "yashts" },
@@ -1448,6 +1449,39 @@
       "versification": "great-learning"
     },
     {
+      "id": "i-ching-zh",
+      "work": "i-ching",
+      "abbr": "Chinese",
+      "name": "周易 (Classical Chinese)",
+      "language": "zh",
+      "kind": "native",
+      "dir": "ltr",
+      "year": -800,
+      "yearNote": "Western Zhou core text (about 9th century BCE)",
+      "translator": "Original text",
+      "license": "Public Domain",
+      "attribution": "Chinese text from Wikisource, 周易 (the 易經 part of each hexagram), public domain.",
+      "sourceUrl": "https://zh.wikisource.org/wiki/周易",
+      "licensed": false,
+      "versification": "i-ching"
+    },
+    {
+      "id": "legge-ic",
+      "work": "i-ching",
+      "abbr": "Legge",
+      "name": "The Yî King (James Legge, 1882)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1882,
+      "translator": "James Legge",
+      "license": "Public Domain",
+      "attribution": "James Legge, The Sacred Books of the East vol. 16 (1882), public domain; the Text only (Legge's notes and the Appendixes left out); transcription from sacred-texts.com.",
+      "sourceUrl": "https://sacred-texts.com/book/the-i-ching",
+      "licensed": false,
+      "versification": "i-ching"
+    },
+    {
       "id": "mean-zh",
       "work": "mean",
       "abbr": "Chinese",
@@ -2287,6 +2321,13 @@
             { "id": "mencius", "name": "Mencius", "work": "mencius", "chapters": 14, "chapterName": "Mencius" },
             { "id": "great-learning", "name": "The Great Learning", "work": "great-learning", "chapters": 11, "chapterName": "Great Learning" },
             { "id": "mean", "name": "Doctrine of the Mean", "work": "mean", "chapters": 33, "chapterName": "Doctrine of the Mean" }
+          ]
+        },
+        {
+          "id": "five-classics",
+          "name": "The Five Classics",
+          "items": [
+            { "id": "i-ching", "name": "I Ching (Book of Changes)", "work": "i-ching", "chapters": 64, "chapterName": "I Ching, Hexagram" }
           ]
         }
       ]

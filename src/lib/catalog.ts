@@ -105,6 +105,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   gathas: ["mills"],
   mencius: ["ai-men", "mencius-zh"],
   "great-learning": ["legge-gl", "great-learning-zh"],
+  "i-ching": ["legge-ic", "i-ching-zh"],
   mean: ["legge-mean", "mean-zh"],
   vendidad: ["darmesteter"],
   "kant-groundwork": ["abbott-gw"],

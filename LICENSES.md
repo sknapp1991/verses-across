@@ -232,6 +232,10 @@ Sacred-texts.com now turns automated downloads away, so these come from Project 
 - **The Great Learning** and **The Doctrine of the Mean** — the Chinese in Zhu Xi's arrangement (Wikisource,
   四書章句集註, his notes left out) and James Legge's English (The Chinese Classics vol. 1, 2nd ed. 1893,
   Wikisource transcription), all public domain.
+- **I Ching (Book of Changes)** — James Legge's translation (The Sacred Books of the East vol. 16, 1882,
+  public domain), the Text only (king Wăn's judgments and the duke of Kâu's lines; Legge's notes and the
+  Appendixes left out), read from sacred-texts.com with the owner's go-ahead (Nov 2026; Wikisource has only
+  hexagrams 1–32); the Chinese 周易 (public domain) from zh.wikisource, line by line beside the English.
 - **Nihongi** — W. G. Aston's translation (1896, public domain), from the proofread Wikisource
   transcription; footnotes and marginal references left out, marginal years put at the start of paragraphs.
 - **The Avesta beyond the Gathas** — James Darmesteter's Vendidad (Sacred Books of the East 4, 1880) and
