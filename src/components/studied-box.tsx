@@ -2,14 +2,15 @@
 /** "Studied" checkbox at the end of a chapter; stores when you marked it (shown as MM/DD/YY h:mm AM). */
 import type { BookRef } from "@/lib/catalog";
 import { openFeedback } from "@/lib/feedback";
-import { formatStamp, itemId, toggle, useStudy } from "@/lib/study";
+import { formatStamp, itemId, studyAgain, timesStudied, toggle, useStudy } from "@/lib/study";
 import { toast } from "@/lib/ui-store";
-import { CheckIcon } from "./icons";
+import { CheckIcon, RepeatIcon } from "./icons";
 
 export function StudiedBox({ bookRef, title }: { bookRef: BookRef; title: string }) {
   // From the hook's snapshot (empty while the server-rendered page is taken over), so it hydrates cleanly.
   const { items } = useStudy();
   const item = items.get(itemId("studied", bookRef));
+  const times = timesStudied(item);
   return (
     <div className="mx-auto max-w-3xl px-4 pt-8 md:px-8">
       <button
@@ -32,12 +33,30 @@ export function StudiedBox({ bookRef, title }: { bookRef: BookRef; title: string
           {item && <CheckIcon width={16} height={16} strokeWidth={3} />}
         </span>
         <span className="min-w-0">
-          <span className="block font-medium">{item ? `${title} — studied` : `Mark ${title} as studied`}</span>
+          <span className="block font-medium">{item ? `${title} — studied${times > 1 ? ` ${times} times` : ""}` : `Mark ${title} as studied`}</span>
           <span className="block text-xs text-muted">
-            {item ? formatStamp(item.createdAt) : "Keeps a dated record in My Study and a ✓ in the library"}
+            {item
+              ? times > 1
+                ? `First ${formatStamp(item.createdAt)} · last ${formatStamp(item.again![item.again!.length - 1])}`
+                : formatStamp(item.createdAt)
+              : "Keeps a dated record in My Study and a ✓ in the library"}
           </span>
         </span>
       </button>
+      {item && (
+        // Read it again: counted as another time through (re-reading badges and experience), the first date kept.
+        <button
+          type="button"
+          onClick={() => {
+            const n = studyAgain(bookRef);
+            toast(`${title} studied ${n} times`);
+          }}
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line px-4 text-sm font-medium text-accent hover:border-faint"
+        >
+          <RepeatIcon width={16} height={16} aria-hidden />
+          Studied it again
+        </button>
+      )}
       {/* Feedback where a reader finishes: quiet, always there, never over the text. */}
       <p className="mt-3 text-center text-xs text-faint">
         Spotted a mistake or have an idea?{" "}

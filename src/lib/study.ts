@@ -161,6 +161,13 @@ export async function allItems(): Promise<StudyItem[]> {
  * Merge items and deletions from another device: the newer change wins.
  * Returns the merged deletion list.
  */
+/** Re-read times as stored: numbers only, not before the mark itself, each once, oldest first (at most 1,000). */
+function cleanAgain(x: unknown, since: number): number[] {
+  if (!Array.isArray(x)) return [];
+  const ok = x.filter((t): t is number => typeof t === "number" && Number.isFinite(t) && t >= (since || 0));
+  return [...new Set(ok)].sort((a, b) => a - b).slice(-1000);
+}
+
 export async function mergeFromSync(remote: StudyItem[], remoteDeleted: Record<string, number>): Promise<Record<string, number>> {
   await load();
   const deleted = { ...remoteDeleted };
@@ -169,6 +176,19 @@ export async function mergeFromSync(remote: StudyItem[], remoteDeleted: Record<s
     if (!it || !KINDS.includes(it.kind) || typeof it.id !== "string") continue;
     if ((deleted[it.id] ?? 0) >= it.updatedAt) continue;
     const mine = snap.items.get(it.id);
+    if (it.kind === "studied") {
+      const theirs = cleanAgain(it.again, it.createdAt);
+      if (theirs.length) it.again = theirs;
+      else delete it.again;
+    }
+    // Re-reads on two devices: both kept (the times, joined), whichever device saved last. Times from
+    // before the mark was made (an older mark that was undone and made again) don't come back.
+    if (mine && it.kind === "studied" && (mine.again?.length || it.again?.length)) {
+      const base = mine.updatedAt < it.updatedAt ? it : mine;
+      const again = cleanAgain([...(mine.again ?? []), ...(it.again ?? [])], base.createdAt);
+      if (again.length !== (mine.again?.length ?? 0) || base !== mine) await write({ ...base, again, updatedAt: Math.max(mine.updatedAt, it.updatedAt) }, undefined, true);
+      continue;
+    }
     if (!mine || mine.updatedAt < it.updatedAt) await write(it, undefined, true);
   }
   for (const [id, t] of Object.entries(deleted)) {
@@ -209,6 +229,19 @@ export function toggle(kind: "favorite" | "later" | "studied", r: StudyRef): boo
   else write(null, itemId(kind, r));
   return on;
 }
+
+/** Mark an already-studied chapter as studied again (a re-read). Returns how many times it's been studied. */
+export function studyAgain(r: StudyRef): number {
+  const old = getItem("studied", r);
+  if (!old) return toggle("studied", r) ? 1 : 0;
+  const now = Date.now();
+  const again = [...(old.again ?? []), now];
+  write({ ...old, again, updatedAt: now });
+  return again.length + 1;
+}
+
+/** How many times a chapter has been studied (0 = not yet). */
+export const timesStudied = (it: StudyItem | undefined) => (it ? 1 + (it.again?.length ?? 0) : 0);
 
 export function saveNote(r: StudyRef, text: string) {
   const t = text.trim();
@@ -260,10 +293,13 @@ export async function importJson(text: string): Promise<number> {
     const it = raw as StudyItem;
     if (!it || !KINDS.includes(it.kind) || typeof it.work !== "string" || typeof it.book !== "string" || !Number.isInteger(it.chapter))
       continue;
+    const createdAt = Number(it.createdAt) || Date.now();
+    const again = it.kind === "studied" ? cleanAgain(it.again, createdAt) : [];
     const clean = make(it.kind, { work: it.work, book: it.book, chapter: it.chapter, verse: it.verse ? String(it.verse) : undefined }, {
       ...(it.color ? { color: String(it.color) } : {}),
       ...(it.text ? { text: String(it.text).slice(0, 20000) } : {}),
-      createdAt: Number(it.createdAt) || Date.now(),
+      ...(again.length ? { again } : {}),
+      createdAt,
       updatedAt: Number(it.updatedAt) || Date.now(),
     });
     const old = snap.items.get(clean.id);

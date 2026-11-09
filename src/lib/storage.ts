@@ -15,6 +15,8 @@ export type StudyItem = StudyRef & {
   color?: string;
   /** note text */
   text?: string;
+  /** "studied": when it was studied again after the first time (re-reads), oldest first */
+  again?: number[];
   createdAt: number;
   updatedAt: number;
 };

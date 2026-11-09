@@ -276,7 +276,11 @@ function Row({ item, onNavigate }: { item: StudyItem; onNavigate?: () => void })
             {text}
           </span>
         )}
-        {item.kind === "studied" && <span className="mt-0.5 block text-sm text-muted">Chapter marked as studied</span>}
+        {item.kind === "studied" && (
+          <span className="mt-0.5 block text-sm text-muted">
+            {item.again?.length ? `Studied ${item.again.length + 1} times · last ${formatStamp(item.again[item.again.length - 1])}` : "Chapter marked as studied"}
+          </span>
+        )}
       </Link>
       <button
         type="button"

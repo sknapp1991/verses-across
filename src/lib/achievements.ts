@@ -14,6 +14,10 @@ export type Stats = {
   verses: number;
   chaptersRead: number;
   studied: number;
+  /** chapters studied again (each extra time counts) */
+  rereads: number;
+  /** books studied a second time from start to end */
+  booksReread: number;
   booksDone: number;
   collectionsDone: string[];
   traditions: number;
@@ -40,11 +44,17 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
   let highlights = 0;
   let favorites = 0;
   let studied = 0;
+  let rereads = 0;
+  const perBookAgain = new Map<string, number>(); // chapters of a book studied twice or more
   for (const it of items.values()) {
     if (it.kind === "studied") {
       studied++;
       perBook.set(`${it.work}/${it.book}`, (perBook.get(`${it.work}/${it.book}`) ?? 0) + 1);
       studyDays.push(dayKey(it.createdAt));
+      const again = Array.isArray(it.again) ? it.again : [];
+      rereads += again.length;
+      for (const t of again) studyDays.push(dayKey(t));
+      if (again.length) perBookAgain.set(`${it.work}/${it.book}`, (perBookAgain.get(`${it.work}/${it.book}`) ?? 0) + 1);
     } else if (it.kind === "note") notes++;
     else if (it.kind === "highlight") highlights++;
     else if (it.kind === "favorite") favorites++;
@@ -54,6 +64,12 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
     const [w, b] = k.split("/");
     const total = findBook(w, b)?.chapters ?? 0;
     if (total > 0 && n >= total) finished.add(k);
+  }
+  let booksReread = 0;
+  for (const [k, n] of perBookAgain) {
+    const [w, b] = k.split("/");
+    const total = findBook(w, b)?.chapters ?? 0;
+    if (total > 0 && n >= total) booksReread++;
   }
   const collectionsDone: string[] = [];
   for (const rel of scriptureShelves)
@@ -73,6 +89,8 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
     verses: t.verses,
     chaptersRead: t.chapters,
     studied,
+    rereads,
+    booksReread,
     booksDone: finished.size,
     collectionsDone,
     traditions: religions.size,
@@ -101,6 +119,11 @@ export const BADGES: Badge[] = [
   tier("chapters-500", "🏛️", "500 chapters", "Read 500 chapters", (s) => s.chaptersRead, 500),
   tier("chapters-1189", "🗿", "1,189 chapters", "Read 1,189 chapters (as many as the whole Bible has)", (s) => s.chaptersRead, 1189),
   tier("chapters-3000", "🌌", "3,000 chapters", "Read 3,000 chapters", (s) => s.chaptersRead, 3000),
+  // Re-reading (a studied chapter marked "Studied again")
+  tier("reread-1", "🔁", "Back again", "Study a chapter a second time (“Studied again” at the end of a chapter you’ve studied)", (s) => s.rereads, 1),
+  tier("reread-25", "🔄", "Re-reader", "Study chapters again 25 times", (s) => s.rereads, 25),
+  tier("reread-100", "♾️", "Well worn", "Study chapters again 100 times", (s) => s.rereads, 100),
+  tier("book-reread-1", "📖", "Second time through", "Study every chapter of a book a second time", (s) => s.booksReread, 1),
   // Verses
   tier("verses-100", "✨", "100 verses", "Read 100 verses", (s) => s.verses, 100),
   tier("verses-1000", "🌟", "1,000 verses", "Read 1,000 verses", (s) => s.verses, 1000),
@@ -168,6 +191,8 @@ export const XP_RULES: { label: string; xp: number; of: (s: Stats) => number }[]
   { label: "each minute reading or listening", xp: 2, of: (s) => Math.floor((s.readSecs + s.listenSecs) / 60) },
   { label: "each chapter marked as studied", xp: 25, of: (s) => s.studied },
   { label: "each book studied from start to end", xp: 250, of: (s) => s.booksDone },
+  { label: "each chapter studied again", xp: 15, of: (s) => s.rereads },
+  { label: "each book studied again from start to end", xp: 150, of: (s) => s.booksReread },
   { label: "each whole collection", xp: 1000, of: (s) => s.collectionsDone.length },
   { label: "each day of your best streak", xp: 20, of: (s) => s.bestStreak },
   { label: "each note, highlight or favorite", xp: 5, of: (s) => s.notes + s.highlights + s.favorites },

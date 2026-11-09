@@ -77,14 +77,15 @@ async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
     const a = getActivity();
     const items = await allItems();
     const map = new Map(items.map((i) => [i.id, i]));
-    const studyDays = items.filter((i) => i.kind === "studied").map((i) => dayKey(i.createdAt));
+    // each time through counts (re-reads too, as in the badges)
+    const studyDays = items.filter((i) => i.kind === "studied").flatMap((i) => [i.createdAt, ...(Array.isArray(i.again) ? i.again : [])].map((t) => dayKey(t)));
     const t = totals(a, periodStart("week"));
     const d = a.days[dayKey()];
     card.streak = streaks(a, studyDays).current;
     card.todayMins = d ? Math.round((d.r + d.l) / 60) : 0;
     card.weekMins = Math.round((t.read + t.listen) / 60);
     card.weekChapters = t.chapters;
-    card.studied = studyDays.length;
+    card.studied = items.filter((i) => i.kind === "studied").length;
     card.book = meta?.book ? bookProgress(map, meta.book.work, meta.book.book) : null;
   }
   if (g.share.reading) {

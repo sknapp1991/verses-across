@@ -41,7 +41,12 @@ export function ProgressPanel() {
   const studiedIn = useMemo(() => {
     const from = period === "all" ? "" : periodStart(period);
     let n = 0;
-    for (const it of items.values()) if (it.kind === "studied" && dayKey(it.createdAt) >= from) n++;
+    // each time through counts, re-reads too ("Studied it again")
+    for (const it of items.values())
+      if (it.kind === "studied") {
+        if (dayKey(it.createdAt) >= from) n++;
+        for (const t of Array.isArray(it.again) ? it.again : []) if (dayKey(t) >= from) n++;
+      }
     return n;
   }, [items, period]);
   const got = BADGES.filter((b) => earned(b, stats));
