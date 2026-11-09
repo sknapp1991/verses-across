@@ -12,6 +12,7 @@ import { updateSettings, useSettings } from "@/lib/settings";
 import { APPROX, lexicon, loadTags, spans, TAGGED, type LexEntry } from "@/lib/strongs";
 import { getLanguage } from "@/lib/languages";
 import { translit } from "@/lib/translit";
+import { ALPHABET_NAME, LETTER_LANGS, lettersOf } from "@/lib/alphabets";
 import { hasWords, lookupWord, type WordCard } from "@/lib/words";
 import { CloseIcon, WordsIcon } from "./icons";
 import { modeButtonClass } from "./highlight-mode";
@@ -206,7 +207,23 @@ function Say({ word, lang, given, className = "" }: { word: string; lang: string
 function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
   const e = card.entry;
   const tr = Object.entries(e.tr ?? {}).filter(([l]) => l !== lang);
-  const [han, setHan] = useState<string | null>(null);
+  // the word whose letters / characters are explained below (tap a Chinese, Russian, Greek, Hebrew or Arabic word)
+  const [spell, setSpell] = useState<{ word: string; lang: string } | null>(null);
+  const tappable = (l: string) => l === "zh" || LETTER_LANGS.has(l);
+  const spellable = (w: string, l: string) =>
+    tappable(l) ? (
+      <button
+        type="button"
+        onClick={() => setSpell(spell?.word === w && spell.lang === l ? null : { word: w, lang: l })}
+        className="underline decoration-dotted underline-offset-2"
+        aria-expanded={spell?.word === w && spell.lang === l}
+        title={l === "zh" ? "What these characters mean" : "Letter by letter"}
+      >
+        {w}
+      </button>
+    ) : (
+      <>{w}</>
+    );
   return (
     <div className="mt-2 space-y-1.5 text-sm">
       {card.archaic && (
@@ -216,7 +233,7 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
       )}
       <p className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-semibold">
-          {card.head}
+          {spellable(card.head, lang)}
           <Say word={card.head} lang={lang} />
         </span>
         {e.pos.length > 0 && <span className="italic text-muted">{e.pos.join(", ")}</span>}
@@ -249,13 +266,7 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
                 {words.slice(0, 2).map((w, i) => (
                   <span key={`${i}:${w}`}>
                     {i > 0 && ", "}
-                    {l === "zh" ? (
-                      <button type="button" onClick={() => setHan(han === w ? null : w)} className="underline decoration-dotted underline-offset-2" aria-expanded={han === w} title="What these characters mean">
-                        {w}
-                      </button>
-                    ) : (
-                      w
-                    )}
+                    {spellable(w, l)}
                     <Say word={w} lang={l} given={e.trr?.[l]?.[i]} />
                   </span>
                 ))}
@@ -264,7 +275,52 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
           })}
         </div>
       )}
-      {han && <HanChars word={han} onClose={() => setHan(null)} />}
+      {spell?.lang === "zh" && <HanChars key={spell.word} word={spell.word} onClose={() => setSpell(null)} />}
+      {spell && spell.lang !== "zh" && <Letters key={`${spell.lang}:${spell.word}`} word={spell.word} lang={spell.lang} onClose={() => setSpell(null)} />}
+    </div>
+  );
+}
+
+/** A panel that opens below the word card's chips: brought into view (a stable function, so only on opening). */
+const reveal = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+/** A Russian, Greek, Hebrew or Arabic word letter by letter: each letter's name and sound, and its marks. */
+function Letters({ word, lang, onClose }: { word: string; lang: string; onClose: () => void }) {
+  const list = lettersOf(word, lang) ?? [];
+  const rtl = lang === "he" || lang === "ar";
+  return (
+    <div ref={reveal} className="mt-1 rounded-lg border border-line bg-raised p-2 text-xs" role="region" aria-label={`The letters of ${word}`}>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="font-medium">
+          <span lang={lang} dir={rtl ? "rtl" : undefined}>
+            {word}
+          </span>
+          , letter by letter ({ALPHABET_NAME[lang]}
+          {rtl ? ", read right to left" : ""})
+        </span>
+        <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-surface">
+          <CloseIcon width={14} height={14} />
+        </button>
+      </div>
+      <ul className="space-y-1.5">
+        {list.map((x, i) => (
+          <li key={`${i}:${x.char}`} className="flex gap-2">
+            <span lang={lang} dir={rtl ? "rtl" : undefined} className="w-9 shrink-0 text-center text-2xl leading-8">
+              {x.char}
+            </span>
+            <span className="min-w-0">
+              {x.name ? <span className="font-medium">{x.name}</span> : <span className="text-muted">(not in the {ALPHABET_NAME[lang]} letter list)</span>}
+              {x.sound && <span className="block text-muted">{x.sound}</span>}
+              {x.marks.map((m) => (
+                <span key={m.name} className="block text-muted">
+                  <span className="text-ink">+ {m.name}</span>: {m.says}
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1.5 text-[11px] text-faint">Sounds are close English equivalents, a learner&apos;s guide{lang === "el" ? " (Ancient Greek as it is usually taught)" : lang === "he" ? " (modern Israeli reading)" : lang === "ar" ? " (Modern Standard Arabic)" : ""}.</p>
     </div>
   );
 }
@@ -298,7 +354,7 @@ function HanChars({ word, onClose }: { word: string; onClose: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [word]);
   return (
-    <div className="mt-1 rounded-lg border border-line bg-raised p-2 text-xs" role="region" aria-label={`The characters of ${word}`}>
+    <div ref={reveal} className="mt-1 rounded-lg border border-line bg-raised p-2 text-xs" role="region" aria-label={`The characters of ${word}`}>
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="font-medium">
           The characters of <span lang="zh">{word}</span>
