@@ -7,11 +7,12 @@
  * Keyboard: ← →, Esc; focus stays on Next. Swipe on touch screens. Respects reduced motion.
  * Replaces the old one-time "Quick tips" card (first-tips.tsx), which it marks as seen.
  */
+import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { openAi } from "@/lib/ai-chat";
 import { openPanel } from "@/lib/ui-store";
 import { openDownloads } from "./downloads-dialog";
-import { BookIcon, ColumnsIcon, HeadphonesIcon, LanguagesIcon, SparkIcon, StarIcon, TrophyIcon } from "./icons";
+import { BookIcon, ColumnsIcon, HeadphonesIcon, LanguagesIcon, RocketIcon, SparkIcon, StarIcon, TrophyIcon } from "./icons";
 import { Modal } from "./modal";
 import { openSyncDialog } from "./sync-dialog";
 
@@ -50,7 +51,7 @@ const put = (k: string, v: string) => {
   }
 };
 
-type Step = { icon: ReactNode; title: string; body: string; where: string; tryIt?: { label: string; go: () => void } };
+type Step = { icon: ReactNode; title: string; body: string; where: string; tryIt?: { label: string; go?: () => void; href?: string } };
 
 const STEPS: Step[] = [
   {
@@ -98,6 +99,13 @@ const STEPS: Step[] = [
     body: "Save any version, and its read-along audio, on this device. The size shows first, and you can delete it any time.",
     where: "Display options (or More ⋯ on a phone), then Offline downloads.",
     tryIt: { label: "Open Offline downloads", go: openDownloads },
+  },
+  {
+    icon: <RocketIcon />,
+    title: "What's coming",
+    body: "Games and quizzes on what you read, with XP and badges. Themes that follow one idea (forgiveness, suffering, creation…) across every tradition and book, turning into study guides and lesson plans. A section made for children, and teaching paths for classes from preschool to university.",
+    where: "The rocket button at the top (More ⋯ on a phone) opens the full roadmap.",
+    tryIt: { label: "See the roadmap", href: "/coming-soon" },
   },
 ];
 
@@ -180,12 +188,21 @@ export function Tour() {
             <span className="font-medium text-ink">Where: </span>
             {s.where}
           </p>
-          {s.tryIt && (
+          {s.tryIt?.href && (
+            <Link
+              href={s.tryIt.href}
+              onClick={() => close()}
+              className="flex min-h-10 items-center justify-center rounded-lg border border-accent/60 px-3 text-sm font-medium text-ink hover:bg-accent-soft"
+            >
+              {s.tryIt.label}
+            </Link>
+          )}
+          {s.tryIt?.go && (
             <button
               type="button"
               onClick={() => {
                 close();
-                s.tryIt!.go();
+                s.tryIt!.go!();
               }}
               className="min-h-10 rounded-lg border border-accent/60 px-3 text-sm font-medium text-ink hover:bg-accent-soft"
             >

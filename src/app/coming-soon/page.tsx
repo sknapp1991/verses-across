@@ -40,8 +40,9 @@ const PLANNED: { title: string; tag?: string; text: string; points?: string[] }[
     text: "Plans for the literature shelves, and short questions after a chapter to check your understanding and think about its themes.",
   },
   {
-    title: "Themes",
-    text: "Follow one theme (forgiveness, suffering, creation…) across every tradition and book.",
+    title: "Themes, study guides and lesson plans",
+    text: "Follow one theme (forgiveness, suffering, creation…) across every tradition and book, built from the cross references.",
+    points: ["A study guide for each theme: the key passages side by side, with questions", "Quizzes on a theme", "Lesson plans for a class or study group, week by week"],
   },
   {
     title: "More languages and recordings",
