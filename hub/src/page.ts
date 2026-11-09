@@ -29,6 +29,7 @@ h2 { font:600 20px Georgia, serif; margin:8px 0 12px; }
 h3 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); margin:22px 0 8px; }
 .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin:0 0 10px; }
 .card.tap { cursor:pointer; }
+.card.was-open { outline:2px solid var(--blue); outline-offset:2px; }
 .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .grow { flex:1; min-width:0; }
 .muted { color:var(--muted); } .faint { color:var(--faint); font-size:13px; }
@@ -145,7 +146,18 @@ function mediaEl(f) {
 
 /* ---------- tabs ---------- */
 const TABS = { report: showReport, inbox: showInbox, approvals: showApprovals, roadmap: showRoadmap, shipped: showShipped };
+// Back from a ticket to Tickets: return to that ticket (or where the list was), not to the top.
+let here = { tab: "", arg: "" };
+let listY = 0;
+let closedOpen = false;
+let backTo = null;
 function go(tab, arg) {
+  if (here.tab === "inbox" && !here.arg) {
+    listY = window.scrollY;
+    closedOpen = !!document.querySelector("details.closed-cases[open]");
+  }
+  backTo = tab === "inbox" && !arg && here.tab === "inbox" && here.arg ? here.arg : null;
+  here = { tab, arg: arg || "" };
   for (const b of document.querySelectorAll("nav.tabs button")) {
     if (b.dataset.tab === tab) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
@@ -154,7 +166,7 @@ function go(tab, arg) {
   if (location.hash !== hash) { skipHash = true; location.hash = hash; } // a history entry, so the phone's Back goes back
   caseOpen = tab === "inbox" && !!arg;
   show(h("p.faint", {}, "Loading…"));
-  window.scrollTo(0, 0);
+  if (!backTo) window.scrollTo(0, 0);
   (Object.hasOwn(TABS, tab) ? TABS[tab] : showReport)(arg).catch((e) => show(h("p.muted", {}, e.message)));
 }
 document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
@@ -219,7 +231,7 @@ async function showReport() {
 async function showInbox(id) {
   if (id) return showOne(id);
   const list = await api("/api/reports");
-  const card = (r) => h("div.card.tap", { onclick: () => go("inbox", r.id) },
+  const card = (r) => h("div.card.tap", { "data-id": r.id, onclick: () => go("inbox", r.id) },
     h("div.row", {}, status(r.status), h("span.faint", {}, r.type + " · " + who(r.author) + " · " + when(r.created)),
       r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null),
     h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
@@ -231,9 +243,19 @@ async function showInbox(id) {
   const past = list.filter((r) => DONE.has(r.status)).sort((a, z) => (z.updated || "").localeCompare(a.updated || ""));
   show(h("h2", {}, "Tickets"),
     open.length ? h("div", {}, open.map(card)) : h("p.muted", {}, list.length ? "Nothing open. Everything is in Cases Closed below." : "Nothing yet. Reports you send show up here with their status."),
-    past.length ? h("details.card", { style: "padding:0;border:0;background:none" },
+    past.length ? h("details.card.closed-cases", { style: "padding:0;border:0;background:none", open: closedOpen || past.some((r) => r.id === backTo) },
       h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "Cases Closed: " + past.length + " (resolved or on the roadmap)"),
       h("div", {}, past.map(card))) : null);
+  // Coming back from a ticket: that ticket in view (outlined for a moment), else where the list was.
+  if (backTo) {
+    const el = document.querySelector('[data-id="' + backTo + '"]');
+    if (el) {
+      el.scrollIntoView({ block: "center" });
+      el.classList.add("was-open");
+      setTimeout(() => el.classList.remove("was-open"), 1500);
+    } else window.scrollTo(0, listY);
+    backTo = null;
+  }
 }
 
 async function showOne(id) {
