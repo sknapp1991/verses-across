@@ -17,6 +17,8 @@ export type StudyItem = StudyRef & {
   text?: string;
   /** "studied": when it was studied again after the first time (re-reads), oldest first */
   again?: number[];
+  /** "Studied again" times taken back (Undo last), so syncing with another device doesn't bring them back. */
+  againUndone?: number[];
   createdAt: number;
   updatedAt: number;
 };

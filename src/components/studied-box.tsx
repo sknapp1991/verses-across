@@ -2,7 +2,7 @@
 /** "Studied" checkbox at the end of a chapter; stores when you marked it (shown as MM/DD/YY h:mm AM). */
 import type { BookRef } from "@/lib/catalog";
 import { openFeedback } from "@/lib/feedback";
-import { formatStamp, itemId, studyAgain, timesStudied, toggle, useStudy } from "@/lib/study";
+import { formatStamp, itemId, studyAgain, timesStudied, toggle, undoStudyAgain, useStudy } from "@/lib/study";
 import { toast } from "@/lib/ui-store";
 import { CheckIcon, RepeatIcon } from "./icons";
 
@@ -44,18 +44,34 @@ export function StudiedBox({ bookRef, title }: { bookRef: BookRef; title: string
         </span>
       </button>
       {item && (
-        // Read it again: counted as another time through (re-reading badges and experience), the first date kept.
-        <button
-          type="button"
-          onClick={() => {
-            const n = studyAgain(bookRef);
-            toast(`${title} studied ${n} times`);
-          }}
-          className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line px-4 text-sm font-medium text-accent hover:border-faint"
-        >
-          <RepeatIcon width={16} height={16} aria-hidden />
-          Studied it again
-        </button>
+        <div className="mt-2 flex gap-2">
+          {/* Read it again: counted as another time through (re-reading badges and experience), the first date kept. */}
+          <button
+            type="button"
+            onClick={() => {
+              const n = studyAgain(bookRef);
+              toast(`${title} studied ${n} times`);
+            }}
+            className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-line px-4 text-sm font-medium text-accent hover:border-faint"
+          >
+            <RepeatIcon width={16} height={16} aria-hidden />
+            Studied it again
+          </button>
+          {/* A tap too many: take back only the latest time; the first date and earlier re-reads stay. */}
+          {times > 1 && (
+            <button
+              type="button"
+              onClick={() => {
+                const n = undoStudyAgain(bookRef);
+                toast(`Took back the last one: ${title} studied ${n === 1 ? "once" : `${n} times`}`);
+              }}
+              title="Take back the most recent 'studied again' (the earlier dates stay)"
+              className="flex min-h-11 shrink-0 items-center justify-center rounded-xl border border-line px-4 text-sm text-muted hover:border-faint hover:text-ink"
+            >
+              Undo last
+            </button>
+          )}
+        </div>
       )}
       {/* Feedback where a reader finishes: quiet, always there, never over the text. */}
       <p className="mt-3 text-center text-xs text-faint">

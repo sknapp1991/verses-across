@@ -20,13 +20,15 @@ import { RedLetterToggle } from "./red-letter";
 import { WordModeToggle } from "./word-study";
 import { ProgressButton } from "./progress-button";
 import { MoreSheet } from "./more-sheet";
-import { SideSwitch } from "./side-switch";
 import { setPageWork } from "@/lib/side";
+import { noteVisit } from "@/lib/reading-position";
 
 export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const { ref, entry, versions } = useReaderState();
   // the side (Scriptures / Library) follows the work on screen
   useEffect(() => setPageWork(ref.work), [ref.work]);
+  // remembered as the last chapter opened (the Library list's "Last read")
+  useEffect(() => noteVisit(`${ref.work}/${ref.book}/${ref.chapter}`), [ref.work, ref.book, ref.chapter]);
   const { sheet } = useUi();
 
   return (
@@ -61,10 +63,8 @@ export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         {entry ? chapterTitle(entry, ref.chapter) : "Verses Across"}
       </button>
 
-      {/* Computer: the Scriptures | Library switch in the middle of the bar (a phone has it atop the menu) */}
-      <div className="hidden flex-1 justify-center desk:flex">
-        <SideSwitch />
-      </div>
+      {/* (the Scriptures | Library switch is at the top of the Library list: on a computer the left panel, on a phone the menu) */}
+      <div className="hidden flex-1 desk:block" />
 
       {/* Buttons in groups of related ones (a thin line between groups on a wide screen). */}
       <Group label="Search and study panels">

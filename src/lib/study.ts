@@ -183,10 +183,13 @@ export async function mergeFromSync(remote: StudyItem[], remoteDeleted: Record<s
     }
     // Re-reads on two devices: both kept (the times, joined), whichever device saved last. Times from
     // before the mark was made (an older mark that was undone and made again) don't come back.
-    if (mine && it.kind === "studied" && (mine.again?.length || it.again?.length)) {
+    if (mine && it.kind === "studied" && (mine.again?.length || it.again?.length || mine.againUndone?.length || it.againUndone?.length)) {
       const base = mine.updatedAt < it.updatedAt ? it : mine;
-      const again = cleanAgain([...(mine.again ?? []), ...(it.again ?? [])], base.createdAt);
-      if (again.length !== (mine.again?.length ?? 0) || base !== mine) await write({ ...base, again, updatedAt: Math.max(mine.updatedAt, it.updatedAt) }, undefined, true);
+      // times taken back on either device stay taken back
+      const undone = cleanAgain([...(mine.againUndone ?? []), ...(it.againUndone ?? [])], 0);
+      const again = cleanAgain([...(mine.again ?? []), ...(it.again ?? [])], base.createdAt).filter((t) => !undone.includes(t));
+      if (again.length !== (mine.again?.length ?? 0) || base !== mine || undone.length !== (mine.againUndone?.length ?? 0))
+        await write({ ...base, again, ...(undone.length ? { againUndone: undone } : {}), updatedAt: Math.max(mine.updatedAt, it.updatedAt) }, undefined, true);
       continue;
     }
     if (!mine || mine.updatedAt < it.updatedAt) await write(it, undefined, true);
@@ -237,6 +240,18 @@ export function studyAgain(r: StudyRef): number {
   const now = Date.now();
   const again = [...(old.again ?? []), now];
   write({ ...old, again, updatedAt: now });
+  return again.length + 1;
+}
+
+/** Take back the most recent "studied again" (a tap by mistake); the first time and earlier re-reads stay. */
+export function undoStudyAgain(r: StudyRef): number {
+  const old = getItem("studied", r);
+  if (!old?.again?.length) return timesStudied(old);
+  const again = old.again.slice(0, -1);
+  const againUndone = [...(old.againUndone ?? []), old.again[old.again.length - 1]].slice(-200);
+  const { again: _drop, ...rest } = old;
+  void _drop;
+  write({ ...rest, ...(again.length ? { again } : {}), againUndone, updatedAt: Date.now() });
   return again.length + 1;
 }
 
@@ -294,11 +309,13 @@ export async function importJson(text: string): Promise<number> {
     if (!it || !KINDS.includes(it.kind) || typeof it.work !== "string" || typeof it.book !== "string" || !Number.isInteger(it.chapter))
       continue;
     const createdAt = Number(it.createdAt) || Date.now();
-    const again = it.kind === "studied" ? cleanAgain(it.again, createdAt) : [];
+    const againUndone = it.kind === "studied" ? cleanAgain(it.againUndone, 0) : [];
+    const again = it.kind === "studied" ? cleanAgain(it.again, createdAt).filter((t) => !againUndone.includes(t)) : [];
     const clean = make(it.kind, { work: it.work, book: it.book, chapter: it.chapter, verse: it.verse ? String(it.verse) : undefined }, {
       ...(it.color ? { color: String(it.color) } : {}),
       ...(it.text ? { text: String(it.text).slice(0, 20000) } : {}),
       ...(again.length ? { again } : {}),
+      ...(againUndone.length ? { againUndone } : {}),
       createdAt,
       updatedAt: Number(it.updatedAt) || Date.now(),
     });

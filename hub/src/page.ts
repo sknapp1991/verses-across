@@ -145,9 +145,28 @@ async function uploadFiles(files, ownerKind, ownerId, onProgress) {
 function filePicker() {
   const input = h("input", { type: "file", accept: "image/*,video/*", multiple: true, class: "hidden" });
   const list = h("div.file");
-  input.addEventListener("change", () => { list.textContent = [...input.files].map((f) => f.name + " (" + Math.round(f.size / 1048576 * 10) / 10 + " MB)").join(", "); });
+  // A small preview of each photo or video picked (only on this device until it's sent), with its name and size.
+  const previews = h("div.thumbs");
+  let urls = [];
+  const draw = () => {
+    for (const u of urls) URL.revokeObjectURL(u);
+    urls = [];
+    const files = [...input.files];
+    list.textContent = files.map((f) => f.name + " (" + Math.round(f.size / 1048576 * 10) / 10 + " MB)").join(", ");
+    previews.replaceChildren(...files.map((f) => {
+      const url = URL.createObjectURL(f);
+      urls.push(url);
+      const name = h("div.faint", { style: "font-size:11px;overflow-wrap:anywhere" }, f.name);
+      // (a photo the browser can't show, like some HEIC files, shows just its name)
+      const media = (f.type || "").startsWith("video/") || /[.](mov|mp4|m4v|webm)$/i.test(f.name)
+        ? h("video", { src: url, muted: true, playsinline: true, preload: "metadata", controls: true })
+        : h("img", { src: url, alt: f.name, onerror: (e) => e.currentTarget.remove() });
+      return h("div", {}, media, name);
+    }));
+  };
+  input.addEventListener("change", draw);
   const btn = h("button.btn", { type: "button", onclick: () => input.click() }, "📎 Add photos or a screen recording");
-  return { el: h("div", {}, btn, input, list), files: () => [...input.files], clear: () => { input.value = ""; list.textContent = ""; } };
+  return { el: h("div", {}, btn, input, previews, list), files: () => [...input.files], clear: () => { input.value = ""; draw(); } };
 }
 function mediaEl(f) {
   const src = "/api/media/" + f.id;
@@ -276,6 +295,7 @@ async function showReport() {
         await uploadFiles(files, "report", id, (p) => { bar.firstChild.style.width = Math.round(p * 100) + "%"; send.textContent = "Uploading " + Math.round(p * 100) + "%"; });
       }
       toast("Sent. Claude will pick it up.");
+      picker.clear(); // (lets go of the previews)
       go("inbox", id);
     } catch (err) { toast(err.message); send.disabled = false; send.textContent = "Send"; }
   } },
@@ -412,6 +432,29 @@ function placeTicket(id) {
   setTimeout(() => { if (here.tab === "inbox" && !here.arg) put(); }, 150);
 }
 
+/** A ticket's text, with Edit for the person who sent it (or the owner): change it after sending. */
+function bodyBox(r, id) {
+  const text = h("div.pre", { style: "margin-top:8px" }, r.body);
+  const mine = ME.email !== "claude" && (r.author === ME.email || ME.owner);
+  if (!mine) return text;
+  const box = h("div", {}, text);
+  const edit = h("button.linkish", { type: "button", onclick: () => {
+    const area = h("textarea", {});
+    area.value = r.body;
+    const save = h("button.btn.primary.small", { type: "button", onclick: async () => {
+      if (!area.value.trim()) return toast("Write what it is");
+      save.disabled = true;
+      try { await post("/api/reports/" + id, { body: area.value }, "PATCH"); toast("Saved"); go("inbox", id); }
+      catch (e) { toast(e.message); save.disabled = false; }
+    } }, "Save");
+    const cancel = h("button.btn.small", { type: "button", onclick: () => box.replaceChildren(text, edit) }, "Cancel");
+    box.replaceChildren(h("label", {}, "Edit what you wrote"), area, h("div.row", { style: "margin-top:6px" }, save, cancel));
+    area.focus();
+  } }, "✎ Edit");
+  box.append(edit);
+  return box;
+}
+
 async function showOne(id) {
   const r = await api("/api/reports/" + id);
   markSeen(id, r.updated || r.created);
@@ -468,7 +511,7 @@ async function showOne(id) {
   const addFiles = h("button.btn.small", { type: "button", onclick: async () => {
     const files = picker.files(); if (!files.length) return toast("Pick a file first");
     bar.classList.remove("hidden"); addFiles.disabled = true;
-    try { await uploadFiles(files, "report", id, (p) => { bar.firstChild.style.width = Math.round(p * 100) + "%"; }); toast("Added"); go("inbox", id); }
+    try { await uploadFiles(files, "report", id, (p) => { bar.firstChild.style.width = Math.round(p * 100) + "%"; }); toast("Added"); picker.clear(); go("inbox", id); }
     catch (e) { toast(e.message); addFiles.disabled = false; }
   } }, "Upload");
 
@@ -498,7 +541,7 @@ async function showOne(id) {
         h("span.faint", {}, num(r.id) + " · " + r.type + " · " + who(r.author) + " · " + when(r.created))),
       r.place ? h("div.faint", { style: "margin-top:6px" }, "Where: " + r.place) : null,
       r.dup_of ? h("p", { style: "margin:6px 0 0" }, h("a", { href: "#inbox/" + r.dup_of }, "Same as " + num(r.dup_of) + " →")) : null,
-      h("div.pre", { style: "margin-top:8px" }, r.body),
+      bodyBox(r, id),
       r.files && r.files.length ? h("div.thumbs", {}, r.files.map(mediaEl)) : null,
       r.notes ? h("div.pre", { style: "margin-top:10px;border-top:1px solid var(--line);padding-top:8px" }, h("b", {}, "Claude"), r.updated ? h("span.faint", {}, " · " + when(r.updated)) : null, h("b", {}, ": "), r.notes) : null,
       r.status === "Live" && r.live_url ? h("p", {}, h("a", { href: r.live_url, target: "_blank", rel: "noopener" }, "Try it on the site →")) : null),
@@ -552,7 +595,7 @@ async function showApprovals() {
         const { id } = await post("/api/approvals", { kind: "clip", title: title.value, detail: detail.value });
         const files = picker.files();
         if (files.length) { bar.classList.remove("hidden"); await uploadFiles(files, "approval", id, (p) => { bar.firstChild.style.width = Math.round(p * 100) + "%"; }); }
-        toast("Added"); go("approvals");
+        toast("Added"); picker.clear(); go("approvals");
       } catch (e) { toast(e.message); b.disabled = false; }
     } }, "Add for approval");
     add = h("details.card", {}, h("summary", { class: "faint" }, "Add a clip for approval (Claude)"), h("label", {}, "Title"), title, h("label", {}, "Detail"), detail, h("label", {}, "Clip"), picker.el, bar, b);

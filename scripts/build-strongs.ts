@@ -662,6 +662,24 @@ async function pack() {
     files++;
     bytes += Buffer.byteLength(body);
   }
+  // index.json: a spelling key → the Strong's numbers it can be (most used first), for words in AI answers
+  const { wordKey } = await import("../src/lib/lexicon-key");
+  const keyed = new Map<string, [string, number][]>();
+  for (const [k, e] of Object.entries(lex))
+    for (const w of [e.translit, e.lemma]) {
+      if (!w) continue;
+      const key = wordKey(w);
+      if (key.length < 2) continue;
+      const list = keyed.get(key) ?? [];
+      if (!list.some(([n]) => n === k)) list.push([k, e.count ?? 0]);
+      keyed.set(key, list);
+    }
+  const index: Record<string, string[]> = {};
+  for (const [key, list] of keyed) index[key] = list.sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n]) => n);
+  const ibody = JSON.stringify(index);
+  await writeFile(path.join(LEX_OUT, "index.json"), ibody);
+  files++;
+  bytes += Buffer.byteLength(ibody);
   console.log(`build-strongs: ${files} files (${shards.size} lexicon shards), ${(bytes / 1e6).toFixed(1)} MB → public/strongs, public/lexicon`);
 }
 

@@ -64,7 +64,7 @@ const STEPS: Step[] = [
     icon: <LibraryIcon />,
     title: "Scriptures and Library",
     body: "Two sides in one app: the Scriptures, and a Library of classic books (novels, poetry, drama, children's books and more). Each side keeps its own shelves and your place.",
-    where: "The Scriptures | Library switch at the top (at the top of the menu ☰ on a phone).",
+    where: "The Scriptures | Library switch at the top of the Library list (the left panel; the menu ☰ on a phone).",
   },
   {
     icon: <HeadphonesIcon />,

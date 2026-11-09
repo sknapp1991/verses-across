@@ -6,6 +6,7 @@
  * Every question includes what is on screen (chapter + visible versions), and optionally a verse.
  */
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { AiWord, looksForeign } from "./ai-word";
 import {
   clearAiChat,
   closeAi,
@@ -530,29 +531,50 @@ function Rich({ text, preferWork }: { text: string; preferWork?: string }) {
   return <div className="space-y-2">{blocks}</div>;
 }
 
-/** **bold**, stray *emphasis* markers dropped, and scripture references as links. */
+/** **bold**, *emphasis* in italics, Hebrew / Greek words tappable (a word card), and scripture references as links. */
 function inlineRich(s: string, preferWork?: string): ReactNode {
   return s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
-      <strong key={i}>{linked(part.slice(2, -2), preferWork)}</strong>
+      <strong key={i}>{withWords(part.slice(2, -2), preferWork)}</strong>
     ) : (
-      <Fragment key={i}>{linked(part.replace(/(^|\s)\*([^*\s][^*]*)\*(?=\s|$|[.,;:!?])/g, "$1$2"), preferWork)}</Fragment>
+      <Fragment key={i}>{withWords(part, preferWork)}</Fragment>
     ),
   );
 }
 
-function linked(s: string, preferWork?: string): ReactNode {
+/** *italic* stretches (with what comes just before) and runs of Hebrew / Greek letters. (No lookbehind: older
+ * Safari can't parse it.) */
+const FOREIGN = /(^|[\s(“"'‘])\*([^*\s][^*]{0,60}?)\*(?=[\s.,;:!?)”"'’]|$)|([֐-׿Ͱ-Ͽἀ-῿][֐-׿Ͱ-Ͽἀ-῿̀-ͯ]*)/g;
+/** A romanized italic word worth looking up: marked like a transliteration (ḥ, ē, ʼ…), or just after the word
+ * "Hebrew", "Greek" or "Aramaic" ("the Greek *logos*"). Plain English italics (*very*, *holy*) stay italics. */
+const lookupable = (w: string, before: string) =>
+  looksForeign(w) && w.length >= 3 && (/[^\x00-\x7F]|['’]/.test(w) || /\b(Hebrew|Greek|Aramaic)\b[^.!?]{0,40}$/i.test(before));
+function withWords(s: string, preferWork?: string): ReactNode {
   const refs = findRefs(s, preferWork);
-  if (!refs.length) return s;
+  type Piece = { start: number; end: number; node: (k: number) => ReactNode };
+  const pieces: Piece[] = refs.map((r) => ({ start: r.start, end: r.end, node: (k) => <RefLink key={k} r={r} /> }));
+  const inRef = (a: number, b: number) => refs.some((r) => a < r.end && b > r.start);
+  for (const m of s.matchAll(FOREIGN)) {
+    const start = m.index + (m[1]?.length ?? 0);
+    const end = m.index + m[0].length;
+    if (inRef(start, end)) continue;
+    if (m[3]) pieces.push({ start, end, node: (k) => <AiWord key={k} word={m[3]} /> });
+    else {
+      const inner = m[2];
+      const word = !/\s/.test(inner) && lookupable(inner, s.slice(0, start));
+      pieces.push({ start, end, node: (k) => (word ? <AiWord key={k} word={inner} italic /> : <em key={k}>{inner}</em>) });
+    }
+  }
+  pieces.sort((x, y) => x.start - y.start);
   const out: ReactNode[] = [];
   let at = 0;
-  refs.forEach((r, k) => {
-    out.push(s.slice(at, r.start));
-    out.push(
-      <RefLink key={k} r={r} />,
-    );
-    at = r.end;
-  });
+  let k = 0;
+  for (const p of pieces) {
+    if (p.start < at) continue;
+    out.push(s.slice(at, p.start));
+    out.push(p.node(k++));
+    at = p.end;
+  }
   out.push(s.slice(at));
   return out;
 }

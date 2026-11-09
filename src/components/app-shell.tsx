@@ -68,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ModeBanner />
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-72 shrink-0 border-r border-line bg-panel desk:block lg:w-80">
-          <Sidebar />
+          <Sidebar showSwitch />
         </aside>
         <main className="relative min-w-0 flex-1">{children}</main>
         {wide && <Dock />}

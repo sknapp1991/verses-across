@@ -3,14 +3,15 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
+import { chooseSide, LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
+import { SideSwitch } from "./side-switch";
 import { recentChapters } from "@/lib/reading-position";
 import { getSettings } from "@/lib/settings";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, isLiteratureWork, readHref, type BookRef } from "@/lib/catalog";
 import { findRefs } from "@/lib/refs";
 import { DailyVerse } from "./daily-verse";
 import type { CatalogItem, Collection, Religion } from "@/lib/schema";
-import { ChevronDown, ChevronRight, CollapseIcon, ExpandIcon, PinIcon, SearchIcon } from "./icons";
+import { ChevronDown, ChevronRight, CloseIcon, CollapseIcon, ExpandIcon, PinIcon, SearchIcon } from "./icons";
 import { usePinch } from "./use-gestures";
 import { useReaderState } from "./use-reader-state";
 import { formatStamp, useStudy } from "@/lib/study";
@@ -28,6 +29,31 @@ const ALL: Hit[] = catalog.religions
   .flatMap((religion) => religion.collections.flatMap((collection) => collection.items.map((item) => ({ religion, collection, item }))))
   // A book on several Literature / Fiction shelves is one search result (its first shelf).
   .filter((h, i, all) => !h.item.work || all.findIndex((x) => x.item.work === h.item.work && x.item.id === h.item.id) === i);
+
+/** Who wrote (or translated) each work, for the finder: "dante" finds the Divine Comedy, "alcott" Little Women. */
+const AUTHORS = new Map<string, { names: string[]; text: string }>();
+for (const v of catalog.versions) {
+  const names: string[] = [];
+  // a Library edition is named "Title (Author)" or "Title (Author, translated by Translator)"
+  const by = isLiteratureWork(v.work) ? /\(([^()]*)\)\s*$/.exec(v.name)?.[1] : undefined;
+  if (by) names.push(...by.split(", translated by "));
+  // a scripture version: its translator(s) as written
+  else if (v.translator) names.push(v.translator);
+  const a = AUTHORS.get(v.work) ?? { names: [], text: "" };
+  for (const n of names.map((x) => x.trim()).filter(Boolean))
+    if (!a.names.includes(n)) {
+      a.names.push(n);
+      a.text += " " + norm(n);
+    }
+  AUTHORS.set(v.work, a);
+}
+/** The author or translator a search matched (shown under the book), if the match came from one. */
+function authorMatch(h: Hit, q: string): string | null {
+  const a = h.item.work ? AUTHORS.get(h.item.work) : undefined;
+  if (!a || !a.text.includes(q)) return null;
+  return a.names.find((n) => norm(n).includes(q)) ?? null;
+}
+const matches = (h: Hit, q: string) => norm(h.item.name).includes(q) || norm(h.collection.name).includes(q) || (q.length >= 3 && !!authorMatch(h, q));
 
 /** "john 3:16", "1 cor 13", "gen" → a jump target when the book is unambiguous. */
 function parseJump(q: string): { hit: Hit; chapter: number; verse?: string } | null {
@@ -94,7 +120,7 @@ function whereIs(ref: BookRef) {
   return null;
 }
 
-export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () => void; showSwitch?: boolean }) {
   const { ref, versions } = useReaderState();
   const side = useSide();
   const other: Side = side === "library" ? "scriptures" : "library";
@@ -196,8 +222,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // "John 3:16" from the Library side: only with "Include the Scriptures" (otherwise it counts as a match there)
   const jumpHere = !!anyJump && (bothSides || LIBRARY_SHELVES.has(anyJump.hit.religion.id) === (side === "library"));
   const jump = jumpHere ? anyJump : null;
-  const hits = q ? ALL.filter((h) => (bothSides || LIBRARY_SHELVES.has(h.religion.id) === (side === "library")) && (norm(h.item.name).includes(q) || norm(h.collection.name).includes(q))) : [];
-  const elsewhere = q && !bothSides ? ALL.filter((h) => LIBRARY_SHELVES.has(h.religion.id) !== (side === "library") && (norm(h.item.name).includes(q) || norm(h.collection.name).includes(q))).length + (anyJump && !jumpHere ? 1 : 0) : 0;
+  const hits = q ? ALL.filter((h) => (bothSides || LIBRARY_SHELVES.has(h.religion.id) === (side === "library")) && matches(h, q)) : [];
+  const elsewhere = q && !bothSides ? ALL.filter((h) => LIBRARY_SHELVES.has(h.religion.id) !== (side === "library") && matches(h, q)).length + (anyJump && !jumpHere ? 1 : 0) : 0;
 
   const href = (r: BookRef, verse?: string) => readHref(r, versions, verse);
 
@@ -249,6 +275,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav aria-label="Library" className="flex h-full min-h-0 flex-col">
+      {/* Computer: the Scriptures | Library switch heads the list (a phone has it as the menu's title) */}
+      {showSwitch && (
+        <div className="flex justify-center border-b border-line px-3 pb-2 pt-3">
+          <SideSwitch />
+        </div>
+      )}
       <div className="border-b border-line p-3">
         <label className="flex h-11 items-center gap-2 rounded-lg border border-line bg-raised px-3 focus-within:ring-2 focus-within:ring-accent/50">
           <SearchIcon className="shrink-0 text-faint" width={18} height={18} />
@@ -257,9 +289,20 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={side === "library" ? "Search the Library’s books" : "Search books, or “John 3:16”"}
-            className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint md:text-sm"
+            placeholder={side === "library" ? "Search books or authors" : "Search books, or “John 3:16”"}
+            className="min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-faint md:text-sm [&::-webkit-search-cancel-button]:hidden"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear the search"
+              title="Clear"
+              className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted hover:bg-panel hover:text-ink"
+            >
+              <CloseIcon width={16} height={16} />
+            </button>
+          )}
         </label>
       </div>
 
@@ -268,22 +311,26 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Link
           href={readHref(cont.ref, cont.ref.work === ref.work ? versions : (DEFAULT_VERSIONS[cont.ref.work] ?? []))}
           onClick={onNavigate}
+          title={`The chapter you had open before this one on the ${side === "library" ? "Library" : "Scriptures"} side`}
           className="flex min-h-11 w-full items-center gap-1.5 border-b border-line px-4 text-left text-sm hover:bg-raised"
         >
-          <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-faint">Continue</span>
+          <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-faint">Last read</span>
           <span className="min-w-0 truncate font-medium">{cont.title}</span>
         </Link>
       )}
-      {!q && here && sideOfWork(ref.work) === side && (
+      {!q && here && (
         <button
           type="button"
-          onClick={showHere}
+          onClick={() => {
+            if (sideOfWork(ref.work) !== side) chooseSide(sideOfWork(ref.work));
+            showHere();
+          }}
           title="Show where I am in the list"
           className="flex min-h-9 w-full items-center gap-1.5 border-b border-line px-4 text-left text-xs font-medium text-accent hover:bg-raised"
         >
           <PinIcon width={14} height={14} className="shrink-0" />
           <span className="min-w-0 truncate">
-            {[here.religion, here.section, here.collection, here.chapter].filter(Boolean).join(" › ")}
+            {[sideOfWork(ref.work) === "library" ? "Library" : "Scriptures", here.religion, here.section, here.collection, here.chapter].filter(Boolean).join(" › ")}
           </span>
         </button>
       )}
@@ -325,7 +372,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               <li key={`${h.religion.id}/${h.collection.id}/${h.item.id}`}>
                 <ItemRow
                   item={h.item}
-                  sub={`${h.religion.name} · ${h.collection.name}`}
+                  sub={[authorMatch(h, q), h.religion.name, h.collection.name].filter(Boolean).join(" · ")}
                   open={isOpen(`b:${h.item.work}/${h.item.id}`)}
                   onToggle={() => toggle(`b:${h.item.work}/${h.item.id}`)}
                   current={ref}

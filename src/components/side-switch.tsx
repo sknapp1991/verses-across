@@ -1,6 +1,6 @@
 "use client";
 /**
- * The "Scriptures | Library" switch (top bar on a computer, the top of the side drawer on a phone) and its
+ * The "Scriptures | Library" switch (the top of the Library list: the left panel on a computer, the menu on a phone) and its
  * one-time explainer. See src/lib/side.ts for how the side is chosen and when the explainer may show.
  */
 import { useEffect, useState } from "react";
@@ -72,8 +72,9 @@ export function SideTip() {
           <p className="mt-1 text-sm text-muted">
             Verses Across has two sides now. <strong className="text-ink">Scriptures</strong> holds every tradition&apos;s texts.{" "}
             <strong className="text-ink">Library</strong> holds the classic books: fiction, poetry, drama, children&apos;s books, freethought and more. Switch between
-            them at the top
-            <span className="desk:hidden"> of the menu (☰)</span>. Each side keeps its own shelves and your place.
+            them at the top of the Library list
+            <span className="desk:hidden"> (the menu ☰)</span>
+            <span className="hidden desk:inline"> on the left</span>. Each side keeps its own shelves and your place.
           </p>
         </div>
         <button type="button" onClick={close} aria-label="Close" className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-raised">

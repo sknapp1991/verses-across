@@ -15,6 +15,7 @@ import { translit } from "@/lib/translit";
 import { ALPHABET_NAME, LETTER_LANGS, lettersOf } from "@/lib/alphabets";
 import { hasWords, lookupWord, type WordCard } from "@/lib/words";
 import { CloseIcon, WordsIcon } from "./icons";
+import { SayAloud } from "./say-aloud";
 import { modeButtonClass } from "./highlight-mode";
 import { openSearch } from "./search-panel";
 
@@ -275,8 +276,10 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
           })}
         </div>
       )}
-      {spell?.lang === "zh" && <HanChars key={spell.word} word={spell.word} onClose={() => setSpell(null)} />}
-      {spell && spell.lang !== "zh" && <Letters key={`${spell.lang}:${spell.word}`} word={spell.word} lang={spell.lang} onClose={() => setSpell(null)} />}
+      {spell?.lang === "zh" && <HanChars key={spell.word} word={spell.word} english={lang === "en" ? card.head : null} onClose={() => setSpell(null)} />}
+      {spell && spell.lang !== "zh" && (
+        <Letters key={`${spell.lang}:${spell.word}`} word={spell.word} lang={spell.lang} english={lang === "en" ? card.head : null} onClose={() => setSpell(null)} />
+      )}
     </div>
   );
 }
@@ -285,7 +288,7 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
 const reveal = (el: HTMLElement | null) => el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
 /** A Russian, Greek, Hebrew or Arabic word letter by letter: each letter's name and sound, and its marks. */
-function Letters({ word, lang, onClose }: { word: string; lang: string; onClose: () => void }) {
+function Letters({ word, lang, english, onClose }: { word: string; lang: string; english?: string | null; onClose: () => void }) {
   const list = lettersOf(word, lang) ?? [];
   const rtl = lang === "he" || lang === "ar";
   return (
@@ -302,6 +305,9 @@ function Letters({ word, lang, onClose }: { word: string; lang: string; onClose:
           <CloseIcon width={14} height={14} />
         </button>
       </div>
+      <p className="mb-2">
+        <SayAloud word={word} lang={lang} romanized={translit(word, lang)} english={english} />
+      </p>
       <ul className="space-y-1.5">
         {list.map((x, i) => (
           <li key={`${i}:${x.char}`} className="flex gap-2">
@@ -341,7 +347,7 @@ function hanPart(c: string) {
     );
   return hanParts.get(i)!;
 }
-function HanChars({ word, onClose }: { word: string; onClose: () => void }) {
+function HanChars({ word, english, onClose }: { word: string; english?: string | null; onClose: () => void }) {
   const chars = [...word].filter((c) => /\p{Script=Han}/u.test(c));
   const [info, setInfo] = useState<{ word: string; list: ({ p: string[]; d: string[] } | undefined)[] } | null>(null);
   useEffect(() => {
@@ -363,6 +369,9 @@ function HanChars({ word, onClose }: { word: string; onClose: () => void }) {
           <CloseIcon width={14} height={14} />
         </button>
       </div>
+      <p className="mb-2">
+        <SayAloud word={word} lang="zh" romanized={translit(word, "zh")} english={english} />
+      </p>
       {info?.word !== word ? (
         <p className="text-muted">Looking up…</p>
       ) : (

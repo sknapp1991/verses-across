@@ -32,7 +32,25 @@ export function getPosition(chapterKey: string): string | undefined {
   return read()[chapterKey];
 }
 
-/** The chapters read on this device, most recent first ("work/book/chapter"). */
+const VISITS = "gs:visits:v1";
+/** A chapter was opened (not only scrolled): remembered as the most recent, 40 kept. */
+export function noteVisit(chapterKey: string) {
+  try {
+    const list = (JSON.parse(localStorage.getItem(VISITS) || "[]") as string[]).filter((k) => k !== chapterKey);
+    list.unshift(chapterKey);
+    localStorage.setItem(VISITS, JSON.stringify(list.slice(0, 40)));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** The chapters read on this device, most recent first ("work/book/chapter"): those opened, then older reading places. */
 export function recentChapters(): string[] {
-  return Object.keys(read()).reverse();
+  let visits: string[] = [];
+  try {
+    visits = JSON.parse(localStorage.getItem(VISITS) || "[]") as string[];
+  } catch {
+    /* storage unavailable */
+  }
+  return [...new Set([...visits, ...Object.keys(read()).reverse()])];
 }
