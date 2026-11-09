@@ -11,7 +11,8 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { selectXref, useUi } from "@/lib/ui-store";
 import { useReaderState } from "./use-reader-state";
 import { askAboutVerse, sendAi, useAiChat } from "@/lib/ai-chat";
-import { BOOK_SHELVES, catalog, chapterTitle, isLiteratureWork, scriptureShelves, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
+import { LIBRARY_SHELVES, shelvesOf, sideOfWork } from "@/lib/side";
+import { BOOK_SHELVES, catalog, chapterTitle, isLiteratureWork, DEFAULT_VERSIONS, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { CloseIcon, SparkIcon } from "./icons";
@@ -235,23 +236,50 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
   const own = religionOf(bookRef.work, bookRef.book);
   // (a book shelf by reference too: Paine on the Freethought shelf)
   const book = isLiteratureWork(bookRef.work) || (!!own && BOOK_SHELVES.has(own.id));
-  const others = scriptureShelves.filter((r) => r.id !== own?.id);
+  // the Scriptures side's shelves (with Philosophy and Freethought), the page's own one left out
+  const others = shelvesOf("scriptures").filter((r) => r.id !== own?.id);
   const hits = data?.k === key ? data.hits : null;
+  // Scriptures | Library: the page's own side first; the other side's matches only when asked.
+  const pageSide = sideOfWork(bookRef.work);
+  const showScriptures = pageSide === "scriptures" || settings.xrefOtherSide;
+  const showLibrary = pageSide === "library" || settings.xrefOtherSide;
   const groups = useMemo(() => {
     if (!hits) return [];
-    // A Literature / Fiction book: its matches are all scripture (one way), shown for every religion.
+    const per = sel.length > 1 ? 8 : 6;
+    // A book: every religion with a match. A scripture: the religions ticked in "Look in".
     const want = book
-      ? others.map((r) => r.id)
+      ? [...(own && !LIBRARY_SHELVES.has(own.id) ? [own.id] : []), ...others.map((r) => r.id)]
       : [...(settings.xrefSame && own ? [own.id] : []), ...others.map((r) => r.id).filter((id) => settings.xrefOthers.includes(id))];
-    return want
-      .map((id) => ({
-        religion: catalog.religions.find((r) => r.id === id)!,
-        hits: hits.filter((h) => religionOf(h.work, h.book)?.id === id).slice(0, sel.length > 1 ? 8 : 6),
-      }))
-      .filter((g) => g.religion && (!book || g.hits.length > 0)); // a book: only the religions with a match
+    const scripture = !showScriptures
+      ? []
+      : want
+          .map((id) => ({
+            religion: catalog.religions.find((r) => r.id === id)!,
+            hits: hits.filter((h) => sideOfWork(h.work) === "scriptures" && religionOf(h.work, h.book)?.id === id).slice(0, per),
+          }))
+          .filter((g) => g.religion && (!book || g.hits.length > 0)); // a book: only the religions with a match
+    const library = !showLibrary
+      ? []
+      : shelvesOf("library")
+          .map((r) => ({ religion: r, hits: hits.filter((h) => sideOfWork(h.work) === "library").slice(0, per) }))
+          .filter((g) => g.hits.length > 0);
+    return pageSide === "library" ? [...library, ...scripture] : [...scripture, ...library];
     // others is derived from own
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hits, settings.xrefSame, settings.xrefOthers, own?.id, book]);
+  }, [hits, settings.xrefSame, settings.xrefOthers, own?.id, book, showScriptures, showLibrary, pageSide]);
+  const otherSide = pageSide === "library" ? "Scriptures" : "Library";
+  const otherSwitch = (
+    <label className="-mx-3 flex min-h-10 items-center gap-2 border-b border-line px-3 text-xs text-muted">
+      <input
+        type="checkbox"
+        checked={settings.xrefOtherSide}
+        onChange={(e) => updateSettings({ xrefOtherSide: e.target.checked })}
+        className="h-4 w-4 accent-[var(--accent)]"
+      />
+      Include the {otherSide}
+      <span className="text-faint">{pageSide === "library" ? "(the world’s scriptures)" : "(classic books: fiction, poetry, drama…)"}</span>
+    </label>
+  );
 
   const [lookOpen, setLookOpen] = useState(false);
   const lookingIn = [...(settings.xrefSame && own ? [own.name] : []), ...others.filter((r) => settings.xrefOthers.includes(r.id)).map((r) => r.name)];
@@ -303,7 +331,9 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
         {/* Which religions to look in: one line until opened (the full list of 20 would fill a phone's sheet).
             A book of literature always looks in every scripture, so it has none. */}
         {book ? (
-          <p className="-mx-3 -mt-2 border-b border-line px-3 py-2 text-xs text-muted">Related passages in the world’s scriptures</p>
+          <p className="-mx-3 -mt-2 border-b border-line px-3 py-2 text-xs text-muted">
+            {pageSide === "library" ? "Related passages in other books" : "Related passages in the world’s scriptures and other books"}
+          </p>
         ) : (
         <div className="-mx-3 -mt-2 border-b border-line px-3 py-2 text-xs">
           {!lookOpen ? (
@@ -357,14 +387,27 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
           )}
         </div>
         )}
+        {otherSwitch}
         {!verse ? (
           <p className="text-muted">
-            {book ? "Tap a paragraph to see the scripture passages closest to it in meaning." : "Tap a verse (or several) to see the verses most like it. Use “Change” above to look across other religions."}
+            {pageSide === "library"
+              ? "Tap a paragraph to see the passages in other books closest to it in meaning."
+              : book
+                ? "Tap a paragraph to see the scripture passages closest to it in meaning."
+                : "Tap a verse (or several) to see the verses most like it. Use “Change” above to look across other religions."}
           </p>
         ) : !hits ? (
           <p className="animate-pulse text-muted">Loading…</p>
         ) : !groups.length ? (
-          <p className="text-muted">{book ? "No close match in scripture for this paragraph." : "Tick at least one religion (“Change” above)."}</p>
+          <p className="text-muted">
+            {pageSide === "library"
+              ? settings.xrefOtherSide
+                ? "No close match for this paragraph."
+                : "No close match in the Library for this paragraph. Try “Include the Scriptures” above."
+              : book
+                ? "No close match for this paragraph."
+                : "Tick at least one religion (“Change” above)."}
+          </p>
         ) : (
           groups.map((g) => (
             <div key={g.religion.id}>

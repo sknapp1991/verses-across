@@ -163,11 +163,18 @@ def main():
     literature(emb, refs, dev)
 
 
-# Literature (the Literature and Fiction shelves, works "lit-*"): one way only. A paragraph of a novel shows the
-# scripture passages closest to it; scripture never lists novels. Short paragraphs (dialogue lines) are skipped.
+# Books (works "lit-*": the Library's Literature, and Freethought's books): a paragraph shows the scripture
+# passages closest to it, and (since the Scriptures | Library split, Nov 9) the closest paragraphs in other books;
+# a scripture verse shows the closest book paragraphs too. The reader shows its own side first and the other side
+# when asked ("Include the Library / the Scriptures"). Short paragraphs (dialogue lines) are skipped.
 LIT_K = 8
 LIT_MIN_LEN = 200
 LIT_MIN_SCORE = 0.58
+LITLIT_K = 6  # a paragraph's closest paragraphs in other books
+LITLIT_MIN_SCORE = 0.62
+SCRIP_LIT_K = 4  # a verse's closest book paragraphs
+SCRIP_LIT_MIN_SCORE = 0.58
+LIT_CACHE = os.path.join(ROOT, "data", "raw", "xref-lit-embeddings.pt")
 
 
 def literature(emb, refs, dev):
@@ -198,6 +205,17 @@ def literature(emb, refs, dev):
     print(f"literature: {len(lrefs)} paragraphs")
     if not lrefs:
         return
+    import hashlib
+
+    sig = hashlib.sha1("|".join(f"{w}/{b}/{c}:{v}:{len(t)}" for (w, b, c, v), t in zip(lrefs, ltexts)).encode()).hexdigest()
+    if os.path.exists(LIT_CACHE):
+        cached = torch.load(LIT_CACHE)
+        if cached.get("sig") == sig:
+            print("literature: embeddings from cache")
+            lemb = cached["emb"]
+            del cached
+            return literature_match(emb, refs, dev, lrefs, lemb)
+        del cached
     model = SentenceTransformer(MODEL, device=dev)
     if dev == "cuda":
         model.half()
@@ -208,9 +226,17 @@ def literature(emb, refs, dev):
     lemb = torch.empty_like(e)
     lemb[torch.tensor(order)] = e  # back in reading order (on the CPU: the GPU has 8 GB)
     del e
+    torch.save({"sig": sig, "emb": lemb.half()}, LIT_CACHE)
+    return literature_match(emb, refs, dev, lrefs, lemb)
+
+
+def literature_match(emb, refs, dev, lrefs, lemb):
     if dev == "cuda":
         torch.cuda.empty_cache()
     lemb = lemb.half().to(dev) if dev == "cuda" else lemb.float()
+    lname = lambda j: f"{lrefs[j][0]}/{lrefs[j][1]}/{lrefs[j][2]}:{lrefs[j][3]}"
+    lwork = [r[0] for r in lrefs]
+    book_works = set(lwork)
     files = defaultdict(dict)
     chunk = 1024
     for s in range(0, len(lrefs), chunk):
@@ -222,6 +248,51 @@ def literature(emb, refs, dev):
             if hits:
                 w, b, c, v = lrefs[s + row]
                 files[(w, b)][f"{c}:{v}"] = hits
+    # book → book: the closest paragraphs in other books (not the same work)
+    n_ll = 0
+    for s in range(0, len(lrefs), chunk):
+        sims = lemb[s : s + chunk] @ lemb.T
+        val, pos = sims.topk(LITLIT_K + 40, dim=1)
+        val, pos = val.float().cpu().tolist(), pos.cpu().tolist()
+        for row in range(len(val)):
+            i = s + row
+            got = []
+            for sc, j in zip(val[row], pos[row]):
+                if sc < LITLIT_MIN_SCORE or len(got) >= LITLIT_K:
+                    break
+                if lwork[j] == lwork[i]:
+                    continue
+                got.append([lname(j), round(sc * 100)])
+            if got:
+                w, b, c, v = lrefs[i]
+                files[(w, b)].setdefault(f"{c}:{v}", []).extend(got)
+                n_ll += len(got)
+        if (s // chunk) % 100 == 0:
+            print(f"  book→book {s}/{len(lrefs)}", flush=True)
+    print(f"literature: {n_ll} book→book matches")
+    # scripture → book: each verse's closest book paragraphs, added to the scripture files
+    scrip = defaultdict(dict)
+    n_sl = 0
+    for s in range(0, len(refs), chunk):
+        sims = emb[s : s + chunk] @ lemb.T
+        val, pos = sims.topk(SCRIP_LIT_K, dim=1)
+        val, pos = val.float().cpu().tolist(), pos.cpu().tolist()
+        for row in range(len(val)):
+            got = [[lname(j), round(sc * 100)] for sc, j in zip(val[row], pos[row]) if sc >= SCRIP_LIT_MIN_SCORE]
+            if got:
+                w, b, c, v = refs[s + row]
+                scrip[(w, b)][f"{c}:{v}"] = got
+                n_sl += len(got)
+    for (w, b), add in scrip.items():
+        p = os.path.join(OUT, w, f"{b}.json")
+        data = json.load(open(p, encoding="utf8")) if os.path.exists(p) else {}
+        for k, lst in add.items():
+            old = [x for x in data.get(k, []) if x[0].split("/")[0] not in book_works]  # (a re-run replaces, not doubles)
+            data[k] = old + lst
+        os.makedirs(os.path.join(OUT, w), exist_ok=True)
+        with open(p, "w", encoding="utf8") as fh:
+            json.dump(data, fh, separators=(",", ":"), ensure_ascii=False)
+    print(f"literature: {n_sl} scripture→book matches in {len(scrip)} scripture files")
     total = 0
     for (w, b), data in files.items():
         os.makedirs(os.path.join(OUT, w), exist_ok=True)

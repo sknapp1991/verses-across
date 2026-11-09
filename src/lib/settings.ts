@@ -80,6 +80,8 @@ export type Settings = {
   /** Desktop: width of the My Study / Search panel in px (null = default). */
   panelWidth: number | null;
   xrefSame: boolean;
+  /** Cross references: also show the other side's (the Library's on a scripture, the Scriptures' on a book). */
+  xrefOtherSide: boolean;
   /** Words of Jesus in red (versions that mark them). */
   redLetter: boolean;
   xrefOthers: string[];
@@ -87,6 +89,8 @@ export type Settings = {
   chapterSwipe: "one" | "two" | "off";
   /** Continuous scroll: the next chapter follows below; scrolling into it moves on to it. */
   continuousScroll: boolean;
+  /** The Library's books read as one long scroll (the next chapter follows below); on by default, its own switch. */
+  continuousLibrary: boolean;
   /** Continuous scroll: a chapter scrolled past on into the next one is marked as studied. */
   autoStudied: boolean;
   /** Floating ‹ › chapter buttons (fade while scrolling). */
@@ -154,10 +158,12 @@ const DEFAULTS: Settings = {
   xrefMode: false,
   panelWidth: null,
   xrefSame: true,
+  xrefOtherSide: false,
   redLetter: false,
   xrefOthers: [],
   chapterSwipe: "one",
   continuousScroll: false,
+  continuousLibrary: true,
   autoStudied: true,
   floatingNav: true,
   textAlign: "start",
@@ -207,10 +213,12 @@ function read(): Settings {
       xrefMode: (p as { xrefMode?: unknown }).xrefMode === true,
       panelWidth: typeof (p as { panelWidth?: unknown }).panelWidth === "number" ? (p as { panelWidth: number }).panelWidth : null,
       xrefSame: (p as { xrefSame?: unknown }).xrefSame !== false,
+      xrefOtherSide: (p as { xrefOtherSide?: unknown }).xrefOtherSide === true,
       redLetter: (p as { redLetter?: unknown }).redLetter === true,
       xrefOthers: Array.isArray((p as { xrefOthers?: unknown }).xrefOthers) ? ((p as { xrefOthers: unknown[] }).xrefOthers.filter((x) => typeof x === "string") as string[]) : [],
       chapterSwipe: p.chapterSwipe === "two" || p.chapterSwipe === "off" ? p.chapterSwipe : "one",
       continuousScroll: (p as { continuousScroll?: unknown }).continuousScroll === true,
+      continuousLibrary: (p as { continuousLibrary?: unknown }).continuousLibrary !== false,
       autoStudied: (p as { autoStudied?: unknown }).autoStudied !== false,
       floatingNav: p.floatingNav !== false,
       textAlign: (["center", "end", "justify"] as const).find((x) => x === (p as { textAlign?: unknown }).textAlign) ?? "start",
@@ -235,7 +243,7 @@ export function getSettings(): Settings {
 }
 
 /** Settings that follow you to other devices with sync (sizes and layout stay per device). */
-export const SYNCED_SETTINGS = ["versions", "setups", "activeSetup", "palette", "versionColors", "langColors", "redLetter", "levelMarks", "highlightColor", "theme", "xrefOthers", "ttsMix", "ttsMixOrder", "ttsRecorded"] as const;
+export const SYNCED_SETTINGS = ["versions", "setups", "activeSetup", "palette", "versionColors", "langColors", "redLetter", "levelMarks", "highlightColor", "theme", "xrefOthers", "xrefOtherSide", "ttsMix", "ttsMixOrder", "ttsRecorded"] as const;
 
 export function updateSettings(patch: Partial<Settings>, fromSync = false) {
   current = { ...snapshot(), ...patch };
