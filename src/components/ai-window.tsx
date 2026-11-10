@@ -436,7 +436,7 @@ export function AiWindow() {
               aria-label="AI model"
               value={chat.provider}
               onChange={(e) => setAiProvider(e.target.value as typeof chat.provider)}
-              className="h-7 rounded border border-line bg-raised px-1 text-[11px] text-ink"
+              className="h-7 max-w-full rounded border border-line bg-raised px-1 text-[11px] text-ink"
             >
               {chat.providers.map((p) => (
                 <option key={p} value={p}>

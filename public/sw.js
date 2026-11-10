@@ -40,16 +40,21 @@ async function staleWhileRevalidate(event, cacheName = DATA) {
   const savedHit = new URL(req.url).pathname.startsWith("/texts/") ? await saved.match(req) : undefined;
   const hit = savedHit || (await cache.match(req));
   const net = fetch(req)
-    .then(async (res) => {
+    .then((res) => {
       if (res.ok && res.status === 200) {
         // A downloaded file stays in the downloads cache (refreshed there); others go to the general one.
-        await (savedHit ? saved : cache).put(req, res.clone());
+        // Saved in the background: the page gets the file as it arrives, not after it's been stored
+        // (iPhones are slow to write the cache).
+        event.waitUntil((savedHit ? saved : cache).put(req, res.clone()).catch(() => {}));
       }
       return res;
     })
     .catch(() => null);
-  if (hit) event.waitUntil(net); // let the background refresh finish even if the page is done with us
-  return hit || (await net) || new Response("Offline", { status: 503 });
+  if (hit) {
+    event.waitUntil(net); // let the background refresh finish even if the page is done with us
+    return hit;
+  }
+  return (await net) || new Response("Offline", { status: 503 });
 }
 
 /**
@@ -57,7 +62,8 @@ async function staleWhileRevalidate(event, cacheName = DATA) {
  * router payload gets its own key via a query flag (the Cache API ignores URL fragments, so "#rsc"
  * would collide with the HTML entry).
  */
-async function networkFirst(req, url) {
+async function networkFirst(event, url) {
+  const req = event.request;
   const key = new URL(url);
   key.searchParams.delete("_rsc");
   if (req.headers.get("RSC")) key.searchParams.set("_rsc", "1");
@@ -66,9 +72,16 @@ async function networkFirst(req, url) {
   try {
     const res = await fetch(req);
     if (res.ok && res.status === 200) {
-      await cache.put(cacheKey, res.clone());
-      const keys = await cache.keys();
-      for (const k of keys.slice(0, Math.max(0, keys.length - MAX_PAGES))) await cache.delete(k);
+      // The page streams in right away; its offline copy is saved (and old ones trimmed) in the background.
+      // Before, the page waited until it was fully downloaded and stored, slow on iPhones.
+      const copy = res.clone();
+      event.waitUntil(
+        (async () => {
+          await cache.put(cacheKey, copy);
+          const keys = await cache.keys();
+          for (const k of keys.slice(0, Math.max(0, keys.length - MAX_PAGES))) await cache.delete(k);
+        })().catch(() => {}),
+      );
     }
     return res;
   } catch (e) {
@@ -126,5 +139,5 @@ self.addEventListener("fetch", (event) => {
   if (isData(p)) return event.respondWith(staleWhileRevalidate(event));
   // Prefetches carry a partial payload: never cache (or serve) them as the page.
   if (req.headers.get("Next-Router-Prefetch") || req.headers.get("Next-Router-Segment-Prefetch")) return;
-  if (req.mode === "navigate" || req.headers.get("RSC")) return event.respondWith(networkFirst(req, url));
+  if (req.mode === "navigate" || req.headers.get("RSC")) return event.respondWith(networkFirst(event, url));
 });

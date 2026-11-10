@@ -87,10 +87,16 @@ export function useVoices(): SpeechSynthesisVoice[] {
       if (!speechSupported()) return () => {};
       voiceSubs.add(l);
       if (!voices.length) loadVoices();
-      window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+      // Safari 15 (iOS 15): speechSynthesis has no addEventListener, and calling it took the whole page down.
+      const synth = window.speechSynthesis;
+      const evented = typeof synth.addEventListener === "function";
+      if (evented) synth.addEventListener("voiceschanged", loadVoices);
+      else synth.onvoiceschanged = loadVoices;
       return () => {
         voiceSubs.delete(l);
-        window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+        if (voiceSubs.size) return; // the one shared listener stays while anyone still listens
+        if (evented) synth.removeEventListener("voiceschanged", loadVoices);
+        else if (synth.onvoiceschanged === loadVoices) synth.onvoiceschanged = null;
       };
     },
     () => (voices.length ? voices : EMPTY),

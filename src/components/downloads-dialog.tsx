@@ -366,7 +366,7 @@ function VersionRow({
                   setBooks([]);
                 }}
                 aria-label={`Voice for ${v.abbr}`}
-                className="min-h-9 rounded-lg border border-line bg-raised px-2 text-xs"
+                className="min-h-9 min-w-0 max-w-full rounded-lg border border-line bg-raised px-2 text-xs"
               >
                 {voiced.map((x) => (
                   <option key={x.id} value={x.id}>

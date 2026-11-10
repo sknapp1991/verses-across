@@ -1232,7 +1232,7 @@ function VersionBubbles({ ra, more, onMore }: { ra: ReadAlong; more: boolean; on
             aria-label="Order"
             value={settings.ttsMixOrder}
             onChange={(e) => ra.setMixOrder(e.target.value as "verse" | "chapter")}
-            className="h-8 rounded-lg border border-line bg-raised px-1.5 text-xs text-ink"
+            className="h-8 min-w-0 max-w-full rounded-lg border border-line bg-raised px-1.5 text-xs text-ink"
           >
             <option value="verse">Each verse in every version</option>
             <option value="chapter">Whole chapter in each, one after another</option>

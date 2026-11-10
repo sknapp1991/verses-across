@@ -2,6 +2,19 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* iPhone / iPad: no double-tap zoom anywhere (pinch zoom still works); Android already skips it on
+   mobile-width pages, Safari zooms in and stays zoomed. */
+html { touch-action: manipulation; }
+/* iPhone / iPad: Safari zooms the page into any text field under 16px when it's tapped, and doesn't zoom
+   back out. Only on iOS (the -webkit-touch-callout test), unlayered so it wins over the size utilities. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* Guided tour: each card slides in gently (none with reduced motion). */
 @keyframes tour-in {
   from { opacity: 0; transform: translateX(14px); }
