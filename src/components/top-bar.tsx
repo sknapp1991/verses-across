@@ -23,7 +23,7 @@ import { MoreSheet } from "./more-sheet";
 import { setPageWork } from "@/lib/side";
 import { noteVisit } from "@/lib/reading-position";
 
-export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
+export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: () => void; menuOnDesk?: boolean }) {
   const { ref, entry, versions } = useReaderState();
   // the side (Scriptures / Library) follows the work on screen
   useEffect(() => setPageWork(ref.work), [ref.work]);
@@ -39,7 +39,7 @@ export function TopBar({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         type="button"
         onClick={onOpenLibrary}
         aria-label="Open library"
-        className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink desk:hidden"
+        className={`flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised hover:text-ink ${menuOnDesk ? "" : "desk:hidden"}`}
       >
         <MenuIcon />
       </button>

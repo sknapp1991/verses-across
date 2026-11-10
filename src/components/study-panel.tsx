@@ -180,7 +180,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
                 </option>
               ))}
             </select>
-            <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort" className="h-9 rounded-lg border border-line bg-raised px-2 text-sm">
+            <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Sort" className="h-9 rounded-lg border border-line bg-raised px-2 text-base md:text-sm">
               <option value="new">Newest first</option>
               <option value="old">Oldest first</option>
               <option value="book">Book order</option>

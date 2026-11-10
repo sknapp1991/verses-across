@@ -41,8 +41,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   useThemeSync();
   useTabsSync();
-  const { panel, toast } = useUi();
+  const { panel, toast, tabs } = useUi();
   const wide = useMediaQuery(WIDE_QUERY, true);
+  const { xrefMode } = useSettings();
+  // Room for the Library list, the reading and a side panel together (an upright iPad hasn't): with a panel open
+  // on a narrower screen the list folds away and the ☰ button opens it as a drawer instead.
+  const roomy = useMediaQuery("(min-width: 1100px)", true);
+  const listFolded = wide && !roomy && (tabs.length > 0 || xrefMode);
   // "/" opens search (desktop keyboard shortcut).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,11 +68,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-dvh flex-col">
       <BackupNudge />
-      <TopBar onOpenLibrary={() => setDrawerOpen(true)} />
+      <TopBar onOpenLibrary={() => setDrawerOpen(true)} menuOnDesk={listFolded} />
       <TabBar />
       <ModeBanner />
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-72 shrink-0 border-r border-line bg-panel desk:block lg:w-80">
+        <aside className={`hidden w-72 shrink-0 border-r border-line bg-panel lg:w-80 ${listFolded ? "" : "desk:block"}`}>
           <Sidebar showSwitch />
         </aside>
         <main className="relative min-w-0 flex-1">{children}</main>

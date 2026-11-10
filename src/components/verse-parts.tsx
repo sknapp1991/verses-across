@@ -57,7 +57,7 @@ export function VerseBox({ v, label, size = "md" }: { v: string; label: string; 
       data-no-swipe
       aria-label={`Verse ${label}${fav ? ", favorite" : ""}${m?.later ? ", study later" : ""}. Tap: favorite, study later, highlight, listen. Double-tap: study later. Long-press: more.`}
       title="Tap: favorite, highlight, listen… · Double-tap: study later · Long-press or right-click: more"
-      className={`relative inline-flex shrink-0 select-none items-center justify-center gap-0.5 rounded-md font-sans font-semibold tabular-nums text-accent transition-colors hover:bg-accent-soft after:absolute after:-inset-1.5 after:content-[''] ${
+      className={`relative inline-flex shrink-0 select-none items-center justify-center gap-0.5 rounded-md font-sans font-semibold tabular-nums text-accent transition-colors hover:bg-accent-soft after:absolute after:-inset-2.5 after:content-[''] ${
         size === "sm" ? "mr-1 h-[1.35em] min-w-[1.35em] px-0.5 align-[0.12em] text-[0.62em] after:-inset-2" : "h-8 min-w-8 px-1 text-xs"
       } touch-manipulation`}
     >

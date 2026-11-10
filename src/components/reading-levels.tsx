@@ -89,7 +89,7 @@ export function LevelMarksControl() {
       <select
         value={levelMarks}
         onChange={(e) => updateSettings({ levelMarks: e.target.value as LevelMarks })}
-        className="h-9 rounded-lg border border-line bg-raised px-2 text-sm"
+        className="h-9 rounded-lg border border-line bg-raised px-2 text-base md:text-sm"
       >
         {LABELS.map(([v, l]) => (
           <option key={v} value={v}>

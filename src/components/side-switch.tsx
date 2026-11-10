@@ -34,6 +34,16 @@ export function SideSwitch({ onChoose, className = "" }: { onChoose?: (side: Sid
  * The explainer: a small card, once (and at most once more about three weeks later, unless the Library has
  * been opened). Waits until nothing else is open and the welcome tour is done.
  */
+/** Whether this device had saved settings before this page loaded: a returning reader. (Read once, when the code
+ * loads: a first visit saves settings within a second or two, so checking later would mistake it for a return.) */
+const HAD_SETTINGS = (() => {
+  try {
+    return typeof window !== "undefined" && !!localStorage.getItem("gs:settings:v1");
+  } catch {
+    return false;
+  }
+})();
+
 export function SideTip() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -44,7 +54,7 @@ export function SideTip() {
       try {
         // a first-time visitor sees the welcome tour first; the explainer waits for a later visit
         // (a returning reader, with settings saved, never gets the tour: the explainer is for them most of all)
-        tourDone = !!(localStorage.getItem("va-tour:v1") || localStorage.getItem("gs:tips:v1") || localStorage.getItem("gs:settings:v1"));
+        tourDone = !!(localStorage.getItem("va-tour:v1") || localStorage.getItem("gs:tips:v1") || HAD_SETTINGS);
       } catch {
         /* storage blocked: show it */
       }

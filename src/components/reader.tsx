@@ -591,7 +591,9 @@ export function ReaderView() {
   const colMin = landscape
     ? `${settings.colWidthLandscape ?? 14}rem`
     : wide
-      ? `${settings.colWidth ?? 17}rem`
+      ? settings.colWidth
+        ? `${settings.colWidth}rem`
+        : `max(11rem, min(17rem, calc(100cqw / ${Math.max(1, Math.min(3, versions.length))})))`
       : settings.colWidth
         ? `${settings.colWidth}rem`
         : "85cqw";

@@ -259,7 +259,7 @@ function Dictionary({ card, lang }: { card: WordCard; lang: string }) {
           {tr.slice(0, 11).map(([l, words]) => {
             const nearOnly = e.tra?.includes(l);
             return (
-              <span key={l} className="rounded-full bg-raised px-2 py-0.5 text-xs" lang={l} title={nearOnly ? "A near match: from a closely related word" : undefined}>
+              <span key={l} className="inline-flex min-h-8 items-center rounded-full bg-raised px-2.5 py-1 text-sm" lang={l} title={nearOnly ? "A near match: from a closely related word" : undefined}>
                 <span className="text-faint">
                   {getLanguage(l).name}
                   {nearOnly ? " ≈" : ""}:

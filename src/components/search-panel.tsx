@@ -434,13 +434,27 @@ function VersionFilter({ work, selected, perVersion }: { work: string; selected:
   // Close the version list when clicking anywhere else.
   const details = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
+    const el = details.current;
     const onDown = (e: PointerEvent) => {
       const d = details.current;
       if (d?.open && !d.contains(e.target as Node)) d.open = false;
     };
     document.addEventListener("pointerdown", onDown);
-    return () => document.removeEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      if (el) el.open = false; // (closed with the panel, not open again next time)
+    };
   }, []);
+  // The list opens under "+ Versions" but is moved left as far as needed to stay on screen (the button is often
+  // near the right edge of the panel).
+  const [shift, setShift] = useState(0);
+  const place = () => {
+    const d = details.current;
+    if (!d?.open) return;
+    const box = d.getBoundingClientRect();
+    const width = Math.min(256, window.innerWidth - 16);
+    setShift(Math.max(8 - box.left, Math.min(0, window.innerWidth - 8 - (box.left + width))));
+  };
   const byLang = new Map<string, typeof all>();
   all.forEach((v) => (byLang.get(v.language) ?? byLang.set(v.language, []).get(v.language)!).push(v));
   return (
@@ -465,11 +479,14 @@ function VersionFilter({ work, selected, perVersion }: { work: string; selected:
             </button>
           );
         })}
-        <details ref={details} className="group relative">
+        <details ref={details} onToggle={place} className="group relative">
           <summary className="flex min-h-9 cursor-pointer list-none items-center rounded-full border border-line px-2.5 text-xs text-muted hover:border-faint">
             + Versions
           </summary>
-          <div className="absolute left-0 z-20 mt-1 max-h-72 w-64 overflow-y-auto rounded-xl border border-line bg-panel p-2 shadow-xl">
+          <div
+            style={{ left: shift }}
+            className="absolute z-20 mt-1 max-h-72 w-64 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-xl border border-line bg-panel p-2 shadow-xl"
+          >
             {[...byLang.entries()].map(([lang, list]) => (
               <div key={lang} className="py-1">
                 <p className="px-2 text-[11px] font-semibold uppercase tracking-wide text-faint">{getLanguage(lang).name}</p>
