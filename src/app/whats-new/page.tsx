@@ -17,6 +17,7 @@ const WEEKS: { week: string; items: string[] }[] = [
   {
     week: "Week of November 9",
     items: [
+      "Why Bibles differ: the New Testament verses some Bibles leave out (Matthew 17:21, Acts 8:37…) and the passages they split on (the end of Mark, John 7:53–8:11, 1 John 5:7), the KJV, WEB and ASV side by side with a short note on why. A small mark under those verses in the reader links there.",
       "Themes: 67 scripture themes (forgiveness, the flood, exile, mercy, death…), each traced across every tradition and the Library's books, side by side, and 44 Library themes (coming of age, revenge, voyages at sea, ghosts…) with the books that carry each one most. A verse or paragraph that is one of a theme's strongest passages shows it in Cross references.",
       "Scriptures and Library: two sides in one app, with a small switch at the top. Each side lists its own shelves, and search and cross references stay on their side unless you include the other.",
       "Search every book in the Library at once: which books mention a whale, a lighthouse or a dragon, with the chapters to open.",

@@ -432,6 +432,10 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
               Themes
             </Link>
             {" · "}
+            <Link href="/differences" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
+              Why Bibles differ
+            </Link>
+            {" · "}
             <Link href="/whats-new" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
               What&rsquo;s new
             </Link>

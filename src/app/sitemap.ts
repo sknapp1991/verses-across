@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE}/coming-soon`, priority: 0.3 },
     { url: `${SITE}/whats-new`, priority: 0.3 },
     { url: `${SITE}/themes`, priority: 0.6 },
+    { url: `${SITE}/differences`, priority: 0.5 },
     ...themes.map((t) => ({ url: `${SITE}/themes/${t.id}`, priority: 0.5 })),
   ];
   for (const w of catalog.works)

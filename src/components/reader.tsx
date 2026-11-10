@@ -29,6 +29,7 @@ import { VerseQuick, type QuickAt } from "./verse-quick";
 import { pickWord, WordStudy } from "./word-study";
 import { LevelLegend, LevelsButton, useLevelMarks } from "./reading-levels";
 import { RedLetterCtx, useRedLetter, VerseWords } from "./red-letter";
+import { DiffMark } from "./diff-mark";
 import { StudiedBox } from "./studied-box";
 import { FloatingNav } from "./floating-nav";
 import { TapModesButton } from "./tap-modes";
@@ -1066,6 +1067,7 @@ function ColumnView({
                       />
                     )}
                     {i === 0 && <NoteLine v={row.v} />}
+                    {i === 0 && <DiffMark v={row.v} />}
                   </div>
                 ))}
               </div>
@@ -1137,6 +1139,7 @@ function StackedView({ cols, rows, marks }: { cols: Col[]; rows: AlignedRow[]; m
                     );
                   })}
                   <NoteLine v={row.v} />
+                  <DiffMark v={row.v} />
                 </div>
               </li>
             );

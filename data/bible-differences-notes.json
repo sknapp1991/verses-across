@@ -1,0 +1,222 @@
+{
+ "$comment": "Phase 1 of TX (ROADMAP): New Testament verses and passages that English Bibles print differently, because their translators followed different Greek texts. The KJV (1611/1769) follows the Textus Receptus (Erasmus and his successors, 16th century, from late manuscripts); the WEB follows the Majority Text (most surviving manuscripts, mostly Byzantine); the ASV (1901) and BBE follow the Greek text of the 1881 revisers, close to Westcott and Hort's, based above all on Codex Sinaiticus and Codex Vaticanus (4th century). scripts/build-differences.mts checks every 'verse' entry against the texts on the site (it fails if a verse it finds missing has no note here) and adds each version's wording. Notes written with AI (Claude), kept neutral, and labelled on the page.",
+ "groups": [
+  {
+   "id": "added",
+   "title": "Verses some Bibles leave out",
+   "intro": "These verses are in the KJV. Bibles translated from the oldest manuscripts (the ASV, BBE and most modern versions) leave them out or put them in a footnote, because those manuscripts don't have them. Most scholars think copyists added them, often from a parallel passage; some hold that the oldest copies dropped them."
+  },
+  {
+   "id": "passages",
+   "title": "Passages the Bibles here split on",
+   "intro": "The KJV prints all of these; the other Bibles differ. They are missing from some of the oldest manuscripts, so modern editions often set them in brackets or add a note."
+  },
+  {
+   "id": "moved",
+   "title": "Moved, not missing",
+   "intro": "Sometimes the words are all there, but in a different place."
+  }
+ ],
+ "items": [
+  {
+   "id": "mat-17-21",
+   "group": "added",
+   "book": "mat",
+   "chapter": 17,
+   "from": 21,
+   "note": "“This kind goes out only by prayer and fasting” is not in Codex Sinaiticus (first hand) or Codex Vaticanus. It matches Mark 9:29, and copyists likely added it here from there.",
+   "parallel": "mrk/9/29"
+  },
+  {
+   "id": "mat-18-11",
+   "group": "added",
+   "book": "mat",
+   "chapter": 18,
+   "from": 11,
+   "note": "Not in Sinaiticus or Vaticanus. The words echo Luke 19:10 (“the Son of man is come to seek and to save that which was lost”).",
+   "parallel": "luk/19/10"
+  },
+  {
+   "id": "mat-23-14",
+   "group": "added",
+   "book": "mat",
+   "chapter": 23,
+   "from": 14,
+   "note": "Not in Sinaiticus or Vaticanus. The same saying about devouring widows’ houses is in Mark 12:40 and Luke 20:47; manuscripts that have it here don’t agree where to put it (before or after verse 13).",
+   "parallel": "mrk/12/40"
+  },
+  {
+   "id": "mrk-7-16",
+   "group": "added",
+   "book": "mrk",
+   "chapter": 7,
+   "from": 16,
+   "note": "“If any man have ears to hear, let him hear” is not in Sinaiticus or Vaticanus; it repeats Mark 4:9 and 4:23.",
+   "parallel": "mrk/4/9"
+  },
+  {
+   "id": "mrk-9-44",
+   "group": "added",
+   "book": "mrk",
+   "chapter": 9,
+   "from": 44,
+   "note": "Verses 44 and 46 repeat verse 48 word for word (“where their worm dieth not…”). They are not in Sinaiticus or Vaticanus.",
+   "parallel": "mrk/9/48"
+  },
+  {
+   "id": "mrk-9-46",
+   "group": "added",
+   "book": "mrk",
+   "chapter": 9,
+   "from": 46,
+   "note": "Same as verse 44: a repeat of verse 48, not in Sinaiticus or Vaticanus.",
+   "parallel": "mrk/9/48"
+  },
+  {
+   "id": "mrk-11-26",
+   "group": "added",
+   "book": "mrk",
+   "chapter": 11,
+   "from": 26,
+   "note": "Not in Sinaiticus or Vaticanus. It matches Matthew 6:15 (“if ye forgive not… neither will your Father forgive”).",
+   "parallel": "mat/6/15"
+  },
+  {
+   "id": "mrk-15-28",
+   "group": "added",
+   "book": "mrk",
+   "chapter": 15,
+   "from": 28,
+   "note": "“He was numbered with the transgressors” (Isaiah 53:12) is not in Sinaiticus, Alexandrinus or Vaticanus; Luke 22:37 quotes the same line.",
+   "parallel": "luk/22/37"
+  },
+  {
+   "id": "luk-17-36",
+   "group": "added",
+   "book": "luk",
+   "chapter": 17,
+   "from": 36,
+   "note": "“Two men shall be in the field…” is in few Greek manuscripts (it is missing from most, which is why the WEB leaves it out too); it matches Matthew 24:40.",
+   "parallel": "mat/24/40"
+  },
+  {
+   "id": "luk-23-17",
+   "group": "added",
+   "book": "luk",
+   "chapter": 23,
+   "from": 17,
+   "note": "The custom of releasing a prisoner at the feast is not in some of the oldest manuscripts (the papyrus P75, Alexandrinus, Vaticanus); Matthew 27:15 and Mark 15:6 tell of it.",
+   "parallel": "mrk/15/6"
+  },
+  {
+   "id": "jhn-5-4",
+   "group": "added",
+   "book": "jhn",
+   "chapter": 5,
+   "from": 4,
+   "note": "The angel who stirred the water of the pool (with the end of verse 3, “waiting for the moving of the water”) is not in the oldest manuscripts (the papyri P66 and P75, Sinaiticus, Vaticanus). It reads like an explanation of verse 7 that entered the text.",
+   "parallel": "jhn/5/7"
+  },
+  {
+   "id": "act-8-37",
+   "group": "added",
+   "book": "act",
+   "chapter": 8,
+   "from": 37,
+   "note": "The eunuch’s confession (“I believe that Jesus Christ is the Son of God”) is in few Greek manuscripts but in Latin ones; Erasmus included it in his Greek New Testament, and so it came into the KJV. Most Greek manuscripts don’t have it, so the WEB leaves it out too."
+  },
+  {
+   "id": "act-15-34",
+   "group": "added",
+   "book": "act",
+   "chapter": 15,
+   "from": 34,
+   "note": "“It pleased Silas to abide there still” is missing from most Greek manuscripts (so the WEB leaves it out too). It may have been added to explain why Silas is still in Antioch in verse 40.",
+   "parallel": "act/15/40"
+  },
+  {
+   "id": "act-24-7",
+   "group": "added",
+   "book": "act",
+   "chapter": 24,
+   "from": 7,
+   "note": "The end of verse 6, verse 7 and the start of verse 8 (Lysias taking Paul away by force) are missing from most Greek manuscripts, so the WEB leaves them out too."
+  },
+  {
+   "id": "act-28-29",
+   "group": "added",
+   "book": "act",
+   "chapter": 28,
+   "from": 29,
+   "note": "“The Jews departed, and had great reasoning among themselves” is not in the oldest manuscripts (Sinaiticus, Alexandrinus, Vaticanus)."
+  },
+  {
+   "id": "rom-16-24",
+   "group": "added",
+   "book": "rom",
+   "chapter": 16,
+   "from": 24,
+   "note": "This blessing (“The grace of our Lord Jesus Christ be with you all”) repeats verse 20 and is not in the oldest manuscripts.",
+   "parallel": "rom/16/20"
+  },
+  {
+   "id": "mrk-16-9",
+   "group": "passages",
+   "book": "mrk",
+   "chapter": 16,
+   "from": 9,
+   "to": 20,
+   "note": "The “longer ending” of Mark. Sinaiticus and Vaticanus end the Gospel at 16:8, with the women afraid; one Latin manuscript has a short ending instead, and a few have both. Early writers (Eusebius, Jerome) knew of copies without it. Most later manuscripts include verses 9–20."
+  },
+  {
+   "id": "jhn-7-53",
+   "group": "passages",
+   "book": "jhn",
+   "chapter": 7,
+   "from": 53,
+   "to": 53,
+   "through": "8:11",
+   "note": "The woman taken in adultery (7:53–8:11) is not in the oldest manuscripts (P66, P75, Sinaiticus, Vaticanus). In later manuscripts it appears here, or after John 7:36, 21:25 or Luke 21:38. Many think it is an old story about Jesus that was kept outside the Gospels at first."
+  },
+  {
+   "id": "1jn-5-7",
+   "group": "passages",
+   "book": "1jn",
+   "chapter": 5,
+   "from": 7,
+   "to": 8,
+   "note": "The words “in heaven, the Father, the Word, and the Holy Ghost: and these three are one. And there are three that bear witness in earth” (the Johannine Comma) come from Latin manuscripts. Only a handful of late Greek manuscripts have them; Erasmus added them in his third edition (1522), and so they are in the KJV. The WEB and ASV don’t have them. (The ASV numbers these verses a little differently, so its verse 7 begins with words the KJV has in verse 6.)"
+  },
+  {
+   "id": "mat-6-13",
+   "group": "passages",
+   "book": "mat",
+   "chapter": 6,
+   "from": 13,
+   "note": "The end of the Lord’s Prayer, “For thine is the kingdom, and the power, and the glory, for ever. Amen,” is not in Sinaiticus or Vaticanus, and Luke’s version (Luke 11:2–4) doesn’t have it. A similar closing is in the Didache, an early Christian manual. The KJV and WEB have it; the ASV doesn’t.",
+   "parallel": "luk/11/4"
+  },
+  {
+   "id": "luk-22-43",
+   "group": "passages",
+   "book": "luk",
+   "chapter": 22,
+   "from": 43,
+   "to": 44,
+   "note": "The angel strengthening Jesus and his sweat “as it were great drops of blood” are missing from some of the oldest manuscripts (P75, Vaticanus) but present in others (Sinaiticus, the first hand). Editors disagree; all the Bibles here print the verses."
+  },
+  {
+   "id": "rom-16-25",
+   "group": "moved",
+   "book": "rom",
+   "chapter": 16,
+   "from": 25,
+   "to": 27,
+   "note": "The closing praise (“Now to him that is of power to stablish you…”) ends chapter 16 in Sinaiticus, Vaticanus and the KJV (the oldest papyrus, P46, has it after chapter 15), but stands at the end of chapter 14 in most later manuscripts, so the WEB prints it as Romans 14:24–26.",
+   "parallel": "rom/14/24",
+   "elsewhere": {
+    "web": "Romans 14:24–26"
+   }
+  }
+ ]
+}
