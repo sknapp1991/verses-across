@@ -614,10 +614,18 @@ async function showApprovals() {
 }
 
 /* ---------- Roadmap ---------- */
+/** Which site's roadmap shows (Nov 10: Verses Across and Library Across each have their own). Remembered on this device. */
+let rmSite = (() => { try { return localStorage.getItem("hub-rm-site") === "library" ? "library" : "verses"; } catch (e) { return "verses"; } })();
+const rmUrl = (site) => "/api/roadmap" + (site === "library" ? "?site=library" : "");
 async function showRoadmap(item) {
   if (item) return showRoadmapItem(item);
-  const sections = await api("/api/roadmap");
-  show(h("h2", {}, "Roadmap"), h("p.muted", {}, "From ROADMAP.md (Claude keeps it up to date). 👍 what you'd like next, or tap to comment."),
+  const sections = await api(rmUrl(rmSite));
+  const pick = (site, label) => h("button.btn.small", { type: "button", "aria-pressed": rmSite === site ? "true" : "false",
+    style: rmSite === site ? "border-color:var(--accent);color:var(--accent);font-weight:600" : "",
+    onclick: () => { rmSite = site; try { localStorage.setItem("hub-rm-site", site); } catch (e) {} go("roadmap"); } }, label);
+  show(h("h2", {}, "Roadmap"),
+    h("div.row", { role: "group", "aria-label": "Which site", style: "gap:6px;margin-bottom:6px" }, pick("verses", "Verses Across"), pick("library", "Library Across")),
+    h("p.muted", {}, (rmSite === "library" ? "From ROADMAP-LIBRARY.md" : "From ROADMAP.md") + " (Claude keeps it up to date). 👍 what you'd like next, or tap to comment."),
     ...sections.flatMap((s) => [h("h3", {}, s.name), ...s.items.map((it) => h("div.card", {},
       h("div.row", {}, h("span.faint", {}, it.id), h("b.grow", { class: "tap", onclick: () => go("roadmap", it.id) }, it.title),
         h("button.btn.small", { type: "button", "aria-pressed": it.mine ? "true" : "false", style: it.mine ? "border-color:var(--accent);color:var(--accent)" : "", onclick: async (e) => {
@@ -650,8 +658,9 @@ function notesText(notes) {
   return box;
 }
 async function showRoadmapItem(id) {
-  const sections = await api("/api/roadmap");
-  const it = sections.flatMap((s) => s.items).find((x) => x.id === id);
+  // the item can be on either site's roadmap (ids are unique across both)
+  let it = (await api(rmUrl(rmSite))).flatMap((s) => s.items).find((x) => x.id === id);
+  if (!it) it = (await api(rmUrl(rmSite === "library" ? "verses" : "library"))).flatMap((s) => s.items).find((x) => x.id === id);
   const thread = h("div");
   const load = async () => { const cs = await api("/api/comments?thread=roadmap:" + id); thread.replaceChildren(...cs.map((c) => h("div.comment" + (c.author === "claude" ? ".claude" : ""), {}, h("div.who", {}, who(c.author) + " · " + when(c.created)), h("div.pre", {}, c.body)))); };
   const reply = h("textarea", { placeholder: "Your thoughts on this…", style: "min-height:80px" });

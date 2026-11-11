@@ -214,7 +214,7 @@ export default {
       if (r && m === "PATCH") return owner ? decideFeedback(env, me, r[1], await req.json()) : bad("Only the owner can decide", 403);
 
       // Roadmap, votes, shipped
-      if (path === "/api/roadmap" && m === "GET") return roadmap(env, me);
+      if (path === "/api/roadmap" && m === "GET") return roadmap(env, me, url.searchParams.get("site") === "library" ? "library" : "verses");
       r = /^\/api\/roadmap\/([A-Za-z0-9-]{1,12})\/vote$/.exec(path);
       if (r && m === "POST") return me === "claude" ? bad("Votes are for people", 403) : vote(env, me, r[1]);
       if (path === "/api/shipped" && m === "GET") return shipped(env);
@@ -529,18 +529,23 @@ async function decideFeedback(env: Env, me: string, id: string, b: Row) {
 
 /* ---------------- Roadmap and shipped ---------------- */
 
-let roadmapCache: { at: number; text: string } | null = null;
+/** One roadmap per site (Nov 10): ROADMAP.md is Verses Across, ROADMAP-LIBRARY.md is Library Across. Item ids are
+ * unique across both files, so votes and comments (keyed by id) never mix. */
+const ROADMAP_FILES = { verses: "ROADMAP.md", library: "ROADMAP-LIBRARY.md" } as const;
+const roadmapCache: Record<string, { at: number; text: string }> = {};
 let commitsCache: { at: number; list: { sha: string; date: string; text: string }[] } | null = null;
 
-/** ROADMAP.md from the public repo (read-only here), parsed into Now / Next / Later items. */
-async function roadmap(env: Env, me: string) {
-  if (!roadmapCache || Date.now() - roadmapCache.at > 10 * 60 * 1000) {
-    const r = await fetch(`https://raw.githubusercontent.com/${env.REPO}/main/ROADMAP.md`, { headers: { "user-agent": "va-hub" } });
-    if (r.ok) roadmapCache = { at: Date.now(), text: await r.text() };
+/** A site's roadmap file from the public repo (read-only here), parsed into Now / Next / Later items. */
+async function roadmap(env: Env, me: string, site: keyof typeof ROADMAP_FILES) {
+  const file = ROADMAP_FILES[site];
+  const cached = roadmapCache[file];
+  if (!cached || Date.now() - cached.at > 10 * 60 * 1000) {
+    const r = await fetch(`https://raw.githubusercontent.com/${env.REPO}/main/${file}`, { headers: { "user-agent": "va-hub" } });
+    if (r.ok) roadmapCache[file] = { at: Date.now(), text: await r.text() };
   }
   const sections: { name: string; items: { id: string; title: string; status: string; notes: string }[] }[] = [];
   let cur: (typeof sections)[number] | null = null;
-  for (const line of (roadmapCache?.text ?? "").split("\n")) {
+  for (const line of (roadmapCache[file]?.text ?? "").split("\n")) {
     const h = /^## (Now|Next|Later)\b/.exec(line);
     if (h) {
       cur = { name: h[1], items: [] };
