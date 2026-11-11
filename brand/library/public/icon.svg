@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Library Across: five book spines on a shelf, joined by the one orange line Verses Across uses (logo A, Skylar Nov 10) -->
+  <rect width="512" height="512" rx="112" fill="#1d4034"/>
+  <rect x="86" y="128" width="64" height="252" rx="8" fill="#fbfaf7"/>
+  <rect x="160" y="160" width="56" height="220" rx="8" fill="#e3cfae"/>
+  <rect x="226" y="112" width="70" height="268" rx="8" fill="#fbfaf7"/>
+  <rect x="306" y="150" width="54" height="230" rx="8" fill="#e3cfae"/>
+  <g transform="rotate(12 400 380)"><rect x="372" y="164" width="54" height="216" rx="8" fill="#fbfaf7"/></g>
+  <rect x="98" y="160" width="40" height="8" rx="4" fill="#1d4034" opacity=".35"/>
+  <rect x="238" y="146" width="46" height="8" rx="4" fill="#1d4034" opacity=".35"/>
+  <rect x="98" y="336" width="40" height="8" rx="4" fill="#1d4034" opacity=".35"/>
+  <rect x="238" y="336" width="46" height="8" rx="4" fill="#1d4034" opacity=".35"/>
+  <rect x="70" y="380" width="372" height="18" rx="9" fill="#6b3a1a"/>
+  <rect x="56" y="246" width="404" height="20" rx="10" fill="#b45309"/>
+</svg>

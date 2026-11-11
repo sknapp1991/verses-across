@@ -4,11 +4,12 @@
  * philosophy; Library Across: literature, Freethought, Psychology) and both stay well under the static-file limit.
  *
  * Runs only on Cloudflare's build machines (WORKERS_CI=1), or with PRUNE_SITE=1: on this computer public/ is the
- * working copy, and deleting from it would remove the files from git.
+ * working copy, and deleting from it would remove the files from git. (A Library Across build also puts its own logo
+ * in place, from brand/library/.)
  *
  *   NEXT_PUBLIC_SITE=library PRUNE_SITE=1 tsx scripts/prune-site.mts   (try it on a throwaway copy only)
  */
-import { existsSync, readdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalog, sideOfWork } from "../src/lib/catalog";
@@ -20,7 +21,8 @@ if (!process.env.WORKERS_CI && !process.env.PRUNE_SITE) {
 }
 
 // PRUNE_PUBLIC: another folder to prune instead (for testing on a dummy copy)
-const PUBLIC = process.env.PRUNE_PUBLIC || join(dirname(fileURLToPath(import.meta.url)), "..", "public");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const PUBLIC = process.env.PRUNE_PUBLIC || join(ROOT, "public");
 const workOfVersion = new Map(catalog.versions.map((v) => [v.id, v.work]));
 const known = new Set(catalog.works.map((w) => w.id));
 
@@ -46,4 +48,19 @@ prune("search", (name) => {
   return !!work && otherWork(work);
 });
 
-console.log(`prune-site: ${SITE_NAME} build, removed ${removed} folders of the other site's books`);
+// Library Across's own logo (brand/library: logo A, Nov 10): its icons and link-preview picture replace Verses
+// Across's in public/ and src/app/ (Next picks up app/icon.png, apple-icon.png, favicon.ico, opengraph-image.png…).
+let branded = 0;
+if (SITE_SIDE === "library" && !process.env.PRUNE_PUBLIC) {
+  const BRAND = join(ROOT, "brand", "library");
+  for (const [from, to] of [["public", PUBLIC], ["app", join(ROOT, "src", "app")]] as const) {
+    const dir = join(BRAND, from);
+    if (!existsSync(dir)) continue;
+    for (const name of readdirSync(dir)) {
+      copyFileSync(join(dir, name), join(to, name));
+      branded++;
+    }
+  }
+}
+
+console.log(`prune-site: ${SITE_NAME} build, removed ${removed} folders of the other site's books${branded ? `, ${branded} logo files in place` : ""}`);

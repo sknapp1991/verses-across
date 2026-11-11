@@ -18,7 +18,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "any",
     background_color: "#fbfaf7",
-    theme_color: "#1f3a5f",
+    theme_color: SITE_SIDE === "library" ? "#1d4034" : "#1f3a5f", // each site's logo colour
     categories: ["books", "education", "reference"],
     prefer_related_applications: false,
     icons: [
