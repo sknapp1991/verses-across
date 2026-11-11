@@ -33,7 +33,9 @@
     // Sync and groups: at most 60 requests a minute per visitor
     { "name": "SYNC_LIMIT", "namespace_id": "1003", "simple": { "limit": 60, "period": 60 } },
     // Anonymous counts (src/app/api/count) and the private stats feed (src/app/api/stats)
-    { "name": "STATS_LIMIT", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } }
+    { "name": "STATS_LIMIT", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } },
+    // Testers' chat (src/app/api/chat): at most 10 messages a minute per visitor
+    { "name": "CHAT_LIMIT", "namespace_id": "1005", "simple": { "limit": 10, "period": 60 } }
   ],
   // Anonymous daily totals (chapter views, read-along plays, downloads per work/version/language). No IPs or IDs.
   "d1_databases": [
@@ -66,7 +68,8 @@
         { "name": "ASK_LIMIT", "namespace_id": "1001", "simple": { "limit": 8, "period": 60 } },
         { "name": "FEEDBACK_LIMIT", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
         { "name": "SYNC_LIMIT", "namespace_id": "1003", "simple": { "limit": 60, "period": 60 } },
-        { "name": "STATS_LIMIT", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } }
+        { "name": "STATS_LIMIT", "namespace_id": "1004", "simple": { "limit": 30, "period": 60 } },
+        { "name": "CHAT_LIMIT", "namespace_id": "1005", "simple": { "limit": 10, "period": 60 } }
       ],
       "d1_databases": [
         { "binding": "STATS_DB", "database_name": "versesacross-stats", "database_id": "1353e9b6-72a1-4507-a127-10ff268e7f29" }

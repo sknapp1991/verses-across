@@ -151,7 +151,7 @@ export default function AboutPage() {
             <li>
               <strong className="text-ink">Private mode.</strong> Nothing is collected unless you send it (a feedback report or a
               question to Ask AI). To switch even that off, turn on Private mode (Display options, or More ⋯ on a phone, then Privacy): Ask AI, the
-              feedback form, the anonymous counts, sync and study groups stop, and nothing leaves your device.
+              feedback form, the anonymous counts, sync, study groups and the testers&rsquo; chat stop, and nothing leaves your device.
             </li>
             <li>
               We count, anonymously, how often chapters are read, read-along audio is played and versions are downloaded:
@@ -182,6 +182,14 @@ export default function AboutPage() {
               in the group&rsquo;s book; if you turn it on, also the chapter you&rsquo;re reading. This is encrypted with the
               group&rsquo;s code, so only people with the code can see it. Leaving a group removes your card.
             </li>
+            {!LIB && (
+              <li>
+                <strong className="text-ink">Testers&rsquo; chat (optional).</strong> If you post in the Android testers&rsquo; chat
+                (/testers), the display name you pick and your messages are stored and shown to everyone with the chat&rsquo;s link, and
+                deleted after 30 days. To stop abuse we keep a random ID from your browser and a scrambled (hashed) form of your IP
+                address with each message, used only to block someone and never shown.
+              </li>
+            )}
             <li>
               When you ask the AI companion a question, the question and the passage you&rsquo;re reading are sent to the AI
               service you picked to get an answer: Google Gemini, or OpenAI&rsquo;s open model (GPT-OSS) run by Cloudflare.

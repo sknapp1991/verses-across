@@ -5,7 +5,8 @@
  * - Ask AI (src/lib/ai-chat.ts): hidden, and a question isn't sent;
  * - the feedback form (src/components/feedback-dialog.tsx): shows the email address to copy instead;
  * - the anonymous reading counts (src/lib/count.ts): not sent;
- * - sync (src/lib/sync.ts) and study groups (src/lib/groups.ts): paused.
+ * - sync (src/lib/sync.ts) and study groups (src/lib/groups.ts): paused;
+ * - the Android testers' chat on /testers (src/components/testers-chat.tsx): off.
  * Downloading texts and audio sends nothing about the reader, so it carries on.
  */
 import { getSettings, useSettings } from "./settings";
