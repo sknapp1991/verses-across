@@ -16,6 +16,8 @@
 //   node hub/cli.mjs shipped <text> [url]
 //   node hub/cli.mjs get <media id> <save to path>   (download a report's photo/video to look at)
 //   node hub/cli.mjs autoreview                     (tickets closed automatically a week+ ago, to check they stayed fixed)
+//   node hub/cli.mjs watch [--minutes 29] [--every 60]  (constant ticket watch for the Monitor tool: NEW TICKET / NEW REPLY /
+//                                                     REOPENED lines, HUB UNREACHABLE, then WATCH ENDED → re-arm)
 import { readFileSync, statSync, openSync, readSync, closeSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -133,6 +135,60 @@ try {
     if (!r.ok) throw new Error(`${r.status}`);
     writeFileSync(a[1], Buffer.from(await r.arrayBuffer()));
     console.log(`saved ${a[1]}`);
+  } else if (cmd === "watch") {
+    // The constant ticket watch (Skylar, Nov 10; same idea as the bots' hub watch): run under the Monitor tool, one line
+    // per event, re-armed on WATCH ENDED. Remembers what it has reported (~/.va-hub/watch-state.json) so a restart
+    // neither repeats nor misses anything; the first run ever lists what is already waiting.
+    const flag = (n, d) => (a.includes(n) ? Number(a[a.indexOf(n) + 1]) || d : d);
+    const minutes = flag("--minutes", 29), every = flag("--every", 60);
+    const stateFile = path.join(dir, "watch-state.json");
+    let state = null;
+    try {
+      state = JSON.parse(readFileSync(stateFile, "utf8"));
+    } catch {
+      /* first run */
+    }
+    const OPEN = new Set(["New", "Seen", "Working", "Question", "Reopened"]);
+    let down = false;
+    const tick = async () => {
+      let list;
+      try {
+        list = await api("/api/reports");
+        if (down) console.log("HUB BACK");
+        down = false;
+      } catch (e) {
+        if (!down) console.log(`HUB UNREACHABLE ${e.message}`);
+        down = true;
+        return;
+      }
+      const next = {};
+      for (const r of list) next[r.id] = { s: r.status, c: r.comments || 0 };
+      if (!state) {
+        const waiting = list.filter((r) => OPEN.has(r.status));
+        console.log(waiting.length ? waiting.map((r) => `WAITING ${line(r)}`).join("\n") : "WATCHING (nothing waiting)");
+      } else {
+        for (const r of list) {
+          const was = state[r.id];
+          if (!was) console.log(`NEW TICKET ${line(r)}`);
+          else {
+            if (r.status !== was.s && (r.status === "Reopened" || r.status === "New")) console.log(`REOPENED ${line(r)}`);
+            if ((r.comments || 0) > was.c) {
+              const cs = await api(`/api/comments?thread=report:${r.id}`);
+              const fresh = cs.slice(was.c).filter((c) => c.author !== "claude");
+              for (const c of fresh) console.log(`NEW REPLY ${r.id} from ${c.author.split("@")[0]}: ${c.body.replace(/\s+/g, " ").slice(0, 140)}`);
+            }
+          }
+        }
+      }
+      state = next;
+      writeFileSync(stateFile, JSON.stringify(state));
+    };
+    const end = Date.now() + minutes * 60_000;
+    while (Date.now() < end) {
+      await tick();
+      await new Promise((res) => setTimeout(res, Math.min(every * 1000, Math.max(0, end - Date.now()))));
+    }
+    console.log("WATCH ENDED");
   } else if (cmd === "me") {
     console.log(await api("/api/me"));
   } else {
