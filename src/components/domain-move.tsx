@@ -43,22 +43,34 @@ async function readStudy(): Promise<unknown[]> {
 async function writeStudy(items: unknown[]) {
   if (!items.length || typeof indexedDB === "undefined") return;
   await new Promise<void>((resolve) => {
+    // Never hold up the move: the page reloads after this, whatever happens (a full disk aborts the write, an old
+    // browser may throw, a blocked database never answers), so give up after 10 seconds at most.
+    const timer = setTimeout(resolve, 10_000);
+    const done = () => {
+      clearTimeout(timer);
+      resolve();
+    };
     const req = indexedDB.open("globalstudy", 1);
     req.onupgradeneeded = () => req.result.createObjectStore("study", { keyPath: "id" });
-    req.onerror = () => resolve();
+    req.onerror = done;
     req.onsuccess = () => {
-      const tx = req.result.transaction("study", "readwrite");
-      const store = tx.objectStore("study");
-      // Keep whichever copy is newer.
-      for (const it of items as { id: string; updatedAt?: number }[]) {
-        const g = store.get(it.id);
-        g.onsuccess = () => {
-          const old = g.result as { updatedAt?: number } | undefined;
-          if (!old || (old.updatedAt ?? 0) < (it.updatedAt ?? 0)) store.put(it);
-        };
+      try {
+        const tx = req.result.transaction("study", "readwrite");
+        const store = tx.objectStore("study");
+        // Keep whichever copy is newer.
+        for (const it of items as { id: string; updatedAt?: number }[]) {
+          const g = store.get(it.id);
+          g.onsuccess = () => {
+            const old = g.result as { updatedAt?: number } | undefined;
+            if (!old || (old.updatedAt ?? 0) < (it.updatedAt ?? 0)) store.put(it);
+          };
+        }
+        tx.oncomplete = done;
+        tx.onerror = done;
+        tx.onabort = done;
+      } catch {
+        done();
       }
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
     };
   });
 }
