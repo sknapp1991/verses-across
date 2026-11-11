@@ -1,16 +1,18 @@
 "use client";
 /**
- * The "Scriptures | Library" switch (the top of the Library list: the left panel on a computer, the menu on a phone) and its
- * one-time explainer. See src/lib/side.ts for how the side is chosen and when the explainer may show.
+ * The "Verses Across | Library Across" switch (the top of the Library list: the left panel on a computer, the menu on a
+ * phone) and its one-time explainer. The other one is another site now (src/lib/site.ts): choosing it goes there,
+ * with the reader's saved data. See src/lib/side.ts for when the explainer may show.
  */
 import { useEffect, useState } from "react";
 import { chooseSide, SIDE_NAME, tipDue, tipShown, useSide, type Side } from "@/lib/side";
 import { CloseIcon } from "./icons";
+import { OTHER_NAME, SITE_NAME, SITE_SIDE } from "@/lib/site";
 
 export function SideSwitch({ onChoose, className = "" }: { onChoose?: (side: Side) => void; className?: string }) {
   const side = useSide();
   return (
-    <div role="radiogroup" aria-label="Scriptures or Library" data-side-switch className={`inline-flex shrink-0 rounded-full border border-line bg-raised p-0.5 ${className}`}>
+    <div role="radiogroup" aria-label="Verses Across (scriptures) or Library Across (books)" data-side-switch className={`inline-flex shrink-0 rounded-full border border-line bg-raised p-0.5 ${className}`}>
       {(["scriptures", "library"] as const).map((s) => (
         <button
           key={s}
@@ -73,18 +75,27 @@ export function SideTip() {
   return (
     <div
       role="region"
-      aria-label="Scriptures and Library"
+      aria-label={`${SITE_NAME} and ${OTHER_NAME}`}
       className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-40 mx-auto max-w-sm rounded-2xl border border-line bg-panel p-4 shadow-xl desk:inset-x-auto desk:bottom-auto desk:left-1/2 desk:top-16 desk:mx-0 desk:w-96 desk:-translate-x-1/2"
     >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Scriptures and Library</p>
+          <p className="font-semibold">{SITE_SIDE === "library" ? "Welcome to Library Across" : "The Library has its own site now"}</p>
           <p className="mt-1 text-sm text-muted">
-            Verses Across has two sides now. <strong className="text-ink">Scriptures</strong> holds every tradition&apos;s texts.{" "}
-            <strong className="text-ink">Library</strong> holds the classic books: fiction, poetry, drama, children&apos;s books, freethought and more. Switch between
-            them at the top of the Library list
+            {SITE_SIDE === "library" ? (
+              <>
+                The classic books (fiction, poetry, drama, children&apos;s books, Freethought and Psychology) moved here from Verses Across, which keeps
+                the world&apos;s scriptures.
+              </>
+            ) : (
+              <>
+                The classic books (fiction, poetry, drama, children&apos;s books, Freethought and Psychology) moved to{" "}
+                <strong className="text-ink">Library Across</strong> (libraryacross.com). Verses Across keeps the world&apos;s scriptures.
+              </>
+            )}{" "}
+            Switch between them at the top of the Library list
             <span className="desk:hidden"> (the menu ☰)</span>
-            <span className="hidden desk:inline"> on the left</span>. Each side keeps its own shelves and your place.
+            <span className="hidden desk:inline"> on the left</span>; your places, highlights and notes come along.
           </p>
         </div>
         <button type="button" onClick={close} aria-label="Close" className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-raised">

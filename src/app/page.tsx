@@ -1,18 +1,18 @@
 "use client";
-/** Open where you left off on the Scriptures side (last book/chapter and versions on this device), else Genesis 1. */
+/** Open where you left off on this site (last book/chapter and versions on this device), else Genesis 1 / Pride and Prejudice. */
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { DEFAULT_LOCATION, readHref, type BookRef } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
-import { sideOfWork } from "@/lib/side";
+import { sideOfWork } from "@/lib/catalog";
+import { SITE_SIDE } from "@/lib/site";
 
 export default function Home() {
   const router = useRouter();
   useEffect(() => {
     const s = getSettings();
-    // The Scriptures are always where the app opens: the most recent tab on the Scriptures side (a book in the
-    // Library is one tap away, under Continue on the Library side).
-    const onScriptures = (t: string) => sideOfWork(t.split("/")[0]) === "scriptures";
+    // The most recent tab of a book on this site (Verses Across: the scriptures; Library Across: the books).
+    const onScriptures = (t: string) => sideOfWork(t.split("/")[0]) === SITE_SIDE;
     const recent = s.tabsRecent.find((r) => s.tabs.some((t) => t.startsWith(`${r}/`) && onScriptures(t)));
     const tab = s.tabs.find((t) => recent && t.startsWith(`${recent}/`) && onScriptures(t)) ?? [...s.tabs].reverse().find(onScriptures);
     let ref: BookRef = DEFAULT_LOCATION;

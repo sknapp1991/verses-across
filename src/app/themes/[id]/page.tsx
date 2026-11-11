@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { ORIGINS, SITE_SIDE } from "@/lib/site";
 import index from "../../../../public/themes/index.json";
 import { ThemeView } from "@/components/theme-view";
 import type { ThemeSummary } from "@/lib/themes";
@@ -9,7 +10,7 @@ const THEMES = index as ThemeSummary[];
 type Props = { params: Promise<{ id: string }> };
 
 export function generateStaticParams() {
-  return THEMES.map((t) => ({ id: t.id }));
+  return THEMES.filter((t) => (t.side ?? "scriptures") === SITE_SIDE).map((t) => ({ id: t.id }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -30,6 +31,9 @@ export default async function ThemePage({ params }: Props) {
   const { id } = await params;
   const t = THEMES.find((x) => x.id === id);
   if (!t) notFound();
+  // A theme of the other site (Verses Across / Library Across): it lives there.
+  const side = t.side ?? "scriptures";
+  if (side !== SITE_SIDE) permanentRedirect(`${ORIGINS[side]}/themes/${t.id}`);
   // previous / next within the same side (scripture themes, or Library themes)
   const same = THEMES.filter((x) => x.side === t.side);
   const i = same.indexOf(t);

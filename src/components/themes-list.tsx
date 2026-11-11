@@ -17,11 +17,14 @@ export function ThemesList({ themes }: { themes: ThemeSummary[] }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from the address after hydration
     if (h === "library" || h === "scriptures") setPicked(h);
   }, []);
-  const side = picked ?? pageSide;
+  // One site's themes only (Verses Across: the scriptures'; Library Across: the books'): no switch then.
+  const sides = [...new Set(themes.map((t) => t.side ?? "scriptures"))] as Side[];
+  const side = sides.length === 1 ? sides[0] : (picked ?? pageSide);
   const list = themes.filter((t) => t.side === side);
   const groups = [...new Set(list.map((t) => t.group))];
   return (
     <div className="space-y-8">
+      {sides.length > 1 && (
       <div role="radiogroup" aria-label="Themes from" className="flex max-w-sm rounded-xl border border-line bg-raised p-1 text-sm">
         {(["scriptures", "library"] as const).map((s) => (
           <button
@@ -39,6 +42,7 @@ export function ThemesList({ themes }: { themes: ThemeSummary[] }) {
           </button>
         ))}
       </div>
+      )}
       <p className="text-sm">
         {side === "scriptures"
           ? "One theme, every tradition: the passages that speak most closely to it in each scripture, side by side, and the Library's books that echo it."

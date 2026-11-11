@@ -4,6 +4,7 @@
  * colour), and versesacross.com — drawn on a canvas (1080 px wide, square-ish, good for social posts
  * and messages). Shared through the phone's share sheet when it accepts images, else downloaded.
  */
+import { SITE_HOST } from "@/lib/site";
 export type ImageVerse = { abbr: string; language: string; text: string; dir: "ltr" | "rtl"; lang: string; color?: string };
 
 const W = 1080;
@@ -100,7 +101,7 @@ export async function renderVerseImage(opts: { heading: string; reference: strin
   ctx.fillStyle = muted;
   ctx.font = `400 26px ${sans}`;
   ctx.textAlign = "right";
-  ctx.fillText("versesacross.com", W - PAD, H - 64);
+  ctx.fillText(SITE_HOST, W - PAD, H - 64);
 
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Couldn’t draw the image"))), "image/png"));
 }

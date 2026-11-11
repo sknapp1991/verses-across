@@ -1,4 +1,5 @@
 "use client";
+import { SITE_NAME } from "@/lib/site";
 import { AlignButton, ColoursButton, FontSizeControl, TextSettingsButton, ViewToggle, WidthButton } from "./controls";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -576,7 +577,7 @@ export function ReaderView() {
   // The tab names the versions actually shown (the page's own title names the defaults when the address has
   // no ?v= and the reader uses this person's saved versions instead).
   const tabTitle = book
-    ? `${seoChapterName(book, ref.chapter)} – ${joinAbbrs(versions.map(getVersion).filter((v): v is Version => !!v))} · Verses Across`
+    ? `${seoChapterName(book, ref.chapter)} – ${joinAbbrs(versions.map(getVersion).filter((v): v is Version => !!v))} · ${SITE_NAME}`
     : "";
   useEffect(() => {
     if (tabTitle) document.title = tabTitle;

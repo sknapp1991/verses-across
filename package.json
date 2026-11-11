@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsx scripts/prune-site.mts && next build",
     "start": "next start",
     "lint": "eslint",
     "dev:lan": "npm run pack && next dev -H 0.0.0.0",

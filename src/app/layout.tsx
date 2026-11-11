@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Naskh_Arabic, Noto_Serif, Noto_Serif_Hebrew, Source_Serif_4 } from "next/font/google";
 import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
+import { SITE_NAME, SITE_ORIGIN, SITE_SIDE, SITE_TAGLINE } from "@/lib/site";
 import { DomainMove } from "@/components/domain-move";
 import { OfflineSupport } from "@/components/offline";
 import { FeedbackHost } from "@/components/feedback-dialog";
@@ -14,28 +15,31 @@ const hebrew = Noto_Serif_Hebrew({ variable: "--font-hebrew", subsets: ["hebrew"
 const arabic = Noto_Naskh_Arabic({ variable: "--font-arabic", subsets: ["arabic"], preload: false });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://versesacross.com"),
-  title: { default: "Verses Across", template: "%s · Verses Across" },
-  description: "Read the world's scriptures side by side, in many languages. Free on phone and desktop.",
-  applicationName: "Verses Across",
+  metadataBase: new URL(SITE_ORIGIN),
+  title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
+  description: SITE_TAGLINE,
+  applicationName: SITE_NAME,
   // The home page's main address; chapter pages and About set their own.
   alternates: { canonical: "/" },
   // Link previews (texts, chats, social): the image comes from app/opengraph-image.png.
   openGraph: {
     type: "website",
-    siteName: "Verses Across",
-    title: "Verses Across",
-    description: "Read the world's scriptures side by side, in many languages. Free on phone and desktop.",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_TAGLINE,
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Verses Across",
-    description: "Read the world's scriptures side by side, in many languages. Free on phone and desktop.",
+    title: SITE_NAME,
+    description: SITE_TAGLINE,
   },
-  appleWebApp: { title: "Verses Across", capable: true, statusBarStyle: "default" },
+  appleWebApp: { title: SITE_NAME, capable: true, statusBarStyle: "default" },
   // Google Search Console and Bing Webmaster Tools ownership (keep: removing them un-verifies the site).
-  verification: { google: "3nW8X3kaJ6HidJ_6O0hgpA9djiA7-qqybFpv6DzR4Ik", other: { "msvalidate.01": "3A234127FCC4DA14DFBE86FE4E25CE77" } },
+  // (versesacross.com's; Library Across gets its own when it's added to Search Console.)
+  ...(SITE_SIDE === "scriptures"
+    ? { verification: { google: "3nW8X3kaJ6HidJ_6O0hgpA9djiA7-qqybFpv6DzR4Ik", other: { "msvalidate.01": "3A234127FCC4DA14DFBE86FE4E25CE77" } } }
+    : {}),
 };
 
 export const viewport: Viewport = {

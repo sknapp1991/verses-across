@@ -4,6 +4,7 @@
  * streak, time this week and progress in the group's book. Plus the prompt shown when an invite link
  * is opened.
  */
+import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { chapterTitle, findBook, readHref, DEFAULT_VERSIONS } from "@/lib/catalog";
@@ -365,7 +366,7 @@ function GroupCard({ g }: { g: MyGroup }) {
 function Invite({ g }: { g: MyGroup }) {
   const link = inviteLink(g);
   const share = async () => {
-    const text = `Join my study group “${g.name}” on Verses Across`;
+    const text = `Join my study group “${g.name}” on ${SITE_NAME}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: g.name, text, url: link });
@@ -413,7 +414,7 @@ export function GroupInvite() {
               <CloseIcon />
             </button>
           </div>
-          <p className="text-sm text-muted">You were invited to read together on Verses Across. Pick the name the group will see.</p>
+          <p className="text-sm text-muted">You were invited to read together on {SITE_NAME}. Pick the name the group will see.</p>
           <JoinForm code={code} onDone={() => setCode(null)} />
         </div>
       )}

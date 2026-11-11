@@ -3,6 +3,7 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SITE_SIDE } from "@/lib/site";
 import { chooseSide, LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
 import { SideSwitch } from "./side-switch";
 import { recentChapters } from "@/lib/reading-position";
@@ -311,7 +312,7 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
         <Link
           href={readHref(cont.ref, cont.ref.work === ref.work ? versions : (DEFAULT_VERSIONS[cont.ref.work] ?? []))}
           onClick={onNavigate}
-          title={`The chapter you had open before this one on the ${side === "library" ? "Library" : "Scriptures"} side`}
+          title={`The chapter you had open before this one on ${SIDE_NAME[side]}`}
           className="flex min-h-11 w-full items-center gap-1.5 border-b border-line px-4 text-left text-sm hover:bg-raised"
         >
           <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-faint">Last read</span>
@@ -385,7 +386,7 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
             <li className="px-1 pt-2">
               <label className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted hover:bg-raised">
                 <input type="checkbox" checked={bothSides} onChange={(e) => setBothSides(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
-                Include the {SIDE_NAME[other]}
+                Include {SIDE_NAME[other]}
                 {elsewhere > 0 && <span className="text-faint">({elsewhere} {elsewhere === 1 ? "match" : "matches"} there)</span>}
               </label>
             </li>
@@ -432,10 +433,14 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
               Themes
             </Link>
             {" · "}
-            <Link href="/differences" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
-              Why Bibles differ
-            </Link>
-            {" · "}
+            {SITE_SIDE === "scriptures" && (
+              <>
+                <Link href="/differences" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
+                  Why Bibles differ
+                </Link>
+                {" · "}
+              </>
+            )}
             <Link href="/whats-new" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
               What&rsquo;s new
             </Link>

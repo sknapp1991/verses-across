@@ -1,4 +1,5 @@
 import app from "../../../../data/android/app.json";
+import { SITE_SIDE } from "@/lib/site";
 
 /**
  * Digital Asset Links: tells Android that the Verses Across app (package below) may open this site
@@ -8,7 +9,8 @@ import app from "../../../../data/android/app.json";
 export const dynamic = "force-static";
 
 export function GET() {
-  const body = app.sha256CertFingerprints.length
+  // The Android app is Verses Across's (Library Across has none yet).
+  const body = SITE_SIDE === "scriptures" && app.sha256CertFingerprints.length
     ? [
         {
           relation: ["delegate_permission/common.handle_all_urls"],

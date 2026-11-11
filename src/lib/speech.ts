@@ -7,6 +7,7 @@
  * utterances), so the reader can highlight the verse being read. "Pause" cancels and remembers the
  * verse; "resume" restarts that verse. Native pause/resume is unreliable on Android and in Chrome.
  */
+import { SITE_NAME } from "@/lib/site";
 import { useSyncExternalStore } from "react";
 import { RAW_WORD } from "./search-text";
 
@@ -339,7 +340,7 @@ function showDeviceSession() {
   if (!ms || !deviceControls || rec) return;
   const c = deviceControls;
   try {
-    ms.metadata = new MediaMetadata({ title: c.title, artist: c.artist, album: "Verses Across" });
+    ms.metadata = new MediaMetadata({ title: c.title, artist: c.artist, album: SITE_NAME });
     ms.setActionHandler("play", () => c.toggle());
     ms.setActionHandler("pause", () => c.toggle());
     ms.setActionHandler("previoustrack", () => c.step(-1));
@@ -766,7 +767,7 @@ function tick() {
 function mediaSession(title: string, artist: string) {
   const ms = (navigator as Navigator & { mediaSession?: MediaSession }).mediaSession;
   if (!ms) return;
-  ms.metadata = new MediaMetadata({ title, artist, album: "Verses Across" });
+  ms.metadata = new MediaMetadata({ title, artist, album: SITE_NAME });
   const step = (d: number) => () => {
     if (!audio || !rec) return;
     if (rec.mix) {

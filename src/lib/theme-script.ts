@@ -1,3 +1,5 @@
+import { SITE_ORIGIN, SITE_SIDE } from "./site";
+
 /** Shared by the server layout (inline <head> script) and the client settings store. */
 export const STORAGE_KEY = "gs:settings:v1";
 
@@ -8,8 +10,9 @@ export const STORAGE_KEY = "gs:settings:v1";
  *   otherwise src/components/domain-move.tsx sends the data first;
  * - applies the dark class so there is no light/dark flash.
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var h=location.hostname;if(/^(www\\.)?snoopwiggy\\.com$|^www\\.versesacross\\.com$/.test(h)&&(localStorage.getItem("gs:moved:v1")==="1"||!localStorage.getItem(${JSON.stringify(
+const OLD_HOSTS = SITE_SIDE === "library" ? String.raw`/^www\.libraryacross\.com$/` : String.raw`/^(www\.)?snoopwiggy\.com$|^www\.versesacross\.com$/`;
+export const THEME_INIT_SCRIPT = `(function(){try{var h=location.hostname;if(${OLD_HOSTS}.test(h)&&(localStorage.getItem("gs:moved:v1")==="1"||!localStorage.getItem(${JSON.stringify(
   STORAGE_KEY,
-)}))){location.replace("https://versesacross.com"+location.pathname+location.search+location.hash);return;}}catch(e){}try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(
+)}))){location.replace(${JSON.stringify(SITE_ORIGIN)}+location.pathname+location.search+location.hash);return;}}catch(e){}try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(
   STORAGE_KEY,
 )})||"{}");var t=s.theme;var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;

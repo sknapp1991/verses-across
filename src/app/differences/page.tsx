@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import data from "../../../data/bible-differences.json";
+import { permanentRedirect } from "next/navigation";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
+import { ORIGINS, SITE_SIDE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Why Bibles differ: verses some leave out",
@@ -51,6 +53,7 @@ function parallelLabel(p: string) {
  * A verse listed here has a small "Not in every Bible" mark in the reader that links to its entry.
  */
 export default function DifferencesPage() {
+  if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/differences`); // a Verses Across page
   return (
     <main className="h-dvh overflow-y-auto bg-paper text-muted">
       <div className="mx-auto max-w-4xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">

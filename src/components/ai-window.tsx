@@ -5,6 +5,7 @@
  * (it becomes the ✦ button in the top bar). Phone: a sheet over the bottom of the reader.
  * Every question includes what is on screen (chapter + visible versions), and optionally a verse.
  */
+import { SITE_NAME } from "@/lib/site";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { AiWord, looksForeign } from "./ai-word";
 import {
@@ -348,7 +349,7 @@ export function AiWindow() {
                   .sort((a, b) => a - b)
                   .map((i) => ({ question: chat.messages[i - 1]?.text, ref: chat.messages[i - 1]?.ref, answer: splitNext(chat.messages[i].text).body }));
                 const text = await buildShareText(pairs, { versionsHere, workHere: ctx?.at.work, reference: ctx?.reference });
-                const res = await shareText(text, ctx ? `${ctx.reference} — Verses Across` : "Verses Across");
+                const res = await shareText(text, ctx ? `${ctx.reference} — ${SITE_NAME}` : SITE_NAME);
                 if (res === "copied") toast("Copied — paste it into a message or email", 3500);
                 else if (res === "failed") toast("Couldn’t share");
                 if (res === "shared" || res === "copied") setPicked(null);

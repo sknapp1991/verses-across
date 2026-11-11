@@ -12,6 +12,7 @@
  * good (the button in the settings still adds it any time, and the reader is told so).
  * Never shown when already opened from the home screen.
  */
+import { SITE_NAME } from "@/lib/site";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "@/lib/ui-store";
@@ -47,7 +48,7 @@ if (typeof window !== "undefined") {
     installed = true;
     save({ ...load(), installed: true });
     ping();
-    toast("Verses Across is on your Home Screen");
+    toast(`${SITE_NAME} is on your Home Screen`);
   });
 }
 const subscribe = (l: () => void) => {
@@ -169,13 +170,13 @@ export function InstallCard() {
   }, []);
 
   // iPhone pre-fills the Home Screen name from the page title ("John 3 · Holy Bible…"), not from the app name:
-  // while the steps are showing, the title is just "Verses Across" (put back when the card closes).
+  // while the steps are showing, the title is just the site's name (put back when the card closes).
   const iosSteps = open && steps && (p === "ios-safari" || p === "ios-other");
   useEffect(() => {
     if (!iosSteps) return;
     const before = document.title;
     const hold = () => {
-      if (document.title !== "Verses Across") document.title = "Verses Across";
+      if (document.title !== SITE_NAME) document.title = SITE_NAME;
     };
     hold();
     const t = window.setInterval(hold, 500); // a page change sets its own title again
@@ -218,7 +219,7 @@ export function InstallCard() {
       <div
         role="region"
         aria-live="polite"
-        aria-label="Add Verses Across to your Home Screen"
+        aria-label={`Add ${SITE_NAME} to your Home Screen`}
         data-no-swipe
         className={`install-card fixed inset-x-3 z-[45] mx-auto max-w-md rounded-2xl border border-line bg-panel p-3 shadow-2xl ${
           topArrow ? "top-[calc(env(safe-area-inset-top)+0.75rem)]" : "bottom-[calc(env(safe-area-inset-bottom)+0.75rem)]"
@@ -228,7 +229,7 @@ export function InstallCard() {
           {/* eslint-disable-next-line @next/next/no-img-element -- the app's own icon, tiny and static */}
           <img src="/icon-192.png" alt="" width={44} height={44} className="h-11 w-11 shrink-0 rounded-xl" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold leading-tight">Add Verses Across to your Home Screen</p>
+            <p className="font-semibold leading-tight">Add {SITE_NAME} to your Home Screen</p>
             {!steps ? (
               <p className="mt-0.5 text-sm text-muted">Opens full screen like an app, with no browser bars. Works offline.</p>
             ) : p === "in-app" ? (

@@ -1,67 +1,41 @@
 "use client";
 /**
- * Two spaces in one app (Skylar, Nov 8): the **Scriptures** (every tradition's texts, with Philosophy beside
- * them) and the **Library** (Literature: fiction, poetry, drama, children's books, non-fiction; and Freethought,
- * moved here on Nov 9). The same reader underneath; each side lists its own shelves, finds its own books and has its
- * own "continue reading".
- *
- * Which side shows: the side of the page being read, unless the reader flipped the switch ("Scriptures |
- * Library"); opening a book on the other side follows it again. The Scriptures are always the default.
+ * Two sites from one codebase (src/lib/site.ts, Skylar, Nov 10): until then the **Scriptures** and the **Library**
+ * were two sides of one app with a switch; now Verses Across is the Scriptures and Library Across is the Library.
+ * The helpers keep their names (sidebar, search, themes, cross references use them): the side shown is always this
+ * site's, and choosing the other side goes to the other site, taking the reader's saved data along.
  *
  * The switch's one explainer: shown once; after it's closed it may show one more time about three weeks
- * later, and never if the Library has been opened even once.
+ * later, and never if the other site has been opened from here.
  */
 import { useSyncExternalStore } from "react";
-import { catalog } from "./catalog";
+import { catalog, sideOfWork } from "./catalog";
+import { LIBRARY_SHELVES, ORIGINS, SITE_NAMES, SITE_SIDE, type Side } from "./site";
+import { forwardTo } from "@/components/domain-move";
 
-export type Side = "scriptures" | "library";
-
-/** The shelves that make up the Library side (everything else is the Scriptures side). */
-export const LIBRARY_SHELVES = new Set(["literature", "fiction", "freethought"]);
-const LIBRARY_WORKS = new Set(
-  catalog.religions.filter((r) => LIBRARY_SHELVES.has(r.id)).flatMap((r) => r.collections.flatMap((c) => c.items.map((i) => i.work).filter(Boolean) as string[])),
-);
-/** A work's side: the Library for the books on the Literature and Freethought shelves (Paine's Age of Reason too). */
-export const sideOfWork = (work: string): Side => (LIBRARY_WORKS.has(work) ? "library" : "scriptures");
+export type { Side };
+export { LIBRARY_SHELVES, sideOfWork };
 export const shelvesOf = (side: Side) => catalog.religions.filter((r) => LIBRARY_SHELVES.has(r.id) === (side === "library"));
-export const SIDE_NAME: Record<Side, string> = { scriptures: "Scriptures", library: "Library" };
+export const SIDE_NAME: Record<Side, string> = SITE_NAMES;
 
-/* ---------- the side being shown ---------- */
-
-let chosen: Side | null = null; // the switch's choice; null = follow the page
-let pageWork = "";
-const subs = new Set<() => void>();
-const emit = () => subs.forEach((l) => l());
-
-/** Called by the reader with the work on screen: a new page's own side shows again. */
+/** Called by the reader with the work on screen (kept for the reader; the side no longer changes within a site). */
 export function setPageWork(work: string) {
-  if (work === pageWork) return;
-  pageWork = work;
-  // a work on the other side from the one being shown: show its side (the switch's choice ends)
-  if (chosen && sideOfWork(work) !== chosen) chosen = null;
-  if (sideOfWork(work) === "library") noteLibraryOpened();
-  emit();
+  void work;
 }
-export function chooseSide(side: Side) {
-  chosen = side;
-  if (side === "library") noteLibraryOpened();
-  emit();
+/** The other side lives on the other site: go there (same path when it's a page both have), with the saved data. */
+export function chooseSide(side: Side, path = "/") {
+  if (side === SITE_SIDE) return;
+  noteLibraryOpened();
+  forwardTo(ORIGINS[side], path);
 }
-const current = (): Side => chosen ?? (pageWork ? sideOfWork(pageWork) : "scriptures");
+const noop = () => () => {};
 export function useSide(): Side {
-  return useSyncExternalStore(
-    (l) => {
-      subs.add(l);
-      return () => subs.delete(l);
-    },
-    current,
-    () => "scriptures",
-  );
+  return useSyncExternalStore(noop, () => SITE_SIDE, () => SITE_SIDE);
 }
 
 /* ---------- the explainer's schedule ---------- */
 
-const TIP = "va-side-tip:v1";
+const TIP = "va-side-tip:v2"; // v2: the sites split (Nov 10), so everyone hears about it once
 type Tip = { first?: number; second?: number; library?: 1 };
 const REPEAT_MS = 21 * 86_400_000; // about three weeks
 function readTip(): Tip {

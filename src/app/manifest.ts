@@ -1,13 +1,16 @@
 import type { MetadataRoute } from "next";
+import { SITE_NAME, SITE_SIDE } from "@/lib/site";
 
 /** "Add to Home Screen" / install, and the Android app (a Trusted Web Activity of this site). */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Verses Across",
-    short_name: "Verses Across",
+    name: SITE_NAME,
+    short_name: SITE_NAME,
     description:
-      "Read the world's scriptures side by side, in many languages: the Bible, Quran, Torah, Gita, Dhammapada and more. Audio read-aloud, word study, cross references. Free, no ads.",
+      SITE_SIDE === "library"
+        ? "Read the classics free: novels, poetry, drama, children's books, Freethought and Psychology, from Project Gutenberg. Read-aloud, word help, notes. Free, no ads."
+        : "Read the world's scriptures side by side, in many languages: the Bible, Quran, Torah, Gita, Dhammapada and more. Audio read-aloud, word study, cross references. Free, no ads.",
     lang: "en",
     dir: "ltr",
     start_url: "/",
@@ -24,9 +27,12 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon-maskable-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
       { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
-    shortcuts: [
-      { name: "Verse of the day", url: "/", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
-      { name: "John 3", url: "/read/bible/jhn/3", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
-    ],
+    shortcuts:
+      SITE_SIDE === "library"
+        ? [{ name: "Continue reading", url: "/", icons: [{ src: "/icon-192.png", sizes: "192x192" }] }]
+        : [
+            { name: "Verse of the day", url: "/", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+            { name: "John 3", url: "/read/bible/jhn/3", icons: [{ src: "/icon-192.png", sizes: "192x192" }] },
+          ],
   };
 }

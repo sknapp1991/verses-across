@@ -15,6 +15,7 @@
  * the same either way, so a bot learns nothing.
  */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { SITE_NAME } from "@/lib/site";
 
 type Bucket = {
   put(key: string, value: string, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
@@ -29,7 +30,7 @@ const TOPIC_NAME: Record<string, string> = { text: "Text mistake", audio: "Audio
 /** A plain-text email for one report, to the owner (FEEDBACK_TO). */
 function emailFor(report: { id: string; topic: string; message: string; contact: string | null; page: string; details: unknown; received: string }, to: string): Mail {
   const first = report.message.replace(/\s+/g, " ").slice(0, 60);
-  const subject = `[Verses Across] ${TOPIC_NAME[report.topic] ?? "Feedback"}: ${first}${report.message.length > 60 ? "…" : ""}`;
+  const subject = `[${SITE_NAME}] ${TOPIC_NAME[report.topic] ?? "Feedback"}: ${first}${report.message.length > 60 ? "…" : ""}`;
   const body = [
     report.message,
     "",
@@ -39,7 +40,7 @@ function emailFor(report: { id: string; topic: string; message: string; contact:
     `Report ${report.id}, received ${report.received}`,
     report.details ? `\nDetails:\n${JSON.stringify(report.details, null, 2).slice(0, 8000)}` : "",
   ].join("\n");
-  return { to, from: { email: FROM, name: "Verses Across feedback" }, subject, text: body };
+  return { to, from: { email: FROM, name: `${SITE_NAME} feedback` }, subject, text: body };
 }
 type Limiter = { limit(o: { key: string }): Promise<{ success: boolean }> };
 type D1 = {

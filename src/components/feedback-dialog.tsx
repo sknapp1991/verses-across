@@ -4,6 +4,7 @@
  * verse, the versions on screen, device and recent errors are attached automatically (and shown
  * before sending, with a switch to leave them out). Mounted once in the root layout.
  */
+import { SITE_NAME } from "@/lib/site";
 import { useEffect, useMemo, useState } from "react";
 import { captureErrors, closeFeedback, gatherDetails, openFeedback, useFeedback, type FeedbackRequest, type FeedbackTopic } from "@/lib/feedback";
 import { CloseIcon } from "./icons";
@@ -13,7 +14,7 @@ const TOPICS: { id: FeedbackTopic; label: string; hint: string }[] = [
   { id: "text", label: "Text or translation", hint: "What’s wrong? For example a missing or wrong word, a verse out of place, a typo…" },
   { id: "audio", label: "Audio", hint: "What did you hear? For example the wrong verse, a skip, a word said wrong…" },
   { id: "bug", label: "Something broken", hint: "What were you doing, and what happened instead?" },
-  { id: "idea", label: "Idea", hint: "What would make Verses Across better for you?" },
+  { id: "idea", label: "Idea", hint: `What would make ${SITE_NAME} better for you?` },
   { id: "other", label: "Other", hint: "Tell us anything." },
 ];
 
@@ -157,7 +158,7 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
                 <button type="button" onClick={copyReport} className="underline underline-offset-2">
                   Copy the report
                 </button>
-                <a href="mailto:feedback@versesacross.com?subject=Verses%20Across%20feedback" className="underline underline-offset-2">
+                <a href={`mailto:feedback@versesacross.com?subject=${encodeURIComponent(SITE_NAME)}%20feedback`} className="underline underline-offset-2">
                   Email it to feedback@versesacross.com
                 </a>
                 <a href="https://github.com/sknapp1991/snoopwiggy/issues/new" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
@@ -174,7 +175,7 @@ function FeedbackBody({ req }: { req: FeedbackRequest }) {
           >
             {state === "sending" ? "Sending…" : "Send"}
           </button>
-          <p className="text-center text-xs text-faint">Goes straight to the two people who make Verses Across. No account needed.</p>
+          <p className="text-center text-xs text-faint">Goes straight to the two people who make {SITE_NAME}. No account needed.</p>
         </form>
       )}
     </div>

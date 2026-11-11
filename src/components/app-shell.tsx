@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { SITE_NAME } from "@/lib/site";
 import { BackupNudge } from "./backup-nudge";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { Modal } from "./modal";
@@ -98,7 +99,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {toast && <Toast key={toast.id} text={toast.text} />}
 
-      <Modal open={drawerOpen} onClose={() => setDrawerOpen(false)} variant="drawer" label="Scriptures and Library">
+      <Modal open={drawerOpen} onClose={() => setDrawerOpen(false)} variant="drawer" label={`${SITE_NAME} library`}>
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
             {/* the drawer's title is the Scriptures | Library switch */}

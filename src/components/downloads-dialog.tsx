@@ -5,7 +5,8 @@
  * saved is listed with Update and Delete. The work itself is in src/lib/downloads.ts.
  */
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { catalog, getVersion } from "@/lib/catalog";
+import { SITE_SIDE } from "@/lib/site";
+import { catalog, getVersion, sideOfWork } from "@/lib/catalog";
 import {
   audioKey,
   cancelDownload,
@@ -107,12 +108,12 @@ function Body() {
 
   const languages = useMemo(() => {
     const count = new Map<string, number>();
-    for (const v of catalog.versions) if (index?.texts[`${v.work}/${v.id}`]) count.set(v.language, (count.get(v.language) ?? 0) + 1);
+    for (const v of catalog.versions) if (index?.texts[`${v.work}/${v.id}`] && sideOfWork(v.work) === SITE_SIDE) count.set(v.language, (count.get(v.language) ?? 0) + 1);
     return [...count.entries()].sort((a, b) => b[1] - a[1] || langName(a[0]).localeCompare(langName(b[0]))).map(([code]) => code);
   }, [index]);
 
   const shown = useMemo(() => {
-    const list = catalog.versions.filter((v) => index?.texts[`${v.work}/${v.id}`]);
+    const list = catalog.versions.filter((v) => index?.texts[`${v.work}/${v.id}`] && sideOfWork(v.work) === SITE_SIDE); // this site's books only
     return lang === "reading" ? list.filter((v) => reading.includes(v.id)) : list.filter((v) => v.language === lang);
   }, [index, lang, reading]);
 
