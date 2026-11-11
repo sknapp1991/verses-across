@@ -245,8 +245,10 @@ export function TestersChat() {
                 id="chat-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                // Enter / Return starts a new line (Skylar, Nov 11); the Send button sends (Ctrl/⌘ + Enter too, on a keyboard)
+                enterKeyHint="enter"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     void send();
                   }
