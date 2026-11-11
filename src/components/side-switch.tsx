@@ -1,8 +1,8 @@
 "use client";
 /**
- * The "Verses Across | Library Across" switch (the top of the Library list: the left panel on a computer, the menu on a
- * phone) and its one-time explainer. The other one is another site now (src/lib/site.ts): choosing it goes there,
- * with the reader's saved data. See src/lib/side.ts for when the explainer may show.
+ * The one-time note about the split into two sites (src/lib/site.ts): the Library's books moved to Library Across.
+ * (The Scriptures | Library switch is gone, Skylar Nov 10; the menu's footer links the sister site.) SideSwitch is
+ * kept for now but unused. See src/lib/side.ts for when the note may show.
  */
 import { useEffect, useState } from "react";
 import { chooseSide, SIDE_NAME, tipDue, tipShown, useSide, type Side } from "@/lib/side";
@@ -93,18 +93,31 @@ export function SideTip() {
                 <strong className="text-ink">Library Across</strong> (libraryacross.com). Verses Across keeps the world&apos;s scriptures.
               </>
             )}{" "}
-            Switch between them at the top of the Library list
-            <span className="desk:hidden"> (the menu ☰)</span>
-            <span className="hidden desk:inline"> on the left</span>; your places, highlights and notes come along.
+            The link to {OTHER_NAME} is at the bottom of the Library list
+            <span className="desk:hidden"> (the menu ☰)</span>; your places, highlights and notes come along.
           </p>
         </div>
         <button type="button" onClick={close} aria-label="Close" className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-raised">
           <CloseIcon width={16} height={16} />
         </button>
       </div>
-      <button type="button" onClick={close} className="mt-3 min-h-10 w-full rounded-lg bg-accent text-sm font-medium text-accent-ink">
-        Got it
-      </button>
+      <div className="mt-3 flex gap-2">
+        {SITE_SIDE === "scriptures" && (
+          <button
+            type="button"
+            onClick={() => {
+              tipShown();
+              chooseSide("library");
+            }}
+            className="min-h-10 flex-1 rounded-lg border border-accent text-sm font-medium text-accent"
+          >
+            Open Library Across
+          </button>
+        )}
+        <button type="button" onClick={close} className="min-h-10 flex-1 rounded-lg bg-accent text-sm font-medium text-accent-ink">
+          Got it
+        </button>
+      </div>
     </div>
   );
 }

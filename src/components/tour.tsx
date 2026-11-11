@@ -72,7 +72,7 @@ const STEPS: Step[] = [
       SITE_SIDE === "library"
         ? "Library Across has the classic books; its sister site Verses Across has the world's scriptures. Your places, highlights and notes come along when you switch."
         : "Verses Across has the world's scriptures; its sister site Library Across has the classic books (novels, poetry, drama, children's books and more). Your places, highlights and notes come along when you switch.",
-    where: "The Verses Across | Library Across switch at the top of the Library list (the left panel; the menu ☰ on a phone).",
+    where: "The link at the bottom of the Library list (the left panel; the menu ☰ on a phone).",
   },
   {
     icon: <HeadphonesIcon />,

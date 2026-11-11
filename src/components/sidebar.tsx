@@ -3,9 +3,8 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SITE_SIDE } from "@/lib/site";
+import { OTHER_NAME, OTHER_ORIGIN, OTHER_SIDE, SITE_SIDE } from "@/lib/site";
 import { chooseSide, LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
-import { SideSwitch } from "./side-switch";
 import { recentChapters } from "@/lib/reading-position";
 import { getSettings } from "@/lib/settings";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, isLiteratureWork, readHref, type BookRef } from "@/lib/catalog";
@@ -121,7 +120,7 @@ function whereIs(ref: BookRef) {
   return null;
 }
 
-export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () => void; showSwitch?: boolean }) {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { ref, versions } = useReaderState();
   const side = useSide();
   const other: Side = side === "library" ? "scriptures" : "library";
@@ -276,12 +275,6 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
 
   return (
     <nav aria-label="Library" className="flex h-full min-h-0 flex-col">
-      {/* Computer: the Scriptures | Library switch heads the list (a phone has it as the menu's title) */}
-      {showSwitch && (
-        <div className="flex justify-center border-b border-line px-3 pb-2 pt-3">
-          <SideSwitch />
-        </div>
-      )}
       <div className="border-b border-line p-3">
         <label className="flex h-11 items-center gap-2 rounded-lg border border-line bg-raised px-3 focus-within:ring-2 focus-within:ring-accent/50">
           <SearchIcon className="shrink-0 text-faint" width={18} height={18} />
@@ -456,6 +449,20 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
             <button type="button" onClick={() => openTour()} className="underline underline-offset-2 hover:text-muted">
               Take the tour
             </button>
+            <br />
+            {/* The sister site (one day a list of every "…Across" site). Goes there with this site's saved data. */}
+            Also from us:{" "}
+            <a
+              href={OTHER_ORIGIN}
+              onClick={(e) => {
+                e.preventDefault();
+                chooseSide(OTHER_SIDE);
+              }}
+              className="font-medium text-accent underline underline-offset-2"
+            >
+              {OTHER_NAME} ↗
+            </a>{" "}
+            ({OTHER_SIDE === "library" ? "classic books" : "the world's scriptures"})
           </p>
         )}
       </div>
