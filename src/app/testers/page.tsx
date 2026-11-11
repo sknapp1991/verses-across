@@ -39,10 +39,12 @@ export default function TestersPage() {
           <h2 className="font-serif text-xl font-semibold text-ink">Three steps</h2>
           <ol className="space-y-3">
             <li className="rounded-xl border border-line bg-raised/40 p-4">
-              <p className="font-medium text-ink">1. Say hi in the testers&rsquo; chat below</p>
+              <p className="font-medium text-ink">1. Say hi in the chat, then email us from your Android phone&rsquo;s Google account</p>
               <p className="text-sm">
-                Pick a name and introduce yourself. Skylar will message you privately for the Google account email you use on your
-                Android phone, so he can add you to the test. Please don&rsquo;t post your email in the chat: everyone can read it.
+                Pick a name in the testers&rsquo; chat below and say hi. Then send an email to{" "}
+                <span className="select-all font-medium text-ink">testers@versesacross.com</span> from the Gmail you use on your Android
+                phone, with <strong className="text-ink">your chat name as the subject</strong>. Google Play only lets that exact account
+                into the test. Please don&rsquo;t post your email in the chat: everyone can read it.
               </p>
             </li>
             <li className="rounded-xl border border-line bg-raised/40 p-4">

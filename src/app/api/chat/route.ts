@@ -56,7 +56,7 @@ const normal = (s: string) => s.toLowerCase().replace(/[@4]/g, "a").replace(/3/g
 const clean = (s: string) => s.replace(/[\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/g, "");
 const MOD_NAME = /skylar|\bmod\b|admin|moderator|verses\s*across/i;
 function refused(text: string, name: string, isMod: boolean): string | null {
-  if (!isMod && (EMAIL.test(text) || EMAIL.test(name))) return "Please don't post email addresses in the chat: everyone can read it. Skylar will ask you privately.";
+  if (!isMod && (EMAIL.test(text) || EMAIL.test(name))) return "Please don't post email addresses in the chat: everyone can read it. Email testers@versesacross.com instead.";
   if (!isMod && (LINK.test(text) || LINK.test(name))) return "Links and web addresses aren't allowed here.";
   if (!isMod && MOD_NAME.test(name)) return "Please pick a different name (that one is for the moderator).";
   if (!/[\p{L}\p{N}]/u.test(name) || !/[\p{L}\p{N}\p{Emoji_Presentation}]/u.test(text)) return "Write a few words, please.";
