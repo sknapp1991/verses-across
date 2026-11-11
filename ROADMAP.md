@@ -12,7 +12,7 @@ Cloudflare Workers + R2 · pushing to `main` deploys · every change reviewed by
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| P | **Google Play** (Android app) | in progress (Nov 10) | Developer account verified. Nov 10: app file built on pwabuilder.com (package com.versesacross.app; signing key kept privately in Documents\Verses Across Android app, never in the repo); upload-key fingerprint added to assetlinks. Next (Skylar, in Play Console): create the app, closed test with the testers' group versesacross-testers@googlegroups.com, App content forms; then send me the Play App Signing SHA-256 → `data/android/app.json`. 12 testers × 14 days before production; opt-in link → social session. |
+| P | **Google Play** (Android app) | in progress (Nov 10) | Developer account verified. Nov 10: app file built on pwabuilder.com (package com.versesacross.app; signing key kept privately in Documents\Verses Across Android app, never in the repo); upload-key fingerprint added to assetlinks. Next (Skylar, in Play Console): create the app, closed test with the testers' group verses-across-testers@googlegroups.com, App content forms; then send me the Play App Signing SHA-256 → `data/android/app.json`. 12 testers × 14 days before production; opt-in link → social session. |
 
 ## Next
 
