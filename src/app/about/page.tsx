@@ -149,6 +149,11 @@ export default function AboutPage() {
           <ul className="list-disc space-y-2 pl-5">
             <li>There are no accounts, ads, cookies or tracking.</li>
             <li>
+              <strong className="text-ink">Private mode.</strong> Nothing is collected unless you send it (a feedback report or a
+              question to Ask AI). To switch even that off, turn on Private mode (Display options, or More ⋯ on a phone, then Privacy): Ask AI, the
+              feedback form, the anonymous counts, sync and study groups stop, and nothing leaves your device.
+            </li>
+            <li>
               We count, anonymously, how often chapters are read, read-along audio is played and versions are downloaded:
               only daily totals per work, version and language. Nothing about you is stored with them (no IP address, no
               ID, no cookie), so the totals can&rsquo;t be linked to anyone.

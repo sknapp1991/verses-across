@@ -10,7 +10,7 @@ import { XrefToggle } from "./xref-panel";
 import { isShowing, openSheet, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
 import { openSearch } from "./search-panel";
-import { ChapterSwipeControl, SavedSetups, ThemeToggle, VersionChooser } from "./controls";
+import { ChapterSwipeControl, PrivacyControl, SavedSetups, ThemeToggle, VersionChooser } from "./controls";
 import { useReaderState } from "./use-reader-state";
 import { AiButton } from "./ai-window";
 import { OfflineDownloadsButton } from "./downloads-dialog";
@@ -112,6 +112,7 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
             <SavedSetups />
             <RedLetterToggle />
             <ChapterSwipeControl />
+            <PrivacyControl heading />
             <OfflineDownloadsButton />
             <InstallAppButton />
             <TourButton />

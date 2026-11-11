@@ -143,7 +143,8 @@ function Body() {
                   disabled={busy}
                   onClick={async () => {
                     setBusy(true);
-                    await turnOnSync();
+                    // Private mode: sync can't start (src/lib/privacy.ts); say so instead of making a code
+                    await turnOnSync().catch((e: Error) => toast(e.message, 5000));
                     setBusy(false);
                   }}
                   className={`${btn} w-full bg-accent font-medium text-accent-ink disabled:opacity-60`}

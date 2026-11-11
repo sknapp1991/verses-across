@@ -10,6 +10,7 @@ import { findBook } from "./catalog";
 import { bookProgress } from "./goals";
 import { deriveKeys, fromBase64, hex, newCode, normalizeCode, open, seal, type CodeKeys } from "./secret-code";
 import { allItems } from "./study";
+import { isPrivate, PrivateModeError } from "./privacy";
 
 export type Share = { progress: boolean; reading: boolean };
 export type MyGroup = { code: string; name: string; me: string; secret: string; share: Share; joined: number };
@@ -63,7 +64,13 @@ export function useGroups(): MyGroup[] {
 }
 
 const keyCache = new Map<string, Promise<CodeKeys>>();
+/** Every group request starts here, so Private mode pauses them all (src/lib/privacy.ts). */
 const keysFor = (code: string) => {
+  if (isPrivate()) return Promise.reject(new PrivateModeError("Study groups"));
+  return keysAlways(code);
+};
+/** Leaving a group (a delete that carries nothing about the reader) works in Private mode too. */
+const keysAlways = (code: string) => {
   let p = keyCache.get(code);
   if (!p) keyCache.set(code, (p = deriveKeys(code, "group")));
   return p;
@@ -176,7 +183,7 @@ export async function joinGroup(input: string, me: string): Promise<string | nul
 
 /** Remove my card from the group, then forget the group here. Throws (and keeps the group) if the card couldn't be removed. */
 export async function leaveGroup(g: MyGroup) {
-  const k = await keysFor(g.code);
+  const k = await keysAlways(g.code);
   const res = await fetch(`/api/group/${k.id}/${await memberId(g.secret)}`, { method: "DELETE", headers: { "x-member-key": g.secret } }).catch(() => null);
   if (!res || !(res.ok || res.status === 404)) throw new Error(navigator.onLine ? "Couldn’t leave the group right now. Try again." : "You’re offline. Try again when you’re back online.");
   saveGroups(getGroups().filter((x) => x.code !== g.code));

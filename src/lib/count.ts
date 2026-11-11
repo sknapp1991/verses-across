@@ -4,11 +4,14 @@
  * one to that day's total for the work and version. Nothing identifies the person: no ID, no cookie;
  * the same chapter is counted once per tab per day. Sent with sendBeacon so it never slows the page.
  */
+import { isPrivate } from "./privacy";
+
 const seen = new Set<string>();
 
 export function count(kind: "view" | "play" | "download", work: string, versions: string[]) {
   versions = versions.filter(Boolean);
   if (typeof window === "undefined" || process.env.NODE_ENV !== "production" || !versions.length) return;
+  if (isPrivate()) return; // Private mode: not even anonymous counts
   const body = JSON.stringify({ kind, work, versions: versions.slice(0, 8) });
   try {
     if (navigator.sendBeacon?.("/api/count", new Blob([body], { type: "application/json" }))) return;

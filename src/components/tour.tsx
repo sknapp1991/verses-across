@@ -17,6 +17,8 @@ import { openDownloads } from "./downloads-dialog";
 import { BookIcon, ColumnsIcon, HeadphonesIcon, LanguagesIcon, LibraryIcon, RocketIcon, SparkIcon, StarIcon, TrophyIcon } from "./icons";
 import { Modal } from "./modal";
 import { openSyncDialog } from "./sync-dialog";
+import { updateSettings } from "@/lib/settings";
+import { toast } from "@/lib/ui-store";
 
 const KEY = "va-tour:v1"; // "done" = don't open by itself again
 const TIPS = "gs:tips:v1"; // the old Quick tips card: shown once, so the tour counts as it
@@ -106,6 +108,19 @@ const STEPS: Step[] = [
     body: "Earn badges and climb from level 1 to 60 as you read, keep a streak, follow a reading plan or set a daily goal, and read with family in a study group. Sync keeps your notes the same on your phone and computer, encrypted, with no account.",
     where: "The trophy at the top (level and badges) and the calendar (Plans & Goals). Sync is in My Study.",
     tryIt: { label: "Set up sync", go: openSyncDialog },
+  },
+  {
+    icon: <BookIcon />,
+    title: "Private by default",
+    body: "No account, no ads, no tracking. Nothing is collected unless you send it: a feedback report or a question to Ask AI. Want none of that? Private mode switches it all off, and nothing leaves your device.",
+    where: "Display options (or More ⋯ on a phone), then Privacy.",
+    tryIt: {
+      label: "Turn on Private mode",
+      go: () => {
+        updateSettings({ privateMode: true });
+        toast("Private mode is on: nothing leaves this device", 4000);
+      },
+    },
   },
   {
     icon: <BookIcon />,

@@ -592,6 +592,25 @@ export function ChapterSwipeControl() {
   );
 }
 
+/** Private mode (src/lib/privacy.ts): one switch that stops everything that would send data off the device. */
+export function PrivacyControl({ heading = false }: { heading?: boolean }) {
+  const { privateMode } = useSettings();
+  return (
+    <div className="space-y-2">
+      {heading && <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Privacy</h3>}
+      <Switch
+        checked={privateMode}
+        onChange={(on) => updateSettings({ privateMode: on })}
+        label="Private mode: nothing leaves this device"
+        hint="Turns off Ask AI, the feedback form (you get our email address instead), the anonymous reading counts, sync and study groups. Reading, listening, notes and downloads all keep working."
+      />
+      <p className="text-xs text-faint">
+        Even with it off, nothing is collected unless you send it: a feedback report or a question to Ask AI. No account, no ads, no tracking.
+      </p>
+    </div>
+  );
+}
+
 /** Column width (Column view; separate value in phone landscape) or reading width (Stacked view). */
 export function WidthControl() {
   const view = useViewMode();

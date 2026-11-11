@@ -8,6 +8,8 @@
  */
 import { useSyncExternalStore } from "react";
 import type { StudyRef } from "./storage";
+import { isPrivate, PrivateModeError } from "./privacy";
+import { toast } from "./ui-store";
 
 /** `at`: the verse (or chapter) the question was about — where "Save as note" puts the answer. */
 export type ChatMsg = { role: "user" | "model"; text: string; ref?: string; error?: boolean; at?: StudyRef };
@@ -87,6 +89,11 @@ function load() {
   } catch {
     /* ignore */
   }
+  if (isPrivate()) {
+    // Private mode: Ask AI is off, don't even ask the server; checked again on the next render once it's turned off
+    loaded = false;
+    return set({ ready: false, open: false }, false);
+  }
   fetch("/api/ask")
     .then((r) => (r.ok ? r.json() : { ready: false }))
     .then((d: { ready?: boolean; providers?: string[] }) => {
@@ -114,7 +121,15 @@ export const setReadingContext = (c: ReadingContext | null) => {
 };
 export const getReadingContext = () => readingCtx;
 
-export const openAi = () => set({ open: true, minimized: false });
+/** Private mode: Ask AI stays closed and says why (src/lib/privacy.ts). */
+const aiOff = () => {
+  if (!isPrivate()) return false;
+  toast(new PrivateModeError("Ask AI").message, 5000);
+  return true;
+};
+export const openAi = () => {
+  if (!aiOff()) set({ open: true, minimized: false });
+};
 export const minimizeAi = () => set({ minimized: true });
 export const closeAi = () => set({ open: false, minimized: false });
 export const setAiBox = (box: WinBox) => set({ box });
@@ -123,6 +138,7 @@ export const setAiDeep = (deep: boolean) => set({ deep });
 export const detachVerse = () => set({ attached: null }, false);
 export const clearAiChat = () => set({ messages: [], attached: null });
 export function askAboutVerse(v: AttachedVerse) {
+  if (aiOff()) return;
   set({ open: true, minimized: false, attached: v });
 }
 
@@ -133,7 +149,7 @@ export function stopAi() {
 
 export async function sendAi(question: string) {
   const q = question.trim();
-  if (chat.busy || (!q && !chat.attached)) return;
+  if (chat.busy || (!q && !chat.attached) || aiOff()) return;
   const ctx = readingCtx;
   const attached = chat.attached;
   const at = attached?.at ?? ctx?.at;

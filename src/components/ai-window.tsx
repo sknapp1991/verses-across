@@ -33,6 +33,7 @@ import { getItem, saveNote, type StudyRef } from "@/lib/study";
 import { buildShareText, shareText } from "@/lib/ai-share";
 import { CloseIcon, CopyIcon, MinusIcon, NoteIcon, SendIcon, ShareIcon, SparkIcon, StopIcon, TrashIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
+import { usePrivate } from "@/lib/privacy";
 
 const SUGGESTIONS = [
   "Summarize this chapter",
@@ -61,7 +62,8 @@ const defaultBox = (): WinBox => {
 /** Top-bar button: opens / restores the window. Hidden until the site has an AI key. */
 export function AiButton() {
   const { ready, open, minimized, busy } = useAiChat();
-  if (!ready) return null;
+  const privateMode = usePrivate();
+  if (!ready || privateMode) return null; // Private mode: no Ask AI
   const showing = open && !minimized;
   return (
     <button
@@ -84,12 +86,13 @@ export function AiButton() {
 
 export function AiWindow() {
   const chat = useAiChat();
+  const privateMode = usePrivate();
   const wide = useMediaQuery(WIDE_QUERY, true);
   const [box, setBox] = useState<WinBox | null>(null);
   const [input, setInput] = useState("");
   const scroller = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const showing = chat.ready && chat.open && !chat.minimized;
+  const showing = chat.ready && chat.open && !chat.minimized && !privateMode; // Private mode: closed
   /** Choosing what to share: the answers ticked (by message index), or null when not sharing. */
   const [picked, setPicked] = useState<Set<number> | null>(null);
   /** Phone: the sheet's height after dragging its top edge (px); null = default 72% of the screen. */

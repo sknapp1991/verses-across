@@ -17,6 +17,7 @@ import { useSettings, versionColor } from "@/lib/settings";
 import { renderVerseImage, shareVerseImage } from "@/lib/verse-image";
 import { CloseIcon, ClockIcon, CopyIcon, HeadphonesIcon, ImageIcon, LinkIcon, MailIcon, SparkIcon, StarIcon } from "./icons";
 import { Modal } from "./modal";
+import { usePrivate } from "@/lib/privacy";
 
 export type VerseText = AskTranslation & { dir: "ltr" | "rtl"; lang: string; id?: string };
 
@@ -73,6 +74,7 @@ function MenuBody({
 }) {
   useStudy(); // re-render on changes
   const ai = useAiChat();
+  const privateMode = usePrivate(); // no "Ask in ChatGPT / Claude" links either: they send the verse to another site
   const settings = useSettings();
   const highlight = getItem("highlight", r)?.color;
   const fav = !!getItem("favorite", r);
@@ -282,7 +284,7 @@ function MenuBody({
           />
         </label>
 
-        {features.askInExternal && (
+        {features.askInExternal && !privateMode && (
           <div className="space-y-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-faint">{ai.ready ? "Ask AI" : "Ask in…"}</span>
             <input

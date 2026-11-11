@@ -5,6 +5,7 @@
  * before sending, with a switch to leave them out). Mounted once in the root layout.
  */
 import { SITE_NAME } from "@/lib/site";
+import { usePrivate, WHERE } from "@/lib/privacy";
 import { useEffect, useMemo, useState } from "react";
 import { captureErrors, closeFeedback, gatherDetails, openFeedback, useFeedback, type FeedbackRequest, type FeedbackTopic } from "@/lib/feedback";
 import { CloseIcon } from "./icons";
@@ -20,11 +21,62 @@ const TOPICS: { id: FeedbackTopic; label: string; hint: string }[] = [
 
 export function FeedbackHost() {
   const req = useFeedback();
+  const privateMode = usePrivate();
   useEffect(captureErrors, []);
   return (
     <Modal open={!!req} onClose={closeFeedback} variant="card" label="Send feedback">
-      {req && <FeedbackBody req={req} />}
+      {req && (privateMode ? <PrivateFeedback req={req} /> : <FeedbackBody req={req} />)}
     </Modal>
+  );
+}
+
+/** Private mode (src/lib/privacy.ts): the form sends nothing; the reader gets our address to write from their own email. */
+function PrivateFeedback({ req }: { req: FeedbackRequest }) {
+  const [copied, setCopied] = useState(false);
+  const address = "feedback@versesacross.com";
+  const subject = req.verse ? `${SITE_NAME} feedback: ${req.verse.reference}` : `${SITE_NAME} feedback`;
+  // a crash report or a prefilled message: shown to copy into the email (and put in it), since the form can't send it
+  const extra = [req.message, req.error ? `Error: ${req.error}` : ""].filter(Boolean).join("\n\n");
+  return (
+    <div className="space-y-4 p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-serif text-lg font-semibold">Send feedback</h2>
+        <button type="button" onClick={closeFeedback} aria-label="Close" className="-mr-3 flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
+          <CloseIcon />
+        </button>
+      </div>
+      <p className="text-sm text-muted">
+        Private mode is on, so this form doesn&rsquo;t send anything. Write to us from your own email instead
+        {req.verse ? <> (mention <strong className="text-ink">{req.verse.reference}</strong>)</> : null}:
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="select-all rounded-lg border border-line bg-raised px-3 py-2 font-medium text-ink">{address}</span>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(address);
+              setCopied(true);
+            } catch {
+              /* the address is selectable */
+            }
+          }}
+          className="min-h-10 rounded-lg border border-line px-3 text-sm hover:bg-raised"
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <a href={`mailto:${address}?subject=${encodeURIComponent(subject)}${extra ? `&body=${encodeURIComponent(extra.slice(0, 1500))}` : ""}`} className="min-h-10 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-ink">
+          Open my email
+        </a>
+      </div>
+      {extra && (
+        <div className="space-y-1">
+          <p className="text-xs text-faint">Details to include:</p>
+          <pre className="max-h-40 select-all overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-raised p-2 text-xs text-muted">{extra}</pre>
+        </div>
+      )}
+      <p className="text-xs text-faint">Or turn Private mode off ({WHERE}) to use the form, which can add the page and device details for you.</p>
+    </div>
   );
 }
 

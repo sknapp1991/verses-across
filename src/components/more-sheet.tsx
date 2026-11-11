@@ -28,6 +28,7 @@ import {
 import {
   AlignControl,
   ChapterSwipeControl,
+  PrivacyControl,
   FontSizeControl,
   LanguageColors,
   SavedSetups,
@@ -145,6 +146,12 @@ function Body({ section }: { section: string }) {
           </Section>
         )}
 
+        {only !== "versions" && (
+          <Section id="privacy" title="Privacy">
+            <PrivacyControl />
+          </Section>
+        )}
+
         {only !== "text" && (
           <Section id="versions" title="Versions & languages" hideTitle={only === "versions"}>
             <SavedSetups />
@@ -227,6 +234,7 @@ function Section({
 function Tiles() {
   const router = useRouter();
   const ai = useAiChat();
+  const { privateMode } = useSettings();
   const share = useShareHere();
   const go = (id: PanelId) => {
     closeSheet();
@@ -249,7 +257,7 @@ function Tiles() {
         label="Study groups"
         onClick={() => go("groups")}
       />
-      {ai.ready && (
+      {ai.ready && !privateMode && (
         <Tile
           icon={<SparkIcon />}
           label="Ask AI"

@@ -18,6 +18,7 @@ import { getSettings, SYNCED_SETTINGS, updateSettings, type Settings } from "./s
 import { onLocalChange, stampOf } from "./stamps";
 import { allItems, getDeleted, mergeFromSync, onStudyChange, type StudyItem } from "./study";
 import { toast } from "./ui-store";
+import { isPrivate, PrivateModeError } from "./privacy";
 
 type Payload = {
   v: 1;
@@ -232,10 +233,12 @@ export function syncNow(): Promise<void> {
   running = (async () => {
     const saved = readSaved();
     if (!saved) return;
+    if (isPrivate()) return set({ status: "error", error: new PrivateModeError("Sync").message }); // paused; resumes when it's off
     set({ status: "syncing", error: null });
     try {
       const k = await keysFor(saved.code);
       for (let attempt = 0; attempt < 4; attempt++) {
+        if (isPrivate()) return set({ status: "error", error: new PrivateModeError("Sync").message }); // switched on mid-sync
         const res = await fetch(`/api/sync/${k.id}`, { cache: "no-store" });
         let remote: Payload | null = null;
         let etag: string | null = null;
@@ -253,6 +256,7 @@ export function syncNow(): Promise<void> {
           return;
         } else if (res.status !== 404) throw new Error((await res.json().catch(() => null))?.error ?? "Sync is unavailable right now.");
         const payload = await mergeAndBuild(remote, saved.device);
+        if (isPrivate()) return set({ status: "error", error: new PrivateModeError("Sync").message }); // nothing uploads
         const put = await fetch(`/api/sync/${k.id}`, {
           method: "PUT",
           headers: { "content-type": "application/octet-stream", ...(etag ? { "if-match": etag } : { "if-none-match": "*" }) },
@@ -282,6 +286,7 @@ export function syncNow(): Promise<void> {
 
 /** Start syncing with a new code (returns it). */
 export async function turnOnSync(): Promise<string> {
+  if (isPrivate()) throw new PrivateModeError("Sync");
   const code = newCode();
   writeSaved({ code, device: deviceId(), etag: null, last: 0 });
   set({ on: true, code, status: "syncing", pending: null });
@@ -293,6 +298,7 @@ export async function turnOnSync(): Promise<string> {
 export async function joinSync(input: string): Promise<string | null> {
   const code = normalizeCode(input);
   if (!code) return "That doesn’t look like a sync code (25 letters and numbers).";
+  if (isPrivate()) return new PrivateModeError("Sync").message;
   const k = await deriveKeys(code, "sync");
   const res = await fetch(`/api/sync/${k.id}`, { cache: "no-store" }).catch(() => null);
   if (!res) return "You’re offline.";

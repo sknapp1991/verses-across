@@ -95,6 +95,12 @@ export type Settings = {
   autoStudied: boolean;
   /** Floating ‹ › chapter buttons (fade while scrolling). */
   floatingNav: boolean;
+  /**
+   * Private mode (Skylar, Nov 10): nothing leaves this device. Ask AI is hidden, feedback becomes an email address to
+   * copy, the anonymous reading counts stop, sync and study groups pause. Reading, audio, notes, word study and
+   * offline downloads are unaffected (they never send anything). See src/lib/privacy.ts.
+   */
+  privateMode: boolean;
   /** Verse text alignment ("start" = left, or right for Hebrew and Arabic). */
   textAlign: TextAlign;
   /** Saved setups, in the order they were made. */
@@ -166,6 +172,7 @@ const DEFAULTS: Settings = {
   continuousLibrary: true,
   autoStudied: true,
   floatingNav: true,
+  privateMode: false,
   textAlign: "start",
   setups: [],
   activeSetup: null,
@@ -221,6 +228,7 @@ function read(): Settings {
       continuousLibrary: (p as { continuousLibrary?: unknown }).continuousLibrary !== false,
       autoStudied: (p as { autoStudied?: unknown }).autoStudied !== false,
       floatingNav: p.floatingNav !== false,
+      privateMode: (p as { privateMode?: unknown }).privateMode === true,
       textAlign: (["center", "end", "justify"] as const).find((x) => x === (p as { textAlign?: unknown }).textAlign) ?? "start",
       setups: Array.isArray(p.setups)
         ? p.setups.filter((x): x is Setup => !!x && typeof x.name === "string" && Array.isArray(x.versions)).slice(0, 30)
