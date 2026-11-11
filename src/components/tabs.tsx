@@ -11,7 +11,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { chapterTitle, findBook, readHref, type BookRef } from "@/lib/catalog";
+import { chapterTitle, findBook, readHref, sideOfWork, type BookRef } from "@/lib/catalog";
+import { SITE_SIDE } from "@/lib/site";
 import { getSettings, MAX_TABS, updateSettings, useSettings } from "@/lib/settings";
 import { CloseIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
@@ -34,7 +35,8 @@ export function useTabsSync() {
   const { ref, entry } = useReaderState();
   const current = key(ref);
   useEffect(() => {
-    if (!entry) return;
+    // (a book of the other site is only passing through on its way there: MovedAway)
+    if (!entry || sideOfWork(current.split("/")[0]) !== SITE_SIDE) return;
     // Read the saved tabs at the moment of the update: during hydration the rendered settings are
     // still the defaults (no tabs), and acting on those would wipe the user's saved tabs.
     const { tabs, tabsRecent } = getSettings();
@@ -56,7 +58,9 @@ export function useTabsSync() {
 
 export function TabBar() {
   const { ref, versions } = useReaderState();
-  const { tabs, tabsRecent } = useSettings();
+  const { tabs: saved, tabsRecent } = useSettings();
+  // This site's books only (Verses Across / Library Across); the other site's tabs live there.
+  const tabs = saved.filter((t) => sideOfWork(t.split("/")[0]) === SITE_SIDE);
   const router = useRouter();
   const barRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);

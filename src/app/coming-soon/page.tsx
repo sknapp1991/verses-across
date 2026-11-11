@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { FeedbackButton } from "@/components/feedback-dialog";
 
 export const metadata: Metadata = {
   title: "Coming soon",
-  description: "What's planned next for Verses Across: games and quizzes, a section for children, a path for teachers, reading plans and more.",
+  description: `What's planned next for ${SITE_NAME}: games and quizzes, a section for children, a path for teachers, reading plans and more.`,
   alternates: { canonical: "/coming-soon" },
 };
 

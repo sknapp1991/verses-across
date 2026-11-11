@@ -4,6 +4,7 @@
  * taps it and is at the same place; the talking happens in whatever app you send it with.
  * Desktop: a pop-up in the top bar (ReadTogether); phone: a tile in the More sheet (useShareHere).
  */
+import { SITE_NAME } from "@/lib/site";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
 import { toast } from "@/lib/ui-store";
 import { ChatIcon, ShareIcon } from "./icons";
@@ -28,7 +29,7 @@ export function useShareHere() {
     const v = topVerse();
     const url = window.location.origin + readHref(ref, versions, v && v !== "1" ? v : undefined);
     const where = `${chapterTitle(findBook(ref.work, ref.book), ref.chapter, ref.book)}${v && v !== "1" ? `:${v}` : ""}`;
-    const text = `Read ${where} with me on Verses Across`;
+    const text = `Read ${where} with me on ${SITE_NAME}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "Read together", text, url });

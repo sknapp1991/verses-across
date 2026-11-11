@@ -7,6 +7,8 @@
  * Keyboard: ← →, Esc; focus stays on Next. Swipe on touch screens. Respects reduced motion.
  * Replaces the old one-time "Quick tips" card (first-tips.tsx), which it marks as seen.
  */
+import { SITE_NAME } from "@/lib/site";
+import { SITE_SIDE } from "@/lib/site";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { openAi } from "@/lib/ai-chat";
@@ -56,15 +58,21 @@ type Step = { icon: ReactNode; title: string; body: string; where: string; tryIt
 const STEPS: Step[] = [
   {
     icon: <ColumnsIcon />,
-    title: "Scriptures side by side",
-    body: "Read the Bible, Quran, Torah, Gita, Pali Canon and more, with several translations and the original language next to each other.",
+    title: SITE_SIDE === "library" ? "Classic books, free" : "Scriptures side by side",
+    body:
+      SITE_SIDE === "library"
+        ? "Novels, poetry, drama, children's books, Freethought and Psychology: over a thousand public-domain classics, and editions side by side where there are several (a translation next to the original)."
+        : "Read the Bible, Quran, Torah, Gita, Pali Canon and more, with several translations and the original language next to each other.",
     where: "Versions (at the top, or the versions chip under the chapter name on a phone) adds or removes columns. Swipe sideways for the next chapter.",
   },
   {
     icon: <LibraryIcon />,
-    title: "Scriptures and Library",
-    body: "Two sides in one app: the Scriptures, and a Library of classic books (novels, poetry, drama, children's books and more). Each side keeps its own shelves and your place.",
-    where: "The Scriptures | Library switch at the top of the Library list (the left panel; the menu ☰ on a phone).",
+    title: "Verses Across and Library Across",
+    body:
+      SITE_SIDE === "library"
+        ? "Library Across has the classic books; its sister site Verses Across has the world's scriptures. Your places, highlights and notes come along when you switch."
+        : "Verses Across has the world's scriptures; its sister site Library Across has the classic books (novels, poetry, drama, children's books and more). Your places, highlights and notes come along when you switch.",
+    where: "The link at the bottom of the Library list (the left panel; the menu ☰ on a phone).",
   },
   {
     icon: <HeadphonesIcon />,
@@ -158,7 +166,7 @@ export function Tour() {
   const s = STEPS[step];
   const last = step === STEPS.length - 1;
   return (
-    <Modal open={isOpen} onClose={close} variant="card" label="Tour of Verses Across">
+    <Modal open={isOpen} onClose={close} variant="card" label={`Tour of ${SITE_NAME}`}>
       <div
         className="flex max-h-[85dvh] flex-col gap-4 overflow-y-auto overscroll-contain px-5 pb-4 pt-4 desk:max-h-[80vh]"
         onKeyDown={(e) => {

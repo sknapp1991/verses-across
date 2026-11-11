@@ -301,7 +301,7 @@ const KINDS: StudyKind[] = ["highlight", "favorite", "later", "note", "studied"]
 /** Merge a backup file: newer entries win. Returns how many were added or updated. */
 export async function importJson(text: string): Promise<number> {
   const data = JSON.parse(text) as { items?: unknown[] };
-  if (!Array.isArray(data.items)) throw new Error("Not a Verses Across backup file");
+  if (!Array.isArray(data.items)) throw new Error("Not a Verses Across or Library Across backup file");
   await load();
   let n = 0;
   for (const raw of data.items) {

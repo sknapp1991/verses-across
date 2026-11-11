@@ -4,6 +4,7 @@
  * "Verses mentioned" postscript that writes out each passage the answers refer to, so whoever
  * receives it can read them without looking them up.
  */
+import { SITE_HOST, SITE_NAME } from "@/lib/site";
 import { chapterTitle, DEFAULT_VERSIONS, findBook, getVersion } from "./catalog";
 import { fetchBook } from "./chapter-store";
 import { findRefs, type FoundRef } from "./refs";
@@ -43,7 +44,7 @@ async function passageText(r: FoundRef, versionsHere: string[], workHere?: strin
 
 export async function buildShareText(pairs: SharePair[], opts: { versionsHere: string[]; workHere?: string; reference?: string }) {
   const parts: string[] = [];
-  if (opts.reference) parts.push(`From my study of ${opts.reference} on Verses Across`);
+  if (opts.reference) parts.push(`From my study of ${opts.reference} on ${SITE_NAME}`);
   for (const p of pairs) {
     if (p.question) parts.push(`Q${p.ref ? ` (${p.ref})` : ""}: ${p.question.replace(/^\[About [^\]]*\]\s*/, "")}`);
     parts.push(`A: ${plain(p.answer)}`);
@@ -60,7 +61,7 @@ export async function buildShareText(pairs: SharePair[], opts: { versionsHere: s
     }
   const texts = (await Promise.all(refs.map((r) => passageText(r, opts.versionsHere, opts.workHere)))).filter(Boolean);
   if (texts.length) parts.push(`P.S. Verses mentioned:\n${texts.map((t) => `• ${t}`).join("\n")}`);
-  parts.push("— versesacross.com");
+  parts.push(`— ${SITE_HOST}`);
   return parts.join("\n\n");
 }
 

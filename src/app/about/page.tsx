@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FeedbackButton } from "@/components/feedback-dialog";
+import { ORIGINS, SITE_NAME, SITE_SIDE } from "@/lib/site";
+
+const LIB = SITE_SIDE === "library";
 
 export const metadata: Metadata = {
   title: "About, terms and privacy",
-  description: "Who makes Verses Across, the terms of use, privacy, and credits for every text.",
+  description: `Who makes ${SITE_NAME}, the terms of use, privacy, and credits for every text.`,
   alternates: { canonical: "/about" },
 };
 
@@ -35,16 +38,30 @@ export default function AboutPage() {
           <Link href="/" className={`text-sm ${a}`}>
             ← Back to reading
           </Link>
-          <h1 className="font-serif text-3xl font-semibold text-ink">About Verses Across&trade;</h1>
-          <p>
-            Verses Across lets you read the world&rsquo;s scriptures side by side, in many languages. It is free, and
-            always will be: no ads, no purchases, no account.
-          </p>
+          <h1 className="font-serif text-3xl font-semibold text-ink">About {SITE_NAME}&trade;</h1>
+          {LIB ? (
+            <p>
+              Library Across lets you read the classic books (novels, poetry, drama, children&rsquo;s books, Freethought and
+              Psychology) with read-aloud, word help and notes. It is the sister site of{" "}
+              <a href={ORIGINS.scriptures} className={a}>
+                Verses Across
+              </a>
+              , which keeps the world&rsquo;s scriptures. It is free, and always will be: no ads, no purchases, no account.
+            </p>
+          ) : (
+            <p>
+              Verses Across lets you read the world&rsquo;s scriptures side by side, in many languages. Its sister site{" "}
+              <a href={ORIGINS.library} className={a}>
+                Library Across
+              </a>{" "}
+              keeps the classic books. It is free, and always will be: no ads, no purchases, no account.
+            </p>
+          )}
         </header>
 
         <Section title="Copyright and license">
           <p>
-            <strong className="text-ink">© 2026 Verses Across</strong>
+            <strong className="text-ink">© 2026 {SITE_NAME}</strong>
           </p>
           <p>
             The app&rsquo;s code is free software under the{" "}
@@ -59,12 +76,27 @@ export default function AboutPage() {
             .
           </p>
           <p>
-            The name Verses Across&trade; and its logo are trademarks and are not covered by that license. If you
+            The names Verses Across&trade; and Library Across&trade; and their logos are trademarks and are not covered by that license. If you
             share a modified version, please give it its own name and logo.
           </p>
         </Section>
 
         <Section title="The texts and recordings">
+          {LIB ? (
+            <>
+              <p>
+                The books are public domain in the United States, almost all from Project Gutenberg; each one is credited, with
+                a link to its source, at the bottom of every chapter. The texts are shown as published: we change formatting
+                only, never wording.
+              </p>
+              <p>
+                <strong className="text-ink">Audio.</strong> Recorded voices are computer voices (Kokoro, an open
+                text-to-speech model). Where there is no recording, your phone or computer&rsquo;s own built-in voice reads
+                the text aloud.
+              </p>
+            </>
+          ) : (
+            <>
           <p>
             The scriptures are not ours. Every text is public domain or shared under an open licence by its translators
             and publishers, and each one is credited, with a link to its source, at the bottom of every chapter. A few are
@@ -89,11 +121,13 @@ export default function AboutPage() {
             recorded voices are computer voices (Kokoro, an open text-to-speech model). Where there is no recording, your
             phone or computer&rsquo;s own built-in voice reads the text aloud.
           </p>
+            </>
+          )}
         </Section>
 
         <Section title="Terms of use">
           <ul className="list-disc space-y-2 pl-5">
-            <li>You are welcome to use Verses Across for personal study, teaching, worship and sharing.</li>
+            <li>You are welcome to use {SITE_NAME} for {LIB ? "reading, study, teaching" : "personal study, teaching, worship"} and sharing.</li>
             <li>
               It is provided &ldquo;as is&rdquo;, without warranty of any kind. We work hard to keep texts, verse numbers
               and audio accurate, but mistakes can happen. Check an authoritative printed edition for anything important.
@@ -156,7 +190,7 @@ export default function AboutPage() {
               If you send feedback, we receive what you write (anonymously: no name or email is asked for) and (unless you untick
               it) the page you were on, the verse and versions on screen, your device and browser type, your reading
               settings and any recent error messages. You can see all of it before sending. We store reports privately and
-              email a copy to the maintainer&rsquo;s inbox, use them only to fix and improve Verses Across, and never share or sell them. Ask us and we&rsquo;ll delete
+              email a copy to the maintainer&rsquo;s inbox, use them only to fix and improve {SITE_NAME}, and never share or sell them. Ask us and we&rsquo;ll delete
               yours:{" "}
               <a href="mailto:privacy@versesacross.com" className={a}>
                 privacy@versesacross.com
@@ -167,10 +201,12 @@ export default function AboutPage() {
               Like every website, our host (Cloudflare) briefly handles standard technical data such as your IP address, to
               deliver pages and to limit abuse.
             </li>
+            {!LIB && (
             <li>
               The Android app is this same website in an app window, so everything above applies to it too. It asks for no
               special permissions and collects nothing extra.
             </li>
+            )}
           </ul>
         </Section>
 
@@ -211,7 +247,7 @@ export default function AboutPage() {
               </a>
             </li>
           </ul>
-          <p className="text-sm">Follow Verses Across for new features and a verse of the day:</p>
+          <p className="text-sm">Follow Verses Across{LIB ? " (Library Across's sister site)" : ""} for new features and a verse of the day:</p>
           <ul className="flex flex-wrap gap-2 text-sm">
             {SOCIALS.map(([name, href]) => (
               <li key={name}>

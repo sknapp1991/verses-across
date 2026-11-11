@@ -4,7 +4,8 @@
  */
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { DEFAULT_VERSIONS, getVersion, parseVersionParam, sortVersions, versionsForWork } from "./catalog";
+import { DEFAULT_VERSIONS, getVersion, parseVersionParam, sideOfWork, sortVersions, versionsForWork } from "./catalog";
+import { ORIGINS, SITE_NAME, SITE_NAMES, SITE_SIDE } from "./site";
 import type { Chapter, Verse, Version } from "./schema";
 import { chapterPath, joinAbbrs, ogImagePath, parseChapter, seoChapterName, seoVersions, SITE, snippet } from "./seo-shared";
 
@@ -63,6 +64,13 @@ function versionsFor(work: string, v: string | undefined): Version[] {
 export async function chapterMetadata(work: string, book: string, chapter: string, v?: string): Promise<Metadata> {
   const ref = parseChapter(work, book, chapter);
   if (!ref) return { robots: { index: false } };
+  // A book of the other site: its address there is the one to index (the page forwards readers, MovedAway).
+  const side = sideOfWork(work);
+  if (side !== SITE_SIDE)
+    return {
+      title: `${seoChapterName(ref.entry, ref.chapter)} · ${SITE_NAMES[side]}`,
+      alternates: { canonical: ORIGINS[side] + chapterPath(ref) },
+    };
   const versions = versionsFor(work, v);
   const name = seoChapterName(ref.entry, ref.chapter);
   const title = `${name} – ${joinAbbrs(versions)}`;
@@ -76,17 +84,17 @@ export async function chapterMetadata(work: string, book: string, chapter: strin
   const tail = `${named} in ${names.length < 90 ? names : joinAbbrs(versions)}${versions.length > 1 ? ", side by side" : ""}. Free, no ads, no sign-up.`;
   const description = first ? `“${snippet(first)}” ${tail}` : `Read ${tail}`;
   const url = chapterPath(ref);
-  const image = { url: ogImagePath(ref), width: 1200, height: 630, alt: `${ref.entry.name} on Verses Across` };
+  const image = { url: ogImagePath(ref), width: 1200, height: 630, alt: `${ref.entry.name} on ${SITE_NAME}` };
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: "article", siteName: "Verses Across", title, description, url, images: [image] },
+    openGraph: { type: "article", siteName: SITE_NAME, title, description, url, images: [image] },
     twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 
-/** Structured data: breadcrumbs (Verses Across › Book › Chapter) shown under the result in Google. */
+/** Structured data: breadcrumbs (Verses Across / Library Across › Book › Chapter) shown under the result in Google. */
 export function chapterJsonLd(work: string, book: string, chapter: string) {
   const ref = parseChapter(work, book, chapter);
   if (!ref) return null;
@@ -94,7 +102,7 @@ export function chapterJsonLd(work: string, book: string, chapter: string) {
   const bookUrl = `${SITE}${chapterPath({ ...ref, chapter: 1 })}`;
   const url = `${SITE}${chapterPath(ref)}`;
   const crumbs = [
-    { name: "Verses Across", item: `${SITE}/` },
+    { name: SITE_NAME, item: `${SITE}/` },
     ...(ref.entry.chapters! > 1 ? [{ name: ref.entry.name, item: bookUrl }] : []),
     { name, item: url },
   ];
@@ -110,7 +118,7 @@ export function chapterJsonLd(work: string, book: string, chapter: string) {
         "@id": url,
         url,
         name,
-        isPartOf: { "@type": "WebSite", name: "Verses Across", url: `${SITE}/` },
+        isPartOf: { "@type": "WebSite", name: SITE_NAME, url: `${SITE}/` },
         about: { "@type": "Book", name: ref.entry.name, genre: `${ref.entry.religion.name} · ${ref.entry.collection.name}` },
         inLanguage: seoVersions(work).map((x) => x.language),
         isAccessibleForFree: true,

@@ -5,6 +5,8 @@
  * shows its own loading state without blocking the others.
  */
 import { createContext, createElement, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { sideOfWork } from "./catalog";
+import { ORIGINS, SITE_SIDE } from "./site";
 import type { Chapter } from "./schema";
 
 export type ChapterEntry =
@@ -32,7 +34,10 @@ const books = new Map<string, Promise<BookFile>>();
 function loadBook(bookKey: string, retry: boolean) {
   let p = books.get(bookKey);
   if (!p || retry) {
-    p = fetch(`/texts/${bookKey}.json`).then(async (res) => {
+    // A book of the other site (a cross reference, a verse cited in an answer): its texts are only there.
+    const side = sideOfWork(bookKey.split("/")[0]);
+    const base = side === SITE_SIDE ? "" : ORIGINS[side];
+    p = fetch(`${base}/texts/${bookKey}.json`).then(async (res) => {
       if (!res.ok) throw new Error(res.status === 404 ? "Not available in this version" : `HTTP ${res.status}`);
       return (await res.json()) as BookFile;
     });

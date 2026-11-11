@@ -1,4 +1,5 @@
 "use client";
+import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
@@ -44,7 +45,7 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
         <MenuIcon />
       </button>
 
-      <Link href="/" className="hidden items-center gap-2 pr-2 desk:flex" aria-label="Verses Across home">
+      <Link href="/" className="hidden items-center gap-2 pr-2 desk:flex" aria-label={`${SITE_NAME} home`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG logo */}
         <img src="/icon.svg" alt="" width={28} height={28} className="rounded-md" />
         <span className="hidden font-serif text-lg font-semibold tracking-tight xl:inline">
@@ -60,7 +61,7 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
         aria-label="Open library"
         className="min-w-0 flex-1 truncate px-1 text-left font-serif text-[17px] font-semibold desk:hidden"
       >
-        {entry ? chapterTitle(entry, ref.chapter) : "Verses Across"}
+        {entry ? chapterTitle(entry, ref.chapter) : SITE_NAME}
       </button>
 
       {/* (the Scriptures | Library switch is at the top of the Library list: on a computer the left panel, on a phone the menu) */}

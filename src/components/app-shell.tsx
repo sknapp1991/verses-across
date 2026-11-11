@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { SITE_NAME } from "@/lib/site";
 import { BackupNudge } from "./backup-nudge";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { Modal } from "./modal";
@@ -22,7 +23,7 @@ import { closeXref, XrefDockPanel } from "./xref-panel";
 import { PlansPanel } from "./plans-panel";
 import { DockPanelContext } from "./panel-header";
 import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon, UsersIcon } from "./icons";
-import { SideSwitch, SideTip } from "./side-switch";
+import { SideTip } from "./side-switch";
 
 /** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"). */
 function useThemeSync() {
@@ -73,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ModeBanner />
       <div className="flex min-h-0 flex-1">
         <aside className={`hidden w-72 shrink-0 border-r border-line bg-panel lg:w-80 ${listFolded ? "" : "desk:block"}`}>
-          <Sidebar showSwitch />
+          <Sidebar />
         </aside>
         <main className="relative min-w-0 flex-1">{children}</main>
         {wide && <Dock />}
@@ -98,11 +99,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {toast && <Toast key={toast.id} text={toast.text} />}
 
-      <Modal open={drawerOpen} onClose={() => setDrawerOpen(false)} variant="drawer" label="Scriptures and Library">
+      <Modal open={drawerOpen} onClose={() => setDrawerOpen(false)} variant="drawer" label={`${SITE_NAME} library`}>
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
-            {/* the drawer's title is the Scriptures | Library switch */}
-            <SideSwitch />
+            <p className="font-serif text-lg font-semibold text-ink">{SITE_NAME}</p>
             <button
               type="button"
               onClick={() => setDrawerOpen(false)}

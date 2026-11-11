@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { FeedbackButton } from "@/components/feedback-dialog";
 
 export const metadata: Metadata = {
   title: "What's new",
-  description: "What changed on Verses Across, week by week: new books and traditions, reading features, search and study tools.",
+  description: `What changed on ${SITE_NAME}, week by week: new books and traditions, reading features, search and study tools.`,
   alternates: { canonical: "/whats-new" },
 };
 
@@ -60,7 +61,7 @@ export default function WhatsNewPage() {
           </Link>
           <h1 className="font-serif text-3xl font-semibold text-ink">What&rsquo;s new</h1>
           <p>
-            What changed on Verses Across, week by week. For what&rsquo;s planned next, see{" "}
+            What changed on {SITE_NAME}, week by week. For what&rsquo;s planned next, see{" "}
             <Link href="/coming-soon" className={a}>
               Coming soon
             </Link>

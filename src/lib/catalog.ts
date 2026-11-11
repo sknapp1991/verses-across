@@ -5,6 +5,7 @@
 import raw from "../../data/catalog.json";
 import lit from "../../data/literature-catalog.json";
 import type { Catalog, CatalogItem, Collection, Religion, Version } from "./schema";
+import { LIBRARY_SHELVES, ORIGINS, SITE_SIDE, type Side } from "./site";
 
 type LitEdition = [gid: number, language: string, abbr: string, year: number, author: string, translator: string | null, yearNote: string | null];
 type LitBook = [work: string, book: string, title: string, chapters: number, editions: LitEdition[]];
@@ -146,7 +147,9 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   "social-contract": ["cole"],
 };
 
-export const DEFAULT_LOCATION: BookRef = { work: "bible", book: "gen", chapter: 1 };
+/** Where a first visit opens: Genesis 1 on Verses Across, Pride and Prejudice on Library Across. */
+export const DEFAULT_LOCATION: BookRef =
+  SITE_SIDE === "library" ? { work: "lit-pride-and-prejudice", book: "pride-and-prejudice", chapter: 1 } : { work: "bible", book: "gen", chapter: 1 };
 
 export function versionsForWork(work: string): Version[] {
   return catalog.versions.filter((v) => v.work === work);
@@ -162,7 +165,7 @@ export function getVersion(id: string): Version | undefined {
  * it stays out of the verse of the day, "traditions" counts and badges, reference links and cross-reference
  * targets. A book can be on several of its shelves (Frankenstein: Gothic, Horror, Science Fiction…).
  */
-export const BOOK_SHELVES = new Set(["literature", "fiction", "freethought"]);
+export const BOOK_SHELVES = new Set(["literature", "fiction", "freethought", "psychology"]); // = LIBRARY_SHELVES (site.ts)
 export const isLiteratureWork = (work: string) => work.startsWith("lit-");
 export const scriptureShelves = catalog.religions.filter((r) => !BOOK_SHELVES.has(r.id));
 
@@ -186,9 +189,19 @@ export function findBook(work: string, book: string): BookEntry | undefined {
   return booksOfWork(work).find((b) => b.id === book);
 }
 
+/** The books on Library Across (the Literature, Freethought and Psychology shelves); every other work is on Verses Across. */
+const LIBRARY_WORKS = new Set(
+  catalog.religions.filter((r) => LIBRARY_SHELVES.has(r.id)).flatMap((r) => r.collections.flatMap((c) => c.items.map((i) => i.work).filter(Boolean) as string[])),
+);
+/** A work's site: the Library for the books on its shelves (Paine's Age of Reason too, though also listed under Philosophy). */
+export const sideOfWork = (work: string): Side => (LIBRARY_WORKS.has(work) ? "library" : "scriptures");
+
+/** A chapter's address; a book of the other site gets that site's full address (libraryacross.com / versesacross.com). */
 export function readHref(ref: BookRef, versions?: string[], verse?: string) {
   const q = versions?.length ? `?v=${versions.join(",")}` : "";
-  return `/read/${ref.work}/${ref.book}/${ref.chapter}${q}${verse ? `#v${verse}` : ""}`;
+  const path = `/read/${ref.work}/${ref.book}/${ref.chapter}${q}${verse ? `#v${verse}` : ""}`;
+  const side = sideOfWork(ref.work);
+  return side === SITE_SIDE ? path : ORIGINS[side] + path;
 }
 
 /** Previous / next chapter, crossing book boundaries (Malachi 4 → Matthew 1). */

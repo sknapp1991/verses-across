@@ -3,6 +3,7 @@
  * Sync across devices: turn it on (get a code), or enter a code from another device. Shows the code as
  * text and as a QR code (a link that joins when opened), and lets you stop or delete the synced copy.
  */
+import { SITE_NAME } from "@/lib/site";
 import { useState, useSyncExternalStore } from "react";
 import { confirmPendingSync, deleteSyncedData, joinSync, syncNow, turnOffSync, turnOnSync, useSync } from "@/lib/sync";
 import { toast } from "@/lib/ui-store";
@@ -198,7 +199,7 @@ function Body() {
               <p className="select-all text-center font-mono text-base tracking-wider text-ink">{s.code}</p>
               <Qr text={link} label="QR code that connects another device to your sync" />
               <p className="text-center text-xs text-muted">
-                On another device: scan this with the camera, or open Verses Across → My Study → Sync and type the code.
+                On another device: scan this with the camera, or open {SITE_NAME} → My Study → Sync and type the code.
               </p>
               <div className="flex w-full gap-2">
                 <button type="button" onClick={() => copy(s.code!, "Code")} className={`${btn} flex-1 border border-line text-ink hover:bg-raised`}>

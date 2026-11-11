@@ -4,7 +4,10 @@
 import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, getVersion, versionsForWork, type BookEntry } from "./catalog";
 import type { Version } from "./schema";
 
-export const SITE = "https://versesacross.com";
+import { SITE_ORIGIN } from "./site";
+
+/** This site's address (versesacross.com or libraryacross.com, src/lib/site.ts). */
+export const SITE = SITE_ORIGIN;
 
 /** The versions a chapter's main address (no ?v=) shows a first-time visitor, and so what search engines see. */
 export function seoVersions(work: string): Version[] {

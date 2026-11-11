@@ -3,15 +3,19 @@ import Link from "next/link";
 import index from "../../../public/themes/index.json";
 import { ThemesList } from "@/components/themes-list";
 import type { ThemeSummary } from "@/lib/themes";
+import { SITE_SIDE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Themes",
   description:
-    "Forgiveness, the flood, exile and mercy across the world's scriptures; coming of age, revenge and voyages at sea across the Library's books. Over 100 themes, side by side.",
+    SITE_SIDE === "library"
+      ? "Coming of age, revenge, voyages at sea and more across the classic books: each theme with a passage from the books that carry it most."
+      : "Forgiveness, the flood, exile and mercy across the world's scriptures: over 60 themes, the passages from each tradition side by side.",
   alternates: { canonical: "/themes" },
 };
 
-const THEMES = index as ThemeSummary[];
+// This site's themes (the other site's are there: /themes/<id> forwards).
+const THEMES = (index as ThemeSummary[]).filter((t) => (t.side ?? "scriptures") === SITE_SIDE);
 const a = "underline underline-offset-2 hover:text-ink";
 
 /**

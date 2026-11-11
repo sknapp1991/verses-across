@@ -3,8 +3,8 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { OTHER_NAME, OTHER_ORIGIN, OTHER_SIDE, SITE_SIDE } from "@/lib/site";
 import { chooseSide, LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
-import { SideSwitch } from "./side-switch";
 import { recentChapters } from "@/lib/reading-position";
 import { getSettings } from "@/lib/settings";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, isLiteratureWork, readHref, type BookRef } from "@/lib/catalog";
@@ -120,7 +120,7 @@ function whereIs(ref: BookRef) {
   return null;
 }
 
-export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () => void; showSwitch?: boolean }) {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { ref, versions } = useReaderState();
   const side = useSide();
   const other: Side = side === "library" ? "scriptures" : "library";
@@ -275,12 +275,6 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
 
   return (
     <nav aria-label="Library" className="flex h-full min-h-0 flex-col">
-      {/* Computer: the Scriptures | Library switch heads the list (a phone has it as the menu's title) */}
-      {showSwitch && (
-        <div className="flex justify-center border-b border-line px-3 pb-2 pt-3">
-          <SideSwitch />
-        </div>
-      )}
       <div className="border-b border-line p-3">
         <label className="flex h-11 items-center gap-2 rounded-lg border border-line bg-raised px-3 focus-within:ring-2 focus-within:ring-accent/50">
           <SearchIcon className="shrink-0 text-faint" width={18} height={18} />
@@ -311,7 +305,7 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
         <Link
           href={readHref(cont.ref, cont.ref.work === ref.work ? versions : (DEFAULT_VERSIONS[cont.ref.work] ?? []))}
           onClick={onNavigate}
-          title={`The chapter you had open before this one on the ${side === "library" ? "Library" : "Scriptures"} side`}
+          title={`The chapter you had open before this one on ${SIDE_NAME[side]}`}
           className="flex min-h-11 w-full items-center gap-1.5 border-b border-line px-4 text-left text-sm hover:bg-raised"
         >
           <span className="shrink-0 text-xs font-medium uppercase tracking-wide text-faint">Last read</span>
@@ -385,7 +379,7 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
             <li className="px-1 pt-2">
               <label className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted hover:bg-raised">
                 <input type="checkbox" checked={bothSides} onChange={(e) => setBothSides(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
-                Include the {SIDE_NAME[other]}
+                Include {SIDE_NAME[other]}
                 {elsewhere > 0 && <span className="text-faint">({elsewhere} {elsewhere === 1 ? "match" : "matches"} there)</span>}
               </label>
             </li>
@@ -432,10 +426,14 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
               Themes
             </Link>
             {" · "}
-            <Link href="/differences" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
-              Why Bibles differ
-            </Link>
-            {" · "}
+            {SITE_SIDE === "scriptures" && (
+              <>
+                <Link href="/differences" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
+                  Why Bibles differ
+                </Link>
+                {" · "}
+              </>
+            )}
             <Link href="/whats-new" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
               What&rsquo;s new
             </Link>
@@ -451,6 +449,20 @@ export function Sidebar({ onNavigate, showSwitch = false }: { onNavigate?: () =>
             <button type="button" onClick={() => openTour()} className="underline underline-offset-2 hover:text-muted">
               Take the tour
             </button>
+            <br />
+            {/* The sister site (one day a list of every "…Across" site). Goes there with this site's saved data. */}
+            Also from us:{" "}
+            <a
+              href={OTHER_ORIGIN}
+              onClick={(e) => {
+                e.preventDefault();
+                chooseSide(OTHER_SIDE);
+              }}
+              className="font-medium text-accent underline underline-offset-2"
+            >
+              {OTHER_NAME} ↗
+            </a>{" "}
+            ({OTHER_SIDE === "library" ? "classic books" : "the world's scriptures"})
           </p>
         )}
       </div>

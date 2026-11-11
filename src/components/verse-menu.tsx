@@ -4,6 +4,7 @@
  * copy, share link, and "Ask in…" (Gemini / ChatGPT / Claude). Bottom sheet on phones,
  * a centred card on desktop.
  */
+import { SITE_HOST, SITE_NAME } from "@/lib/site";
 import { useEffect, useRef, useState } from "react";
 import { ASK_SERVICES, askUrl, buildAskPrompt, type AskTranslation } from "@/lib/ask-in";
 import { catalog, chapterTitle, findBook, readHref } from "@/lib/catalog";
@@ -95,9 +96,9 @@ function MenuBody({
       ...texts.map((t) => (texts.length > 1 ? `${t.abbr} (${t.language}): “${t.text}”` : `“${t.text}” — ${t.abbr}`)),
       "",
       `Read it side by side: ${link()}`,
-      "Shared from Verses Across · versesacross.com",
+      `Shared from ${SITE_NAME} · ${SITE_HOST}`,
     ].join("\n");
-  const subject = `${heading} — shared from Verses Across`;
+  const subject = `${heading} — shared from ${SITE_NAME}`;
 
   const copy = async () => {
     const ok = await copyText(shareBody());
