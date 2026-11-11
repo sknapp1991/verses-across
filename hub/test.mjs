@@ -195,6 +195,20 @@ if (process.argv[2] === "serve") {
   check("bad priority refused", (await call(TEAMMATE, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ priority: "" }) })).status === 400);
   check("bad area refused", (await call(OWNER, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ area: "kitchen" }) })).status === 400);
   check("Claude (the owner's helper) can set sorting", (await call(CLAUDE, `/api/reports/${sid}`, { method: "PATCH", body: JSON.stringify({ area: "search" }) })).status === 200);
+  // Which site (HB8)
+  r = await J(await call(TEAMMATE, `/api/reports/${sid}`));
+  check("a new ticket is Verses Across unless picked", r.body.site === "verses");
+  r = await J(await call(TEAMMATE, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "library one", site: "library" }) }));
+  const lid = r.body.id;
+  check("a ticket can be Library Across", (await J(await call(TEAMMATE, `/api/reports/${lid}`))).body.site === "library");
+  check("unknown site falls back to Verses Across", (await J(await call(TEAMMATE, `/api/reports/${(await J(await call(TEAMMATE, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "x", site: "mars" }) }))).body.id}`))).body.site === "verses");
+  check("reporter moves their ticket to the other site", (await call(TEAMMATE, `/api/reports/${lid}`, { method: "PATCH", body: JSON.stringify({ site: "verses" }) })).status === 200);
+  check("someone else can't change a ticket's site", (await call(TEAMMATE, `/api/reports/${(await J(await call(OWNER, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Idea", body: "owner's", site: "library" }) }))).body.id}`, { method: "PATCH", body: JSON.stringify({ site: "verses" }) })).status === 403);
+  check("a Library Across ticket takes a libraryacross.com link", (await call(CLAUDE, `/api/reports/${lid}`, { method: "PATCH", body: JSON.stringify({ live_url: "https://libraryacross.com/read/lit-adam-bede" }) })).status === 200);
+  check("other links still refused", (await call(CLAUDE, `/api/reports/${lid}`, { method: "PATCH", body: JSON.stringify({ live_url: "https://libraryacross.com.evil.example/x" }) })).status === 400);
+  check("bad or empty site refused", (await call(OWNER, `/api/reports/${lid}`, { method: "PATCH", body: JSON.stringify({ site: "" }) })).status === 400);
+  check("Claude can set the site", (await call(CLAUDE, `/api/reports/${lid}`, { method: "PATCH", body: JSON.stringify({ site: "library" }) })).status === 200);
+  check("the list carries the site", (await J(await call(OWNER, "/api/reports"))).body.some((x) => x.id === lid && x.site === "library"));
   check("teammate can't mark duplicates", (await call(TEAMMATE, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: sid.slice(0, 6) }) })).status === 403);
   check("duplicate needs a real number", (await call(OWNER, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: "#zzzz" }) })).status === 400);
   check("can't be a duplicate of itself", (await call(OWNER, `/api/reports/${jid}`, { method: "PATCH", body: JSON.stringify({ dup_of: jid }) })).status === 400);

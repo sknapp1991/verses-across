@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS reports (
   priority TEXT NOT NULL DEFAULT 'normal', -- urgent | normal | someday
   area TEXT NOT NULL DEFAULT '',
   device TEXT NOT NULL DEFAULT '',
-  dup_of TEXT NOT NULL DEFAULT ''
+  dup_of TEXT NOT NULL DEFAULT '',
+  site TEXT NOT NULL DEFAULT 'verses' -- verses | library (HB8: which site the ticket is about)
 );
 CREATE INDEX IF NOT EXISTS reports_status ON reports (status, created);
 
@@ -82,13 +83,15 @@ CREATE TABLE IF NOT EXISTS shipped (
   url TEXT NOT NULL DEFAULT ''
 );
 
--- Sorting (Nov 9, HB1): the last four columns of reports. A database made before then gets them with:
+-- Sorting (Nov 9, HB1): four more columns of reports (priority, area, device, dup_of). A database made before then gets them with:
 --   priority: urgent | normal | someday   area: reader, library, search, audio, study, phone, hub, other
 --   device: iPhone | Android | computer | ''   dup_of: the id of the ticket this one is the same as
 -- ALTER TABLE reports ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal';
 -- ALTER TABLE reports ADD COLUMN area TEXT NOT NULL DEFAULT '';
 -- ALTER TABLE reports ADD COLUMN device TEXT NOT NULL DEFAULT '';
 -- ALTER TABLE reports ADD COLUMN dup_of TEXT NOT NULL DEFAULT '';
+-- Which site (Nov 11, HB8): verses = versesacross.com, library = libraryacross.com. A database made before then gets it with:
+-- ALTER TABLE reports ADD COLUMN site TEXT NOT NULL DEFAULT 'verses';
 
 -- Site health (HB5): the hourly check of the public site
 CREATE TABLE IF NOT EXISTS health (

@@ -6,10 +6,11 @@
 // What it can do is limited by the hub itself: statuses, notes, test links, replies as Claude, clips for
 // approval, "what shipped" lines. It can't approve, decide website feedback, vote, or act as a person.
 //
-//   node hub/cli.mjs list [New|Seen|Working|Question|Reopened|Live|Done|Roadmap]
+//   node hub/cli.mjs list [New|Seen|Working|Question|Reopened|Live|Done|Roadmap] [--site verses|library]
+//   node hub/cli.mjs site <id> <verses|library>     (which site the ticket is about; "[LA]" in lists = Library Across)
 //   node hub/cli.mjs show <id>
 //   node hub/cli.mjs status <id> <Status> [note…]
-//   node hub/cli.mjs link <id> <https://versesacross.com/…>
+//   node hub/cli.mjs link <id> <https://versesacross.com/… or https://libraryacross.com/…>
 //   node hub/cli.mjs say <id> <message…>            (a reply on the report, as Claude)
 //   node hub/cli.mjs approval <title> <clip path> [detail…]
 //   node hub/cli.mjs approvals | feedback
@@ -81,15 +82,20 @@ async function upload(ownerKind, ownerId, file) {
 }
 
 const [cmd, ...a] = process.argv.slice(2);
-const line = (r) => `${r.id}  ${r.status.padEnd(8)} ${r.type.padEnd(8)} ${r.author === "claude" ? "Claude" : r.author.split("@")[0]}  ${r.created.slice(0, 16).replace("T", " ")}  ${r.body.replace(/\s+/g, " ").slice(0, 90)}${r.media ? `  [${r.media} file]` : ""}${r.comments ? `  [${r.comments} msg]` : ""}`;
+const line = (r) => `${r.id}  ${r.site === "library" ? "[LA] " : ""}${r.status.padEnd(8)} ${r.type.padEnd(8)} ${r.author === "claude" ? "Claude" : r.author.split("@")[0]}  ${r.created.slice(0, 16).replace("T", " ")}  ${r.body.replace(/\s+/g, " ").slice(0, 90)}${r.media ? `  [${r.media} file]` : ""}${r.comments ? `  [${r.comments} msg]` : ""}`;
 try {
   if (cmd === "list") {
-    const list = await api("/api/reports" + (a[0] ? `?status=${encodeURIComponent(a[0])}` : ""));
+    const si = a.indexOf("--site");
+    const want = si >= 0 ? a.splice(si, 2)[1] : "";
+    if (si >= 0 && want !== "verses" && want !== "library") throw new Error("Usage: list [Status] --site verses|library");
+    if (a.some((x) => x.startsWith("--"))) throw new Error("Usage: list [Status] --site verses|library");
+    const list = (await api("/api/reports" + (a[0] ? `?status=${encodeURIComponent(a[0])}` : ""))).filter((r) => !want || (r.site || "verses") === want);
     console.log(list.length ? list.map(line).join("\n") : "(no reports)");
   } else if (cmd === "show") {
     const r = await api(`/api/reports/${a[0]}`);
     const cs = await api(`/api/comments?thread=report:${a[0]}`);
-    console.log(`${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere: ${r.place || "-"}\n\n${r.body}\n`);
+    console.log(`${r.site === "library" ? "Library Across (libraryacross.com)" : "Verses Across (versesacross.com)"}
+${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere: ${r.place || "-"}\n\n${r.body}\n`);
     if (r.notes) console.log(`Claude's note: ${r.notes}`);
     if (r.live_url) console.log(`Test link: ${r.live_url}`);
     for (const f of r.files) console.log(`File: ${f.id}  ${f.name}  ${f.type}  ${(f.size / 1048576).toFixed(1)} MB`);
@@ -112,6 +118,9 @@ try {
     console.log(n ? `\n${n} to review (mark each with: say <id> "Reviewed: …")` : "(nothing to review)");
   } else if (cmd === "status") {
     await send(`/api/reports/${a[0]}`, { status: a[1], ...(a.length > 2 ? { notes: a.slice(2).join(" ") } : {}) }, "PATCH");
+    console.log("ok");
+  } else if (cmd === "site") {
+    await send(`/api/reports/${a[0]}`, { site: a[1] }, "PATCH");
     console.log("ok");
   } else if (cmd === "link") {
     await send(`/api/reports/${a[0]}`, { live_url: a[1] }, "PATCH");

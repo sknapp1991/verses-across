@@ -235,10 +235,13 @@ window.addEventListener("hashchange", () => {
   go(Object.hasOwn(TABS, tab) ? tab : "report", arg);
 });
 
-/* ---------- sorting: priority, area, device ---------- */
+/* ---------- sorting: site, priority, area, device ---------- */
 const PRIOS = [["urgent", "Urgent"], ["normal", "Normal"], ["someday", "Someday"]];
-const AREA_LIST = [["reader", "Reader"], ["library", "Library"], ["search", "Search"], ["audio", "Audio"], ["study", "Study"], ["phone", "Phone layout"], ["hub", "This hub"], ["other", "Other"]];
+const AREA_LIST = [["reader", "Reader"], ["library", "Books & shelves"], ["search", "Search"], ["audio", "Audio"], ["study", "Study"], ["phone", "Phone layout"], ["hub", "This hub"], ["other", "Other"]];
 const DEVICE_LIST = [["iPhone", "iPhone"], ["Android", "Android"], ["computer", "Computer"]];
+/** Which site the ticket is about (HB8, Nov 11). Old tickets are Verses Across. */
+const SITE_LIST = [["verses", "Verses Across"], ["library", "Library Across"]];
+const siteOf = (r) => (r.site === "library" ? "library" : "verses");
 const labelOf = (list, v) => (list.find((x) => x[0] === v) || [v, v])[1];
 function guessDevice() {
   const ua = navigator.userAgent;
@@ -282,8 +285,9 @@ async function showReport() {
   const chips = h("div.chips", { role: "radiogroup", "aria-label": "Type" }, ["Bug", "Idea", "Content", "Question"].map((t) =>
     h("button.chip", { type: "button", role: "radio", "aria-pressed": t === type ? "true" : "false", onclick: (e) => { type = t; chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c === e.currentTarget ? "true" : "false")); } }, t)));
   const body = h("textarea", { placeholder: "What happened, or what's the idea? As much detail as you like." });
-  const place = h("input", { type: "text", placeholder: "e.g. Psalm 23, the Library, versesacross.com/…" });
+  const place = h("input", { type: "text", placeholder: "e.g. Psalm 23, Moby Dick ch. 3, versesacross.com/…" });
   // Sorting: how soon, which part, which device (guessed from this phone or computer; tap to change)
+  const site = chipChoice("Which site?", SITE_LIST, "verses");
   const prio = chipChoice("How soon?", PRIOS, "normal");
   const area = chipChoice("Which part of the site? (optional)", AREA_LIST, "", true);
   const device = chipChoice("On which device?", DEVICE_LIST, guessDevice(), true);
@@ -295,7 +299,7 @@ async function showReport() {
     if (!body.value.trim()) return toast("Write what it is first");
     send.disabled = true; send.textContent = "Sending…";
     try {
-      const { id } = await post("/api/reports", { type, body: body.value, place: place.value, priority: prio.value(), area: area.value(), device: device.value() });
+      const { id } = await post("/api/reports", { type, body: body.value, place: place.value, priority: prio.value(), area: area.value(), device: device.value(), site: site.value() });
       const files = picker.files();
       if (files.length) {
         bar.classList.remove("hidden");
@@ -306,6 +310,7 @@ async function showReport() {
       go("inbox", id);
     } catch (err) { toast(err.message); send.disabled = false; send.textContent = "Send"; }
   } },
+    site.el,
     h("label", {}, "Type"), chips,
     h("label", {}, "What is it?"), body,
     h("label", {}, "Where? (optional)"), place,
@@ -337,7 +342,7 @@ async function showInbox(id) {
 }
 let lastList = null;
 /** The filters above Tickets (kept while you open tickets and come back). */
-const filt = { q: "", mine: false, prio: "", area: "", type: "" };
+const filt = { q: "", mine: false, prio: "", area: "", type: "", site: "" };
 let closedSort = "date";
 function renderTickets(list, target) {
   lastList = list;
@@ -352,14 +357,15 @@ function renderTickets(list, target) {
         r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null,
         isFresh(r) ? h("span.fresh", { title: "Changed since you last opened it" }, "● New activity") : null),
       h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
-      r.area || r.device || age >= 3 ? h("div.row", { style: "margin-top:6px" },
+      siteOf(r) === "library" || r.area || r.device || age >= 3 ? h("div.row", { style: "margin-top:6px" },
+        siteOf(r) === "library" ? tag("Library Across", "color:var(--accent);border-color:var(--accent)") : null,
         r.area ? tag(labelOf(AREA_LIST, r.area)) : null, r.device ? tag(labelOf(DEVICE_LIST, r.device)) : null,
         age >= 3 ? tag("Waiting " + age + " days", "color:var(--warn);border-color:var(--warn)") : null) : null,
       r.dup_of ? h("div.faint", { style: "margin-top:6px" }, "Same as " + num(r.dup_of)) : null,
       r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude" + (r.updated ? " · " + when(r.updated) : "") + ": " + r.notes) : null);
   };
-  // Filters: words, mine, urgent, part of the site, type
-  const active = () => !!(filt.q.trim() || filt.mine || filt.prio || filt.area || filt.type);
+  // Filters: words, mine, urgent, site, part of the site, type
+  const active = () => !!(filt.q.trim() || filt.mine || filt.prio || filt.area || filt.type || filt.site);
   const DONE = new Set(["Done", "Roadmap"]);
   const rank = { urgent: 0, normal: 1, someday: 2 };
   const sorts = {
@@ -373,7 +379,7 @@ function renderTickets(list, target) {
   const lists = () => {
     const words = filt.q.toLowerCase().split(/ +/).filter(Boolean);
     const keep = (r) =>
-      (!filt.mine || r.author === ME.email) && (!filt.prio || r.priority === filt.prio) && (!filt.area || r.area === filt.area) && (!filt.type || r.type === filt.type) &&
+      (!filt.mine || r.author === ME.email) && (!filt.prio || r.priority === filt.prio) && (!filt.area || r.area === filt.area) && (!filt.type || r.type === filt.type) && (!filt.site || siteOf(r) === filt.site) &&
       words.every((w) => (r.body + " " + r.place + " " + r.notes + " " + num(r.id) + " " + who(r.author)).toLowerCase().includes(w));
     const shown = list.filter(keep);
     // Open tickets on top (urgent first, then newest); finished ones (closed, or put on the roadmap) in Cases Closed.
@@ -396,7 +402,7 @@ function renderTickets(list, target) {
     renderTickets(lastList, null);
     window.scrollTo(0, y);
   };
-  const clear = h("button.linkish" + (active() ? "" : ".hidden"), { type: "button", onclick: () => { Object.assign(filt, { q: "", mine: false, prio: "", area: "", type: "" }); redraw(); } }, "Clear filters");
+  const clear = h("button.linkish" + (active() ? "" : ".hidden"), { type: "button", onclick: () => { Object.assign(filt, { q: "", mine: false, prio: "", area: "", type: "", site: "" }); redraw(); } }, "Clear filters");
   // Typing redraws only the lists below, never the search box itself (so a phone keeps its keyboard).
   const search = h("input", { type: "text", placeholder: "Search tickets (words, #number, name)", "aria-label": "Search tickets", value: filt.q });
   let timer = 0;
@@ -416,6 +422,7 @@ function renderTickets(list, target) {
     h("div.chips", { style: "margin-top:8px" },
       toggle("Mine", filt.mine, () => (filt.mine = !filt.mine)),
       toggle("Urgent", filt.prio === "urgent", () => (filt.prio = filt.prio === "urgent" ? "" : "urgent")),
+      pick("Any site", SITE_LIST, "site"),
       pick("Any part", AREA_LIST, "area"),
       pick("Any type", [["Bug", "Bug"], ["Idea", "Idea"], ["Content", "Content"], ["Question", "Question"]], "type"),
       clear));
@@ -467,18 +474,18 @@ async function showOne(id) {
   markSeen(id, r.updated || r.created);
   if (lastList) updateTicketsBadge(lastList);
   const thread = h("div");
-  // Sorting: the reporter or the owner can change how soon / which part / which device.
+  // Sorting: the reporter or the owner can change which site / how soon / which part / which device.
   let sorting = null;
   if (ME.owner || (ME.email !== "claude" && r.author === ME.email)) {
     const sel = (label, list, key, none) => {
-      const s = h("select", { "aria-label": label }, none ? h("option", { value: "" }, none) : null, list.map(([v, l]) => h("option", { value: v, selected: r[key] === v }, l)));
+      const s = h("select", { "aria-label": label }, none ? h("option", { value: "" }, none) : null, list.map(([v, l]) => h("option", { value: v, selected: (key === "site" ? siteOf(r) : r[key]) === v }, l)));
       s.addEventListener("change", async () => {
         try { const res = await post("/api/reports/" + id, { [key]: s.value }, "PATCH"); markSeen(id, res.updated); toast("Saved"); } catch (e) { toast(e.message); }
       });
       return h("div", {}, h("label", {}, label), s);
     };
-    sorting = h("details.card", {}, h("summary", { class: "faint" }, "Sorting: " + [labelOf(PRIOS, r.priority || "normal"), r.area ? labelOf(AREA_LIST, r.area) : "", r.device ? labelOf(DEVICE_LIST, r.device) : ""].filter(Boolean).join(" · ")),
-      sel("How soon?", PRIOS, "priority"), sel("Which part of the site?", AREA_LIST, "area", "Not set"), sel("On which device?", DEVICE_LIST, "device", "Not set"));
+    sorting = h("details.card", {}, h("summary", { class: "faint" }, "Sorting: " + [labelOf(SITE_LIST, siteOf(r)), labelOf(PRIOS, r.priority || "normal"), r.area ? labelOf(AREA_LIST, r.area) : "", r.device ? labelOf(DEVICE_LIST, r.device) : ""].filter(Boolean).join(" · ")),
+      sel("Which site?", SITE_LIST, "site"), sel("How soon?", PRIOS, "priority"), sel("Which part of the site?", AREA_LIST, "area", "Not set"), sel("On which device?", DEVICE_LIST, "device", "Not set"));
   }
   async function loadThread() {
     const cs = await api("/api/comments?thread=report:" + id);
@@ -499,7 +506,7 @@ async function showOne(id) {
   if (ME.owner) {
     const sel = h("select", {}, ["New", "Seen", "Working", "Question", "Reopened", "Live", "Done", "Roadmap"].map((s) => h("option", { value: s, selected: s === r.status }, s)));
     const notes = h("textarea", { style: "min-height:70px" }); notes.value = r.notes || "";
-    const link = h("input", { type: "url", placeholder: "https://versesacross.com/…" }); link.value = r.live_url || "";
+    const link = h("input", { type: "url", placeholder: siteOf(r) === "library" ? "https://libraryacross.com/…" : "https://versesacross.com/…" }); link.value = r.live_url || "";
     const dup = h("input", { type: "text", placeholder: "Same as… e.g. #3fa2c1" });
     tools = h("details.card", {}, h("summary", { class: "faint" }, "Status and note (Claude)"),
       h("label", {}, "Status"), sel, h("label", {}, "Note"), notes, h("label", {}, "Test link"), link,
@@ -544,7 +551,8 @@ async function showOne(id) {
   show(
     h("button.back", { onclick: () => go("inbox") }, "← Tickets"),
     h("div.card", {},
-      h("div.row", {}, status(r.status), r.priority === "urgent" ? h("span.tag", { style: "color:var(--bad);border-color:var(--bad)" }, "Urgent") : null,
+      h("div.row", {}, status(r.status), siteOf(r) === "library" ? h("span.tag", { style: "color:var(--accent);border-color:var(--accent)" }, "Library Across") : null,
+        r.priority === "urgent" ? h("span.tag", { style: "color:var(--bad);border-color:var(--bad)" }, "Urgent") : null,
         h("span.faint", {}, num(r.id) + " · " + r.type + " · " + who(r.author) + " · " + when(r.created))),
       r.place ? h("div.faint", { style: "margin-top:6px" }, "Where: " + r.place) : null,
       r.dup_of ? h("p", { style: "margin:6px 0 0" }, h("a", { href: "#inbox/" + r.dup_of }, "Same as " + num(r.dup_of) + " →")) : null,

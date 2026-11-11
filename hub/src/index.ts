@@ -38,6 +38,8 @@ const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap
 const PRIORITIES = new Set(["urgent", "normal", "someday"]);
 const AREAS = new Set(["reader", "library", "search", "audio", "study", "phone", "hub", "other"]);
 const DEVICES = new Set(["iPhone", "Android", "computer"]);
+/** Which site a ticket is about (HB8, Nov 11): one hub for every "…Across" site. */
+const SITES = new Set(["verses", "library"]);
 const PART = 10 * 1024 * 1024; // upload parts (the page sends 10 MB at a time)
 const MAX_FILE = 2 * 1024 * 1024 * 1024; // 2 GB per file
 /** Exactly these: photos and phone videos. Never SVG or HTML (they could run code on the hub's address). */
@@ -259,8 +261,9 @@ async function createReport(env: Env, me: string, b: Row) {
   const priority = PRIORITIES.has(String(b.priority)) ? String(b.priority) : "normal";
   const area = AREAS.has(String(b.area)) ? String(b.area) : "";
   const device = DEVICES.has(String(b.device)) ? String(b.device) : "";
-  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device)
+  const site = SITES.has(String(b.site)) ? String(b.site) : "verses";
+  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device, site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device, site)
     .run();
   return json({ id });
 }
@@ -281,11 +284,11 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   const extra: D1Stmt[] = [];
   // Sorting: the reporter or the owner's session (Claude) may set these.
   const mine = me !== "claude" && report.author === me;
-  for (const [k, allowed] of [["priority", PRIORITIES], ["area", AREAS], ["device", DEVICES]] as const) {
+  for (const [k, allowed] of [["priority", PRIORITIES], ["area", AREAS], ["device", DEVICES], ["site", SITES]] as const) {
     if (b[k] === undefined) continue;
     if (!owner && !mine) return bad("Not your report", 403);
     const v = String(b[k]);
-    if ((v || k === "priority") && !allowed.has(v)) return bad(`Unknown ${k}`);
+    if ((v || k === "priority" || k === "site") && !allowed.has(v)) return bad(`Unknown ${k}`);
     sets.push(`${k} = ?`);
     vals.push(v);
   }
@@ -323,7 +326,7 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   if (b.live_url !== undefined) {
     if (!owner) return bad("Only the owner's session sets the link", 403);
     const u = clip(b.live_url, 500);
-    if (u && !/^https:\/\/(www\.)?versesacross\.com(\/|$)/.test(u)) return bad("Links go to versesacross.com");
+    if (u && !/^https:\/\/(www\.)?(versesacross|libraryacross)\.com(\/|$)/.test(u)) return bad("Links go to versesacross.com or libraryacross.com");
     sets.push("live_url = ?");
     vals.push(u);
   }
