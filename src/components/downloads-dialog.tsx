@@ -70,7 +70,11 @@ export function OfflineDownloadsButton() {
   return (
     <div className="space-y-1.5">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Offline</h3>
-      <button type="button" onClick={openDownloads} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm hover:border-faint">
+      <button
+        type="button"
+        onClick={openDownloads}
+        className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-line px-3 text-sm hover:border-faint"
+      >
         Offline downloads{n ? ` · ${n} saved` : ""}
       </button>
       <p className="text-xs text-faint">Keep versions, and their read-along audio, on this device to read and listen with no signal.</p>
@@ -109,7 +113,8 @@ function Body() {
 
   const languages = useMemo(() => {
     const count = new Map<string, number>();
-    for (const v of catalog.versions) if (index?.texts[`${v.work}/${v.id}`] && sideOfWork(v.work) === SITE_SIDE) count.set(v.language, (count.get(v.language) ?? 0) + 1);
+    for (const v of catalog.versions)
+      if (index?.texts[`${v.work}/${v.id}`] && sideOfWork(v.work) === SITE_SIDE) count.set(v.language, (count.get(v.language) ?? 0) + 1);
     return [...count.entries()].sort((a, b) => b[1] - a[1] || langName(a[0]).localeCompare(langName(b[0]))).map(([code]) => code);
   }, [index]);
 
@@ -124,11 +129,24 @@ function Body() {
   const [what, setWhat] = useState<"text" | "audio" | "both">("text");
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
   const stopBatch = useRef(false);
-  const shownKeys = shown.map((v) => `${v.work}/${v.id}`);
-  const allShownPicked = shownKeys.length > 0 && shownKeys.every((k) => picked.includes(k));
-  const hiddenPicked = picked.filter((k) => !shownKeys.includes(k)).length;
   /** The first recording of a version that has audio files (the one Download all uses). */
   const voiceOf = (version: string) => (index ? recordings.find((r) => r.version === version && index.audio[r.id]) : undefined);
+  /** Everything the chosen kind (Text / Audio / Both) needs of this version is already on the device. */
+  const isDone = (work: string, version: string) => {
+    if (what !== "audio" && !saved[textKey(work, version)]) return false;
+    const r = what !== "text" ? voiceOf(version) : undefined;
+    if (r && index) {
+      const s = saved[audioKey(r.version, r.voice)];
+      const have = s?.kind === "audio" ? s.books : [];
+      if (Object.keys(index.audio[r.id]).some((b) => !have.includes(b))) return false;
+    }
+    return true;
+  };
+  // Audio: only the versions that have read-along audio (ticket 75d47734: the list follows Text / Audio / Both).
+  const listed = what === "audio" ? shown.filter((v) => voiceOf(v.id)) : shown;
+  const shownKeys = listed.filter((v) => !isDone(v.work, v.id)).map((v) => `${v.work}/${v.id}`); // what Select all picks
+  const allShownPicked = shownKeys.length > 0 && shownKeys.every((k) => picked.includes(k));
+  const hiddenPicked = picked.filter((k) => !listed.some((v) => `${v.work}/${v.id}` === k)).length;
   const plan = useMemo(() => {
     const steps: { bytes: number; go: () => Promise<boolean> }[] = [];
     if (!index) return steps;
@@ -141,7 +159,11 @@ function Body() {
         const s = saved[audioKey(r.version, r.voice)];
         const have = s?.kind === "audio" ? s.books : [];
         const books = Object.keys(index.audio[r.id]).filter((b) => !have.includes(b));
-        if (books.length) steps.push({ bytes: books.reduce((a, b) => a + index.audio[r.id][b][0], 0), go: () => downloadAudio(r, books) });
+        if (books.length)
+          steps.push({
+            bytes: books.reduce((a, b) => a + index.audio[r.id][b][0], 0),
+            go: () => downloadAudio(r, books),
+          });
       }
     }
     return steps;
@@ -200,14 +222,18 @@ function Body() {
     <div className="flex max-h-[85dvh] flex-col desk:max-h-[80vh]">
       <div className="flex items-center justify-between border-b border-line py-1 pl-4 pr-1">
         <h2 className="font-serif text-lg font-semibold">Offline downloads</h2>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-raised"
+        >
           <CloseIcon />
         </button>
       </div>
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-3 text-sm">
         <p className="text-muted">
-          Save versions on this device to read with no signal, and their read-along audio to listen offline too. The size shows
-          before anything downloads.
+          Save versions on this device to read with no signal, and their read-along audio to listen offline too. The size shows before anything downloads.
           {space ? ` About ${formatBytes(space.free)} free for this site.` : ""}
         </p>
 
@@ -216,14 +242,24 @@ function Body() {
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-medium text-ink">
                 {job.error ? "Download stopped" : `Saving ${job.label}…`}
-                {batch && !job.error ? <span className="font-normal text-faint"> ({batch.done + 1} of {batch.total})</span> : null}
+                {batch && !job.error ? (
+                  <span className="font-normal text-faint">
+                    {" "}
+                    ({batch.done + 1} of {batch.total})
+                  </span>
+                ) : null}
               </span>
               <span className="tabular-nums text-faint">
                 {formatBytes(job.bytesDone)} of {formatBytes(job.bytesTotal)}
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-raised" aria-hidden>
-              <div className="h-full rounded-full bg-accent transition-[width] motion-reduce:transition-none" style={{ width: `${Math.round((job.done / Math.max(1, job.total)) * 100)}%` }} />
+              <div
+                className="h-full rounded-full bg-accent transition-[width] motion-reduce:transition-none"
+                style={{
+                  width: `${Math.round((job.done / Math.max(1, job.total)) * 100)}%`,
+                }}
+              />
             </div>
             {job.error ? (
               <div className="flex items-start justify-between gap-2">
@@ -311,10 +347,11 @@ function Body() {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
+                    disabled={!shownKeys.length}
                     onClick={() => setPicked((p) => (allShownPicked ? [] : [...new Set([...p, ...shownKeys])]))}
-                    className={`${btn} border border-line`}
+                    className={`${btn} border border-line disabled:opacity-50`}
                   >
-                    {allShownPicked ? "Clear selection" : `Select all ${shown.length}`}
+                    {!shownKeys.length ? "✓ All downloaded" : allShownPicked ? "Clear selection" : `Select all ${shownKeys.length}`}
                   </button>
                   {picked.length > 0 && !allShownPicked && (
                     <button type="button" onClick={() => setPicked([])} className={`${btn} text-muted hover:bg-raised`}>
@@ -327,7 +364,10 @@ function Body() {
                         key={w}
                         type="button"
                         aria-pressed={what === w}
-                        onClick={() => setWhat(w)}
+                        onClick={() => {
+                          setWhat(w);
+                          setPicked([]); // a new kind: start the selection afresh
+                        }}
                         className={`min-h-10 px-3 ${what === w ? "bg-accent-soft font-medium text-ink" : "text-muted hover:bg-raised"}`}
                       >
                         {w === "text" ? "Text" : w === "audio" ? "Audio" : "Both"}
@@ -355,9 +395,11 @@ function Body() {
                         : "✓ All selected are saved"}
                 </button>
               </div>
+              {listed.length === 0 && <p className="text-faint">None of these versions has read-along audio yet.</p>}
               <ul className="space-y-2">
-                {shown.map((v) => {
+                {listed.map((v) => {
                   const k = `${v.work}/${v.id}`;
+                  const done = isDone(v.work, v.id);
                   return (
                     <VersionRow
                       key={k}
@@ -368,7 +410,9 @@ function Body() {
                       recordings={recordings.filter((r) => r.version === v.id)}
                       busy={(!!job && !job.error) || !!batch}
                       start={start}
-                      picked={picked.includes(k)}
+                      what={what}
+                      done={done}
+                      picked={!done && picked.includes(k)}
                       onPick={(on) => setPicked((p) => (on ? [...p, k] : p.filter((x) => x !== k)))}
                     />
                   );
@@ -393,11 +437,16 @@ function SavedRow({ k, s, recordings, busy, missing }: { k: string; s: Saved; re
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-ink">{what}</p>
         <p className="text-xs text-faint">
-          {detail} · {formatBytes(s.bytes)} · saved {new Date(s.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          {detail} · {formatBytes(s.bytes)} · saved{" "}
+          {new Date(s.at).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}
         </p>
         {missing > 0 && (
           <p className="text-xs text-ink">
-            Incomplete: this browser cleared {missing} file{missing === 1 ? "" : "s"}. Download again to fill them in.
+            Incomplete: this browser cleared {missing} file
+            {missing === 1 ? "" : "s"}. Download again to fill them in.
           </p>
         )}
       </div>
@@ -423,7 +472,9 @@ function SavedRow({ k, s, recordings, busy, missing }: { k: string; s: Saved; re
             <button
               type="button"
               disabled={busy}
-              onClick={() => void refreshDownload(k).then((ok) => ok && toast(missing > 0 ? `${what} is complete again` : `${v?.abbr ?? s.version} is up to date`))}
+              onClick={() =>
+                void refreshDownload(k).then((ok) => ok && toast(missing > 0 ? `${what} is complete again` : `${v?.abbr ?? s.version} is up to date`))
+              }
               className={`${btn} border border-line disabled:opacity-50`}
             >
               {missing > 0 ? "Download again" : "Update"}
@@ -446,6 +497,8 @@ function VersionRow({
   recordings,
   busy,
   start,
+  what,
+  done,
   picked,
   onPick,
 }: {
@@ -456,6 +509,10 @@ function VersionRow({
   recordings: Recording[];
   busy: boolean;
   start: (bytes: number, go: () => Promise<boolean>, done: string) => Promise<void>;
+  /** Text / Audio / Both: which downloads the row offers. */
+  what: "text" | "audio" | "both";
+  /** Everything of that kind is on the device: the row is greyed and says Downloaded. */
+  done: boolean;
   picked: boolean;
   onPick: (on: boolean) => void;
 }) {
@@ -472,38 +529,48 @@ function VersionRow({
   const savedBooks = audioSaved?.kind === "audio" ? audioSaved.books : [];
   const allBytes = Object.values(sizes).reduce((a, [b]) => a + b, 0);
   const pickedBytes = books.reduce((a, b) => a + (sizes[b]?.[0] ?? 0), 0);
-  const bookName = (id: string) => catalog.religions.flatMap((x) => x.collections.flatMap((c) => c.items)).find((it) => it.work === work && it.id === id)?.name.split(" · ")[0] ?? id;
+  const bookName = (id: string) =>
+    catalog.religions
+      .flatMap((x) => x.collections.flatMap((c) => c.items))
+      .find((it) => it.work === work && it.id === id)
+      ?.name.split(" · ")[0] ?? id;
 
   return (
-    <li className="space-y-2 rounded-xl border border-line px-3 py-2.5">
+    <li className={`space-y-2 rounded-xl border border-line px-3 py-2.5 ${done ? "bg-raised/40" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <input
           type="checkbox"
           checked={picked}
+          disabled={done}
           onChange={(e) => onPick(e.target.checked)}
-          aria-label={`Select ${v.name}`}
-          className="h-5 w-5 shrink-0 accent-[var(--accent)]"
+          aria-label={done ? `${v.name}: downloaded already` : `Select ${v.name}`}
+          className="h-5 w-5 shrink-0 accent-[var(--accent)] disabled:opacity-40"
         />
-        <div className="min-w-0 flex-1">
+        <div className={`min-w-0 flex-1 ${done ? "opacity-60" : ""}`}>
           <p className="font-medium text-ink">
             {v.name} <span className="text-faint">· {v.abbr}</span>
+            {done && <span className="ml-2 whitespace-nowrap text-xs font-normal text-muted">✓ Downloaded already</span>}
           </p>
           <p className="text-xs text-faint">
-            {workName(work)} · {langName(v.language)} · text {formatBytes(text.bytes)}
+            {workName(work)} · {langName(v.language)}
+            {what !== "audio" && ` · text ${formatBytes(text.bytes)}`}
+            {what !== "text" && r && ` · audio ${formatBytes(allBytes)}`}
           </p>
         </div>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void start(text.bytes, () => downloadText(work, version), `${v.abbr} saved for offline reading`)}
-          className={`${btn} shrink-0 disabled:opacity-50 ${isSaved ? "border border-line text-muted" : "bg-accent font-medium text-accent-ink"}`}
-        >
-          {isSaved ? "✓ Saved" : `Download · ${formatBytes(text.bytes)}`}
-          {isSaved && <span className="sr-only"> (download again)</span>}
-        </button>
+        {what !== "audio" && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void start(text.bytes, () => downloadText(work, version), `${v.abbr} saved for offline reading`)}
+            className={`${btn} shrink-0 disabled:opacity-50 ${isSaved ? "border border-line text-muted" : "bg-accent font-medium text-accent-ink"}`}
+          >
+            {isSaved ? "✓ Saved" : `Download · ${formatBytes(text.bytes)}`}
+            {isSaved && <span className="sr-only"> (download again)</span>}
+          </button>
+        )}
       </div>
 
-      {r && (
+      {r && what !== "text" && (
         <div className="space-y-2 border-t border-line pt-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted">Read-along audio</span>
@@ -566,7 +633,9 @@ function VersionRow({
                 type="button"
                 disabled={busy || !books.length}
                 onClick={() =>
-                  void start(pickedBytes, () => downloadAudio(r, books), `Audio saved for ${books.length} book${books.length === 1 ? "" : "s"}`).then(() => setBooks([]))
+                  void start(pickedBytes, () => downloadAudio(r, books), `Audio saved for ${books.length} book${books.length === 1 ? "" : "s"}`).then(() =>
+                    setBooks([]),
+                  )
                 }
                 className={`${btn} bg-accent font-medium text-accent-ink disabled:opacity-50`}
               >
