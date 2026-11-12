@@ -3,7 +3,7 @@ import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
-import { CalendarIcon, ShareIcon, LanguagesIcon, LibraryIcon, MenuIcon, MoreIcon, RocketIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
+import { CalendarIcon, ShareIcon, LanguagesIcon, LibraryIcon, HomeIcon, MenuIcon, MoreIcon, RocketIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
 import { ReadTogether } from "./read-together";
 import { HighlightModeToggle } from "./highlight-mode";
 import { XrefToggle } from "./xref-panel";
@@ -47,6 +47,15 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
       >
         <MenuIcon />
       </button>
+      {/* Phone: the home page, one tap away (the logo is desktop only). Ticket 72cd7cf4. */}
+      <Link
+        href="/read"
+        aria-label="Home"
+        aria-current={home ? "page" : undefined}
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg hover:bg-raised hover:text-ink desk:hidden ${home ? "text-accent" : "text-muted"}`}
+      >
+        <HomeIcon />
+      </Link>
 
       <Link href="/read" className="hidden items-center gap-2 pr-2 desk:flex" aria-label={`${SITE_NAME} home`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG logo */}

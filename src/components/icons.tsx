@@ -174,3 +174,6 @@ export const WidthIcon = (p: P) => (
 export const MoreIcon = (p: P) => (
   <svg {...base(p)}><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" /></svg>
 );
+export const HomeIcon = (p: P) => (
+  <svg {...base(p)}><path d="M3 11l9-7 9 7" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
+);
