@@ -15,7 +15,7 @@ import { OTHER_NAME, OTHER_ORIGIN, SITE_NAME, SITE_SIDE } from "@/lib/site";
 import { openFeedback } from "@/lib/feedback";
 import { openPanel } from "@/lib/ui-store";
 import { openTour } from "./tour";
-import { BookIcon, CalendarIcon, LibraryIcon, MailIcon, RocketIcon, SparkIcon, StarIcon } from "./icons";
+import { BookIcon, CalendarIcon, ColumnsIcon, LibraryIcon, MailIcon, RocketIcon, SparkIcon, StarIcon } from "./icons";
 import { SuggestionsTile } from "./home-suggestions";
 
 const library = SITE_SIDE === "library";
@@ -140,6 +140,14 @@ export function HomePage() {
           </Tile>
           <Tile icon={<SparkIcon width={18} height={18} />} title="Themes" href={library ? "/themes#library" : "/themes"}>
             {library ? "Story themes across the books: love, war, home, the journey…" : "Big themes across the scriptures, with the passages that speak to them."}
+          </Tile>
+          {!library && (
+            <Tile icon={<ColumnsIcon width={18} height={18} />} title="Why Bibles differ" href="/differences">
+              Where the King James and modern translations part ways, verse by verse, and why.
+            </Tile>
+          )}
+          <Tile icon={<RocketIcon width={18} height={18} />} title="Coming soon" href="/coming-soon">
+            What we&apos;re building next: games, a section for children, a path for teachers and more.
           </Tile>
           <Tile icon={<StarIcon width={18} height={18} />} title={`About ${SITE_NAME}`} href="/about">
             Who made it, where the texts come from, and how your privacy is kept.

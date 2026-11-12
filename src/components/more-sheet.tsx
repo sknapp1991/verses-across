@@ -18,7 +18,6 @@ import { Modal } from "./modal";
 import {
   CalendarIcon,
   CloseIcon,
-  RocketIcon,
   BookIcon,
   StarIcon,
   ShareIcon,
@@ -293,15 +292,6 @@ function Tiles() {
         onClick={() => {
           closeSheet();
           router.push("/read");
-        }}
-      />
-      <Tile
-        icon={<RocketIcon />}
-        label="Coming soon"
-        title="What's planned next: games, a section for children, a path for teachers and more"
-        onClick={() => {
-          closeSheet();
-          router.push("/coming-soon");
         }}
       />
     </div>

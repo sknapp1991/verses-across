@@ -3,7 +3,7 @@ import { openTour } from "./tour";
 import Link from "next/link";
 import { openFeedback } from "@/lib/feedback";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { OTHER_NAME, OTHER_ORIGIN, OTHER_SIDE, SITE_SIDE } from "@/lib/site";
+import { OTHER_NAME, OTHER_ORIGIN, OTHER_SIDE } from "@/lib/site";
 import { chooseSide, LIBRARY_SHELVES, SIDE_NAME, shelvesOf, sideOfWork, useSide, type Side } from "@/lib/side";
 import { recentChapters } from "@/lib/reading-position";
 import { getSettings } from "@/lib/settings";
@@ -431,14 +431,6 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               Themes
             </Link>
             {" · "}
-            {SITE_SIDE === "scriptures" && (
-              <>
-                <Link href="/differences" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
-                  Why Bibles differ
-                </Link>
-                {" · "}
-              </>
-            )}
             <Link href="/whats-new" onClick={onNavigate} className="underline underline-offset-2 hover:text-muted">
               What&rsquo;s new
             </Link>

@@ -133,7 +133,7 @@ const STEPS: Step[] = [
     icon: <RocketIcon />,
     title: "What's coming",
     body: "Games and quizzes on what you read, with XP and badges. Themes that follow one idea (forgiveness, suffering, creation…) across every tradition and book, turning into study guides and lesson plans. A section made for children, and teaching paths for classes from preschool to university.",
-    where: "The rocket button at the top (More ⋯ on a phone) opens the full roadmap.",
+    where: "The Coming soon tile on the home page (the logo at top left, or the house on a phone) opens the full roadmap.",
     tryIt: { label: "See the roadmap", href: "/coming-soon" },
   },
 ];
