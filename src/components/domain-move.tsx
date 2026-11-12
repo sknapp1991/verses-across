@@ -127,6 +127,8 @@ async function forward(origin = `https://${OFFICIAL}`, target?: string, everyTim
 }
 
 async function receive(encoded: string) {
+  // Taking in the data, then reloading: other code (Ask AI's status check) waits for the reload (ai-chat.ts).
+  (window as Window & { __vaMoving?: boolean }).__vaMoving = true;
   let hash = "";
   try {
     const data = JSON.parse(await gunzip(fromB64(encoded))) as Bundle;

@@ -94,7 +94,7 @@ function load() {
     loaded = false;
     return set({ ready: false, open: false }, false);
   }
-  if (window.location.hash.startsWith("#vamove=")) {
+  if (window.location.hash.startsWith("#vamove=") || (window as Window & { __vaMoving?: boolean }).__vaMoving) {
     // Arriving from the other site with the reader's data: the page takes it in and reloads at once, so the
     // "is Ask AI on?" request waits for that (cut off by the reload, it left a CORS error in the console).
     // The saved chat is already restored above; asked again on the next render.
