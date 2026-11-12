@@ -97,10 +97,16 @@ async function gunzip(bytes: Uint8Array): Promise<string> {
 /** Go to `origin` + `path` (this page's own path when not given), with this site's saved data. */
 export async function forwardTo(origin: string, path?: string, newTab = false) {
   const { pathname, search, hash } = window.location;
-  // A new tab must be opened right away, during the tap (browsers block pop-ups opened later); the address
-  // with the reader's data is filled in a moment after (ticket 83ae5216).
-  const tab = newTab ? window.open("about:blank", "_blank") : null;
-  if (tab) tab.opener = null;
+  // The tab must be opened right away, during the tap (browsers block pop-ups opened later); the address with
+  // the reader's data is filled in a moment after (ticket 83ae5216). One tab per site: the tab is named after
+  // the site, so the next link there reuses it instead of opening another ("" leaves a found tab where it is
+  // until the new address arrives). Both sites are ours, so the tab keeps its link back to this one, which is
+  // what lets the browser find it again.
+  let tab: Window | null = null;
+  if (newTab) {
+    tab = window.open("", `site-${new URL(origin).host.replace(/^www\./, "")}`);
+    tab?.focus();
+  }
   return forward(origin, path ?? pathname + search + hash, true, tab);
 }
 
@@ -189,6 +195,15 @@ export function DomainMove() {
       return;
     }
     if (window.location.hash.startsWith(MARK)) receive(window.location.hash.slice(MARK.length));
+    // One tab per site (ticket 83ae5216): this tab carries the site's name, so a link from the other site comes
+    // back here rather than opening another tab. (A tab already sent elsewhere keeps its own name.)
+    if (!window.name || window.name.startsWith("site-")) window.name = `site-${window.location.host.replace(/^www\./, "")}`;
+    // The other site sent this tab its data while it was already on that very page: only the #part changed.
+    const onHash = () => {
+      if (window.location.hash.startsWith(MARK)) receive(window.location.hash.slice(MARK.length));
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
   // Any link to the sister site (a cross reference, a search result, the menu's footer link) opens it in a new
   // tab, taking the reader's saved data along, so each site stays in its own tab (ticket 83ae5216). Ctrl/Cmd/
