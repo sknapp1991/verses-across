@@ -1,8 +1,9 @@
 "use client";
 /**
  * The home page (/read, inside the reading frame): a grid of tiles, 2 across (1 on a phone). A first visit lands
- * here; the logo at top left opens it. Tiles: Continue reading, the tour, the sister site, Themes, what to study /
- * read next, About, Send feedback. Ticket 72cd7cf4 (the brother's idea, Skylar approved, Nov 12): kept simple to
+ * here; the logo at top left opens it. Tiles: Continue reading beside what to study / read next, Suggestions (a short
+ * questionnaire, home-suggestions.tsx), the tour, the sister site, Themes,
+ * About, Send feedback. Ticket 72cd7cf4 (the brother's idea, Skylar approved, Nov 12): kept simple to
  * build on later.
  */
 import Link from "next/link";
@@ -15,6 +16,7 @@ import { openFeedback } from "@/lib/feedback";
 import { openPanel } from "@/lib/ui-store";
 import { openTour } from "./tour";
 import { BookIcon, CalendarIcon, LibraryIcon, MailIcon, RocketIcon, SparkIcon, StarIcon } from "./icons";
+import { SuggestionsTile } from "./home-suggestions";
 
 const library = SITE_SIDE === "library";
 const noSubscribe = () => () => {};
@@ -91,16 +93,6 @@ export function HomePage() {
             {(last ? lastEntry : startEntry) ? chapterTitle(last ? lastEntry : startEntry, start.chapter) : "Open the first chapter"}
             {!last && <span className="block text-faint">or pick any book from the list</span>}
           </Tile>
-          <Tile icon={<RocketIcon width={18} height={18} />} title="Take the tour" onClick={() => openTour()}>
-            A short walk through what you can do here, one step at a time.
-          </Tile>
-          <Tile icon={<LibraryIcon width={18} height={18} />} title={OTHER_NAME} href={`${OTHER_ORIGIN}/`} newTab>
-            {library ? "Our sister site: the world's scriptures side by side." : "Our sister site: classic books, from novels to poetry and children's stories."}
-            <span className="block text-faint">Your places and notes come along.</span>
-          </Tile>
-          <Tile icon={<SparkIcon width={18} height={18} />} title="Themes" href={library ? "/themes#library" : "/themes"}>
-            {library ? "Story themes across the books: love, war, home, the journey…" : "Big themes across the scriptures, with the passages that speak to them."}
-          </Tile>
           {library ? (
             <div className={tileCls}>
               <span className="flex items-center gap-2 font-serif text-lg font-semibold text-ink">
@@ -138,6 +130,17 @@ export function HomePage() {
               </button>
             </div>
           )}
+          <SuggestionsTile className="sm:col-span-2" />
+          <Tile icon={<RocketIcon width={18} height={18} />} title="Take the tour" onClick={() => openTour()}>
+            A short walk through what you can do here, one step at a time.
+          </Tile>
+          <Tile icon={<LibraryIcon width={18} height={18} />} title={OTHER_NAME} href={`${OTHER_ORIGIN}/`} newTab>
+            {library ? "Our sister site: the world's scriptures side by side." : "Our sister site: classic books, from novels to poetry and children's stories."}
+            <span className="block text-faint">Your places and notes come along.</span>
+          </Tile>
+          <Tile icon={<SparkIcon width={18} height={18} />} title="Themes" href={library ? "/themes#library" : "/themes"}>
+            {library ? "Story themes across the books: love, war, home, the journey…" : "Big themes across the scriptures, with the passages that speak to them."}
+          </Tile>
           <Tile icon={<StarIcon width={18} height={18} />} title={`About ${SITE_NAME}`} href="/about">
             Who made it, where the texts come from, and how your privacy is kept.
           </Tile>
