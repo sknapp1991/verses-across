@@ -444,12 +444,12 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
         ) : (
           groups.map((g) => (
             <div key={g.religion.id}>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">{g.religion.name}</p>
+              <p className="mb-1.5 rounded-md bg-accent-soft px-2 py-1 text-xs font-semibold uppercase tracking-wide text-accent">{g.religion.name}</p>
               {g.sections ? (
                 <div className="space-y-2">
                   {g.sections.map((s) => (
                     <div key={s.id}>
-                      <p className="mb-1 border-l-2 border-line pl-2 text-xs font-medium text-muted">{s.name}</p>
+                      <p className="mb-1 rounded-md border-l-2 border-accent bg-raised px-2 py-0.5 text-xs font-medium text-ink">{s.name}</p>
                       <ul className="space-y-1.5">
                         {s.hits.map((h) => (
                           <HitRow key={`${h.work}/${h.book}/${h.chapter}:${h.v}`} h={h} versions={h.work === bookRef.work ? versions : undefined} />
