@@ -32,11 +32,11 @@ const groupOf = (t: string) => {
 
 /** Keep the tab list in step with where the reader is (update the current book's tab, or add one). */
 export function useTabsSync() {
-  const { ref, entry } = useReaderState();
+  const { ref, entry, home } = useReaderState();
   const current = key(ref);
   useEffect(() => {
     // (a book of the other site is only passing through on its way there: MovedAway)
-    if (!entry || sideOfWork(current.split("/")[0]) !== SITE_SIDE) return;
+    if (home || !entry || sideOfWork(current.split("/")[0]) !== SITE_SIDE) return;
     // Read the saved tabs at the moment of the update: during hydration the rendered settings are
     // still the defaults (no tabs), and acting on those would wipe the user's saved tabs.
     const { tabs, tabsRecent } = getSettings();
@@ -53,11 +53,11 @@ export function useTabsSync() {
       // New book: add a tab; past the limit, drop the oldest one.
       updateSettings({ tabs: [...tabs, current].slice(-MAX_TABS), tabsRecent: recent });
     }
-  }, [current, entry]);
+  }, [current, entry, home]);
 }
 
 export function TabBar() {
-  const { ref, versions } = useReaderState();
+  const { ref, versions, home } = useReaderState();
   const { tabs: saved, tabsRecent } = useSettings();
   // This site's books only (Verses Across / Library Across); the other site's tabs live there.
   const tabs = saved.filter((t) => sideOfWork(t.split("/")[0]) === SITE_SIDE);
@@ -71,10 +71,10 @@ export function TabBar() {
     const g = groupOf(t);
     if (!groups.some((x) => x.id === g.id)) groups.push(g);
   }
-  const activeTab = tabs.find((t) => sameBook(parse(t), ref));
+  const activeTab = home ? undefined : tabs.find((t) => sameBook(parse(t), ref)); // the home page: no tab is the open one
   const activeGroup = activeTab ? groupOf(activeTab).id : groups[0]?.id;
   const visible = tabs.filter((t) => groupOf(t).id === activeGroup);
-  const activeIndex = visible.findIndex((t) => sameBook(parse(t), ref));
+  const activeIndex = home ? -1 : visible.findIndex((t) => sameBook(parse(t), ref));
 
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });

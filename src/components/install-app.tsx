@@ -129,7 +129,7 @@ export function InstallCard() {
 
   // Offer once the reader has spent a little while reading (counted across chapters), not during the welcome
   // tour, not over an open sheet, and not while the read-aloud player is open.
-  const reading = pathname.startsWith("/read");
+  const reading = pathname.startsWith("/read/"); // a chapter (not the home page, /read)
   useEffect(() => {
     if (!available || open || !reading || askedThisVisit) return;
     const s = load();

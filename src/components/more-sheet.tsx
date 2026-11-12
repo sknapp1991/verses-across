@@ -19,6 +19,7 @@ import {
   CalendarIcon,
   CloseIcon,
   RocketIcon,
+  BookIcon,
   StarIcon,
   ShareIcon,
   SparkIcon,
@@ -283,6 +284,15 @@ function Tiles() {
         onClick={() => {
           closeSheet();
           router.push("/themes");
+        }}
+      />
+      <Tile
+        icon={<BookIcon />}
+        label="Home"
+        title="The home page: continue reading, the tour, themes, our sister site and more"
+        onClick={() => {
+          closeSheet();
+          router.push("/read");
         }}
       />
       <Tile

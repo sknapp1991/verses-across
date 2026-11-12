@@ -25,11 +25,14 @@ import { setPageWork } from "@/lib/side";
 import { noteVisit } from "@/lib/reading-position";
 
 export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: () => void; menuOnDesk?: boolean }) {
-  const { ref, entry, versions } = useReaderState();
+  const { ref, entry: chapterEntry, versions, home } = useReaderState();
+  const entry = home ? undefined : chapterEntry; // the home page: the site name, not a chapter
   // the side (Scriptures / Library) follows the work on screen
   useEffect(() => setPageWork(ref.work), [ref.work]);
   // remembered as the last chapter opened (the Library list's "Last read")
-  useEffect(() => noteVisit(`${ref.work}/${ref.book}/${ref.chapter}`), [ref.work, ref.book, ref.chapter]);
+  useEffect(() => {
+    if (!home) noteVisit(`${ref.work}/${ref.book}/${ref.chapter}`);
+  }, [ref.work, ref.book, ref.chapter, home]);
   const { sheet } = useUi();
 
   return (
@@ -45,7 +48,7 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
         <MenuIcon />
       </button>
 
-      <Link href="/" className="hidden items-center gap-2 pr-2 desk:flex" aria-label={`${SITE_NAME} home`}>
+      <Link href="/read" className="hidden items-center gap-2 pr-2 desk:flex" aria-label={`${SITE_NAME} home`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG logo */}
         <img src="/icon.svg" alt="" width={28} height={28} className="rounded-md" />
         <span className="hidden font-serif text-lg font-semibold tracking-tight xl:inline">

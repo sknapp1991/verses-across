@@ -24,12 +24,13 @@ function topVerse(): string | undefined {
  * taps it and is at the same place; the talking happens in whatever app you send it with.
  */
 export function useShareHere() {
-  const { ref, versions } = useReaderState();
+  const { ref, versions, home } = useReaderState();
   return async () => {
     const v = topVerse();
-    const url = window.location.origin + readHref(ref, versions, v && v !== "1" ? v : undefined);
+    // The home page has no chapter: share the site itself.
+    const url = window.location.origin + (home ? "/" : readHref(ref, versions, v && v !== "1" ? v : undefined));
     const where = `${chapterTitle(findBook(ref.work, ref.book), ref.chapter, ref.book)}${v && v !== "1" ? `:${v}` : ""}`;
-    const text = `Read ${where} with me on ${SITE_NAME}`;
+    const text = home ? `Read with me on ${SITE_NAME}` : `Read ${where} with me on ${SITE_NAME}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: "Read together", text, url });

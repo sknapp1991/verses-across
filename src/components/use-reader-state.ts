@@ -80,5 +80,7 @@ export function useReaderState() {
     [router, pathname, differs, settings.versions, work],
   );
 
-  return { ref, entry, versions, setVersions };
+  /** The home page (/read, inside the shell): no chapter is open, so nothing may be recorded as read. */
+  const home = pathname === "/read" || pathname === "/read/";
+  return { ref, entry, versions, setVersions, home };
 }

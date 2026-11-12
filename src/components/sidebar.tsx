@@ -111,6 +111,9 @@ function lastRead(side: Side, now: BookRef): { ref: BookRef; title: string } | n
   return null;
 }
 
+/** Stands in for "no chapter open" (the home page). */
+const NO_CHAPTER: BookRef = { work: "", book: "", chapter: 0 };
+
 function whereIs(ref: BookRef) {
   for (const r of catalog.religions)
     for (const c of r.collections)
@@ -121,7 +124,9 @@ function whereIs(ref: BookRef) {
 }
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const { ref, versions } = useReaderState();
+  const { ref: readerRef, versions, home } = useReaderState();
+  // The home page: no chapter is open, so nothing is "here" and no shelf opens by itself.
+  const ref = home ? NO_CHAPTER : readerRef;
   const side = useSide();
   const other: Side = side === "library" ? "scriptures" : "library";
   const shelves = shelvesOf(side);
@@ -218,7 +223,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, []);
 
   const q = norm(query);
-  const anyJump = q ? (parseJump(query) ?? refJump(query, ref.work)) : null;
+  const anyJump = q ? (parseJump(query) ?? refJump(query, readerRef.work)) : null;
   // "John 3:16" from the Library side: only with "Include the Scriptures" (otherwise it counts as a match there)
   const jumpHere = !!anyJump && (bothSides || LIBRARY_SHELVES.has(anyJump.hit.religion.id) === (side === "library"));
   const jump = jumpHere ? anyJump : null;
