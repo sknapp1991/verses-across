@@ -150,6 +150,21 @@ export function askAboutVerse(v: AttachedVerse) {
 }
 
 let controller: AbortController | null = null;
+/**
+ * The page is being left or reloaded: that cuts the answer off, and it isn't a connection problem. (Moving between
+ * chapters keeps the page, but right after the site is updated the next click loads the page afresh. Ticket b0b7add8.)
+ */
+let leaving = false;
+if (typeof window !== "undefined") {
+  const away = () => {
+    leaving = true;
+  };
+  window.addEventListener("beforeunload", away);
+  window.addEventListener("pagehide", away);
+  window.addEventListener("pageshow", () => {
+    leaving = false;
+  });
+}
 export function stopAi() {
   controller?.abort();
 }
@@ -202,7 +217,11 @@ export async function sendAi(question: string) {
       if (!text.trim()) update({ text: "No answer came back — please try again.", error: true });
     }
   } catch (e) {
-    if ((e as Error).name === "AbortError") update({ text: text ? text + " …(stopped)" : "(stopped)" });
+    if (leaving)
+      update({
+        text: (text ? text + " …" : "") + "(The page reloaded, probably because the site was just updated, before the answer finished. Please ask again.)",
+      });
+    else if ((e as Error).name === "AbortError") update({ text: text ? text + " …(stopped)" : "(stopped)" });
     else update({ text: "Couldn’t reach the AI. Check your connection and try again.", error: true });
   } finally {
     controller = null;
