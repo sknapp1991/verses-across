@@ -254,15 +254,27 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
     const scripture = !showScriptures
       ? []
       : want
-          .map((id) => ({
-            religion: catalog.religions.find((r) => r.id === id)!,
-            hits: hits.filter((h) => sideOfWork(h.work) === "scriptures" && religionOf(h.work, h.book)?.id === id).slice(0, per),
-          }))
+          .map((id) => {
+            const religion = catalog.religions.find((r) => r.id === id)!;
+            const mine = hits.filter((h) => sideOfWork(h.work) === "scriptures" && religionOf(h.work, h.book)?.id === id);
+            // Split by section (Christianity: Old Testament · New Testament · Apocrypha…), each with its own best
+            // matches, when the matches come from more than one (ticket 31354432).
+            const sections = (religion?.collections ?? [])
+              .map((c) => ({ id: c.id, name: c.name, hits: mine.filter((h) => findBook(h.work, h.book)?.collection.id === c.id).slice(0, per) }))
+              .filter((s) => s.hits.length > 0);
+            return sections.length > 1
+              ? { religion, hits: sections.flatMap((s) => s.hits), sections }
+              : { religion, hits: mine.slice(0, per), sections: undefined };
+          })
           .filter((g) => g.religion && (!book || g.hits.length > 0)); // a book: only the religions with a match
     const library = !showLibrary
       ? []
       : shelvesOf("library")
-          .map((r) => ({ religion: r, hits: hits.filter((h) => sideOfWork(h.work) === "library" && religionOf(h.work, h.book)?.id === r.id).slice(0, per) }))
+          .map((r) => ({
+            religion: r,
+            hits: hits.filter((h) => sideOfWork(h.work) === "library" && religionOf(h.work, h.book)?.id === r.id).slice(0, per),
+            sections: undefined as { id: string; name: string; hits: Hit[] }[] | undefined,
+          }))
           .filter((g) => g.hits.length > 0);
     return pageSide === "library" ? [...library, ...scripture] : [...scripture, ...library];
     // others is derived from own
@@ -414,7 +426,20 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
           groups.map((g) => (
             <div key={g.religion.id}>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">{g.religion.name}</p>
-              {g.hits.length ? (
+              {g.sections ? (
+                <div className="space-y-2">
+                  {g.sections.map((s) => (
+                    <div key={s.id}>
+                      <p className="mb-1 border-l-2 border-line pl-2 text-xs font-medium text-muted">{s.name}</p>
+                      <ul className="space-y-1.5">
+                        {s.hits.map((h) => (
+                          <HitRow key={`${h.work}/${h.book}/${h.chapter}:${h.v}`} h={h} versions={h.work === bookRef.work ? versions : undefined} />
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ) : g.hits.length ? (
                 <ul className="space-y-1.5">
                   {g.hits.map((h) => (
                     <HitRow key={`${h.work}/${h.book}/${h.chapter}:${h.v}`} h={h} versions={h.work === bookRef.work ? versions : undefined} />
