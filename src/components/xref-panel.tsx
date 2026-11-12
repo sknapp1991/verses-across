@@ -244,9 +244,14 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
   const pageSide = sideOfWork(bookRef.work);
   const showScriptures = pageSide === "scriptures" || settings.xrefOtherSide;
   const showLibrary = pageSide === "library" || settings.xrefOtherSide;
+  // "Show more" under a section or religion: 6 more matches per tap (ticket 31354432), reset for a new verse.
+  const [more, setMore] = useState<{ k: string; m: Record<string, number> }>({ k: "", m: {} });
+  const extra = more.k === key ? more.m : {};
+  const showMore = (id: string) => setMore((s) => ({ k: key, m: { ...(s.k === key ? s.m : {}), [id]: ((s.k === key ? s.m[id] : 0) ?? 0) + 6 } }));
   const groups = useMemo(() => {
     if (!hits) return [];
-    const per = sel.length > 1 ? 8 : 6;
+    const base = sel.length > 1 ? 8 : 6;
+    const lim = (id: string) => base + (extra[id] ?? 0);
     // A book: every religion with a match. A scripture: the religions ticked in "Look in".
     const want = book
       ? [...(own && !LIBRARY_SHELVES.has(own.id) ? [own.id] : []), ...others.map((r) => r.id)]
@@ -260,26 +265,40 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
             // Split by section (Christianity: Old Testament · New Testament · Apocrypha…), each with its own best
             // matches, when the matches come from more than one (ticket 31354432).
             const sections = (religion?.collections ?? [])
-              .map((c) => ({ id: c.id, name: c.name, hits: mine.filter((h) => findBook(h.work, h.book)?.collection.id === c.id).slice(0, per) }))
+              .map((c) => {
+                const all = mine.filter((h) => findBook(h.work, h.book)?.collection.id === c.id);
+                const sid = `${id}/${c.id}`;
+                return { id: sid, name: c.name, hits: all.slice(0, lim(sid)), total: all.length };
+              })
               .filter((s) => s.hits.length > 0);
             return sections.length > 1
-              ? { religion, hits: sections.flatMap((s) => s.hits), sections }
-              : { religion, hits: mine.slice(0, per), sections: undefined };
+              ? { religion, hits: sections.flatMap((s) => s.hits), sections, total: mine.length }
+              : { religion, hits: mine.slice(0, lim(id)), sections: undefined, total: mine.length };
           })
           .filter((g) => g.religion && (!book || g.hits.length > 0)); // a book: only the religions with a match
     const library = !showLibrary
       ? []
       : shelvesOf("library")
-          .map((r) => ({
-            religion: r,
-            hits: hits.filter((h) => sideOfWork(h.work) === "library" && religionOf(h.work, h.book)?.id === r.id).slice(0, per),
-            sections: undefined as { id: string; name: string; hits: Hit[] }[] | undefined,
-          }))
+          .map((r) => {
+            const all = hits.filter((h) => sideOfWork(h.work) === "library" && religionOf(h.work, h.book)?.id === r.id);
+            return {
+              religion: r,
+              hits: all.slice(0, lim(r.id)),
+              sections: undefined as { id: string; name: string; hits: Hit[]; total: number }[] | undefined,
+              total: all.length,
+            };
+          })
           .filter((g) => g.hits.length > 0);
     return pageSide === "library" ? [...library, ...scripture] : [...scripture, ...library];
     // others is derived from own
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hits, settings.xrefSame, settings.xrefOthers, own?.id, book, showScriptures, showLibrary, pageSide]);
+  }, [hits, settings.xrefSame, settings.xrefOthers, own?.id, book, showScriptures, showLibrary, pageSide, more]);
+  const moreButton = (id: string, shown: number, total: number) =>
+    total > shown ? (
+      <button type="button" onClick={() => showMore(id)} className="mt-1 min-h-8 px-1 text-xs font-medium text-accent hover:underline">
+        Show more ({total - shown} more)
+      </button>
+    ) : null;
   const otherSide = pageSide === "library" ? "Scriptures" : "Library";
   const otherSwitch = (
     <label className="-mx-3 flex min-h-10 items-center gap-2 border-b border-line px-3 text-xs text-muted">
@@ -436,15 +455,19 @@ function XrefBody({ bookRef, versions, phone = false }: { bookRef: BookRef; vers
                           <HitRow key={`${h.work}/${h.book}/${h.chapter}:${h.v}`} h={h} versions={h.work === bookRef.work ? versions : undefined} />
                         ))}
                       </ul>
+                      {moreButton(s.id, s.hits.length, s.total)}
                     </div>
                   ))}
                 </div>
               ) : g.hits.length ? (
-                <ul className="space-y-1.5">
-                  {g.hits.map((h) => (
-                    <HitRow key={`${h.work}/${h.book}/${h.chapter}:${h.v}`} h={h} versions={h.work === bookRef.work ? versions : undefined} />
-                  ))}
-                </ul>
+                <>
+                  <ul className="space-y-1.5">
+                    {g.hits.map((h) => (
+                      <HitRow key={`${h.work}/${h.book}/${h.chapter}:${h.v}`} h={h} versions={h.work === bookRef.work ? versions : undefined} />
+                    ))}
+                  </ul>
+                  {moreButton(g.religion.id, g.hits.length, g.total)}
+                </>
               ) : (
                 <p className="text-xs text-muted">No close match.</p>
               )}
