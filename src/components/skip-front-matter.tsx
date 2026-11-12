@@ -24,28 +24,29 @@ const hidden = (): string[] => {
 
 export function SkipFrontMatter({ work, book, chapter, entry, versions }: { work: string; book: string; chapter: number; entry: Parameters<typeof chapterTitle>[0]; versions: string[] }) {
   const key = `${work}/${book}`;
-  const [start, setStart] = useState<[number, string, string?] | null>(null);
-  const [off, setOff] = useState(false);
+  // Kept with the book it belongs to, so moving to another book never shows the last one's bar.
+  const [state, setState] = useState<{ key: string; start: [number, string, string?] | null; off: boolean } | null>(null);
   useEffect(() => {
     if (!work.startsWith("lit-")) return;
     let alive = true;
     void load().then((s) => {
-      if (!alive) return;
-      setStart(s[key] ?? null);
-      setOff(hidden().includes(key));
+      if (alive) setState({ key, start: s[key] ?? null, off: hidden().includes(key) });
     });
     return () => {
       alive = false;
     };
   }, [key, work]);
-  if (!start || off || chapter >= start[0]) return null;
+  const start = state?.key === key ? state.start : null;
+  if (!start || state?.off || chapter >= start[0]) return null;
   const [to, what, toTitle] = start;
-  const first = what.split(" · ")[0];
-  const label = first.length > 40 ? "the front matter" : `the ${first.replace(/^the /i, "")}`;
+  // "Author'S Preface", "INTRODUCTION", "Author's Note--" → "author's preface", "introduction", "author's note"
+  const parts = what.split(" · ").map((t) => t.replace(/^the /i, "").replace(/[\s.,:;—–-]+$/, "").toLowerCase());
+  const named = parts.length === 1 ? parts[0] : parts.length === 2 ? `${parts[0]} and ${parts[1]}` : "";
+  const label = named && named.length <= 40 ? `the ${named}` : "the front matter";
   return (
-    <div className="mx-auto mb-2 mt-1 flex max-w-xl items-center gap-2 rounded-xl border border-line bg-raised/50 px-3 py-1.5 text-sm text-muted">
-      <span className="min-w-0 flex-1">Want to begin with the book itself?</span>
-      <Link href={readHref({ work, book, chapter: to }, versions)} className="min-w-0 rounded-lg px-2 py-1.5 text-right font-medium text-accent hover:bg-raised">
+    <div className="mx-auto mb-2 mt-1 flex max-w-xl flex-wrap items-center gap-x-2 gap-y-0.5 rounded-xl border border-line bg-raised/50 px-3 py-1.5 text-sm text-muted">
+      <span className="min-w-[12rem] flex-1">Want to begin with the book itself?</span>
+      <Link href={readHref({ work, book, chapter: to }, versions)} className="min-w-0 rounded-lg py-1.5 font-medium text-accent hover:underline">
         Skip {label} → {toTitle || chapterTitle(entry, to)}
       </Link>
       <button
@@ -58,7 +59,7 @@ export function SkipFrontMatter({ work, book, chapter, entry, versions }: { work
           } catch {
             /* private mode */
           }
-          setOff(true);
+          setState((s) => (s ? { ...s, off: true } : s));
         }}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-faint hover:bg-raised hover:text-ink"
       >
