@@ -1,6 +1,7 @@
 "use client";
 import { SITE_NAME } from "@/lib/site";
 import { AlignButton, ColoursButton, FontSizeControl, TextSettingsButton, ViewToggle, WidthButton } from "./controls";
+import { SkipFrontMatter } from "./skip-front-matter";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
@@ -626,6 +627,9 @@ export function ReaderView() {
         <ChapterHeader title={title} subtitle={subtitle} bookRef={ref} versions={versions} prev={prev} next={next} titleOnly />
       </div>
       <ChapterBar versions={versions} prev={prev} next={next} column={column} />
+      <div className={column ? "sticky left-0 w-[100cqw] px-3 desk:w-auto" : "px-3"}>
+        <SkipFrontMatter work={ref.work} book={ref.book} chapter={ref.chapter} entry={book} versions={versions} />
+      </div>
 
       <ListenCtx.Provider value={ra}>
       <VerseCtx.Provider value={actions}>
