@@ -8,7 +8,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
   const report = () =>
     openFeedback({ topic: "bug", error: `${error.name}: ${error.message}${error.digest ? ` (digest ${error.digest})` : ""}\n${error.stack ?? ""}`.slice(0, 3000) });
   return (
-    <main className="flex h-dvh flex-col items-center justify-center gap-4 bg-paper px-6 text-center text-muted">
+    <main className="flex h-app flex-col items-center justify-center gap-4 bg-paper px-6 text-center text-muted">
       <h1 className="font-serif text-2xl font-semibold text-ink">Something went wrong</h1>
       <p className="max-w-sm">Sorry about that. Trying again usually fixes it. If it keeps happening, please tell us: the details are filled in for you.</p>
       <div className="flex flex-wrap justify-center gap-3">

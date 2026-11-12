@@ -260,3 +260,9 @@ html[data-peek] dialog.sheet .peek-keep {
   padding: 0.5rem 0.75rem;
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
 }
+
+/* The app's full height: the real window height on desktop Safari (--app-h, set in layout.tsx), else 100dvh. */
+@utility h-app {
+  height: 100vh;
+  height: var(--app-h, 100dvh);
+}

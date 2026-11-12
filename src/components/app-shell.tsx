@@ -67,7 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex h-app flex-col">
       <BackupNudge />
       <TopBar onOpenLibrary={() => setDrawerOpen(true)} menuOnDesk={listFolded} />
       <TabBar />
@@ -349,7 +349,7 @@ const TabsIcon = () => (
 
 export function ShellFallback() {
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex h-app flex-col">
       <div className="h-14 shrink-0 border-b border-line bg-panel" />
       <div className="flex min-h-0 flex-1">
         <div className="hidden w-72 shrink-0 border-r border-line bg-panel desk:block lg:w-80" />

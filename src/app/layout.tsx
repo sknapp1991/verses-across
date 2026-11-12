@@ -57,6 +57,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${reading.variable} ${greek.variable} ${hebrew.variable} ${arabic.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Desktop Safari (older versions) keeps 100dvh at the size the window had when the page loaded, so after
+            leaving full screen or resizing, the top bar and the bottom (Read aloud button) end up off screen. There
+            the page height follows the real window height instead (--app-h, used by .h-app). Ticket 637f3496. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var u=navigator.userAgent;if(!/Safari\\//.test(u)||/Chrome|Chromium|CriOS|FxiOS|Edg|OPR|Android/.test(u)||navigator.maxTouchPoints>1)return;var d=document.documentElement;function f(){d.style.setProperty("--app-h",innerHeight+"px");if(d.scrollTop)d.scrollTop=0;if(document.body&&document.body.scrollTop)document.body.scrollTop=0}f();addEventListener("resize",f);addEventListener("pageshow",f)})();`,
+          }}
+        />
         {/* Android / Chrome: keep the "install this app" offer for the Add to Home Screen card (install-app.tsx). */}
         <script
           dangerouslySetInnerHTML={{

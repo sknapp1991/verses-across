@@ -24,5 +24,5 @@ export default function Home() {
     const keep = /^#(sync|group)=/.test(location.hash) ? location.hash : "";
     router.replace(readHref(ref, s.versions[ref.work]) + keep);
   }, [router]);
-  return <div className="h-dvh bg-paper" aria-busy="true" />;
+  return <div className="h-app bg-paper" aria-busy="true" />;
 }

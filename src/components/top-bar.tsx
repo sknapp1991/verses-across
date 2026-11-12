@@ -49,7 +49,7 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static SVG logo */}
         <img src="/icon.svg" alt="" width={28} height={28} className="rounded-md" />
         <span className="hidden font-serif text-lg font-semibold tracking-tight xl:inline">
-          <span className="text-[#b8935f]">Verses</span> <span className="text-[#5f8fc4]">Across</span>
+          <span className="text-[#b8935f]">{SITE_NAME.split(" ")[0]}</span> <span className="text-[#5f8fc4]">Across</span>
           <sup className="ml-0.5 align-super font-sans text-[9px] font-normal text-faint">™</sup>
         </span>
       </Link>
@@ -209,7 +209,7 @@ function VersionsPopover({ count }: { count: number }) {
         <div
           role="dialog"
           aria-label="Versions and languages"
-          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(100dvh-5rem)] w-96 space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-3 shadow-xl"
+          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(var(--app-h,100dvh)-5rem)] w-96 space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-3 shadow-xl"
         >
           <VersionChooser />
           <p className="px-2 text-xs text-faint">Saved setups (your favourite sets of versions) are in Display options.</p>
@@ -255,7 +255,7 @@ function TopPopover({ label, title, icon, children }: { label: string; title: st
         <div
           role="dialog"
           aria-label={label}
-          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(100dvh-5rem)] w-80 space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 shadow-xl"
+          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(var(--app-h,100dvh)-5rem)] w-80 space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 shadow-xl"
         >
           {children}
         </div>

@@ -75,7 +75,7 @@ export function CompareView() {
   ];
 
   return (
-    <div className="h-dvh overflow-auto">
+    <div className="h-app overflow-auto">
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-8">
         <Link href="/" className="text-sm text-accent underline-offset-2 hover:underline">
           ← Verses Across

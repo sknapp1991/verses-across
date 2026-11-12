@@ -4,11 +4,12 @@
  * recorded read-along audio (all books or chosen ones). Sizes show before anything starts; what's
  * saved is listed with Update and Delete. The work itself is in src/lib/downloads.ts.
  */
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { SITE_SIDE } from "@/lib/site";
 import { catalog, getVersion, sideOfWork } from "@/lib/catalog";
 import {
   audioKey,
+  busy as busyNow,
   cancelDownload,
   checkSaved,
   dismissJob,
@@ -114,8 +115,70 @@ function Body() {
 
   const shown = useMemo(() => {
     const list = catalog.versions.filter((v) => index?.texts[`${v.work}/${v.id}`] && sideOfWork(v.work) === SITE_SIDE); // this site's books only
+    if (lang === "all") return list;
     return lang === "reading" ? list.filter((v) => reading.includes(v.id)) : list.filter((v) => v.language === lang);
   }, [index, lang, reading]);
+
+  /* ---------- several at once: tick versions (or Select all), choose Text / Audio / Both ---------- */
+  const [picked, setPicked] = useState<string[]>([]); // "work/version"
+  const [what, setWhat] = useState<"text" | "audio" | "both">("text");
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
+  const stopBatch = useRef(false);
+  const shownKeys = shown.map((v) => `${v.work}/${v.id}`);
+  const allShownPicked = shownKeys.length > 0 && shownKeys.every((k) => picked.includes(k));
+  const hiddenPicked = picked.filter((k) => !shownKeys.includes(k)).length;
+  /** The first recording of a version that has audio files (the one Download all uses). */
+  const voiceOf = (version: string) => (index ? recordings.find((r) => r.version === version && index.audio[r.id]) : undefined);
+  const plan = useMemo(() => {
+    const steps: { bytes: number; go: () => Promise<boolean> }[] = [];
+    if (!index) return steps;
+    for (const k of picked) {
+      const [work, version] = k.split("/");
+      const t = index.texts[k];
+      if (what !== "audio" && t && !saved[textKey(work, version)]) steps.push({ bytes: t.bytes, go: () => downloadText(work, version) });
+      const r = what !== "text" ? voiceOf(version) : undefined;
+      if (r) {
+        const s = saved[audioKey(r.version, r.voice)];
+        const have = s?.kind === "audio" ? s.books : [];
+        const books = Object.keys(index.audio[r.id]).filter((b) => !have.includes(b));
+        if (books.length) steps.push({ bytes: books.reduce((a, b) => a + index.audio[r.id][b][0], 0), go: () => downloadAudio(r, books) });
+      }
+    }
+    return steps;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- voiceOf only reads index + recordings
+  }, [index, picked, what, saved, recordings]);
+  const planBytes = plan.reduce((a, s) => a + s.bytes, 0);
+  const pickedWithAudio = picked.filter((k) => voiceOf(k.split("/")[1])).length;
+
+  const runBatch = async () => {
+    if (job && !job.error) {
+      toast("Another download is running. Press Download again when it finishes.", 4000);
+      return;
+    }
+    const s = await storageInfo();
+    if (s && planBytes > s.free * 0.9) {
+      toast(`Not enough space: this needs ${formatBytes(planBytes)}, and about ${formatBytes(s.free)} is free.`, 5000);
+      return;
+    }
+    const steps = [...plan];
+    stopBatch.current = false;
+    let ok = 0;
+    for (let i = 0; i < steps.length && !stopBatch.current; i++) {
+      setBatch({ done: i, total: steps.length });
+      if (await steps[i].go()) ok++;
+      else {
+        // Stopped, out of space or a failed file: that message stays up. Anything else (another download took
+        // the slot): say so. Either way, Download selected again carries on, skipping what's saved.
+        if (!stopBatch.current && !busyNow()) toast("Download paused. Press Download selected again to carry on.", 4000);
+        break;
+      }
+    }
+    setBatch(null);
+    if (ok === steps.length) {
+      toast(`Saved ${steps.length} download${steps.length === 1 ? "" : "s"} for offline use`, 3000);
+      setPicked([]);
+    }
+  };
 
   /** Start a download unless it clearly won't fit. */
   const start = async (bytes: number, go: () => Promise<boolean>, done: string) => {
@@ -151,7 +214,10 @@ function Body() {
         {job && (
           <div className="space-y-2 rounded-xl border border-line px-3 py-3" role="status" aria-live="polite">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-medium text-ink">{job.error ? "Download stopped" : `Saving ${job.label}…`}</span>
+              <span className="font-medium text-ink">
+                {job.error ? "Download stopped" : `Saving ${job.label}…`}
+                {batch && !job.error ? <span className="font-normal text-faint"> ({batch.done + 1} of {batch.total})</span> : null}
+              </span>
               <span className="tabular-nums text-faint">
                 {formatBytes(job.bytesDone)} of {formatBytes(job.bytesTotal)}
               </span>
@@ -171,7 +237,14 @@ function Body() {
                 <span className="tabular-nums text-faint">
                   {job.done} of {job.total} files
                 </span>
-                <button type="button" onClick={cancelDownload} className={`${btn} border border-line`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopBatch.current = true;
+                    cancelDownload();
+                  }}
+                  className={`${btn} border border-line`}
+                >
                   Stop
                 </button>
               </div>
@@ -184,7 +257,7 @@ function Body() {
             <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">On this device</h3>
             <ul className="divide-y divide-line rounded-xl border border-line">
               {savedList.map(([key, s]) => (
-                <SavedRow key={key} k={key} s={s} recordings={recordings} busy={!!job && !job.error} missing={missing[key] ?? 0} />
+                <SavedRow key={key} k={key} s={s} recordings={recordings} busy={(!!job && !job.error) || !!batch} missing={missing[key] ?? 0} />
               ))}
             </ul>
             {!confirmAll ? (
@@ -216,7 +289,7 @@ function Body() {
         <section className="space-y-2" aria-label="Add downloads">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Add</h3>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Language">
-            {["reading", ...languages].map((code) => (
+            {["reading", "all", ...languages].map((code) => (
               <button
                 key={code}
                 type="button"
@@ -224,7 +297,7 @@ function Body() {
                 onClick={() => setLang(code)}
                 className={`min-h-9 rounded-full border px-3 text-xs ${lang === code ? "border-accent bg-accent-soft text-ink" : "border-line text-muted hover:border-faint"}`}
               >
-                {code === "reading" ? "Reading now" : langName(code)}
+                {code === "reading" ? "Reading now" : code === "all" ? "All languages" : langName(code)}
               </button>
             ))}
           </div>
@@ -233,11 +306,75 @@ function Body() {
           ) : shown.length === 0 ? (
             <p className="text-faint">Nothing to show for this language.</p>
           ) : (
-            <ul className="space-y-2">
-              {shown.map((v) => (
-                <VersionRow key={`${v.work}/${v.id}`} work={v.work} version={v.id} index={index} saved={saved} recordings={recordings.filter((r) => r.version === v.id)} busy={!!job && !job.error} start={start} />
-              ))}
-            </ul>
+            <>
+              <div className="space-y-2 rounded-xl border border-line bg-raised/40 px-3 py-2.5" aria-label="Download several at once" role="group">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPicked((p) => (allShownPicked ? [] : [...new Set([...p, ...shownKeys])]))}
+                    className={`${btn} border border-line`}
+                  >
+                    {allShownPicked ? "Clear selection" : `Select all ${shown.length}`}
+                  </button>
+                  {picked.length > 0 && !allShownPicked && (
+                    <button type="button" onClick={() => setPicked([])} className={`${btn} text-muted hover:bg-raised`}>
+                      Clear
+                    </button>
+                  )}
+                  <div className="flex overflow-hidden rounded-lg border border-line text-xs" role="group" aria-label="What to download">
+                    {(["text", "audio", "both"] as const).map((w) => (
+                      <button
+                        key={w}
+                        type="button"
+                        aria-pressed={what === w}
+                        onClick={() => setWhat(w)}
+                        className={`min-h-10 px-3 ${what === w ? "bg-accent-soft font-medium text-ink" : "text-muted hover:bg-raised"}`}
+                      >
+                        {w === "text" ? "Text" : w === "audio" ? "Audio" : "Both"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-faint">
+                  {picked.length === 0
+                    ? "Tick versions below (or Select all) to download them in one go. Text is small; audio takes much more space."
+                    : `${picked.length} selected${hiddenPicked ? ` (${hiddenPicked} in other languages)` : ""}${what !== "text" ? ` · ${pickedWithAudio} with read-along audio` : ""}. Already saved parts are skipped.`}
+                </p>
+                <button
+                  type="button"
+                  disabled={!plan.length || (!!job && !job.error) || !!batch}
+                  onClick={() => void runBatch()}
+                  className={`${btn} bg-accent font-medium text-accent-ink disabled:opacity-50`}
+                >
+                  {picked.length === 0
+                    ? "Download selected"
+                    : plan.length
+                      ? `Download selected · ${formatBytes(planBytes)}`
+                      : what === "audio" && pickedWithAudio === 0
+                        ? "No audio for the selected versions"
+                        : "✓ All selected are saved"}
+                </button>
+              </div>
+              <ul className="space-y-2">
+                {shown.map((v) => {
+                  const k = `${v.work}/${v.id}`;
+                  return (
+                    <VersionRow
+                      key={k}
+                      work={v.work}
+                      version={v.id}
+                      index={index}
+                      saved={saved}
+                      recordings={recordings.filter((r) => r.version === v.id)}
+                      busy={(!!job && !job.error) || !!batch}
+                      start={start}
+                      picked={picked.includes(k)}
+                      onPick={(on) => setPicked((p) => (on ? [...p, k] : p.filter((x) => x !== k)))}
+                    />
+                  );
+                })}
+              </ul>
+            </>
           )}
         </section>
       </div>
@@ -309,6 +446,8 @@ function VersionRow({
   recordings,
   busy,
   start,
+  picked,
+  onPick,
 }: {
   work: string;
   version: string;
@@ -317,6 +456,8 @@ function VersionRow({
   recordings: Recording[];
   busy: boolean;
   start: (bytes: number, go: () => Promise<boolean>, done: string) => Promise<void>;
+  picked: boolean;
+  onPick: (on: boolean) => void;
 }) {
   const v = getVersion(version)!;
   const text = index.texts[`${work}/${version}`];
@@ -336,6 +477,13 @@ function VersionRow({
   return (
     <li className="space-y-2 rounded-xl border border-line px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="checkbox"
+          checked={picked}
+          onChange={(e) => onPick(e.target.checked)}
+          aria-label={`Select ${v.name}`}
+          className="h-5 w-5 shrink-0 accent-[var(--accent)]"
+        />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-ink">
             {v.name} <span className="text-faint">· {v.abbr}</span>

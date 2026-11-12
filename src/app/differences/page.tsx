@@ -55,7 +55,7 @@ function parallelLabel(p: string) {
 export default function DifferencesPage() {
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/differences`); // a Verses Across page
   return (
-    <main className="h-dvh overflow-y-auto bg-paper text-muted">
+    <main className="h-app overflow-y-auto bg-paper text-muted">
       <div className="mx-auto max-w-4xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
           <Link href="/" className={`text-sm ${a}`}>

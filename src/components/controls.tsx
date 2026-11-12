@@ -736,7 +736,7 @@ export function ToolPopover({ label, title, icon, text, children, wide = false }
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute right-0 top-full z-40 mt-2 max-h-[calc(100dvh-10rem)] ${wide ? "w-96" : "w-80"} max-w-[calc(100vw-2rem)] space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 text-left shadow-xl`}
+          className={`absolute right-0 top-full z-40 mt-2 max-h-[calc(var(--app-h,100dvh)-10rem)] ${wide ? "w-96" : "w-80"} max-w-[calc(100vw-2rem)] space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 text-left shadow-xl`}
         >
           {children}
         </div>

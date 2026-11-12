@@ -41,7 +41,7 @@ export default async function ThemePage({ params }: Props) {
   const next = same[i + 1];
   const a = "underline underline-offset-2 hover:text-ink";
   return (
-    <main className="h-dvh overflow-y-auto bg-paper text-muted">
+    <main className="h-app overflow-y-auto bg-paper text-muted">
       <div className="mx-auto max-w-3xl space-y-6 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-2">
           <Link href={`/themes#${t.side}`} className={`text-sm ${a}`}>

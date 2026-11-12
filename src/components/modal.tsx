@@ -35,7 +35,7 @@ export function Modal({
 
   const shape =
     variant === "drawer"
-      ? "drawer m-0 h-dvh max-h-none w-[min(22rem,88vw)] max-w-none border-r border-line"
+      ? "drawer m-0 h-app max-h-none w-[min(22rem,88vw)] max-w-none border-r border-line"
       : variant === "card"
         ? "sheet mt-auto mb-0 w-full max-w-none max-h-[85dvh] rounded-t-2xl border-t border-line pb-[env(safe-area-inset-bottom)] desk:m-auto desk:max-h-[80vh] desk:w-[30rem] desk:rounded-2xl desk:border desk:shadow-2xl"
         : "sheet mt-auto mb-0 w-full max-w-none max-h-[85dvh] rounded-t-2xl border-t border-line pb-[env(safe-area-inset-bottom)]";

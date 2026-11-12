@@ -32,7 +32,7 @@ const a = "underline underline-offset-2 hover:text-ink";
 
 export default function AboutPage() {
   return (
-    <main className="h-dvh overflow-y-auto bg-paper text-muted">
+    <main className="h-app overflow-y-auto bg-paper text-muted">
       <div className="mx-auto max-w-2xl space-y-10 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
           <Link href="/" className={`text-sm ${a}`}>
