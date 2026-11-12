@@ -209,11 +209,11 @@ export async function POST(request: Request) {
   let thinking = true;
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
-    // No answer text within 10 s (30 s in depth: it thinks longer first): don't leave the reader waiting (ticket
+    // No answer text within 7 s (25 s in depth: it thinks longer first): don't leave the reader waiting (ticket
     // 7bccc422: answers took 20-50 s when the free model was slow; the OpenAI model starts in ~5 s). The timer
     // stops once the first piece of the answer arrives, so a long answer is never cut off.
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), deep ? 30_000 : 10_000);
+    const timer = setTimeout(() => ctl.abort(), deep ? 25_000 : 7_000);
     upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
