@@ -102,6 +102,11 @@ function Body() {
   const [space, setSpace] = useState<{ used: number; free: number } | null>(null);
   const [lang, setLang] = useState<string>("reading");
   const [confirmAll, setConfirmAll] = useState(false);
+  // Folding sections: "On this device" starts folded when it holds more than a few items; "Add" starts open.
+  const [savedFold, setSavedFold] = useState<boolean | null>(null); // null: not chosen yet
+  const savedOpen = savedFold ?? Object.keys(saved).length <= 3;
+  const setSavedOpen = (v: boolean) => setSavedFold(v);
+  const [addOpen, setAddOpen] = useState(true);
 
   useEffect(() => {
     void loadIndex().then(setIndex);
@@ -290,139 +295,165 @@ function Body() {
 
         {savedList.length > 0 && (
           <section className="space-y-2" aria-label="On this device">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">On this device</h3>
-            <ul className="divide-y divide-line rounded-xl border border-line">
-              {savedList.map(([key, s]) => (
-                <SavedRow key={key} k={key} s={s} recordings={recordings} busy={(!!job && !job.error) || !!batch} missing={missing[key] ?? 0} />
-              ))}
-            </ul>
-            {!confirmAll ? (
-              <button type="button" onClick={() => setConfirmAll(true)} className="text-xs text-faint underline underline-offset-2 hover:text-muted">
-                Delete all downloads…
-              </button>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-ink">Delete every saved version and recording from this device?</span>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await removeAllDownloads();
-                    setConfirmAll(false);
-                    toast("All downloads deleted");
-                  }}
-                  className={`${btn} bg-ink font-medium text-paper`}
-                >
-                  Delete all
-                </button>
-                <button type="button" onClick={() => setConfirmAll(false)} className={`${btn} text-muted hover:bg-raised`}>
-                  Cancel
-                </button>
-              </div>
+            <Fold label={`On this device · ${savedList.length}`} open={savedOpen} onToggle={() => setSavedOpen(!savedOpen)} />
+            {savedOpen && (
+              <>
+                <ul className="divide-y divide-line rounded-xl border border-line">
+                  {savedList.map(([key, s]) => (
+                    <SavedRow key={key} k={key} s={s} recordings={recordings} busy={(!!job && !job.error) || !!batch} missing={missing[key] ?? 0} />
+                  ))}
+                </ul>
+                {!confirmAll ? (
+                  <button type="button" onClick={() => setConfirmAll(true)} className="text-xs text-faint underline underline-offset-2 hover:text-muted">
+                    Delete all downloads…
+                  </button>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-ink">Delete every saved version and recording from this device?</span>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await removeAllDownloads();
+                        setConfirmAll(false);
+                        toast("All downloads deleted");
+                      }}
+                      className={`${btn} bg-ink font-medium text-paper`}
+                    >
+                      Delete all
+                    </button>
+                    <button type="button" onClick={() => setConfirmAll(false)} className={`${btn} text-muted hover:bg-raised`}>
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         )}
 
         <section className="space-y-2" aria-label="Add downloads">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Add</h3>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Language">
-            {["reading", "all", ...languages].map((code) => (
-              <button
-                key={code}
-                type="button"
-                aria-pressed={lang === code}
-                onClick={() => setLang(code)}
-                className={`min-h-9 rounded-full border px-3 text-xs ${lang === code ? "border-accent bg-accent-soft text-ink" : "border-line text-muted hover:border-faint"}`}
-              >
-                {code === "reading" ? "Reading now" : code === "all" ? "All languages" : langName(code)}
-              </button>
-            ))}
-          </div>
-          {!index ? (
-            <p className="text-faint">Loading sizes…</p>
-          ) : shown.length === 0 ? (
-            <p className="text-faint">Nothing to show for this language.</p>
-          ) : (
-            <>
-              <div className="space-y-2 rounded-xl border border-line bg-raised/40 px-3 py-2.5" aria-label="Download several at once" role="group">
-                <div className="flex flex-wrap items-center gap-2">
+          <Fold label="Add" open={addOpen} onToggle={() => setAddOpen(!addOpen)} />
+          {addOpen && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Language">
+                {["reading", "all", ...languages].map((code) => (
                   <button
+                    key={code}
                     type="button"
-                    disabled={!shownKeys.length}
-                    onClick={() => setPicked((p) => (allShownPicked ? [] : [...new Set([...p, ...shownKeys])]))}
-                    className={`${btn} border border-line disabled:opacity-50`}
+                    aria-pressed={lang === code}
+                    onClick={() => setLang(code)}
+                    className={`min-h-9 rounded-full border px-3 text-xs ${lang === code ? "border-accent bg-accent-soft text-ink" : "border-line text-muted hover:border-faint"}`}
                   >
-                    {!shownKeys.length ? "✓ All downloaded" : allShownPicked ? "Clear selection" : `Select all ${shownKeys.length}`}
+                    {code === "reading" ? "Reading now" : code === "all" ? "All languages" : langName(code)}
                   </button>
-                  {picked.length > 0 && !allShownPicked && (
-                    <button type="button" onClick={() => setPicked([])} className={`${btn} text-muted hover:bg-raised`}>
-                      Clear
-                    </button>
-                  )}
-                  <div className="flex overflow-hidden rounded-lg border border-line text-xs" role="group" aria-label="What to download">
-                    {(["text", "audio", "both"] as const).map((w) => (
-                      <button
-                        key={w}
-                        type="button"
-                        aria-pressed={what === w}
-                        onClick={() => {
-                          setWhat(w);
-                          setPicked([]); // a new kind: start the selection afresh
-                        }}
-                        className={`min-h-10 px-3 ${what === w ? "bg-accent-soft font-medium text-ink" : "text-muted hover:bg-raised"}`}
-                      >
-                        {w === "text" ? "Text" : w === "audio" ? "Audio" : "Both"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-faint">
-                  {picked.length === 0
-                    ? "Tick versions below (or Select all) to download them in one go. Text is small; audio takes much more space."
-                    : `${picked.length} selected${hiddenPicked ? ` (${hiddenPicked} in other languages)` : ""}${what !== "text" ? ` · ${pickedWithAudio} with read-along audio` : ""}. Already saved parts are skipped.`}
-                </p>
-                <button
-                  type="button"
-                  disabled={!plan.length || (!!job && !job.error) || !!batch}
-                  onClick={() => void runBatch()}
-                  className={`${btn} bg-accent font-medium text-accent-ink disabled:opacity-50`}
-                >
-                  {picked.length === 0
-                    ? "Download selected"
-                    : plan.length
-                      ? `Download selected · ${formatBytes(planBytes)}`
-                      : what === "audio" && pickedWithAudio === 0
-                        ? "No audio for the selected versions"
-                        : "✓ All selected are saved"}
-                </button>
+                ))}
               </div>
-              {listed.length === 0 && <p className="text-faint">None of these versions has read-along audio yet.</p>}
-              <ul className="space-y-2">
-                {listed.map((v) => {
-                  const k = `${v.work}/${v.id}`;
-                  const done = isDone(v.work, v.id);
-                  return (
-                    <VersionRow
-                      key={k}
-                      work={v.work}
-                      version={v.id}
-                      index={index}
-                      saved={saved}
-                      recordings={recordings.filter((r) => r.version === v.id)}
-                      busy={(!!job && !job.error) || !!batch}
-                      start={start}
-                      what={what}
-                      done={done}
-                      picked={!done && picked.includes(k)}
-                      onPick={(on) => setPicked((p) => (on ? [...p, k] : p.filter((x) => x !== k)))}
-                    />
-                  );
-                })}
-              </ul>
-            </>
+              {!index ? (
+                <p className="text-faint">Loading sizes…</p>
+              ) : shown.length === 0 ? (
+                <p className="text-faint">Nothing to show for this language.</p>
+              ) : (
+                <>
+                  <div className="space-y-2 rounded-xl border border-line bg-raised/40 px-3 py-2.5" aria-label="Download several at once" role="group">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={!shownKeys.length}
+                        onClick={() => setPicked((p) => (allShownPicked ? [] : [...new Set([...p, ...shownKeys])]))}
+                        className={`${btn} border border-line disabled:opacity-50`}
+                      >
+                        {!shownKeys.length ? "✓ All downloaded" : allShownPicked ? "Clear selection" : `Select all ${shownKeys.length}`}
+                      </button>
+                      {picked.length > 0 && !allShownPicked && (
+                        <button type="button" onClick={() => setPicked([])} className={`${btn} text-muted hover:bg-raised`}>
+                          Clear
+                        </button>
+                      )}
+                      <div className="flex overflow-hidden rounded-lg border border-line text-xs" role="group" aria-label="What to download">
+                        {(["text", "audio", "both"] as const).map((w) => (
+                          <button
+                            key={w}
+                            type="button"
+                            aria-pressed={what === w}
+                            onClick={() => {
+                              setWhat(w);
+                              setPicked([]); // a new kind: start the selection afresh
+                            }}
+                            className={`min-h-10 px-3 ${what === w ? "bg-accent-soft font-medium text-ink" : "text-muted hover:bg-raised"}`}
+                          >
+                            {w === "text" ? "Text" : w === "audio" ? "Audio" : "Both"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-faint">
+                      {picked.length === 0
+                        ? "Tick versions below (or Select all) to download them in one go. Text is small; audio takes much more space."
+                        : `${picked.length} selected${hiddenPicked ? ` (${hiddenPicked} in other languages)` : ""}${what !== "text" ? ` · ${pickedWithAudio} with read-along audio` : ""}. Already saved parts are skipped.`}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={!plan.length || (!!job && !job.error) || !!batch}
+                      onClick={() => void runBatch()}
+                      className={`${btn} bg-accent font-medium text-accent-ink disabled:opacity-50`}
+                    >
+                      {picked.length === 0
+                        ? "Download selected"
+                        : plan.length
+                          ? `Download selected · ${formatBytes(planBytes)}`
+                          : what === "audio" && pickedWithAudio === 0
+                            ? "No audio for the selected versions"
+                            : "✓ All selected are saved"}
+                    </button>
+                  </div>
+                  {listed.length === 0 && <p className="text-faint">None of these versions has read-along audio yet.</p>}
+                  <ul className="space-y-2">
+                    {listed.map((v) => {
+                      const k = `${v.work}/${v.id}`;
+                      const done = isDone(v.work, v.id);
+                      return (
+                        <VersionRow
+                          key={k}
+                          work={v.work}
+                          version={v.id}
+                          index={index}
+                          saved={saved}
+                          recordings={recordings.filter((r) => r.version === v.id)}
+                          busy={(!!job && !job.error) || !!batch}
+                          start={start}
+                          what={what}
+                          done={done}
+                          picked={!done && picked.includes(k)}
+                          onPick={(on) => setPicked((p) => (on ? [...p, k] : p.filter((x) => x !== k)))}
+                        />
+                      );
+                    })}
+                  </ul>
+                </>
+              )}
+            </div>
           )}
         </section>
       </div>
     </div>
+  );
+}
+
+/** A section heading that folds its section open or closed (ticket 75d47734: long lists). */
+function Fold({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className="-mx-1 flex min-h-9 w-[calc(100%+0.5rem)] items-center gap-1.5 rounded-lg px-1 text-left text-xs font-semibold uppercase tracking-wide text-faint hover:bg-raised hover:text-muted"
+    >
+      <span aria-hidden className={`inline-block transition-transform motion-reduce:transition-none ${open ? "rotate-90" : ""}`}>
+        ▸
+      </span>
+      {label}
+      {!open && <span className="ml-auto font-normal normal-case tracking-normal">Show</span>}
+    </button>
   );
 }
 
