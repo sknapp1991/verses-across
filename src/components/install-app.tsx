@@ -5,6 +5,8 @@
  *    (beforeinstallprompt), then the icon appears on the home screen / in the apps list.
  *  - iPhone / iPad: no website can add itself there; the card shows the two taps (Share → Add to Home
  *    Screen) with an arrow pointing at the button to press.
+ *  - Android when the browser makes no offer (Samsung Internet, Firefox, or Chrome after its own "not now" or
+ *    before it decides to offer): the card shows the two taps for that browser's menu (Nov 11).
  *  - In-app browsers (Instagram, Facebook, TikTok…): can't install; the card says to open the page in the
  *    browser first.
  * The card offers itself once the reader has been reading a little (never on the first page load), not
@@ -26,6 +28,8 @@ const SNOOZE_DAYS = 21;
 const MAX_DISMISSALS = 2; // "Not now" once: back in three weeks; twice: never again on its own
 
 let deferred: InstallEvent | null = null;
+/** The browser's own install dialog was shown this visit (accepted or not): the card doesn't offer itself again. */
+let askedThisVisit = false;
 /** Reading time (ms, page visible, on a chapter) this visit, across chapter changes. */
 let readMs = 0;
 let installed = false;
@@ -72,18 +76,19 @@ function save(s: Saved) {
   }
 }
 
-type Platform = "standalone" | "prompt" | "ios-safari" | "ios-other" | "in-app" | "none";
+type Platform = "standalone" | "prompt" | "ios-safari" | "ios-other" | "android" | "in-app" | "none";
 /** What this browser can do. Only call in the browser. */
 function platform(): Platform {
   const nav = navigator as Navigator & { standalone?: boolean };
   if (installed || nav.standalone || window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches) return "standalone";
   const ua = navigator.userAgent;
-  if (/FBAN|FBAV|FB_IAB|Instagram|TikTok|musical_ly|BytedanceWebview|Line\/|Snapchat|Pinterest|LinkedInApp|GSA\//i.test(ua)) return "in-app";
+  if (/FBAN|FBAV|FB_IAB|Instagram|TikTok|musical_ly|BytedanceWebview|Line\/|Snapchat|Pinterest|LinkedInApp|GSA\/|; wv\)/i.test(ua)) return "in-app";
   if (deferred) return "prompt";
   const ipad = /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   // iPad (and Chrome / Edge / Firefox on iPhone): the Share button is at the top. iPhone Safari: at the bottom.
   if (ipad) return "ios-other";
   if (/iPhone|iPod/.test(ua)) return /CriOS|EdgiOS|FxiOS|OPiOS/.test(ua) ? "ios-other" : "ios-safari";
+  if (/Android/.test(ua)) return "android";
   return "none";
 }
 
@@ -93,7 +98,7 @@ export function useInstall() {
   return {
     platform: p,
     /** Something useful can be offered (a one-tap install, or the iPhone steps). */
-    available: p === "prompt" || p === "ios-safari" || p === "ios-other" || p === "in-app",
+    available: p === "prompt" || p === "ios-safari" || p === "ios-other" || p === "android" || p === "in-app",
   };
 }
 
@@ -102,6 +107,7 @@ async function promptInstall() {
   const e = deferred;
   if (!e) return false;
   deferred = null; // a prompt event can be used once
+  askedThisVisit = true;
   ping();
   try {
     await e.prompt();
@@ -125,7 +131,7 @@ export function InstallCard() {
   // tour, not over an open sheet, and not while the read-aloud player is open.
   const reading = pathname.startsWith("/read");
   useEffect(() => {
-    if (!available || open || !reading) return;
+    if (!available || open || !reading || askedThisVisit) return;
     const s = load();
     if (s.installed || (s.count ?? 0) >= MAX_DISMISSALS) return;
     if (s.dismissed && Date.now() - s.dismissed < SNOOZE_DAYS * 86_400_000) return;
@@ -186,6 +192,8 @@ export function InstallCard() {
     };
   }, [iosSteps]);
 
+  // The Android steps were open when the browser made its own offer: show its one-tap Add instead.
+  if (steps && p === "prompt") setSteps(false);
   if (!open || p === "standalone" || p === "none") return null;
 
   const dismiss = () => {
@@ -237,6 +245,8 @@ export function InstallCard() {
                 This app’s built-in browser can’t do it. Tap <strong className="text-ink">•••</strong> (or the share icon) and choose{" "}
                 <strong className="text-ink">Open in browser</strong>, then add it from there.
               </p>
+            ) : p === "android" ? (
+              <AndroidSteps />
             ) : (
               <ol className="mt-1 space-y-1 text-sm text-muted">
                 <li className="flex items-center gap-1.5">
@@ -287,6 +297,46 @@ export function InstallCard() {
         </div>
       )}
     </>
+  );
+}
+
+/** Android without the browser's own offer: the two taps in this browser's menu. */
+function AndroidSteps() {
+  const ua = navigator.userAgent;
+  const samsung = /SamsungBrowser/.test(ua);
+  const firefox = /Firefox/.test(ua);
+  const edge = /EdgA\//.test(ua);
+  const n = (k: number) => <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[11px] font-bold text-accent">{k}</span>;
+  return (
+    <ol className="mt-1 space-y-1 text-sm text-muted">
+      <li className="flex items-center gap-1.5">
+        {n(1)}
+        <span>
+          Tap the menu{" "}
+          {samsung ? (
+            <><strong className="text-ink">☰</strong> at the bottom right</>
+          ) : edge ? (
+            <><strong className="text-ink">☰</strong> or <strong className="text-ink">•••</strong> at the bottom</>
+          ) : firefox ? (
+            <><strong className="text-ink">⋮</strong> (top or bottom right)</>
+          ) : (
+            <><strong className="text-ink">⋮</strong> (top or bottom right)</>
+          )}
+        </span>
+      </li>
+      <li className="flex items-center gap-1.5">
+        {n(2)}
+        <span>
+          {samsung ? (
+            <>Choose <strong className="text-ink">Add page to</strong>, then <strong className="text-ink">Home screen</strong></>
+          ) : edge ? (
+            <>Choose <strong className="text-ink">Add to phone</strong> <span className="text-faint">(or Add to Home screen)</span></>
+          ) : (
+            <>Choose <strong className="text-ink">Add to Home screen</strong> or <strong className="text-ink">Install</strong> <span className="text-faint">(swipe up on the menu if you don’t see it)</span></>
+          )}
+        </span>
+      </li>
+    </ol>
   );
 }
 
