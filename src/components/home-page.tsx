@@ -142,6 +142,11 @@ export function HomePage() {
             {library ? "Story themes across the books: love, war, home, the journey…" : "Big themes across the scriptures, with the passages that speak to them."}
           </Tile>
           {!library && (
+            <Tile icon={<BookIcon width={18} height={18} />} title="How the Bible came to be" href="/bible-history">
+              How the books were written, chosen and argued over, from the scrolls to the councils, the splits and the Reformation.
+            </Tile>
+          )}
+          {!library && (
             <Tile icon={<ColumnsIcon width={18} height={18} />} title="Why Bibles differ" href="/differences">
               Where the King James and modern translations part ways, verse by verse, and why.
             </Tile>

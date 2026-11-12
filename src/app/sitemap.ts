@@ -12,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE}/coming-soon`, priority: 0.3 },
     { url: `${SITE}/whats-new`, priority: 0.3 },
     { url: `${SITE}/themes`, priority: 0.6 },
-    ...(SITE_SIDE === "scriptures" ? [{ url: `${SITE}/differences`, priority: 0.5 }] : []),
+    ...(SITE_SIDE === "scriptures" ? [{ url: `${SITE}/differences`, priority: 0.5 }, { url: `${SITE}/bible-history`, priority: 0.5 }] : []),
     ...themes.filter((t) => ((t as { side?: string }).side ?? "scriptures") === SITE_SIDE).map((t) => ({ url: `${SITE}/themes/${t.id}`, priority: 0.5 })),
   ];
   for (const w of catalog.works.filter((w) => sideOfWork(w.id) === SITE_SIDE))
