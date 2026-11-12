@@ -204,20 +204,64 @@ export async function POST(request: Request) {
       generationConfig: { temperature: 0.4, maxOutputTokens: deep ? 8192 : 4096, ...(thinking ? { thinkingConfig: { thinkingLevel: deep ? "medium" : "low" } } : {}) },
     });
   let upstream: Response | null = null;
+  let answer: ReadableStream<Uint8Array> | null = null;
   let status = 0;
   let thinking = true;
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
+    // No answer text within 10 s (30 s in depth: it thinks longer first): don't leave the reader waiting (ticket
+    // 7bccc422: answers took 20-50 s when the free model was slow; the OpenAI model starts in ~5 s). The timer
+    // stops once the first piece of the answer arrives, so a long answer is never cut off.
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), deep ? 30_000 : 10_000);
     upstream = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: payload(thinking),
-      // No first byte within 25 s (40 s in depth: it thinks longer first): try the next model rather than leave the reader waiting.
-      signal: AbortSignal.timeout(deep ? 40_000 : 25_000),
+      signal: ctl.signal,
     }).catch(() => null);
-    if (upstream?.ok && upstream.body) break;
+    if (upstream?.ok && upstream.body) {
+      const reader = upstream.body.getReader();
+      // Read until the answer's first words have arrived (an event with a "text" part), keeping what came so far.
+      const head: Uint8Array[] = [];
+      const dec = new TextDecoder();
+      let seen = "";
+      let ended = false;
+      while (!/"text"\s*:/.test(seen)) {
+        const r = await reader.read().catch(() => null);
+        if (!r || r.done) {
+          ended = true;
+          break;
+        }
+        head.push(r.value);
+        seen = (seen + dec.decode(r.value, { stream: true })).slice(-4000);
+      }
+      clearTimeout(timer);
+      if (!ended && head.length) {
+        answer = new ReadableStream<Uint8Array>({
+          start(c) {
+            for (const h of head) c.enqueue(h);
+          },
+          async pull(c) {
+            const { done, value } = await reader.read();
+            if (done) c.close();
+            else c.enqueue(value);
+          },
+          cancel(reason) {
+            return reader.cancel(reason);
+          },
+        });
+        break;
+      }
+      void reader.cancel().catch(() => {});
+      console.error("gemini failed", model, "no answer in time");
+      upstream = null;
+      status = 0;
+      break; // slow: straight to the OpenAI model below
+    }
     status = upstream?.status ?? 0;
-    const detail = upstream ? (await upstream.text()).slice(0, 300) : "network/timeout";
+    const detail = upstream ? (await upstream.text().catch(() => "")).slice(0, 300) : "network/timeout";
+    clearTimeout(timer);
     console.error("gemini failed", model, status, detail);
     upstream = null;
     // This model doesn't accept the thinking setting: same model again without it.
@@ -226,9 +270,10 @@ export async function POST(request: Request) {
       i--;
       continue;
     }
-    if (![0, 404, 429, 500, 502, 503, 504, 524].includes(status)) break; // bad request etc.: another model won't help
+    if (status === 0) break; // slow or unreachable: go straight to the OpenAI model below instead of waiting on another Gemini
+    if (![404, 429, 500, 502, 503, 504, 524].includes(status)) break; // bad request etc.: another model won't help
   }
-  if (!upstream?.body) {
+  if (!answer) {
     // Gemini is busy or out of its free quota: answer with the OpenAI model instead, if it's there.
     const r = await askOpenAI(sys.join("\n"), plain, deep);
     if (r) return r;
@@ -240,7 +285,7 @@ export async function POST(request: Request) {
 
   // Gemini SSE ("data: {json}" lines) → plain text chunks (its "thought" parts left out).
   return textResponse(
-    sseToText(upstream.body, (d) => {
+    sseToText(answer, (d) => {
       const x = d as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
       return x.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("") ?? "";
     }),

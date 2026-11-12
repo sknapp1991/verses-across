@@ -101,18 +101,31 @@ export function SideTip() {
           <CloseIcon width={16} height={16} />
         </button>
       </div>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         {SITE_SIDE === "scriptures" && (
-          <button
-            type="button"
-            onClick={() => {
-              tipShown();
-              chooseSide("library");
-            }}
-            className="min-h-10 flex-1 rounded-lg border border-accent text-sm font-medium text-accent"
-          >
-            Open Library Across
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                tipShown();
+                setOpen(false);
+                chooseSide("library", "/", true);
+              }}
+              className="min-h-10 flex-1 rounded-lg border border-accent px-2 text-sm font-medium text-accent"
+            >
+              Open Library Across in a new tab ↗
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                tipShown();
+                chooseSide("library");
+              }}
+              className="min-h-10 rounded-lg border border-line px-3 text-sm text-muted hover:text-ink"
+            >
+              Go there in this tab
+            </button>
+          </>
         )}
         <button type="button" onClick={close} className="min-h-10 flex-1 rounded-lg bg-accent text-sm font-medium text-accent-ink">
           Got it

@@ -916,7 +916,8 @@ export function VersionChooser() {
   return (
     <div className="space-y-4">
       <OrderList versions={versions} setVersions={setVersions} />
-      {LANGUAGES.map((lang) => {
+      {/* Languages this book has, together at the top; the rest fold into one "coming soon" line (ticket 8ff7bbd1). */}
+      {LANGUAGES.filter((lang) => all.some((v) => v.language === lang.code)).map((lang) => {
         const vs = all.filter((v) => v.language === lang.code);
         const isBase = lang.code === "en";
         return (
@@ -933,10 +934,21 @@ export function VersionChooser() {
             {vs.map((v) => (
               <VersionRow key={v.id} v={v} checked={selected.has(v.id)} onChange={(c) => toggle(v.id, c)} disableUncheck={lastOne} />
             ))}
-            {!vs.length && <p className="px-2 text-xs text-faint">Coming soon</p>}
           </section>
         );
       })}
+      {(() => {
+        const soon = LANGUAGES.filter((lang) => !all.some((v) => v.language === lang.code));
+        if (!soon.length) return null;
+        return (
+          <details className="px-2 text-xs text-faint">
+            <summary className="cursor-pointer select-none py-1 hover:text-muted">
+              Not yet in {soon.length} other language{soon.length === 1 ? "" : "s"}
+            </summary>
+            <p className="pt-1 leading-relaxed">{soon.map((l) => l.name).join(" · ")}</p>
+          </details>
+        );
+      })()}
     </div>
   );
 }

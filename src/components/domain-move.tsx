@@ -9,7 +9,7 @@
  * base64url encoded. The receiving site unpacks it, merges it, cleans the address bar and reloads once.
  */
 import { useEffect } from "react";
-import { SITE_HOST, SITE_SIDE } from "@/lib/site";
+import { OTHER_ORIGIN, SITE_HOST, SITE_SIDE } from "@/lib/site";
 
 const OFFICIAL = SITE_HOST;
 const OLD_HOSTS = SITE_SIDE === "library" ? /^www\.libraryacross\.com$/ : /^(www\.)?snoopwiggy\.com$|^www\.versesacross\.com$/;
@@ -95,12 +95,16 @@ async function gunzip(bytes: Uint8Array): Promise<string> {
 }
 
 /** Go to `origin` + `path` (this page's own path when not given), with this site's saved data. */
-export async function forwardTo(origin: string, path?: string) {
+export async function forwardTo(origin: string, path?: string, newTab = false) {
   const { pathname, search, hash } = window.location;
-  return forward(origin, path ?? pathname + search + hash, true);
+  // A new tab must be opened right away, during the tap (browsers block pop-ups opened later); the address
+  // with the reader's data is filled in a moment after (ticket 83ae5216).
+  const tab = newTab ? window.open("about:blank", "_blank") : null;
+  if (tab) tab.opener = null;
+  return forward(origin, path ?? pathname + search + hash, true, tab);
 }
 
-async function forward(origin = `https://${OFFICIAL}`, target?: string, everyTime = false) {
+async function forward(origin = `https://${OFFICIAL}`, target?: string, everyTime = false, tab: Window | null = null) {
   const local: Record<string, string> = {};
   for (const k of KEYS) {
     const v = localStorage.getItem(k);
@@ -123,7 +127,9 @@ async function forward(origin = `https://${OFFICIAL}`, target?: string, everyTim
       /* very old browser: move without data */
     }
   }
-  window.location.replace(`${origin}${at < 0 ? dest : dest.slice(0, at)}${fragment}`);
+  const url = `${origin}${at < 0 ? dest : dest.slice(0, at)}${fragment}`;
+  if (tab) tab.location.replace(url);
+  else window.location.replace(url);
 }
 
 async function receive(encoded: string) {
@@ -183,6 +189,28 @@ export function DomainMove() {
       return;
     }
     if (window.location.hash.startsWith(MARK)) receive(window.location.hash.slice(MARK.length));
+  }, []);
+  // Any link to the sister site (a cross reference, a search result, the menu's footer link) opens it in a new
+  // tab, taking the reader's saved data along, so each site stays in its own tab (ticket 83ae5216). Ctrl/Cmd/
+  // middle clicks are left to the browser.
+  useEffect(() => {
+    const other = new URL(OTHER_ORIGIN).origin;
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.hasAttribute("download")) return;
+      let url: URL;
+      try {
+        url = new URL(a.href, window.location.href);
+      } catch {
+        return;
+      }
+      if (url.origin !== other) return;
+      e.preventDefault();
+      void forwardTo(other, url.pathname + url.search + url.hash, true);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
   }, []);
   return null;
 }

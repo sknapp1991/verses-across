@@ -23,10 +23,10 @@ export function setPageWork(work: string) {
   void work;
 }
 /** The other side lives on the other site: go there (same path when it's a page both have), with the saved data. */
-export function chooseSide(side: Side, path = "/") {
+export function chooseSide(side: Side, path = "/", newTab = false) {
   if (side === SITE_SIDE) return;
   noteLibraryOpened();
-  forwardTo(ORIGINS[side], path);
+  forwardTo(ORIGINS[side], path, newTab);
 }
 const noop = () => () => {};
 export function useSide(): Side {

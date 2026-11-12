@@ -316,7 +316,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <button
           type="button"
           onClick={() => {
-            if (sideOfWork(ref.work) !== side) chooseSide(sideOfWork(ref.work));
+            if (sideOfWork(ref.work) !== side) chooseSide(sideOfWork(ref.work), "/", true);
             showHere();
           }}
           title="Show where I am in the list"
@@ -452,12 +452,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <br />
             {/* The sister site (one day a list of every "…Across" site). Goes there with this site's saved data. */}
             Also from us:{" "}
+            {/* A plain link: DomainMove opens links to the sister site in a new tab, with the saved data. */}
             <a
-              href={OTHER_ORIGIN}
-              onClick={(e) => {
-                e.preventDefault();
-                chooseSide(OTHER_SIDE);
-              }}
+              href={OTHER_ORIGIN + "/"}
               className="font-medium text-accent underline underline-offset-2"
             >
               {OTHER_NAME} ↗

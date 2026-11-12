@@ -4,7 +4,7 @@
  * groups and badges. Goals live with the reading plans (Plans & Goals, plans-panel.tsx).
  * All counted on this device (src/lib/activity.ts); nothing is sent anywhere.
  */
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
 import { addGoalMet, BADGES, computeStats, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
 import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
@@ -356,6 +356,7 @@ export function ProgressWatcher() {
   const a = useActivity();
   const { items, ready } = useStudy();
   const started = useStartedPlans();
+  const [levelUp, setLevelUp] = useState<{ level: number; title: string; max: boolean } | null>(null);
   useEffect(() => {
     startActivityTracking();
     startSync();
@@ -378,7 +379,7 @@ export function ProgressWatcher() {
       if (lvl > was) {
         markLevel(lvl);
         const title = levelOf(xpOf(stats)).title;
-        toast(lvl === MAX_LEVEL ? `⬆️ Level ${lvl} — ${title}, the highest level!` : `⬆️ Level ${lvl} — ${title}!`, 5000);
+        setLevelUp({ level: lvl, title, max: lvl === MAX_LEVEL });
         return; // a badge earned at the same moment is announced on the next check, a few seconds later
       }
       const fresh = BADGES.filter((b) => now.includes(b.id) && !seen.has(b.id));
@@ -411,7 +412,49 @@ export function ProgressWatcher() {
     }, 1500);
     return () => clearTimeout(t);
   }, [a, items, ready, started]);
-  return null;
+  return levelUp ? <LevelUpCelebration key={levelUp.level} {...levelUp} onDone={() => setLevelUp(null)} /> : null;
+}
+
+/**
+ * A new level: a card in the middle of the screen for about 3 seconds that then fades by itself; tapping it
+ * opens Progress (ticket a3c42cdb). It doesn't block the page: only the card itself takes taps.
+ */
+function LevelUpCelebration({ level, title, max, onDone }: { level: number; title: string; max: boolean; onDone: () => void }) {
+  const [leaving, setLeaving] = useState(false);
+  const done = useRef(onDone);
+  useEffect(() => {
+    done.current = onDone;
+  });
+  useEffect(() => {
+    // Timers start once (the parent re-renders often and passes a new onDone each time).
+    const fade = setTimeout(() => setLeaving(true), 2600);
+    const end = setTimeout(() => done.current(), 3200);
+    return () => {
+      clearTimeout(fade);
+      clearTimeout(end);
+    };
+  }, []);
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center p-4" role="status" aria-live="polite">
+      <button
+        type="button"
+        onClick={() => {
+          openPanel("progress");
+          onDone();
+        }}
+        className={`levelup-card pointer-events-auto flex max-w-xs flex-col items-center gap-1 rounded-2xl border border-accent bg-panel px-8 py-6 text-center shadow-2xl transition-opacity duration-500 motion-reduce:transition-none ${leaving ? "opacity-0" : "opacity-100"}`}
+        aria-label={`Level ${level}, ${title}. Open Progress`}
+      >
+        <span className="text-4xl" aria-hidden>
+          ⬆️
+        </span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-faint">{max ? "Highest level reached" : "Level up!"}</span>
+        <span className="font-serif text-3xl font-semibold text-ink">Level {level}</span>
+        <span className="text-sm text-muted">{title}</span>
+        <span className="pt-1 text-[11px] text-faint">Tap to see your progress</span>
+      </button>
+    </div>
+  );
 }
 
 /** Today's progress toward the first goal (0–1), or null without a goal. */
