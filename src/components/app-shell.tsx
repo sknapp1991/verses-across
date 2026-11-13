@@ -20,6 +20,7 @@ import { InstallCard } from "./install-app";
 import { AiWindow } from "./ai-window";
 import { closePanel, openPanel, openSheet, selectXref, setSplit, useUi, type PanelId } from "@/lib/ui-store";
 import { closeXref, XrefDockPanel } from "./xref-panel";
+import { InterlinearPanel } from "./interlinear-panel";
 import { PlansPanel } from "./plans-panel";
 import { DockPanelContext } from "./panel-header";
 import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon, UsersIcon } from "./icons";
@@ -152,15 +153,17 @@ const PANEL_LABEL: Record<DockId, string> = {
   plans: "Plans & Goals",
   groups: "Study groups",
   xref: "Cross references",
+  interlinear: "Interlinear",
 };
 /** Shorter names for the dock's tabs, so every tab fits without scrolling. */
-const TAB_LABEL: Record<DockId, string> = { search: "Search", study: "My Study", progress: "Progress", plans: "Plans & Goals", groups: "Groups", xref: "Cross refs" };
+const TAB_LABEL: Record<DockId, string> = { search: "Search", study: "My Study", progress: "Progress", plans: "Plans & Goals", groups: "Groups", xref: "Cross refs", interlinear: "Interlinear" };
 const PANEL_ICON: Record<DockId, React.ReactNode> = {
   search: <SearchIcon width={16} height={16} />,
   study: <LibraryIcon width={16} height={16} />,
   progress: <TrophyIcon width={16} height={16} />,
   plans: <CalendarIcon width={16} height={16} />,
   groups: <UsersIcon width={16} height={16} />,
+  interlinear: <span className="w-4 text-center font-serif leading-none" aria-hidden>א</span>,
   xref: (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M7 4h4v6H7zM13 14h4v6h-4z" />
@@ -177,6 +180,7 @@ function PanelBody({ panel, onNavigate }: { panel: DockId; onNavigate?: () => vo
   if (panel === "plans") return <PlansPanel onNavigate={onNavigate} />;
   if (panel === "groups") return <GroupsPanel />;
   if (panel === "xref") return <XrefDockPanel />;
+  if (panel === "interlinear") return <InterlinearPanel />;
   return <StudyPanel onNavigate={onNavigate} />;
 }
 

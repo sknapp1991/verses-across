@@ -18,6 +18,7 @@ import { renderVerseImage, shareVerseImage } from "@/lib/verse-image";
 import { CloseIcon, ClockIcon, CopyIcon, HeadphonesIcon, ImageIcon, LinkIcon, MailIcon, SparkIcon, StarIcon } from "./icons";
 import { Modal } from "./modal";
 import { usePrivate } from "@/lib/privacy";
+import { hasInterlinear, showInterlinear } from "./interlinear-panel";
 
 export type VerseText = AskTranslation & { dir: "ltr" | "rtl"; lang: string; id?: string };
 
@@ -266,6 +267,23 @@ function MenuBody({
           <button type="button" onClick={image} disabled={drawing} className={`${pill} border-line disabled:opacity-60`}>
             <ImageIcon width={18} height={18} /> {drawing ? "Drawing…" : "Picture"}
           </button>
+          {hasInterlinear(r.work, r.book) && (
+            <button
+              type="button"
+              onClick={() => {
+                saveIfChanged();
+                closeVerseMenu();
+                showInterlinear({ work: r.work, book: r.book, chapter: r.chapter, verse: r.verse });
+              }}
+              className={`${pill} border-line`}
+              title="This verse word by word in Hebrew or Greek"
+            >
+              <span className="w-[18px] text-center font-serif text-base leading-none" aria-hidden>
+                א
+              </span>{" "}
+              Interlinear
+            </button>
+          )}
         </div>
 
         <label className="block space-y-1">

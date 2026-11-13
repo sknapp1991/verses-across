@@ -10,7 +10,7 @@ import { useSyncExternalStore } from "react";
 import type { StudyRef } from "./storage";
 import { getSettings, WIDE_QUERY } from "./settings";
 
-export type PanelId = "search" | "study" | "progress" | "plans" | "groups";
+export type PanelId = "search" | "study" | "progress" | "plans" | "groups" | "interlinear";
 export type Panel = PanelId | null;
 /** `version`: the column that was tapped (read aloud uses it). */
 export type VerseMenuState = (StudyRef & { verse: string; focus?: "note" | "ask"; version?: string }) | null;
