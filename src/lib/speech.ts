@@ -528,7 +528,142 @@ let rec: {
   /** Several versions in turn from their recordings (one verse of one file at a time). */
   mix?: Mix;
   getMixNext?: (from: string) => Promise<MixNext | null>;
+  /** Where the chapter now heard starts in the audio element's timeline (0 unless chapters are streamed one after another). */
+  base: number;
+  /** Chapters streamed one after another into one MediaSource (see "one continuous stream" below). */
+  stream?: Stream;
 } | null = null;
+
+/* ---------- one continuous stream: chapter after chapter with the screen off ---------- */
+
+/**
+ * Some phone browsers (Samsung Internet, ticket 4d80ea44) won't start a new file while the screen is off, so a
+ * recording stopped at the end of each chapter. Where the browser has MediaSource (Android browsers, desktop),
+ * the chapters are appended one after another to a single stream: the next chapter is fetched and added a couple
+ * of minutes before the current one ends, and playback simply carries on — no new file is ever started. iPhones
+ * (no MediaSource for this) keep switching files, which they allow.
+ */
+type StreamSeg = { key: string; title: string; timing: Timing; start: number; end: number };
+type Stream = { ms: MediaSource; sb: SourceBuffer; url: string; segs: StreamSeg[]; busy: boolean; done: boolean; failedAt: number; fails: number; timer: number };
+/** Android only (where a new file can't start with the screen off); elsewhere the tried path of switching files. */
+const canStream = () =>
+  typeof window !== "undefined" && /Android/i.test(navigator.userAgent) && "MediaSource" in window && MediaSource.isTypeSupported("audio/mpeg");
+
+async function fetchBytes(url: string): Promise<ArrayBuffer> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.arrayBuffer();
+}
+function appendBytes(s: Stream, bytes: ArrayBuffer): Promise<{ start: number; end: number }> {
+  return new Promise((resolve, reject) => {
+    const b = s.sb.buffered;
+    const start = b.length ? b.end(b.length - 1) : 0;
+    const done = () => {
+      s.sb.removeEventListener("updateend", done);
+      s.sb.removeEventListener("error", fail);
+      const bb = s.sb.buffered;
+      resolve({ start, end: bb.length ? bb.end(bb.length - 1) : start });
+    };
+    const fail = () => {
+      s.sb.removeEventListener("updateend", done);
+      s.sb.removeEventListener("error", fail);
+      reject(new Error("append failed"));
+    };
+    s.sb.addEventListener("updateend", done);
+    s.sb.addEventListener("error", fail);
+    s.sb.appendBuffer(bytes);
+  });
+}
+/** Open a stream with the first chapter in it; null if the browser can't (the caller plays the file directly). */
+async function openStream(a: HTMLAudioElement, url: string, seg: Omit<StreamSeg, "start" | "end">, isCurrent: () => boolean): Promise<Stream | null> {
+  let obj = "";
+  try {
+    const bytes = await fetchBytes(url);
+    if (!isCurrent()) return null; // a newer play started meanwhile: leave the element alone
+    const ms = new MediaSource();
+    obj = URL.createObjectURL(ms);
+    a.src = obj;
+    await new Promise<void>((res, rej) => {
+      ms.addEventListener("sourceopen", () => res(), { once: true });
+      setTimeout(() => rej(new Error("sourceopen timeout")), 8000);
+    });
+    const sb = ms.addSourceBuffer("audio/mpeg");
+    sb.mode = "sequence";
+    const s: Stream = { ms, sb, url: obj, segs: [], busy: false, done: false, failedAt: 0, fails: 0, timer: 0 };
+    const span = await appendBytes(s, bytes);
+    s.segs.push({ ...seg, ...span });
+    // timeupdate stops once playback reaches the end of what was added and waits: check on a timer too, so a
+    // failed fetch is tried again (and after a few tries the stream ends cleanly instead of waiting in silence).
+    s.timer = window.setInterval(streamCheck, 5000);
+    return s;
+  } catch {
+    if (obj) URL.revokeObjectURL(obj);
+    return null;
+  }
+}
+function closeStream(s?: Stream) {
+  if (!s) return;
+  clearInterval(s.timer);
+  try {
+    URL.revokeObjectURL(s.url);
+  } catch {
+    /* already gone */
+  }
+}
+/** On every timeupdate (it fires with the screen off too): follow chapter changes, and add the next chapter early. */
+function streamCheck() {
+  const r = rec;
+  const s = r?.stream;
+  if (!audio || !r || !s) return;
+  const t = audio.currentTime;
+  // Which chapter is playing now?
+  const seg = s.segs.find((x) => t >= x.start - 0.05 && t < x.end) ?? s.segs[s.segs.length - 1];
+  if (seg && seg.start !== r.base) {
+    r.base = seg.start;
+    r.timing = seg.timing;
+    r.lastVerse = null;
+    set({ chapterKey: seg.key, verse: seg.timing.verses[0]?.v ?? null });
+    mediaSession(seg.title, r.artist);
+    r.onAdvance?.(seg.key);
+    // Free what was already heard (keep a few seconds for "previous verse").
+    if (!s.sb.updating && seg.start > 10)
+      try {
+        s.sb.remove(0, seg.start - 5);
+      } catch {
+        /* nothing to free */
+      }
+  }
+  if (s.done && s.ms.readyState === "open" && !s.sb.updating)
+    try {
+      s.ms.endOfStream(); // nothing more to add: let it end after the last chapter
+    } catch {
+      /* already ended */
+    }
+  // Add the next chapter about two minutes before the last one in the stream ends.
+  const last = s.segs[s.segs.length - 1];
+  if (s.busy || s.done || r.until || !r.getNext || last.end - t > 120 || Date.now() - s.failedAt < 15000) return;
+  s.busy = true;
+  void (async () => {
+    try {
+      const next = await r.getNext!(last.key);
+      if (rec !== r) return;
+      if (!next) {
+        s.done = true;
+        if (s.ms.readyState === "open" && !s.sb.updating) s.ms.endOfStream(); // ends after the last chapter
+        return;
+      }
+      const span = await appendBytes(s, await fetchBytes(next.url));
+      if (rec !== r) return;
+      s.segs.push({ key: next.chapterKey, title: next.title, timing: next.timing, ...span });
+      s.fails = 0;
+    } catch {
+      s.failedAt = Date.now(); // network blip: try again in a little while...
+      if (++s.fails >= 3) s.done = true; // ...but after three failed tries, end after what is there (no silent wait)
+    } finally {
+      s.busy = false;
+    }
+  })();
+}
 
 /* ---------- several recorded versions in turn (keeps going with the screen locked) ---------- */
 
@@ -711,7 +846,7 @@ export async function playRecordedMix(opts: {
   audio ??= new Audio();
   audio.preload = "auto";
   const first = tracks[opts.tracks[0].version].timing;
-  rec = { timing: first, until: opts.until, onDone: opts.onDone, raf: 0, lastVerse: null, onAdvance: opts.onAdvance, title: opts.title, artist: opts.artist, getMixNext: opts.getNext };
+  rec = { timing: first, until: opts.until, onDone: opts.onDone, raf: 0, lastVerse: null, onAdvance: opts.onAdvance, title: opts.title, artist: opts.artist, getMixNext: opts.getNext, base: 0 };
   rec.mix = { seq, i: 0, tracks, cur: null, timer: 0 };
   const a = audio;
   a.onended = () => {
@@ -764,7 +899,7 @@ export function loadTiming(url: string): Promise<Timing> {
 
 function tick() {
   if (!audio || !rec) return;
-  const t = audio.currentTime;
+  const t = audio.currentTime - rec.base; // (the chapter now heard, in a stream of chapters)
   if (rec.mix) {
     // Several versions in turn: mixCheck moves between verses; this only follows the words.
     const seg = rec.mix.seq[rec.mix.i];
@@ -783,7 +918,7 @@ function tick() {
     set({ verse: cur.v });
     // "Pause after each verse": wait at the start of the next verse.
     if (stopEachVerse && moved && audio) {
-      audio.currentTime = cur.s;
+      audio.currentTime = rec.base + cur.s;
       pause();
       return;
     }
@@ -822,7 +957,7 @@ function mediaSession(title: string, artist: string) {
     const vs = rec.timing.verses;
     const i = Math.max(0, vs.findIndex((x) => x.v === state.verse));
     const j = Math.min(vs.length - 1, Math.max(0, i + d));
-    audio.currentTime = vs[j].s;
+    audio.currentTime = rec.base + vs[j].s;
     rec.lastVerse = vs[j].v;
     set({ verse: vs[j].v });
   };
@@ -841,6 +976,7 @@ function mediaSession(title: string, artist: string) {
 function stopRecording() {
   pauseKeepAlive(); // a recording has its own audio (and lock-screen controls)
   if (rec) cancelAnimationFrame(rec.raf);
+  closeStream(rec?.stream);
   if (rec?.mix) {
     clearTimeout(rec.mix.timer);
     freeTracks(rec.mix.tracks);
@@ -902,15 +1038,30 @@ export async function playRecording(opts: {
   if (my !== token) return true; // something else started meanwhile
   audio ??= new Audio();
   audio.preload = "auto";
-  audio.src = opts.url;
+  // Chapter after chapter in one stream where the browser can (see "one continuous stream"); else the file itself.
+  const stream = opts.getNext && !opts.until && canStream() ? await openStream(audio, opts.url, { key: opts.chapterKey, title: opts.title, timing }, () => my === token) : null;
+  if (my !== token) {
+    closeStream(stream ?? undefined);
+    return true;
+  }
+  if (!stream) audio.src = opts.url;
   audio.playbackRate = opts.rate;
   const start = opts.startVerse ? timing.verses.find((x) => x.v === opts.startVerse) ?? timing.verses.find((x) => parseInt(x.v, 10) >= parseInt(opts.startVerse!, 10)) : null;
-  rec = { timing, until: opts.until, onDone: opts.onDone, raf: 0, lastVerse: null, getNext: opts.getNext, onAdvance: opts.onAdvance, title: opts.title, artist: opts.artist };
+  rec = { timing, until: opts.until, onDone: opts.onDone, raf: 0, lastVerse: null, getNext: opts.getNext, onAdvance: opts.onAdvance, title: opts.title, artist: opts.artist, base: 0, ...(stream ? { stream } : {}) };
   const a = audio;
+  a.ontimeupdate = stream ? streamCheck : null;
   a.onended = async () => {
     const r = rec;
     if (!r) return;
     cancelAnimationFrame(r.raf);
+    if (r.stream) {
+      // The stream ran out: the last chapter (or the end of the Bible / book) has been heard.
+      stopRecording();
+      set({ status: "idle", verse: null, until: null });
+      emitWord(null);
+      r.onDone();
+      return;
+    }
     // From the chapter that just ended (not the one where playing began: chapter after chapter, screen off).
     const next = !r.until && r.getNext ? await r.getNext(state.chapterKey ?? "").catch(() => null) : null;
     if (rec !== r) return;
@@ -977,7 +1128,7 @@ export function seekRecording(v: string, version?: string): boolean {
   }
   const x = rec.timing.verses.find((t) => t.v === v);
   if (!x) return false;
-  audio.currentTime = x.s;
+  audio.currentTime = rec.base + x.s;
   rec.lastVerse = v; // a jump isn't "reaching the next verse" (pause-after-each-verse)
   set({ verse: v });
   return true;
