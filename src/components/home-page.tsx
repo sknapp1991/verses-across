@@ -15,7 +15,7 @@ import { OTHER_NAME, OTHER_ORIGIN, SITE_NAME, SITE_SIDE } from "@/lib/site";
 import { openFeedback } from "@/lib/feedback";
 import { openPanel } from "@/lib/ui-store";
 import { openTour } from "./tour";
-import { BookIcon, CalendarIcon, ColumnsIcon, LibraryIcon, MailIcon, RocketIcon, SparkIcon, StarIcon } from "./icons";
+import { BookIcon, CalendarIcon, ColumnsIcon, LibraryIcon, NoteIcon, MailIcon, RocketIcon, SparkIcon, StarIcon } from "./icons";
 import { SuggestionsTile } from "./home-suggestions";
 
 const library = SITE_SIDE === "library";
@@ -144,6 +144,11 @@ export function HomePage() {
           {!library && (
             <Tile icon={<BookIcon width={18} height={18} />} title="How the Bible came to be" href="/bible-history">
               How the books were written, chosen and argued over, from the scrolls to the councils, the splits and the Reformation.
+            </Tile>
+          )}
+          {!library && (
+            <Tile icon={<NoteIcon width={18} height={18} />} title="Articles" href="/articles">
+              Articles, research and insights on the scriptures. The first ones are on their way.
             </Tile>
           )}
           {!library && (
