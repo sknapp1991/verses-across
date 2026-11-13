@@ -55,9 +55,46 @@ const IDLE: SpeechState = {
 let state: SpeechState = IDLE;
 const subs = new Set<() => void>();
 function set(patch: Partial<SpeechState>) {
+  const was = state;
   state = { ...state, ...patch };
+  noteHiddenStop(was);
   subs.forEach((l) => l());
 }
+
+/**
+ * Listening that stops with the screen off (ticket 4d80ea44: Samsung Internet stopping after 15–30 minutes,
+ * sometimes mid-chapter): remember where and why, and say so when the screen comes back, so the cause can be
+ * found. Kept on this device only.
+ */
+const STOPS = "va-audio-stops:v1";
+let hiddenStop: { where: string; why: string; at: number } | null = null;
+function noteHiddenStop(was: SpeechState) {
+  if (typeof document === "undefined" || document.visibilityState !== "hidden") return;
+  if (was.status !== "playing" || state.status === "playing") return;
+  const why =
+    state.error ??
+    (state.status === "idle" ? "it reached the end (or the next chapter wasn't available)" : "the browser paused it (or it lost the audio)");
+  const where = [state.chapterKey ?? was.chapterKey, state.verse ?? was.verse].filter(Boolean).join(":");
+  hiddenStop = { where, why, at: Date.now() };
+  try {
+    const list = JSON.parse(localStorage.getItem(STOPS) ?? "[]") as unknown[];
+    localStorage.setItem(STOPS, JSON.stringify([...list, { ...hiddenStop, engine: state.engine }].slice(-20)));
+  } catch {
+    /* private mode */
+  }
+}
+if (typeof document !== "undefined")
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || !hiddenStop) return;
+    const s = hiddenStop;
+    hiddenStop = null;
+    const [work, book, ch, v] = s.where.replace(":", "/").split("/");
+    const time = new Date(s.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    void Promise.all([import("./ui-store"), import("./catalog")]).then(([{ toast }, { chapterTitle, findBook }]) => {
+      const place = book ? `${chapterTitle(findBook(work, book), Number(ch), book)}${v ? `:${v}` : ""}` : "";
+      toast(`Listening stopped${place ? ` at ${place}` : ""} at ${time} while the screen was off: ${s.why}.`, 9000);
+    });
+  });
 function subscribe(l: () => void) {
   subs.add(l);
   return () => subs.delete(l);
@@ -483,13 +520,14 @@ let rec: {
   raf: number;
   lastVerse: string | null;
   /** Advance straight to this chapter when one ends (works with the screen off). */
-  getNext?: () => Promise<{ url: string; timing: Timing; chapterKey: string; title: string } | null>;
+  /** The chapter after `from` ("work/book/chapter": the one just finished), or null to stop. */
+  getNext?: (from: string) => Promise<{ url: string; timing: Timing; chapterKey: string; title: string } | null>;
   onAdvance?: (chapterKey: string) => void;
   title: string;
   artist: string;
   /** Several versions in turn from their recordings (one verse of one file at a time). */
   mix?: Mix;
-  getMixNext?: () => Promise<MixNext | null>;
+  getMixNext?: (from: string) => Promise<MixNext | null>;
 } | null = null;
 
 /* ---------- several recorded versions in turn (keeps going with the screen locked) ---------- */
@@ -568,7 +606,7 @@ function mixGo(i: number, autoplay = true) {
   set({ verse: seg.v, speaking: seg.version });
   // Fetch the next chapter early, so carrying on with the screen off doesn't wait on the network.
   if (!m.next && rec.getMixNext && !rec.until && i >= m.seq.length / 2) {
-    m.next = rec.getMixNext().catch(() => null);
+    m.next = rec.getMixNext(state.chapterKey ?? "").catch(() => null);
   }
   if (autoplay) a.play().catch(() => set({ status: "paused", error: "Tap play to start." }));
 }
@@ -605,7 +643,7 @@ async function mixEnd() {
   if (!r || !m) return;
   cancelAnimationFrame(r.raf);
   clearTimeout(m.timer);
-  const next = !r.until && r.getMixNext ? await (m.next ?? r.getMixNext().catch(() => null)) : null;
+  const next = !r.until && r.getMixNext ? await (m.next ?? r.getMixNext(state.chapterKey ?? "").catch(() => null)) : null;
   if (rec !== r) {
     freeTracks(next?.tracks);
     return;
@@ -637,7 +675,8 @@ export async function playRecordedMix(opts: {
   title: string;
   artist: string;
   onDone: () => void;
-  getNext?: () => Promise<MixNext | null>;
+  /** The chapter after `from` (the one just finished), or null to stop. */
+  getNext?: (from: string) => Promise<MixNext | null>;
   onAdvance?: (chapterKey: string) => void;
 }): Promise<boolean> {
   const my = ++token;
@@ -840,7 +879,8 @@ export async function playRecording(opts: {
   title: string;
   artist: string;
   onDone: () => void;
-  getNext?: () => Promise<{ url: string; timing: Timing; chapterKey: string; title: string } | null>;
+  /** The chapter after `from` ("work/book/chapter": the one just finished), or null to stop. */
+  getNext?: (from: string) => Promise<{ url: string; timing: Timing; chapterKey: string; title: string } | null>;
   onAdvance?: (chapterKey: string) => void;
 }): Promise<boolean> {
   const my = ++token;
@@ -871,7 +911,8 @@ export async function playRecording(opts: {
     const r = rec;
     if (!r) return;
     cancelAnimationFrame(r.raf);
-    const next = !r.until && r.getNext ? await r.getNext().catch(() => null) : null;
+    // From the chapter that just ended (not the one where playing began: chapter after chapter, screen off).
+    const next = !r.until && r.getNext ? await r.getNext(state.chapterKey ?? "").catch(() => null) : null;
     if (rec !== r) return;
     if (next) {
       // Keep the audio session alive: go straight into the next chapter, then tell the page.

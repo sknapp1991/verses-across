@@ -61,6 +61,11 @@ const findStart = (items: SpeechItem[], v: string) => {
 };
 
 /** Keep reading into `to` after `from` ends? (Next chapter; into another book only if that is on too.) */
+/** "work/book/chapter" → a BookRef (null if it isn't one). */
+function refFromKey(key: string | null | undefined): BookRef | null {
+  const [work, book, ch] = (key ?? "").split("/");
+  return work && book && Number(ch) > 0 ? { work, book, chapter: Number(ch) } : null;
+}
 function mayContinue(from: BookRef, to: BookRef | undefined): to is BookRef {
   const s = getSettings();
   return !!to && s.ttsContinue && (to.book === from.book || s.ttsContinueBook);
@@ -201,10 +206,11 @@ export function useReadAlong({
           title: chapterTitle(findBook(bookRef.work, bookRef.book), bookRef.chapter),
           artist: mixIds.map(abbr).join(" + "),
           onDone,
-          getNext: async () => {
+          getNext: async (fromKey) => {
             const s = getSettings();
-            const at = adjacentChapters(bookRef).next;
-            if (!mayContinue(bookRef, at)) return null;
+            const from = refFromKey(fromKey) ?? bookRef; // the chapter that just ended
+            const at = adjacentChapters(from).next;
+            if (!mayContinue(from, at)) return null;
             const sp = specs(at);
             if (!sp.every(Boolean)) return null;
             const rates: Record<string, number> = {};
@@ -220,9 +226,10 @@ export function useReadAlong({
               title: chapterTitle(findBook(at.work, at.book), at.chapter),
             });
           },
-          onAdvance: () => {
+          onAdvance: (key) => {
             setSpeech({ continuePending: true });
-            if (next) router.push(readHref(next, versions), { scroll: false });
+            const to = refFromKey(key); // the chapter now playing (not the one after where playing began)
+            if (to) router.push(readHref(to, to.work === bookRef.work ? versions : undefined), { scroll: false });
           },
         }).then((ok) => {
           if (!ok) playDevice();
@@ -271,9 +278,10 @@ export function useReadAlong({
         artist: `${tc.version.abbr} · ${rec.label}`,
         onDone,
         // Screen off: go straight into the next chapter's recording, then move the page along.
-        getNext: async () => {
-          const at = adjacentChapters(bookRef).next;
-          if (!mayContinue(bookRef, at) || !hasChapter(rec, at.book, at.chapter)) return null;
+        getNext: async (fromKey) => {
+          const from = refFromKey(fromKey) ?? bookRef; // the chapter that just ended
+          const at = adjacentChapters(from).next;
+          if (!mayContinue(from, at) || !hasChapter(rec, at.book, at.chapter)) return null;
           const timing = await loadTiming(timingUrl(rec, at.book, at.chapter));
           return {
             url: audioUrl(rec, at.book, at.chapter),
@@ -282,9 +290,10 @@ export function useReadAlong({
             title: chapterTitle(findBook(at.work, at.book), at.chapter),
           };
         },
-        onAdvance: () => {
+        onAdvance: (key) => {
           setSpeech({ continuePending: true });
-          if (next) router.push(readHref(next, versions), { scroll: false });
+          const to = refFromKey(key); // the chapter now playing (not the one after where playing began)
+          if (to) router.push(readHref(to, to.work === bookRef.work ? versions : undefined), { scroll: false });
         },
       }).then((ok) => {
         if (!ok) playDevice();
