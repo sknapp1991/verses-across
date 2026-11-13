@@ -47,7 +47,8 @@ async function main() {
   const done: Record<string, number> = JSON.parse(await readFile(DONE, "utf8").catch(() => "{}"));
   const files: string[] = [];
   for (const v of await readdir(SRC, { withFileTypes: true }))
-    if (v.isDirectory() && !["hf", "piper"].includes(v.name)) await walk(path.join(SRC, v.name), files);
+    // (librivox-*: the raw LibriVox downloads and their transcripts, only cut into chapters here, never served)
+    if (v.isDirectory() && !["hf", "piper"].includes(v.name) && !v.name.startsWith("librivox")) await walk(path.join(SRC, v.name), files);
   const todo: { key: string; file: string; mtime: number }[] = [];
   for (const f of files) {
     const key = path.relative(SRC, f).split(path.sep).join("/");

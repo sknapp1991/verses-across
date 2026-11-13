@@ -36,10 +36,13 @@ const VOICES: Record<string, string> = {
   pm_alex: "Alex · Brazilian Portuguese (male)",
   rapunzelina: "Rapunzelina · Greek (female)",
   armenta: "Michael Armenta · human reader (LibriVox)",
+  librivox: "LibriVox volunteers · human readers",
 };
 /** Human recordings (not generated): public-domain readings, cut into chapters by scripts/tts/align-librivox.py. */
 const HUMAN: Record<string, string> = {
   armenta: "Read by Michael Armenta for LibriVox (2001), public domain",
+  // scripts/tts/librivox-sets.py: Spanish, French, German, Hebrew and Greek readings (Nov 12)
+  librivox: "Read by LibriVox volunteers, public domain",
 };
 /** Voices made with Piper instead of Kokoro (licence noted per voice). */
 const PIPER: Record<string, string> = {
@@ -78,7 +81,7 @@ async function main() {
     }
   }
   // Best-sounding voices first (Kokoro's own quality grades), then the rest.
-  const order = ["armenta", ...Object.keys(VOICES)]; // a human reader first
+  const order = ["armenta", "librivox", ...Object.keys(VOICES)]; // a human reader first
   recs.sort((a, b) => a.version.localeCompare(b.version) || (order.indexOf(a.voice) + 1 || 99) - (order.indexOf(b.voice) + 1 || 99));
   const index = JSON.stringify({ generatedAt: new Date().toISOString(), recordings: recs });
   await writeFile(path.join(SRC, "index.json"), index);
