@@ -202,7 +202,18 @@ def which_chapters(version: str, books, words):
     good = [i for i, k in enumerate(order) if hits[k] >= 0.25]
     if not good:
         return []
-    return order[good[0] : good[-1] + 1]
+    # The main run only: near-identical chapters elsewhere (Psalm 14 and Psalm 53, Kings and Chronicles) must
+    # not stretch the range. Runs allow one missed chapter in between; the one with the most matching wins.
+    runs, cur = [], [good[0]]
+    for i in good[1:]:
+        if i - cur[-1] <= 2:
+            cur.append(i)
+        else:
+            runs.append(cur)
+            cur = [i]
+    runs.append(cur)
+    best = max(runs, key=lambda r: sum(hits[order[i]] for i in r))
+    return order[best[0] : best[-1] + 1]
 
 
 def align(version: str, chapters, words):
@@ -286,6 +297,9 @@ def align_set(name: str, limit: int):
                 b, c = key
                 s = ch_start[key]
                 e = ch_start.get(chs[i + 1], total) if i + 1 < len(chs) else total
+                if e - s < 5:  # out of order or too short to be a chapter: leave it for another reading
+                    print(f"  skipped {b} {c}: {s:.1f}–{e:.1f} s", flush=True)
+                    continue
                 vs = [(v, t) for (bb, ch, v), t in verses if (bb, ch) == key]
                 timing = [{"v": v, "s": round(max(0.0, t - s), 3), "e": round(max(0.0, (vs[j + 1][1] if j + 1 < len(vs) else e) - s - 0.1), 3)} for j, (v, t) in enumerate(vs)]
                 (out / b).mkdir(parents=True, exist_ok=True)
