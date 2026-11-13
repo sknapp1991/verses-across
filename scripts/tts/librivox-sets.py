@@ -124,9 +124,26 @@ def fetch(name: str):
     print(f"{name}: {len(items)} projects, {sum(len(i['books']) for i in items)} books, {total / 1e6:.0f} MB downloaded")
 
 
+HE_FINALS = str.maketrans("ךםןףץ", "כמנפצ")
+LANG = "en"  # set per set in align_set: Hebrew needs its own matching
+
+
 def norm(w: str) -> str:
     w = unicodedata.normalize("NFD", w.lower())
     w = "".join(c for c in w if unicodedata.category(c) != "Mn")  # accents, Hebrew points, Greek breathings
+    if LANG == "he":
+        # Whisper writes modern (full) spelling and the reader says "Adonai" for the divine name, while the
+        # Masoretic text is written defectively: compare consonant skeletons without the vowel letters.
+        w = w.translate(HE_FINALS).replace("יהוה", "אדני")
+        w = re.sub(r"[^א-ת]", "", w)
+        return re.sub(r"[ויא]", "", w)
+    if LANG == "el":
+        # Read with modern pronunciation, so Whisper often picks another spelling of the same sound (ει/οι/η/υ/ι
+        # all say "i", ω/ο "o", αι/ε "e"): compare by sound.
+        w = re.sub(r"[^\w]", "", w).replace("_", "").replace("ς", "σ")
+        for a, b in (("ει", "ι"), ("οι", "ι"), ("υι", "ι"), ("αι", "ε"), ("η", "ι"), ("υ", "ι"), ("ω", "ο")):
+            w = w.replace(a, b)
+        return re.sub(r"(.)\1", r"\1", w)  # double letters sound single
     return re.sub(r"[^\w]", "", w).replace("_", "")
 
 
@@ -138,7 +155,7 @@ def ref_words(version: str, chapters):
         if not p.exists():
             continue
         for x in json.loads(p.read_text(encoding="utf-8"))["verses"]:
-            for w in (x.get("t") or "").split():
+            for w in re.split(r"[\s־]+", x.get("t") or ""):  # (the Hebrew maqaf joins words)
                 n = norm(w)
                 if n:
                     out.append((n, book, ch, x["v"]))
@@ -235,6 +252,8 @@ def align(version: str, chapters, words):
 
 
 def align_set(name: str, limit: int):
+    global LANG
+    LANG = SETS[name]["lang"]
     src = CACHE / f"librivox-{name}"
     out = CACHE / name / "librivox"
     items = json.loads((src / "items.json").read_text(encoding="utf-8"))
