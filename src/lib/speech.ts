@@ -291,12 +291,16 @@ function speakItem(r: Run, my: number) {
   set({ verse: item.v, speaking: item.version ?? null, status: "playing", error: null });
   emitWord(null);
   const parts = chunks(item.text);
+  // "Say each verse": "Verse 3." first, as its own part (not counted for the word highlight). Once per verse
+  // (several versions can read the same verse; a chapter announcement shares verse 1's number), not at the start.
+  const sayNumber = sayEach.verse && r.index > 0 && r.items[r.index - 1]?.v !== item.v;
+  if (sayNumber) parts.unshift(`Verse ${item.v}.`);
   let p = 0;
   let base = 0; // words spoken in earlier chunks of this verse
   let sawWord = false;
   const next = () => {
     if (my !== token) return;
-    if (p > 0) base += countWords(parts[p - 1]);
+    if (p > 0 && !(sayNumber && p === 1)) base += countWords(parts[p - 1]);
     if (p >= parts.length) {
       // A whole verse without word positions: this voice can't follow word by word.
       if (!sawWord && countWords(item.text) > 3 && state.wordTiming !== false) set({ wordTiming: false });
@@ -318,8 +322,9 @@ function speakItem(r: Run, my: number) {
     u.rate = item.rate ?? r.rate;
     const chunkText = parts[p - 1];
     const chunkBase = base;
+    const isNumber = sayNumber && p === 1;
     u.onboundary = (e) => {
-      if (my !== token || e.name !== "word") return;
+      if (my !== token || e.name !== "word" || isNumber) return;
       if (!sawWord) {
         sawWord = true;
         if (state.wordTiming !== true) set({ wordTiming: true });
@@ -530,6 +535,8 @@ let rec: {
   getMixNext?: (from: string) => Promise<MixNext | null>;
   /** Where the chapter now heard starts in the audio element's timeline (0 unless chapters are streamed one after another). */
   base: number;
+  /** "Say each verse": the last verse said (undefined until playing has begun). */
+  said?: string;
   /** Chapters streamed one after another into one MediaSource (see "one continuous stream" below). */
   stream?: Stream;
 } | null = null;
@@ -610,8 +617,75 @@ function closeStream(s?: Stream) {
     /* already gone */
   }
 }
+/* ---------- "Say each…" verse / chapter / book (ticket c1ec4dc5) ---------- */
+
+export type SayEach = { verse: boolean; chapter: boolean; book: boolean };
+let sayEach: SayEach = { verse: false, chapter: false, book: false };
+/** The reader keeps this in step with the "Say each…" setting. */
+export function setSayEach(s: SayEach) {
+  sayEach = s;
+}
+/** What to say when a recording moves on by itself from chapter `fromKey` to `toKey` ("Exodus 1", "Exodus", or nothing). */
+function chapterWords(fromKey: string, toKey: string, title: string): string {
+  if (sayEach.chapter) return title;
+  const book = (k: string) => k.split("/").slice(0, 2).join("/");
+  if (sayEach.book && book(fromKey) !== book(toKey)) return title.replace(/\s+\d+$/, "");
+  return "";
+}
+/** "Verse 12" for the verse a recording has just reached (not verse 1 when the chapter was just said). */
+function sayVerse() {
+  const r = rec;
+  const a = audio;
+  if (!sayEach.verse || !r || !a || a.muted || r.mix || r.until) return;
+  const t = a.currentTime - r.base;
+  const vs = r.timing.verses;
+  const i = vs.findIndex((x) => t >= x.s && t < x.e);
+  if (i < 0) return;
+  const v = vs[i];
+  if (r.said === v.v) return;
+  const first = r.said === undefined;
+  r.said = v.v;
+  if (first || (i === 0 && sayEach.chapter)) return; // the verse pressed play on, or a chapter just announced
+  const base = r.base;
+  announce(`Verse ${v.v}`, () => {
+    if (rec === r && audio) audio.currentTime = base + v.s;
+  });
+}
+/**
+ * Say something over a recording: "Exodus 1" when it moves on to a new chapter, "Verse 12" at a new verse. Nothing
+ * is paused or restarted (a phone with the screen off may not allow starting again): the recording carries on muted
+ * while the device voice speaks, then goes back to where it was, unmuted. If the voice never reports back, it
+ * carries on after 5 s.
+ */
+function announce(title: string, again: () => void) {
+  const a = audio;
+  if (!a || !speechSupported() || !title) return;
+  a.muted = true;
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    clearTimeout(t);
+    a.muted = false;
+    again();
+  };
+  const t = window.setTimeout(finish, 5000);
+  try {
+    const u = new SpeechSynthesisUtterance(title);
+    u.lang = "en";
+    u.rate = 1;
+    u.onend = finish;
+    u.onerror = finish;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  } catch {
+    finish();
+  }
+}
+
 /** On every timeupdate (it fires with the screen off too): follow chapter changes, and add the next chapter early. */
 function streamCheck() {
+  sayVerse();
   const r = rec;
   const s = r?.stream;
   if (!audio || !r || !s) return;
@@ -622,9 +696,14 @@ function streamCheck() {
     r.base = seg.start;
     r.timing = seg.timing;
     r.lastVerse = null;
+    const from = state.chapterKey ?? "";
     set({ chapterKey: seg.key, verse: seg.timing.verses[0]?.v ?? null });
     mediaSession(seg.title, r.artist);
     r.onAdvance?.(seg.key);
+    const at = seg.start;
+    announce(chapterWords(from, seg.key, seg.title), () => {
+      if (audio && rec === r) audio.currentTime = at;
+    });
     // Free what was already heard (keep a few seconds for "previous verse").
     if (!s.sb.updating && seg.start > 10)
       try {
@@ -786,10 +865,14 @@ async function mixEnd() {
   if (next && next.seq.length) {
     freeTracks(m.tracks);
     r.mix = { seq: next.seq, i: 0, tracks: next.tracks, cur: null, timer: 0 };
+    const from = state.chapterKey ?? "";
     set({ chapterKey: next.chapterKey });
     mediaSession(next.title, r.artist);
     r.onAdvance?.(next.chapterKey);
     mixGo(0);
+    announce(chapterWords(from, next.chapterKey, next.title), () => {
+      if (rec === r && r.mix) mixGo(0);
+    });
     r.raf = requestAnimationFrame(tick);
     return;
   }
@@ -986,6 +1069,7 @@ function stopRecording() {
   rec = null;
   if (audio) {
     audio.ontimeupdate = null;
+    audio.muted = false; // (a chapter announcement may have been under way)
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
@@ -1049,7 +1133,7 @@ export async function playRecording(opts: {
   const start = opts.startVerse ? timing.verses.find((x) => x.v === opts.startVerse) ?? timing.verses.find((x) => parseInt(x.v, 10) >= parseInt(opts.startVerse!, 10)) : null;
   rec = { timing, until: opts.until, onDone: opts.onDone, raf: 0, lastVerse: null, getNext: opts.getNext, onAdvance: opts.onAdvance, title: opts.title, artist: opts.artist, base: 0, ...(stream ? { stream } : {}) };
   const a = audio;
-  a.ontimeupdate = stream ? streamCheck : null;
+  a.ontimeupdate = stream ? streamCheck : sayVerse;
   a.onended = async () => {
     const r = rec;
     if (!r) return;
@@ -1071,10 +1155,14 @@ export async function playRecording(opts: {
       r.lastVerse = null;
       a.src = next.url;
       a.playbackRate = opts.rate;
+      const from = state.chapterKey ?? "";
       set({ chapterKey: next.chapterKey, verse: next.timing.verses[0]?.v ?? null });
       mediaSession(next.title, r.artist);
       r.onAdvance?.(next.chapterKey);
       await a.play().catch(() => {});
+      announce(chapterWords(from, next.chapterKey, next.title), () => {
+        if (rec === r) a.currentTime = 0;
+      });
       r.raf = requestAnimationFrame(tick);
       return;
     }

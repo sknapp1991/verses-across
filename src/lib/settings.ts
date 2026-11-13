@@ -63,6 +63,8 @@ export type Settings = {
   ttsKeepAwake: boolean;
   /** Keep going from a book's last chapter into the next book (with ttsContinue). */
   ttsContinueBook: boolean;
+  /** Read aloud, "Say each…" (ticket c1ec4dc5): say the verse number, the chapter ("Exodus 1") and/or the book as it begins. */
+  ttsSay: { verse: boolean; chapter: boolean; book: boolean };
   /** Listen to several versions: each verse in turn ("verse") or each whole chapter in turn ("chapter"). */
   ttsMix: string[];
   ttsMixOrder: "verse" | "chapter";
@@ -154,6 +156,7 @@ const DEFAULTS: Settings = {
   ttsContinue: true,
   ttsKeepAwake: true,
   ttsContinueBook: true,
+  ttsSay: { verse: false, chapter: false, book: false },
   ttsMix: [],
   ttsMixOrder: "verse",
   ttsVerseStop: false,
@@ -210,6 +213,10 @@ function read(): Settings {
       ttsContinue: p.ttsContinue !== false,
       ttsKeepAwake: p.ttsKeepAwake !== false,
       ttsContinueBook: (p as { ttsContinueBook?: unknown }).ttsContinueBook !== false,
+      ttsSay: (() => {
+        const x = (p as { ttsSay?: Partial<Record<"verse" | "chapter" | "book", unknown>> }).ttsSay ?? {};
+        return { verse: x.verse === true, chapter: x.chapter === true, book: x.book === true };
+      })(),
       ttsMix: Array.isArray(p.ttsMix) ? p.ttsMix.filter((x): x is string => typeof x === "string") : [],
       ttsMixOrder: p.ttsMixOrder === "chapter" ? "chapter" : "verse",
       ttsVerseStop: p.ttsVerseStop === true,

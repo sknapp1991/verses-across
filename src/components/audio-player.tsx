@@ -21,6 +21,7 @@ import {
   seekRecording,
   setRecordingRate,
   setStopEachVerse,
+  setSayEach,
   onWord,
   pause,
   pickVoice,
@@ -112,6 +113,7 @@ export function useReadAlong({
 
   const voice = useMemo(() => pickVoice(allVoices, lang, settings.ttsVoices[lang]), [allVoices, lang, settings.ttsVoices]);
   useEffect(() => setStopEachVerse(settings.ttsVerseStop), [settings.ttsVerseStop]);
+  useEffect(() => setSayEach(settings.ttsSay), [settings.ttsSay]);
 
   // Several versions in turn (e.g. WEB then RVR): every verse in each chosen version, or each whole
   // chapter in turn. Uses the recordings when every version has one (screen-off), else device voices.
@@ -360,7 +362,13 @@ export function useReadAlong({
   useEffect(() => {
     if (speech.engine === "recorded") return;
     if (!speech.continuePending || speech.chapterKey === chapterKey || !items.length || !version) return;
-    play({ items, start: 0, lang, voice, rate: getSettings().ttsRate, version: version.id, chapterKey, onDone, keepAwake: keepAwake() });
+    // "Say each chapter / book": the device voice reads "Exodus 1" (or "Exodus") first (ticket c1ec4dc5).
+    const say = getSettings().ttsSay;
+    const title = chapterTitle(findBook(bookRef.work, bookRef.book), bookRef.chapter);
+    const fromBook = (speech.chapterKey ?? "").split("/").slice(0, 2).join("/");
+    const words = say.chapter ? title : say.book && fromBook !== `${bookRef.work}/${bookRef.book}` ? title.replace(/\s+\d+$/, "") : "";
+    const list = words && items.length ? [{ ...items[0], text: `${words}.` }, ...items] : items;
+    play({ items: list, start: 0, lang, voice, rate: getSettings().ttsRate, version: version.id, chapterKey, onDone, keepAwake: keepAwake() });
     // onDone is recreated each render; the latest one is captured here on purpose
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speech.continuePending, speech.chapterKey, speech.engine, chapterKey, items, version, lang, voice]);
@@ -1184,6 +1192,7 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
             >
               ↪ Next book
             </Pill>
+            <SayEachMenu />
             {touch && (
               <Pill
                 on={settings.ttsKeepAwake}
@@ -1363,6 +1372,33 @@ function Pill({ on, disabled, onClick, title, children }: { on: boolean; disable
     >
       {children}
     </button>
+  );
+}
+
+/**
+ * "Say each…": one button that opens three choices — say the verse number, the chapter ("Exodus 1") and/or the book
+ * as each begins. Handy with the screen off (ticket c1ec4dc5).
+ */
+function SayEachMenu() {
+  const say = useSettings().ttsSay;
+  const [open, setOpen] = useState(false);
+  const chosen = (["verse", "chapter", "book"] as const).filter((k) => say[k]);
+  return (
+    <span className="relative inline-flex">
+      <Pill on={chosen.length > 0} onClick={() => setOpen((o) => !o)} title="Say the verse number, the chapter and/or the book as each begins (handy with the screen off)">
+        🔊 Say each{chosen.length ? `: ${chosen.join(", ")}` : "…"}
+      </Pill>
+      {open && (
+        <span role="group" aria-label="Say each" className="absolute bottom-full left-0 z-20 mb-1 flex gap-1 rounded-xl border border-line bg-panel p-1.5 shadow-lg">
+          {(["verse", "chapter", "book"] as const).map((k) => (
+            <label key={k} className="flex min-h-9 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs hover:bg-raised">
+              <input type="checkbox" checked={say[k]} onChange={() => updateSettings({ ttsSay: { ...say, [k]: !say[k] } })} className="h-4 w-4 accent-[var(--accent)]" />
+              {k === "verse" ? "Verse" : k === "chapter" ? "Chapter" : "Book"}
+            </label>
+          ))}
+        </span>
+      )}
+    </span>
   );
 }
 
