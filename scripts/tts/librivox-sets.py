@@ -44,11 +44,11 @@ SETS = {
     # without "books", a project may hold any book of the work (found by matching the words).
     "higginson": {"title": r"^Enchiridion \(Higginson", "query": "Enchiridion (Higginson", "lang": "en", "work": "enchiridion"},
     "parker": {"title": r"^Australian Legendary", "query": "Australian Legendary", "lang": "en", "work": "australian"},
-    "legge-an": {"title": r"^Analects of Confucius$", "query": "Analects of Confucius", "lang": "en", "work": "analects"},
+    "jennings": {"title": r"^Analects of Confucius$", "query": "Analects of Confucius", "lang": "en", "work": "analects"},  # Jennings, not Legge
     "johnston": {"title": r"^Yoga Sutras of Patanjali: The Book of the Spiritual Man", "query": "Yoga Sutras of Patanjali", "lang": "en", "work": "yoga-sutras"},
     "charles": {"title": r"^Book of Enoch$", "query": "Book of Enoch", "lang": "en", "work": "enoch"},
     "mclaughlin": {"title": r"^Myths and Legends of the Sioux", "query": "Myths and Legends of the Sioux", "lang": "en", "work": "sioux"},
-    "long": {"title": r"^Meditations of the Emperor Marcus Aurelius", "query": "Meditations of the Emperor", "lang": "en", "work": "meditations"},
+    "chrystal": {"title": r"^Meditations of the Emperor Marcus Aurelius", "query": "Meditations of the Emperor", "lang": "en", "work": "meditations"},  # Chrystal, not Long
     "chamberlain": {"title": r"^Kojiki", "query": "Kojiki", "lang": "en", "work": "kojiki"},
     "leonard": {"title": r"^On the Nature of Things \(Leonard", "query": "On the Nature of Things", "lang": "en", "work": "lucretius"},
     "pusey": {"title": r"^Confessions \(Pusey", "query": "Confessions (Pusey", "lang": "en", "work": "confessions"},

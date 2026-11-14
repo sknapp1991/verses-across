@@ -279,6 +279,64 @@ function sections(text: string, head: RegExp) {
 /** Footnote lines ("    [A] Xenophon…") and markers ("father,[B]") out. */
 const noNotes = (s: string) => s.replace(/^[ \t]+\[[A-Z0-9]+\][^\n]*(\n[ \t]+[^\n]+)*/gm, "").replace(/\[[A-Z]\]/g, "");
 
+/**
+ * Analects — William Jennings (1895), Gutenberg #10056 ("Chinese Literature"; the Analects part). Read on LibriVox,
+ * so it carries a human voice. Jennings doesn't number the sayings: each paragraph is a verse here, numbered in order
+ * (they don't line up with Legge's chapter numbers).
+ */
+async function analectsJennings() {
+  const txt = gutenbergBody(await cached("analects", "pg10056.txt", GUT(10056)));
+  const at = txt.search(/^BOOK I\s*$/m);
+  const rest = txt.slice(at);
+  const books = sections(rest.slice(0, rest.search(/^THE SAYINGS OF MEN[CI]+US\s*$/m)), /^BOOK ([IVXL]+)\s*$/m);
+  await resetVersion("analects", "jennings");
+  let total = 0;
+  for (const b of books) {
+    const body = b.body.replace(/\[Footnote[^\]]*\]/g, "").replace(/\[\d+\]/g, "").replace(/_/g, "");
+    const list = paras(body);
+    const title = list.shift()?.replace(/:?--$/, ""); // "On Learning--Miscellaneous Sayings"
+    // A paragraph per verse (Jennings runs many sayings together inside one quotation, so quote marks can't
+    // separate them); a lead-in ("A saying of the Scholar Yu:--") joins the paragraph after it.
+    const sayings: string[] = [];
+    for (const t of list) {
+      const prev = sayings[sayings.length - 1];
+      if (prev !== undefined && /:--$/.test(prev)) sayings[sayings.length - 1] = `${prev} ${t}`;
+      else sayings.push(t);
+    }
+    const verses = sayings.map((t, i) => ({ v: String(i + 1), t }));
+    await writeChapter("analects", "jennings", "analects", roman(b.head), verses, undefined, title);
+    total += verses.length;
+  }
+  report("analects jennings", books.length, total);
+}
+
+/** Meditations — George W. Chrystal (1902), Gutenberg #55317, read on LibriVox. Numbered like Long's. */
+async function meditationsChrystal() {
+  const txt = gutenbergBody(await cached("secular", "pg55317.txt", GUT(55317)));
+  const books = sections(txt, /^\s+BOOK ([IVX]+)\.\s*$/m);
+  await resetVersion("meditations", "chrystal");
+  let total = 0;
+  for (const b of books) {
+    const body = b.body.replace(/^\s+END OF THE [A-Z]+ BOOK\.\s*$/m, "").replace(/\s*THE END\.\s*$/, "").replace(/_/g, "");
+    const verses: Verse[] = [];
+    for (const p of paras(body)) {
+      const m = /^(\d+)\.\s+([\s\S]*)$/.exec(p);
+      if (m) verses.push({ v: m[1], t: m[2] });
+      else if (verses.length) verses[verses.length - 1].t += ` ${p}`;
+    }
+    // Book I runs sections 1-4 on in one paragraph ("... anger. 2. In the famous memory ..."): split at the next number.
+    for (let i = 0; i < verses.length; i++) {
+      const next = String(Number(verses[i].v) + 1);
+      if (verses[i + 1]?.v === next) continue;
+      const m = new RegExp(`^([\\s\\S]*?[.;:!?])\\s+${next}\\.\\s+([\\s\\S]*)$`).exec(verses[i].t);
+      if (m) verses.splice(i, 1, { v: verses[i].v, t: m[1] }, { v: next, t: m[2] });
+    }
+    await writeChapter("meditations", "chrystal", "med", roman(b.head), sequential(verses));
+    total += verses.length;
+  }
+  report("meditations chrystal", books.length, total);
+}
+
 /** Lucretius, On the Nature of Things — William Ellery Leonard (1916), Gutenberg #785. Books I–VI. */
 async function lucretius() {
   const txt = gutenbergBody(await cached("secular", "pg785.txt", GUT(785)));
@@ -781,12 +839,14 @@ const ALL: Record<string, () => Promise<unknown>> = {
   jaina,
   ttc,
   analects,
+  analectsJennings,
   australian,
   hidden,
   aqdas,
   ggs,
   lucretius,
   meditations,
+  meditationsChrystal,
   enchiridion,
   hume,
   paine,

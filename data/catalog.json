@@ -565,6 +565,23 @@
       "versification": "analects"
     },
     {
+      "id": "jennings",
+      "work": "analects",
+      "abbr": "Jennings",
+      "name": "The Analects (William Jennings)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1895,
+      "translator": "William Jennings",
+      "license": "Public Domain",
+      "attribution": "Translated by William Jennings (1895), public domain; Project Gutenberg #10056.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/10056",
+      "licensed": false,
+      "versification": "analects",
+      "licenseNote": "Jennings doesn't number the sayings: his paragraphs are numbered here, so they don't line up with Legge's chapters."
+    },
+    {
       "id": "analects-zh",
       "work": "analects",
       "abbr": "Chinese",
@@ -696,6 +713,22 @@
       "license": "Public Domain",
       "attribution": "Marcus Aurelius, tr. George Long (1862), public domain; Project Gutenberg #15877.",
       "sourceUrl": "https://www.gutenberg.org/ebooks/15877",
+      "licensed": false,
+      "versification": "meditations"
+    },
+    {
+      "id": "chrystal",
+      "work": "meditations",
+      "abbr": "Chrystal",
+      "name": "Meditations (George W. Chrystal)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1902,
+      "translator": "George W. Chrystal (a new rendering based on the Foulis translation of 1742, by Hutcheson and Moor)",
+      "license": "Public Domain",
+      "attribution": "Marcus Aurelius, George W. Chrystal's rendering (1902) based on the Foulis translation of 1742 (Francis Hutcheson and James Moor), public domain; Project Gutenberg #55317.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/55317",
       "licensed": false,
       "versification": "meditations"
     },
