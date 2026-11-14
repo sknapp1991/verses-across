@@ -1,4 +1,7 @@
 {
   "packageName": "com.versesacross.app",
-  "sha256CertFingerprints": ["A5:7A:67:C5:A9:9D:24:6A:73:41:AF:D1:7A:0D:FA:1F:3D:07:2B:1A:CD:71:9B:80:C9:B2:36:11:53:67:6D:30"]
+  "sha256CertFingerprints": [
+    "07:D1:5D:E6:B3:DA:86:85:EF:6B:B8:FE:91:EF:3D:0A:61:63:6F:C5:50:93:5E:2F:B2:AE:BB:94:84:35:E4:5E",
+    "A5:7A:67:C5:A9:9D:24:6A:73:41:AF:D1:7A:0D:FA:1F:3D:07:2B:1A:CD:71:9B:80:C9:B2:36:11:53:67:6D:30"
+  ]
 }
