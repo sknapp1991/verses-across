@@ -18,6 +18,7 @@ the KJV) to time each verse. A book read twice keeps the first reading. Safe to 
 import argparse
 import difflib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -38,7 +39,31 @@ SETS = {
     "luther1912": {"title": r"^Bibel \(LB 1912\)", "query": "Bibel (LB 1912)", "lang": "de"},
     "hebrew": {"title": r"^Bible \(Hebrew\)", "query": "Bible (Hebrew)", "lang": "he"},
     "greek": {"title": r"^Bible \((?:PE|STE)\)", "query": ["Bible (PE)", "Bible (STE)"], "lang": "el"},
+    # Beyond the Bible (Skylar, Nov 14: other scriptures first, fastest first). Each reads the same edition the
+    # site shows (checked against LibriVox's source text). "work" = our work; "version" = our version id;
+    # without "books", a project may hold any book of the work (found by matching the words).
+    "higginson": {"title": r"^Enchiridion \(Higginson", "query": "Enchiridion (Higginson", "lang": "en", "work": "enchiridion"},
+    "parker": {"title": r"^Australian Legendary", "query": "Australian Legendary", "lang": "en", "work": "australian"},
+    "legge-an": {"title": r"^Analects of Confucius$", "query": "Analects of Confucius", "lang": "en", "work": "analects"},
+    "johnston": {"title": r"^Yoga Sutras of Patanjali: The Book of the Spiritual Man", "query": "Yoga Sutras of Patanjali", "lang": "en", "work": "yoga-sutras"},
+    "charles": {"title": r"^Book of Enoch$", "query": "Book of Enoch", "lang": "en", "work": "enoch"},
+    "mclaughlin": {"title": r"^Myths and Legends of the Sioux", "query": "Myths and Legends of the Sioux", "lang": "en", "work": "sioux"},
+    "long": {"title": r"^Meditations of the Emperor Marcus Aurelius", "query": "Meditations of the Emperor", "lang": "en", "work": "meditations"},
+    "chamberlain": {"title": r"^Kojiki", "query": "Kojiki", "lang": "en", "work": "kojiki"},
+    "leonard": {"title": r"^On the Nature of Things \(Leonard", "query": "On the Nature of Things", "lang": "en", "work": "lucretius"},
+    "pusey": {"title": r"^Confessions \(Pusey", "query": "Confessions (Pusey", "lang": "en", "work": "confessions"},
+    "griffith-ry": {"title": r"^Ramayan, Book \d", "query": "Ramayan, Book", "lang": "en", "work": "ramayana", "book_re": r"Book (\d+)", "book_fmt": "ry{}"},
+    "kjv-apoc": {
+        "title": r"^Bible \(KJV\) Apocrypha/Deuterocanon:",
+        "query": "Bible (KJV) Apocrypha",
+        "lang": "en",
+        "work": "bible",
+        "version": "kjv",
+        "books": ["tob", "wis", "1ma", "2ma", "sus", "bel"],
+    },
 }
+WORK = "bible"  # set per set in main(): the work whose texts are matched
+VERSION = ""  # …and the version (our id)
 
 # Book order (Old Testament 1–39, New Testament 1–27), as LibriVox numbers its Bible projects.
 OT, NT = [], []
@@ -49,6 +74,17 @@ for rel in CATALOG["religions"]:
         if col["id"] == "nt":
             NT = [it["id"] for it in col["items"]]
 CHAPTERS = {it["id"]: it["chapters"] for rel in CATALOG["religions"] for col in rel["collections"] if col["id"] in ("ot", "nt") for it in col["items"]}
+# Every work's books and chapter counts: {"work": {"book": chapters}} (in shelf order)
+WORK_BOOKS: dict = {}
+for rel in CATALOG["religions"]:
+    for col in rel["collections"]:
+        for it in col["items"]:
+            if it.get("work") and it.get("chapters"):
+                WORK_BOOKS.setdefault(it["work"], {}).setdefault(it["id"], it["chapters"])
+
+
+def chapters_of(book: str) -> int:
+    return WORK_BOOKS.get(WORK, {}).get(book, CHAPTERS.get(book, 0) if WORK == "bible" else 0)
 NUMS = re.compile(r"\)\s*(NT\s*|AT\s*)?(\d+)(?:\s*-\s*(\d+))?\s*:")
 
 
@@ -86,8 +122,22 @@ def projects(name: str):
     for b in sorted(found.values(), key=lambda x: int(x["id"])):
         if re.search(r"version 2", b["title"], re.I):
             continue
-        m = NUMS.search(b["title"])
         ia = re.search(r"archive\.org/(?:compress|download)/([^/]+)", b.get("url_zip_file") or "")
+        if s.get("work", "bible") != "bible" or s.get("books"):
+            # Not numbered like LibriVox's Bible projects: the set's books (or the work's), or "Book N" in the title.
+            if not ia:
+                print("?? skipped", b["title"])
+                continue
+            bm = re.search(s["book_re"], b["title"]) if s.get("book_re") else None
+            books = [s["book_fmt"].format(bm.group(1))] if bm else (s.get("books") or list(WORK_BOOKS.get(s.get("work", "bible"), {})))
+            books = [x for x in books if x not in taken] if bm else books
+            if not books:
+                continue
+            if bm:
+                taken.update(books)
+            out.append({"id": b["id"], "title": b["title"], "ia": ia.group(1), "books": books})
+            continue
+        m = NUMS.search(b["title"])
         if not m or not ia:
             print("?? skipped", b["title"])
             continue
@@ -151,7 +201,7 @@ def ref_words(version: str, chapters):
     """Words of these (book, chapter)s in our text, each tagged (book, chapter, verse)."""
     out = []
     for book, ch in chapters:
-        p = ROOT / "data" / "texts" / "bible" / version / book / f"{ch}.json"
+        p = ROOT / "data" / "texts" / WORK / version / book / f"{ch}.json"
         if not p.exists():
             continue
         for x in json.loads(p.read_text(encoding="utf-8"))["verses"]:
@@ -192,7 +242,7 @@ def which_chapters(version: str, books, words):
     grams = {tuple(hyp[i : i + 3]) for i in range(len(hyp) - 2)}
     order, hits = [], {}
     for b in books:
-        for c in range(1, CHAPTERS.get(b, 0) + 1):
+        for c in range(1, chapters_of(b) + 1):
             ws = [w for w, *_ in ref_words(version, [(b, c)])]
             g = [tuple(ws[i : i + 3]) for i in range(len(ws) - 2)]
             if not g:
@@ -262,18 +312,94 @@ def align(version: str, chapters, words):
     return [(k, t) for (k, _), t in zip(order, times)], matched, last_end
 
 
+def cut(name, version, out, mp3, chs, words, label):
+    """Cut the chapters chs out of mp3 (with their verse timings); returns a log line."""
+    verses, matched, last_end = align(version, chs, words)
+    total = min(duration(mp3), last_end + 1.2)
+    ch_start = {}
+    for (b, ch, v), t in verses:
+        ch_start.setdefault((b, ch), max(0.0, t - 2.5))  # "Capítulo 3" is heard just before verse 1
+    for i, key in enumerate(chs):
+        if key not in ch_start:
+            continue
+        b, c = key
+        s = ch_start[key]
+        e = ch_start.get(chs[i + 1], total) if i + 1 < len(chs) else total
+        if e - s < 5:  # out of order or too short to be a chapter: leave it for another reading
+            print(f"  skipped {b} {c}: {s:.1f}–{e:.1f} s", flush=True)
+            continue
+        vs = [(v, t) for (bb, ch, v), t in verses if (bb, ch) == key]
+        timing = [{"v": v, "s": round(max(0.0, t - s), 3), "e": round(max(0.0, (vs[j + 1][1] if j + 1 < len(vs) else e) - s - 0.1), 3)} for j, (v, t) in enumerate(vs)]
+        (out / b).mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{s:.3f}", "-to", f"{e:.3f}", "-i", str(mp3), "-c:a", "libmp3lame", "-b:a", "64k", "-ac", "1", str(out / b / f"{c}.mp3")],
+            check=True,
+        )
+        (out / b / f"{c}.json").write_text(
+            json.dumps({"version": version, "voice": "librivox", "book": b, "chapter": c, "duration": round(e - s, 3), "verses": timing}), encoding="utf-8"
+        )
+    line = f"{label}: {chs[0][0]} {chs[0][1]}–{chs[-1][0]} {chs[-1][1]}, {matched:.0%} of words matched"
+    return line
+
+
 def align_set(name: str, limit: int):
-    global LANG
+    global LANG, WORK
     LANG = SETS[name]["lang"]
+    WORK = SETS[name].get("work", "bible")
+    version = SETS[name].get("version", name)
     src = CACHE / f"librivox-{name}"
-    out = CACHE / name / "librivox"
+    out = CACHE / version / "librivox"
     items = json.loads((src / "items.json").read_text(encoding="utf-8"))
     log = []
     done = 0
     for it in items:
         # One file per chapter (the file count is the book's chapter count): file N is chapter N. Matching by
         # words can't tell near-identical chapters apart (Numbers 1-3's census, Numbers 28-29's offerings).
-        one_each = len(it["books"]) == 1 and len(it["files"]) == CHAPTERS.get(it["books"][0], -1)
+        one_each = len(it["books"]) == 1 and len(it["files"]) == (chapters_of(it["books"][0]) or -1)
+        if WORK != "bible":
+            # Our chapters can be longer than a file (the Enchiridion is one chapter in 8 files) or shorter: join
+            # the project's files into one recording and its transcripts into one, then match the whole of it.
+            mp3s = [src / it["ia"] / f for f in it["files"]]
+            joined = src / it["ia"] / "_joined.mp3"
+            mark = out / ".done" / (it["ia"] + ".txt")
+            if mark.exists() or not all(m.exists() for m in mp3s):
+                continue
+            per = [transcribe(m, SETS[name]["lang"]) for m in mp3s]
+            chs = which_chapters(version, it["books"], [w for ws in per for w in ws])
+            if not chs:
+                line = f"{it['title']}: no chapter found"
+            else:
+                # Keep only the book in each file: from the first word that matches our text to the last (runs of 3+
+                # matching words), so "This is a LibriVox recording…" and "End of section…" are left out (Skylar, Nov 14).
+                ref = [r[0] for r in ref_words(version, chs)]
+                hyp = [norm(w) for ws in per for w, _, _ in ws]
+                hit = set()
+                for blk in difflib.SequenceMatcher(a=ref, b=hyp, autojunk=False).get_matching_blocks():
+                    if blk.size >= 3:
+                        hit.update(range(blk.b, blk.b + blk.size))
+                trim = src / it["ia"] / "_trim"
+                trim.mkdir(exist_ok=True)
+                words, parts, off, base = [], [], 0.0, 0
+                for k, (m, ws) in enumerate(zip(mp3s, per)):
+                    idx = [i for i in range(len(ws)) if base + i in hit]
+                    base += len(ws)
+                    if not idx:
+                        continue  # nothing of the book in this file (an introduction, or the credits)
+                    a = max(0.0, ws[idx[0]][1] - 0.6)
+                    z = min(duration(m), ws[idx[-1]][2] + 0.8)
+                    part = trim / f"{k:03d}.mp3"
+                    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{a:.3f}", "-to", f"{z:.3f}", "-i", str(m), "-c:a", "libmp3lame", "-b:a", "64k", "-ac", "1", str(part)], check=True)
+                    words += [(w, s0 - a + off, e0 - a + off) for w, s0, e0 in ws if a <= s0 and e0 <= z]
+                    off += duration(part)
+                    parts.append(part)
+                lst = trim / "list.txt"
+                lst.write_text("".join(f"file '{p.name}'\n" for p in parts), encoding="utf-8")
+                subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)], check=True)
+                line = cut(name, version, out, joined, chs, words, it["title"])
+            print(line, flush=True)
+            mark.parent.mkdir(parents=True, exist_ok=True)
+            mark.write_text(line, encoding="utf-8")
+            continue
         for n_file, f in enumerate(it["files"]):
             mp3 = src / it["ia"] / f
             if not mp3.exists():
@@ -283,37 +409,13 @@ def align_set(name: str, limit: int):
             if mark.exists():
                 continue
             words = transcribe(mp3, SETS[name]["lang"])
-            chs = [(it["books"][0], n_file + 1)] if one_each else which_chapters(name, it["books"], words)
+            chs = [(it["books"][0], n_file + 1)] if one_each else which_chapters(version, it["books"], words)
             if not chs:
                 print(f"{f}: no chapter found (intro or other), skipped", flush=True)
                 mark.parent.mkdir(parents=True, exist_ok=True)
                 mark.write_text("none", encoding="utf-8")
                 continue
-            verses, matched, last_end = align(name, chs, words)
-            total = min(duration(mp3), last_end + 1.2)
-            ch_start = {}
-            for (b, ch, v), t in verses:
-                ch_start.setdefault((b, ch), max(0.0, t - 2.5))  # "Capítulo 3" is heard just before verse 1
-            for i, key in enumerate(chs):
-                if key not in ch_start:
-                    continue
-                b, c = key
-                s = ch_start[key]
-                e = ch_start.get(chs[i + 1], total) if i + 1 < len(chs) else total
-                if e - s < 5:  # out of order or too short to be a chapter: leave it for another reading
-                    print(f"  skipped {b} {c}: {s:.1f}–{e:.1f} s", flush=True)
-                    continue
-                vs = [(v, t) for (bb, ch, v), t in verses if (bb, ch) == key]
-                timing = [{"v": v, "s": round(max(0.0, t - s), 3), "e": round(max(0.0, (vs[j + 1][1] if j + 1 < len(vs) else e) - s - 0.1), 3)} for j, (v, t) in enumerate(vs)]
-                (out / b).mkdir(parents=True, exist_ok=True)
-                subprocess.run(
-                    ["ffmpeg", "-loglevel", "error", "-y", "-ss", f"{s:.3f}", "-to", f"{e:.3f}", "-i", str(mp3), "-c:a", "libmp3lame", "-b:a", "64k", "-ac", "1", str(out / b / f"{c}.mp3")],
-                    check=True,
-                )
-                (out / b / f"{c}.json").write_text(
-                    json.dumps({"version": name, "voice": "librivox", "book": b, "chapter": c, "duration": round(e - s, 3), "verses": timing}), encoding="utf-8"
-                )
-            line = f"{f}: {chs[0][0]} {chs[0][1]}–{chs[-1][0]} {chs[-1][1]}, {matched:.0%} of words matched"
+            line = cut(name, version, out, mp3, chs, words, f)
             print(line, flush=True)
             log.append(line)
             mark.parent.mkdir(parents=True, exist_ok=True)
@@ -329,6 +431,10 @@ def main():
     ap.add_argument("--set", default="")
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
+    if os.name == "nt":  # below-normal priority (ffmpeg inherits it): the paper-trading bots share this PC
+        import ctypes
+
+        ctypes.windll.kernel32.SetPriorityClass(ctypes.windll.kernel32.GetCurrentProcess(), 0x4000)
     for name in [args.set] if args.set else list(SETS):
         if args.cmd == "fetch":
             fetch(name)
