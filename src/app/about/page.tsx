@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { FeedbackButton } from "@/components/feedback-dialog";
 import { ORIGINS, SITE_NAME, SITE_SIDE } from "@/lib/site";
-import { BackLink, PageChrome } from "@/components/page-chrome";
+import { BackLink, Fold, PageChrome } from "@/components/page-chrome";
 
 const LIB = SITE_SIDE === "library";
 
@@ -21,10 +21,9 @@ const SOCIALS = [
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section id={title.toLowerCase().replace(/[^a-z]+/g, "-")} className="scroll-mt-4 space-y-3">
-      <h2 className="font-serif text-xl font-semibold text-ink">{title}</h2>
+    <Fold id={title.toLowerCase().replace(/[^a-z]+/g, "-")} title={title} small>
       {children}
-    </section>
+    </Fold>
   );
 }
 

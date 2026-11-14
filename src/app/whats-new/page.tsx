@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { FeedbackButton } from "@/components/feedback-dialog";
-import { BackLink, PageChrome } from "@/components/page-chrome";
+import { BackLink, Fold, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "What's new",
@@ -73,14 +73,13 @@ export default function WhatsNewPage() {
         </header>
 
         {WEEKS.map((w) => (
-          <section key={w.week} className="space-y-3">
-            <h2 className="font-serif text-xl font-semibold text-ink">{w.week}</h2>
+          <Fold key={w.week} id={w.week.toLowerCase().replace(/[^a-z0-9]+/g, "-")} title={w.week} small>
             <ul className="list-disc space-y-1.5 pl-5">
               {w.items.map((x) => (
                 <li key={x}>{x}</li>
               ))}
             </ul>
-          </section>
+          </Fold>
         ))}
 
         <p className="text-sm">

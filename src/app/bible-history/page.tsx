@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { permanentRedirect } from "next/navigation";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
-import { BackLink, PageChrome } from "@/components/page-chrome";
+import { BackLink, Fold, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "How the Bible came to be",
@@ -349,10 +349,7 @@ export default function BibleHistoryPage() {
           </nav>
         </header>
 
-        <section id="timeline" aria-labelledby="timeline-h" className="scroll-mt-4 space-y-2">
-          <h2 id="timeline-h" className="font-serif text-xl font-semibold text-ink">
-            Timeline
-          </h2>
+        <Fold id="timeline" title="Timeline" small>
           <ol className="divide-y divide-line rounded-xl border border-line bg-panel">
             {TIMELINE.map(([when, what]) => (
               <li key={when + what} className="grid grid-cols-[7.5rem_1fr] gap-3 px-3 py-2 text-sm sm:grid-cols-[9rem_1fr]">
@@ -361,15 +358,12 @@ export default function BibleHistoryPage() {
               </li>
             ))}
           </ol>
-        </section>
+        </Fold>
 
         {SECTIONS.map((s) => (
-          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-4 space-y-3">
-            <h2 id={`${s.id}-h`} className="font-serif text-xl font-semibold text-ink">
-              {s.title}
-            </h2>
+          <Fold key={s.id} id={s.id} title={s.title} small>
             {s.body}
-          </section>
+          </Fold>
         ))}
 
         <footer className="border-t border-line pt-4 text-sm">

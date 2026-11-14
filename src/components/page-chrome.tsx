@@ -137,7 +137,7 @@ export function PageChrome({ fallback, top = true }: { fallback: string; top?: b
 }
 
 /** A section that folds away: its heading holds the fold button (ticket ff8c9d5b). Starts open. */
-export function Fold({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+export function Fold({ id, title, small = false, children }: { id: string; title: string; small?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -147,8 +147,8 @@ export function Fold({ id, title, children }: { id: string; title: string; child
     return () => el?.removeEventListener("va-unfold", unfold);
   }, []);
   return (
-    <section ref={ref} id={id} data-fold data-open={open ? "1" : "0"} className="scroll-mt-4 space-y-4">
-      <h2 className="font-serif text-2xl font-semibold text-ink">
+    <section ref={ref} id={id} data-fold data-open={open ? "1" : "0"} className={`scroll-mt-4 ${small ? "space-y-3" : "space-y-4"}`}>
+      <h2 className={`font-serif font-semibold text-ink ${small ? "text-xl" : "text-2xl"}`}>
         <button type="button" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 text-left">
           <span aria-hidden className={`text-base text-accent transition-transform ${open ? "rotate-90" : ""}`}>
             ▸
@@ -156,7 +156,7 @@ export function Fold({ id, title, children }: { id: string; title: string; child
           {title}
         </button>
       </h2>
-      <div id={`${id}-body`} hidden={!open} className="space-y-4">
+      <div id={`${id}-body`} hidden={!open} className={small ? "space-y-3" : "space-y-4"}>
         {children}
       </div>
     </section>
