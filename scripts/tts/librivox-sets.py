@@ -271,7 +271,10 @@ def align_set(name: str, limit: int):
     log = []
     done = 0
     for it in items:
-        for f in it["files"]:
+        # One file per chapter (the file count is the book's chapter count): file N is chapter N. Matching by
+        # words can't tell near-identical chapters apart (Numbers 1-3's census, Numbers 28-29's offerings).
+        one_each = len(it["books"]) == 1 and len(it["files"]) == CHAPTERS.get(it["books"][0], -1)
+        for n_file, f in enumerate(it["files"]):
             mp3 = src / it["ia"] / f
             if not mp3.exists():
                 print("missing", f)
@@ -280,7 +283,7 @@ def align_set(name: str, limit: int):
             if mark.exists():
                 continue
             words = transcribe(mp3, SETS[name]["lang"])
-            chs = which_chapters(name, it["books"], words)
+            chs = [(it["books"][0], n_file + 1)] if one_each else which_chapters(name, it["books"], words)
             if not chs:
                 print(f"{f}: no chapter found (intro or other), skipped", flush=True)
                 mark.parent.mkdir(parents=True, exist_ok=True)
