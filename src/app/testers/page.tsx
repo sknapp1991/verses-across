@@ -3,6 +3,7 @@ import Link from "next/link";
 import { permanentRedirect } from "next/navigation";
 import { TestersChat } from "@/components/testers-chat";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
+import { BackLink, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "Test the Android app",
@@ -23,11 +24,12 @@ export default function TestersPage() {
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/testers`); // the Verses Across app's test
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/" />
       <div className="mx-auto max-w-2xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/" className={`text-sm ${a}`}>
+          <BackLink fallback="/" className={`text-sm ${a}`}>
             ← Back to reading
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">Help test the Android app</h1>
           <p>
             Verses Across is almost on Google Play. Before an app can go public, Google asks for at least 12 people to test it for 14

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { permanentRedirect } from "next/navigation";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
+import { BackLink, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "How the Bible came to be",
@@ -320,11 +321,12 @@ export default function BibleHistoryPage() {
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/bible-history`); // a Verses Across page
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/read" />
       <div className="mx-auto max-w-3xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/read" className={`text-sm ${a}`}>
+          <BackLink fallback="/read" className={`text-sm ${a}`}>
             ← Home
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">How the Bible came to be</h1>
           <p>
             How a library of scrolls written over a thousand years became the Bible, which books were accepted, debated or left

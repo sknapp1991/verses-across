@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FeedbackButton } from "@/components/feedback-dialog";
 import { ORIGINS, SITE_NAME, SITE_SIDE } from "@/lib/site";
+import { BackLink, PageChrome } from "@/components/page-chrome";
 
 const LIB = SITE_SIDE === "library";
 
@@ -33,11 +33,12 @@ const a = "underline underline-offset-2 hover:text-ink";
 export default function AboutPage() {
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/" />
       <div className="mx-auto max-w-2xl space-y-10 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/" className={`text-sm ${a}`}>
+          <BackLink fallback="/" className={`text-sm ${a}`}>
             ← Back to reading
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">About {SITE_NAME}&trade;</h1>
           {LIB ? (
             <p>

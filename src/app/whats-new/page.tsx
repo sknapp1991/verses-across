@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { FeedbackButton } from "@/components/feedback-dialog";
+import { BackLink, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "What's new",
@@ -55,11 +56,12 @@ const a = "underline underline-offset-2 hover:text-ink";
 export default function WhatsNewPage() {
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/" />
       <div className="mx-auto max-w-2xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/" className={`text-sm ${a}`}>
+          <BackLink fallback="/" className={`text-sm ${a}`}>
             ← Back to reading
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">What&rsquo;s new</h1>
           <p>
             What changed on {SITE_NAME}, week by week. For what&rsquo;s planned next, see{" "}

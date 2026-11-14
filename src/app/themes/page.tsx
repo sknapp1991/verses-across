@@ -4,6 +4,7 @@ import index from "../../../public/themes/index.json";
 import { ThemesList } from "@/components/themes-list";
 import type { ThemeSummary } from "@/lib/themes";
 import { SITE_SIDE } from "@/lib/site";
+import { BackLink, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "Themes",
@@ -25,11 +26,12 @@ const a = "underline underline-offset-2 hover:text-ink";
 export default function ThemesPage() {
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/" />
       <div className="mx-auto max-w-3xl space-y-6 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/" className={`text-sm ${a}`}>
+          <BackLink fallback="/" className={`text-sm ${a}`}>
             ← Back to reading
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">Themes</h1>
           <p className="text-xs text-faint">
             The passages are found by comparing meaning (the same method as the cross references), not chosen by hand, so

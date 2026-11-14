@@ -48,6 +48,7 @@ import { useSpeech } from "@/lib/speech";
 import { gestureLock, useChapterSwipe, useScrollIdle, type SwipeHint } from "./use-chapter-swipe";
 import { sideOfWork } from "@/lib/side";
 import { SimilarBooks } from "./similar-books";
+import { FROM_HOME } from "./page-chrome";
 
 type Col = { version: Version; entry: ChapterEntry; retry: () => void };
 
@@ -312,6 +313,12 @@ function NextChapterFlow({
 
 export function ReaderView() {
   const { ref, entry: book, versions, setVersions } = useReaderState();
+  // Reading again: an info page opened from here (or after here) goes back here, not to the home page (page-chrome.tsx).
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(FROM_HOME);
+    } catch {}
+  }, []);
   // Anonymous counts (lib/count.ts): a chapter read for 2 s, and a read-along that starts playing.
   const versionsKey = versions.join(",");
   useEffect(() => {

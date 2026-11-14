@@ -7,7 +7,8 @@
  * build on later.
  */
 import Link from "next/link";
-import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { FROM_HOME, HOME_RETURN } from "./page-chrome";
 import { DEFAULT_LOCATION, DEFAULT_VERSIONS, catalog, chapterTitle, findBook, readHref, type BookRef } from "@/lib/catalog";
 import { lastRead } from "@/lib/last-read";
 import { getSettings } from "@/lib/settings";
@@ -79,10 +80,37 @@ export function HomePage() {
       live = false;
     };
   }, [last]);
+  // Coming back from a page a tile opened lands where the home page was scrolled (ticket ff8c9d5b).
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    try {
+      // Only when coming back (Back on a page a tile opened); opened from the logo or a link, home starts at the top.
+      const y = sessionStorage.getItem(HOME_RETURN) ? Number(sessionStorage.getItem("va-home-scroll") ?? 0) : 0;
+      sessionStorage.removeItem(HOME_RETURN);
+      sessionStorage.removeItem(FROM_HOME);
+      if (y > 0) setTimeout(() => (el.scrollTop = y), 150); // after the tiles that load late
+    } catch {}
+    const save = () => {
+      try {
+        sessionStorage.setItem("va-home-scroll", String(Math.round(el.scrollTop)));
+      } catch {}
+    };
+    el.addEventListener("scroll", save, { passive: true });
+    return () => el.removeEventListener("scroll", save);
+  }, []);
+  const noteTile = (e: React.MouseEvent) => {
+    const link = (e.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null;
+    if (!link || link.target === "_blank") return;
+    try {
+      sessionStorage.setItem(FROM_HOME, new URL(link.href).pathname);
+    } catch {}
+  };
   const nextChapter = last && lastEntry?.chapters && last.chapter < lastEntry.chapters ? { ...last, chapter: last.chapter + 1 } : null;
 
   return (
-    <div className="absolute inset-0 overflow-y-auto overscroll-contain bg-paper">
+    <div ref={scroller} onClickCapture={noteTile} className="absolute inset-0 overflow-y-auto overscroll-contain bg-paper">
       <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
         <h1 className="font-serif text-3xl font-semibold text-ink">{SITE_NAME}</h1>
         <p className="mt-1 text-muted">

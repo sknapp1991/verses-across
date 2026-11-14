@@ -4,6 +4,7 @@ import data from "../../../data/bible-differences.json";
 import { permanentRedirect } from "next/navigation";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
+import { BackLink, Fold, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "Why Bibles differ: verses some leave out",
@@ -56,11 +57,12 @@ export default function DifferencesPage() {
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/differences`); // a Verses Across page
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/" />
       <div className="mx-auto max-w-4xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/" className={`text-sm ${a}`}>
+          <BackLink fallback="/" className={`text-sm ${a}`}>
             ← Back to reading
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">Why Bibles differ</h1>
           <p>
             No original manuscript of the New Testament survives; we have thousands of copies, and they don&rsquo;t all agree.
@@ -89,8 +91,8 @@ export default function DifferencesPage() {
         </header>
 
         {GROUPS.map((g) => (
-          <section key={g.id} id={g.id} className="scroll-mt-4 space-y-4">
-            <h2 className="font-serif text-2xl font-semibold text-ink">{g.title}</h2>
+          // Each part folds away (ticket ff8c9d5b); a link to an entry inside opens it (PageChrome).
+          <Fold key={g.id} id={g.id} title={g.title}>
             <p>{g.intro}</p>
             {ITEMS.filter((it) => it.group === g.id).map((it) => (
               <article key={it.id} id={it.id} className="scroll-mt-4 space-y-3 rounded-2xl border border-line bg-raised/40 p-4">
@@ -150,7 +152,7 @@ export default function DifferencesPage() {
                 </p>
               </article>
             ))}
-          </section>
+          </Fold>
         ))}
       </div>
     </main>

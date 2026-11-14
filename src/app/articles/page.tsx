@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { permanentRedirect } from "next/navigation";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
+import { BackLink, PageChrome } from "@/components/page-chrome";
 
 export const metadata: Metadata = {
   title: "Articles",
@@ -21,11 +22,12 @@ export default function ArticlesPage() {
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/articles`); // a Verses Across page
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
+      <PageChrome fallback="/read" />
       <div className="mx-auto max-w-3xl space-y-6 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <Link href="/read" className={`text-sm ${a}`}>
+          <BackLink fallback="/read" className={`text-sm ${a}`}>
             ← Home
-          </Link>
+          </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">Articles</h1>
           <p>Articles, research and insights on the world&rsquo;s scriptures: how they came to be, what they say, and how they speak to each other.</p>
         </header>
