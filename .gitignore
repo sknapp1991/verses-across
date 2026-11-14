@@ -89,3 +89,4 @@ hub/.wrangler/
 hub/.dev.vars
 
 __pycache__/
+.cache-audio-removed/

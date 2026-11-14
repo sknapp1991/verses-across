@@ -9,7 +9,9 @@
 import { cp, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { booksOfWork, getVersion } from "../../src/lib/catalog";
-type Recording = { id: string; version: string; voice: string; label: string; engine: string; license: string; chapters?: Record<string, number[]> };
+type Recording = { id: string; version: string; voice: string; label: string; engine: string; license: string; rev?: string; chapters?: Record<string, number[]> };
+/** Bumped when a voice's files are redone under the same names (browsers keep audio a year): Nov 14, LibriVox intros cut. */
+const REV: Record<string, string> = { armenta: "2", librivox: "2" };
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const SRC = path.join(ROOT, ".cache-audio");
@@ -75,6 +77,7 @@ async function main() {
         label: VOICES[voice] ?? voice,
         engine: HUMAN[voice] ? "Human" : PIPER[voice] ? "Piper" : "Kokoro-82M",
         license: HUMAN[voice] ?? PIPER[voice] ?? "Generated with Kokoro-82M (Apache-2.0)",
+        ...(REV[voice] ? { rev: REV[voice] } : {}),
         ...(all ? {} : { chapters }),
       });
       console.log(`  ${version}/${voice}: ${total} chapters${all ? " (complete)" : ""}`);

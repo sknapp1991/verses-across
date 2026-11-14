@@ -16,6 +16,8 @@ export type Recording = {
   label: string;
   engine: string;
   license: string;
+  /** Files redone under the same names: asked for with ?r=<rev> so a copy the browser kept isn't played. */
+  rev?: string;
   /** Only these chapters exist (book → chapters); omitted = every chapter. */
   chapters?: Record<string, number[]>;
 };
@@ -58,5 +60,6 @@ export function hasChapter(r: Recording, book: string, chapter: number) {
   return !r.chapters || !!r.chapters[book]?.includes(chapter);
 }
 
-export const audioUrl = (r: Recording, book: string, chapter: number) => `${AUDIO_BASE}/${r.version}/${r.voice}/${book}/${chapter}.mp3`;
-export const timingUrl = (r: Recording, book: string, chapter: number) => `${AUDIO_BASE}/${r.version}/${r.voice}/${book}/${chapter}.json`;
+const rev = (r: Recording) => (r.rev ? `?r=${r.rev}` : "");
+export const audioUrl = (r: Recording, book: string, chapter: number) => `${AUDIO_BASE}/${r.version}/${r.voice}/${book}/${chapter}.mp3${rev(r)}`;
+export const timingUrl = (r: Recording, book: string, chapter: number) => `${AUDIO_BASE}/${r.version}/${r.voice}/${book}/${chapter}.json${rev(r)}`;

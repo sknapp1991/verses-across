@@ -103,7 +103,7 @@ async function networkFirst(event, url) {
 
 /** A saved recording (or its timings): the whole file, or the bytes asked for in a Range header. */
 async function savedAudio(req) {
-  const hit = await (await caches.open(AUDIO)).match(req.url);
+  const hit = await (await caches.open(AUDIO)).match(req.url, { ignoreSearch: true }); // (?r=2: see recordings.ts)
   if (!hit) return fetch(req);
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("range") || "");
   if (!range) return hit;

@@ -117,8 +117,13 @@ export default function AboutPage() {
             They can contain mistakes. We may add more where nothing else exists, always labelled the same way.
           </p>
           <p>
-            <strong className="text-ink">Audio.</strong> The King James Version is read by a LibriVox volunteer. The other
-            recorded voices are computer voices (Kokoro, an open text-to-speech model). Where there is no recording, your
+            <strong className="text-ink">Audio.</strong> The human readings (the whole King James Version, and other Bibles and
+            books where a reading exists) are by LibriVox volunteers; LibriVox recordings are in the public domain (
+            <a href="https://librivox.org" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-ink">
+              librivox.org
+            </a>
+            ). We cut them into chapters and leave out the spoken LibriVox introductions, so each chapter starts with the text.
+            The other recorded voices are computer voices (Kokoro, an open text-to-speech model). Where there is no recording, your
             phone or computer&rsquo;s own built-in voice reads the text aloud.
           </p>
             </>
