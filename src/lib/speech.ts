@@ -473,6 +473,13 @@ export function play(opts: {
   }
 }
 
+/** Every verse of the chapter now playing (recording or device voice), for "chapter heard" (activity.ts). */
+export function chapterVerses(): string[] {
+  if (rec) return [...new Set(rec.mix ? rec.mix.seq.map((x) => x.v) : rec.timing.verses.map((x) => x.v))];
+  if (run) return [...new Set(run.items.map((x) => x.v))];
+  return [];
+}
+
 /** Index of the verse being read in the current queue. */
 export function currentIndex() {
   return run ? run.index : -1;

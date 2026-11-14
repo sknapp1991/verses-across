@@ -6,11 +6,11 @@
  * - listening time: seconds the read-aloud player is playing;
  * - verses read: verses that stayed on screen for at least 2 seconds while reading (once per day);
  * - chapters read: chapters read for at least 30 seconds (once per day), and per-work seconds;
- * - verses heard: each verse the read-aloud player reaches (once per day); chapters heard: chapters listened to for
- *   at least 30 seconds (once per day). Until Nov 14, listening counted toward chapters read instead.
+ * - verses heard: each verse the read-aloud player reaches (once per day); chapters heard: chapters whose every verse
+ *   has played (over one or more visits; once per day). Until Nov 14, listening counted toward chapters read instead.
  */
 import { useSyncExternalStore } from "react";
-import { getSpeech, subscribeSpeech } from "./speech";
+import { chapterVerses, getSpeech, subscribeSpeech } from "./speech";
 
 export type Day = {
   /** reading seconds */ r: number;
@@ -144,7 +144,28 @@ const seenToday = new Set<string>(); // verse keys counted today
 let seenDay = "";
 const onScreenSince = new Map<string, number>();
 const chapterSecs = new Map<string, number>();
-const heardSecs = new Map<string, number>();
+// Verses heard per chapter, kept across visits: a chapter is heard once every verse in it has played (ticket 049c25a8).
+const PARTIAL = "va-heard-partial:v1";
+let partial: Record<string, string[]> | null = null;
+function heardVerses(ch: string): Set<string> {
+  if (!partial)
+    try {
+      partial = JSON.parse(localStorage.getItem(PARTIAL) ?? "{}") as Record<string, string[]>;
+    } catch {
+      partial = {};
+    }
+  return new Set(partial[ch] ?? []);
+}
+function saveHeardVerses(ch: string, vs: Set<string> | null) {
+  if (!partial) return;
+  delete partial[ch];
+  if (vs) partial[ch] = [...vs]; // newest last
+  const keys = Object.keys(partial);
+  for (const k of keys.slice(0, Math.max(0, keys.length - 60))) delete partial[k]; // the last 60 chapters
+  try {
+    localStorage.setItem(PARTIAL, JSON.stringify(partial));
+  } catch {}
+}
 const heardToday = new Set<string>(); // verse keys heard today
 let heardDay = "";
 let lastHeard = "";
@@ -152,9 +173,22 @@ let lastHeard = "";
 function noteHeard() {
   const s = getSpeech();
   if (s.status !== "playing" || !s.verse || !s.chapterKey) return;
-  const k = `${s.chapterKey.split("/").slice(0, 3).join("/")}:${s.verse}`;
+  const ch = s.chapterKey.split("/").slice(0, 3).join("/");
+  const k = `${ch}:${s.verse}`;
   if (k === lastHeard) return;
   lastHeard = k;
+  // The chapter counts as heard when every verse in it has played (not while playing a verse range).
+  if (!s.until && /^[^/]+\/[^/]+\/\d+$/.test(ch)) {
+    const all = chapterVerses();
+    const got = heardVerses(ch);
+    got.add(s.verse);
+    if (all.length && all.every((v) => got.has(v))) {
+      saveHeardVerses(ch, null);
+      bump((d) => {
+        if (!(d.hc ??= []).includes(ch)) d.hc.push(ch);
+      });
+    } else saveHeardVerses(ch, got);
+  }
   if (dayKey() !== heardDay) {
     heardDay = dayKey();
     heardToday.clear();
@@ -218,13 +252,9 @@ function tick() {
       chapterSecs.set(ch.key, s);
       if (s >= 30 && !d.ch.includes(ch.key)) d.ch.push(ch.key);
     } else if (listening && sp.chapterKey) {
-      // listening counts toward the work too, and the chapter as heard once listened to for 30 s
+      // listening counts toward the work too (a chapter is heard once all its verses have played: noteHeard)
       const work = sp.chapterKey.split("/")[0];
       d.w[work] = (d.w[work] ?? 0) + secs;
-      const k = sp.chapterKey.split("/").slice(0, 3).join("/");
-      const s = (heardSecs.get(k) ?? 0) + secs;
-      heardSecs.set(k, s);
-      if (s >= 30 && /^[^/]+\/[^/]+\/\d+$/.test(k) && !(d.hc ??= []).includes(k)) d.hc.push(k);
     }
   });
 }

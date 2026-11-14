@@ -15,7 +15,7 @@ export type Stats = {
   chaptersRead: number;
   /** verses the read-aloud player reached (once per day) */
   versesHeard: number;
-  /** chapters listened to for 30 s or more (once per day) */
+  /** chapters whose every verse has played (once per day) */
   chaptersHeard: number;
   /** books whose every chapter has been heard */
   booksHeard: number;

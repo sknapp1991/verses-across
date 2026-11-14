@@ -180,7 +180,7 @@ export function ProgressPanel() {
 
         <p className="pb-2 text-xs text-faint">
           Counted on your devices only (and shared only with groups you join). Reading time counts while a chapter is open and you’re using it; verses count once
-          they’ve been on screen for two seconds. Listening counts each verse the player reaches, and a chapter once you’ve listened for 30 seconds; a book is
+          they’ve been on screen for two seconds. Listening counts each verse the player reaches, and a chapter once every verse in it has played (it can be over several visits); a book is
           heard (or studied) when every chapter is. Mark chapters as studied at the end of each chapter.
         </p>
       </div>
@@ -355,7 +355,7 @@ function AddGoal({ onDone }: { onDone: () => void }) {
             <option value="day">a day</option>
             <option value="week">a week</option>
           </select>
-          {!minutes && metric === "chapters" && <p className="w-full text-xs text-faint">A chapter counts once you’ve read or listened to it for 30 seconds.</p>}
+          {!minutes && metric === "chapters" && <p className="w-full text-xs text-faint">A chapter counts once you’ve read it for 30 seconds.</p>}
         </div>
       ) : book ? (
         <label className="flex flex-wrap items-center gap-2">
