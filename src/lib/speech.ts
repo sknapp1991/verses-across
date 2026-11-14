@@ -104,6 +104,8 @@ export function useSpeech() {
 }
 export const getSpeech = () => state;
 export const setSpeech = set;
+/** Follow the player's state outside React (activity counts the verses heard). */
+export const subscribeSpeech = subscribe;
 
 export const speechSupported = () => typeof window !== "undefined" && "speechSynthesis" in window;
 const noop = () => () => {};

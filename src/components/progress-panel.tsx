@@ -49,6 +49,31 @@ export function ProgressPanel() {
       }
     return n;
   }, [items, period]);
+  // Books finished in this period: every chapter studied (or heard), the last of them within the period.
+  const booksIn = useMemo(() => {
+    const from = period === "all" ? "" : periodStart(period);
+    const finishedIn = (perBook: Map<string, string[]>) => {
+      let n = 0;
+      for (const [k, days] of perBook) {
+        const [w, b] = k.split("/");
+        const total = findBook(w, b)?.chapters ?? 0;
+        if (total > 0 && days.length >= total && days.sort()[days.length - 1] >= from) n++;
+      }
+      return n;
+    };
+    const studied = new Map<string, string[]>();
+    for (const it of items.values())
+      if (it.kind === "studied") {
+        const k = `${it.work}/${it.book}`;
+        studied.set(k, [...(studied.get(k) ?? []), dayKey(it.createdAt)]);
+      }
+    const heard = new Map<string, string[]>();
+    for (const [c, day] of totals(a).heard) {
+      const k = c.split("/").slice(0, 2).join("/");
+      heard.set(k, [...(heard.get(k) ?? []), day]);
+    }
+    return { studied: finishedIn(studied), heard: finishedIn(heard) };
+  }, [items, a, period]);
   const got = BADGES.filter((b) => earned(b, stats));
 
   return (
@@ -97,12 +122,19 @@ export function ProgressPanel() {
               </button>
             ))}
           </div>
+          {/* Reading and studying on the left, listening on the right (ticket 049c25a8). */}
           <div className="grid grid-cols-2 gap-2">
-            <Tile label="Reading" value={fmtDuration(t.read)} />
-            <Tile label="Listening" value={fmtDuration(t.listen)} />
+            <p className="text-xs font-semibold uppercase tracking-wide text-faint">📖 Reading</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-faint">🎧 Listening</p>
+            <Tile label="Time reading" value={fmtDuration(t.read)} />
+            <Tile label="Time listening" value={fmtDuration(t.listen)} />
             <Tile label="Verses read" value={t.verses.toLocaleString()} />
+            <Tile label="Verses heard" value={t.versesHeard.toLocaleString()} />
             <Tile label="Chapters read" value={t.chapters.toLocaleString()} />
+            <Tile label="Chapters heard" value={t.chaptersHeard.toLocaleString()} />
             <Tile label="Chapters studied" value={studiedIn.toLocaleString()} />
+            <Tile label="Books heard" value={booksIn.heard.toLocaleString()} />
+            <Tile label="Books studied" value={booksIn.studied.toLocaleString()} />
             <Tile label={period === "day" ? "Traditions today" : "Traditions"} value={String(traditionsIn(t.works))} />
           </div>
           {period !== "day" && <Chart a={a} period={period} />}
@@ -148,7 +180,8 @@ export function ProgressPanel() {
 
         <p className="pb-2 text-xs text-faint">
           Counted on your devices only (and shared only with groups you join). Reading time counts while a chapter is open and you’re using it; verses count once
-          they’ve been on screen for two seconds. Mark chapters as studied at the end of each chapter.
+          they’ve been on screen for two seconds. Listening counts each verse the player reaches, and a chapter once you’ve listened for 30 seconds; a book is
+          heard (or studied) when every chapter is. Mark chapters as studied at the end of each chapter.
         </p>
       </div>
     </div>

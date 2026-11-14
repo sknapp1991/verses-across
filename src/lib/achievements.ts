@@ -13,6 +13,12 @@ export type Stats = {
   listenSecs: number;
   verses: number;
   chaptersRead: number;
+  /** verses the read-aloud player reached (once per day) */
+  versesHeard: number;
+  /** chapters listened to for 30 s or more (once per day) */
+  chaptersHeard: number;
+  /** books whose every chapter has been heard */
+  booksHeard: number;
   studied: number;
   /** chapters studied again (each extra time counts) */
   rereads: number;
@@ -83,11 +89,26 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
   for (const rel of scriptureShelves)
     for (const col of rel.collections) for (const i of col.items) if (i.work && worksTouched.has(i.work)) religions.add(rel.id);
   const s = streaks(a, studyDays);
+  // Books heard: every chapter of the book listened to (at any time)
+  const heardPerBook = new Map<string, number>();
+  for (const k of t.heard.keys()) {
+    const b = k.split("/").slice(0, 2).join("/");
+    heardPerBook.set(b, (heardPerBook.get(b) ?? 0) + 1);
+  }
+  let booksHeard = 0;
+  for (const [k, cnt] of heardPerBook) {
+    const [w, b] = k.split("/");
+    const total = findBook(w, b)?.chapters ?? 0;
+    if (total > 0 && cnt >= total) booksHeard++;
+  }
   return {
     readSecs: t.read,
     listenSecs: t.listen,
     verses: t.verses,
     chaptersRead: t.chapters,
+    versesHeard: t.versesHeard,
+    chaptersHeard: t.heard.size,
+    booksHeard,
     studied,
     rereads,
     booksReread,
@@ -127,6 +148,7 @@ export const BADGES: Badge[] = [
   // Verses
   tier("verses-100", "✨", "100 verses", "Read 100 verses", (s) => s.verses, 100),
   tier("verses-1000", "🌟", "1,000 verses", "Read 1,000 verses", (s) => s.verses, 1000),
+  tier("verses-2500", "🌟", "2,500 verses", "Read 2,500 verses", (s) => s.verses, 2500),
   tier("verses-6236", "🌙", "6,236 verses", "Read 6,236 verses (as many as the Quran has)", (s) => s.verses, 6236),
   tier("verses-10000", "💫", "10,000 verses", "Read 10,000 verses", (s) => s.verses, 10000),
   tier("verses-31102", "☀️", "31,102 verses", "Read 31,102 verses (as many as the whole Bible has)", (s) => s.verses, 31102),
@@ -139,14 +161,30 @@ export const BADGES: Badge[] = [
   tier("streak-60", "🥇", "60-day streak", "Read or listen 60 days in a row", (s) => s.bestStreak, 60),
   tier("streak-100", "👑", "100-day streak", "Read or listen 100 days in a row", (s) => s.bestStreak, 100),
   tier("streak-365", "💎", "A whole year", "Read or listen 365 days in a row", (s) => s.bestStreak, 365),
+  tier("streak-730", "💠", "Two whole years", "Read or listen 730 days in a row", (s) => s.bestStreak, 730),
   // Time
   tier("read-1h", "⏱️", "First hour", "Spend an hour reading", (s) => s.readSecs / H, 1),
+  tier("read-5h", "⏱️", "5 hours reading", "Spend 5 hours reading", (s) => s.readSecs / H, 5),
   tier("read-10h", "⌛", "10 hours reading", "Spend 10 hours reading", (s) => s.readSecs / H, 10),
+  tier("read-25h", "⌛", "25 hours reading", "Spend 25 hours reading", (s) => s.readSecs / H, 25),
   tier("read-50h", "⏳", "50 hours reading", "Spend 50 hours reading", (s) => s.readSecs / H, 50),
   tier("read-100h", "🕰️", "100 hours reading", "Spend 100 hours reading", (s) => s.readSecs / H, 100),
   tier("listen-1h", "🎧", "First hour listening", "Listen for an hour", (s) => s.listenSecs / H, 1),
   tier("listen-10h", "🎶", "10 hours listening", "Listen for 10 hours", (s) => s.listenSecs / H, 10),
+  tier("listen-5h", "🎧", "5 hours listening", "Listen for 5 hours", (s) => s.listenSecs / H, 5),
+  tier("listen-25h", "🎶", "25 hours listening", "Listen for 25 hours", (s) => s.listenSecs / H, 25),
   tier("listen-50h", "📻", "50 hours listening", "Listen for 50 hours", (s) => s.listenSecs / H, 50),
+  tier("listen-100h", "🎙️", "100 hours listening", "Listen for 100 hours", (s) => s.listenSecs / H, 100),
+  // Heard (read aloud)
+  tier("heard-verses-100", "👂", "100 verses heard", "Listen to 100 verses", (s) => s.versesHeard, 100),
+  tier("heard-verses-2500", "👂", "2,500 verses heard", "Listen to 2,500 verses", (s) => s.versesHeard, 2500),
+  tier("heard-verses-31102", "🔊", "31,102 verses heard", "Listen to 31,102 verses (as many as the whole Bible has)", (s) => s.versesHeard, 31102),
+  tier("heard-chapters-10", "🎧", "10 chapters heard", "Listen to 10 chapters", (s) => s.chaptersHeard, 10),
+  tier("heard-chapters-100", "🎧", "100 chapters heard", "Listen to 100 chapters", (s) => s.chaptersHeard, 100),
+  tier("heard-chapters-1189", "🗣️", "1,189 chapters heard", "Listen to 1,189 chapters (as many as the whole Bible has)", (s) => s.chaptersHeard, 1189),
+  tier("heard-book-1", "📀", "First book heard", "Listen to every chapter of a book", (s) => s.booksHeard, 1),
+  tier("heard-book-10", "💿", "10 books heard", "Listen to every chapter of 10 books", (s) => s.booksHeard, 10),
+  tier("heard-book-66", "🎼", "66 books heard", "Listen to every chapter of 66 books (as many as a Protestant Bible has)", (s) => s.booksHeard, 66),
   // Study
   tier("studied-1", "✅", "Studied", "Mark a chapter as studied", (s) => s.studied, 1),
   tier("studied-25", "☑️", "25 studied", "Mark 25 chapters as studied", (s) => s.studied, 25),
@@ -155,6 +193,8 @@ export const BADGES: Badge[] = [
   tier("book-5", "📙", "5 books", "Study every chapter of 5 books", (s) => s.booksDone, 5),
   tier("book-10", "📗", "10 books", "Study every chapter of 10 books", (s) => s.booksDone, 10),
   tier("book-25", "📒", "25 books", "Study every chapter of 25 books", (s) => s.booksDone, 25),
+  tier("book-50", "📔", "50 books", "Study every chapter of 50 books", (s) => s.booksDone, 50),
+  tier("book-100", "🏅", "100 books", "Study every chapter of 100 books", (s) => s.booksDone, 100),
   tier("collection-1", "🗂️", "A whole collection", "Study every book of a collection (e.g. the Gospels or the Torah)", (s) => s.collectionsDone.length, 1),
   tier("collection-3", "🗃️", "Three collections", "Study every book of 3 collections", (s) => s.collectionsDone.length, 3),
   // Plans and goals
@@ -188,6 +228,8 @@ export const MAX_LEVEL = 60;
 export const XP_RULES: { label: string; xp: number; of: (s: Stats) => number }[] = [
   { label: "each verse read", xp: 1, of: (s) => s.verses },
   { label: "each chapter read", xp: 10, of: (s) => s.chaptersRead },
+  { label: "each chapter heard", xp: 10, of: (s) => s.chaptersHeard },
+  { label: "each book heard from start to end", xp: 150, of: (s) => s.booksHeard },
   { label: "each minute reading or listening", xp: 2, of: (s) => Math.floor((s.readSecs + s.listenSecs) / 60) },
   { label: "each chapter marked as studied", xp: 25, of: (s) => s.studied },
   { label: "each book studied from start to end", xp: 250, of: (s) => s.booksDone },

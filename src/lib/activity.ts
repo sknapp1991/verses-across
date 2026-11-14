@@ -5,10 +5,12 @@
  *   scrolled or typed in the last minute (an app left open doesn't count);
  * - listening time: seconds the read-aloud player is playing;
  * - verses read: verses that stayed on screen for at least 2 seconds while reading (once per day);
- * - chapters read: chapters read for at least 30 seconds (once per day), and per-work seconds.
+ * - chapters read: chapters read for at least 30 seconds (once per day), and per-work seconds;
+ * - verses heard: each verse the read-aloud player reaches (once per day); chapters heard: chapters listened to for
+ *   at least 30 seconds (once per day). Until Nov 14, listening counted toward chapters read instead.
  */
 import { useSyncExternalStore } from "react";
-import { getSpeech } from "./speech";
+import { getSpeech, subscribeSpeech } from "./speech";
 
 export type Day = {
   /** reading seconds */ r: number;
@@ -16,6 +18,8 @@ export type Day = {
   /** verses read */ v: number;
   /** chapters read: "work/book/chapter" */ ch: string[];
   /** seconds per work */ w: Record<string, number>;
+  /** verses heard */ hv?: number;
+  /** chapters heard: "work/book/chapter" */ hc?: string[];
 };
 export type Activity = { v: 1; days: Record<string, Day> };
 
@@ -68,11 +72,13 @@ export function setOtherActivity(next: Record<string, Activity>) {
 
 function addInto(into: Record<string, Day>, from: Record<string, Day>) {
   for (const [k, d] of Object.entries(from)) {
-    const t = into[k] ? { ...into[k], ch: [...into[k].ch], w: { ...into[k].w } } : { r: 0, l: 0, v: 0, ch: [], w: {} };
+    const t: Day = into[k] ? { ...into[k], ch: [...into[k].ch], w: { ...into[k].w }, hc: [...(into[k].hc ?? [])] } : { r: 0, l: 0, v: 0, ch: [], w: {} };
     t.r += d.r || 0;
     t.l += d.l || 0;
     t.v += d.v || 0;
+    t.hv = (t.hv ?? 0) + (d.hv || 0);
     for (const c of d.ch ?? []) if (!t.ch.includes(c)) t.ch.push(c);
+    for (const c of d.hc ?? []) if (!(t.hc ??= []).includes(c)) t.hc.push(c);
     for (const [w, n] of Object.entries(d.w ?? {})) t.w[w] = (t.w[w] ?? 0) + n;
     into[k] = t;
   }
@@ -138,6 +144,27 @@ const seenToday = new Set<string>(); // verse keys counted today
 let seenDay = "";
 const onScreenSince = new Map<string, number>();
 const chapterSecs = new Map<string, number>();
+const heardSecs = new Map<string, number>();
+const heardToday = new Set<string>(); // verse keys heard today
+let heardDay = "";
+let lastHeard = "";
+/** A verse the player has reached: counted once per day. */
+function noteHeard() {
+  const s = getSpeech();
+  if (s.status !== "playing" || !s.verse || !s.chapterKey) return;
+  const k = `${s.chapterKey.split("/").slice(0, 3).join("/")}:${s.verse}`;
+  if (k === lastHeard) return;
+  lastHeard = k;
+  if (dayKey() !== heardDay) {
+    heardDay = dayKey();
+    heardToday.clear();
+  }
+  if (heardToday.has(k)) return;
+  heardToday.add(k);
+  bump((d) => {
+    d.hv = (d.hv ?? 0) + 1;
+  });
+}
 
 function currentChapter(): { work: string; key: string } | null {
   const m = /^\/read\/([^/]+)\/([^/]+)\/(\d+)/.exec(location.pathname);
@@ -191,13 +218,13 @@ function tick() {
       chapterSecs.set(ch.key, s);
       if (s >= 30 && !d.ch.includes(ch.key)) d.ch.push(ch.key);
     } else if (listening && sp.chapterKey) {
-      // listening counts toward the work too (and the chapter, once heard for 30 s)
+      // listening counts toward the work too, and the chapter as heard once listened to for 30 s
       const work = sp.chapterKey.split("/")[0];
       d.w[work] = (d.w[work] ?? 0) + secs;
       const k = sp.chapterKey.split("/").slice(0, 3).join("/");
-      const s = (chapterSecs.get(k) ?? 0) + secs;
-      chapterSecs.set(k, s);
-      if (s >= 30 && /^[^/]+\/[^/]+\/\d+$/.test(k) && !d.ch.includes(k)) d.ch.push(k);
+      const s = (heardSecs.get(k) ?? 0) + secs;
+      heardSecs.set(k, s);
+      if (s >= 30 && /^[^/]+\/[^/]+\/\d+$/.test(k) && !(d.hc ??= []).includes(k)) d.hc.push(k);
     }
   });
 }
@@ -209,6 +236,7 @@ export function startActivityTracking() {
   for (const ev of ["pointerdown", "keydown", "wheel", "scroll", "touchstart"]) window.addEventListener(ev, input, { passive: true, capture: true });
   input();
   setInterval(tick, TICK);
+  subscribeSpeech(noteHeard);
   setInterval(save, 15_000);
   document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && save());
   window.addEventListener("pagehide", save);
@@ -216,17 +244,31 @@ export function startActivityTracking() {
 
 /* ---------- sums ---------- */
 
-export type Totals = { read: number; listen: number; verses: number; chapters: number; days: number; works: Set<string> };
+export type Totals = {
+  read: number;
+  listen: number;
+  verses: number;
+  chapters: number;
+  days: number;
+  works: Set<string>;
+  versesHeard: number;
+  chaptersHeard: number;
+  /** each chapter heard ("work/book/chapter") → the first day it was heard */
+  heard: Map<string, string>;
+};
 
 /** Totals over days from `from` to `to` (inclusive "YYYY-MM-DD"; omit for all time). */
 export function totals(a: Activity, from?: string, to?: string): Totals {
-  const t: Totals = { read: 0, listen: 0, verses: 0, chapters: 0, days: 0, works: new Set() };
+  const t: Totals = { read: 0, listen: 0, verses: 0, chapters: 0, days: 0, works: new Set(), versesHeard: 0, chaptersHeard: 0, heard: new Map() };
   for (const [k, d] of Object.entries(a.days)) {
     if ((from && k < from) || (to && k > to)) continue;
     t.read += d.r;
     t.listen += d.l;
     t.verses += d.v;
     t.chapters += d.ch.length;
+    t.versesHeard += d.hv ?? 0;
+    t.chaptersHeard += d.hc?.length ?? 0;
+    for (const c of d.hc ?? []) if (!t.heard.has(c) || k < t.heard.get(c)!) t.heard.set(c, k);
     if (d.r + d.l >= 60) t.days++;
     for (const w of Object.keys(d.w)) t.works.add(w);
   }
