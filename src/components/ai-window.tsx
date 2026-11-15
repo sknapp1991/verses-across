@@ -560,7 +560,7 @@ function withEntities(s: string, preferWork?: string): ReactNode {
   let last = 0;
   for (const m of s.matchAll(ENTITY)) {
     if (m.index! > last) out.push(<Fragment key={`t${last}`}>{withWords(s.slice(last, m.index), preferWork)}</Fragment>);
-    out.push(<EntityLink key={`e${m.index}`} title={m[1].trim()} text={(m[2] ?? m[1]).trim()} />);
+    out.push(<EntityLink key={`e${m.index}`} title={m[1].trim()} text={(m[2] ?? m[1]).trim()} context={stripEntities(s).slice(0, 400)} />);
     last = m.index! + m[0].length;
   }
   if (last < s.length) out.push(<Fragment key={`t${last}`}>{withWords(s.slice(last), preferWork)}</Fragment>);

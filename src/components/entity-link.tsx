@@ -5,12 +5,15 @@
  * description and the opening of the article, with a link to read more. Looked up straight from the reader's browser
  * (Wikipedia sees the name and the reader's IP address, as for any site; see About → Privacy); cached for the session.
  * The card is put on document.body (a portal), not inside the answer's paragraph or list item.
+ * No Wikipedia article (or only a list of people with that name, like "Valentinus"): a short summary from our own AI,
+ * written for the sentence the name is in, labelled as such (the brother's follow-up on the ticket).
  */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMediaQuery } from "@/lib/settings";
+import { ENTITY } from "@/lib/entities";
 
-type Summary = { title: string; description?: string; extract: string; image?: string; url: string } | null;
+type Summary = { title: string; description?: string; extract: string; image?: string; url: string; ai?: boolean } | null;
 const cache = new Map<string, Promise<Summary>>();
 const https = (u: unknown) => (typeof u === "string" && u.startsWith("https://") ? u : undefined);
 
@@ -38,12 +41,44 @@ function summary(title: string): Promise<Summary> {
   return p;
 }
 
+/** Our own short AI summary of a name Wikipedia has no single article for, for the sentence it's in. */
+const snaps = new Map<string, Promise<Summary>>();
+function snapshot(title: string, text: string, context: string): Promise<Summary> {
+  const key = `${title}|${context}`;
+  let p = snaps.get(key);
+  if (!p) {
+    const question =
+      `In two or three short sentences of plain text (no lists, no headings, no brackets), who or what is "${text}"` +
+      `${title !== text ? ` (${title})` : ""}, as meant in this sentence: "${context}"? Give dates and the main fact a reader needs.`;
+    p = fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", text: question }], depth: "standard" }),
+    })
+      .then((r) => (r.ok ? r.text() : ""))
+      .then((t) => {
+        const body = t
+          .replace(/\n\s*\**\s*Next\s*:[\s\S]*$/i, "") // the follow-up suggestions line
+          .replace(ENTITY, (_, a: string, b?: string) => b ?? a)
+          .replace(/\*\*?([^*]+)\*\*?/g, "$1")
+          .trim();
+        return body
+          ? { title: text, extract: body, url: `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(title)}`, ai: true }
+          : null;
+      })
+      .catch(() => null);
+    p.then((s) => s === null && snaps.delete(key));
+    snaps.set(key, p);
+  }
+  return p;
+}
+
 /** Only one card at a time: the open card's own closer. */
 let closeOpen: (() => void) | null = null;
 
 type Pos = { left: number; top?: number; bottom?: number; max: number };
 
-export function EntityLink({ title, text }: { title: string; text: string }) {
+export function EntityLink({ title, text, context = "" }: { title: string; text: string; context?: string }) {
   const touch = useMediaQuery("(hover: none)", false);
   const [pos, setPos] = useState<Pos | null>(null);
   const [data, setData] = useState<Summary | undefined>(undefined);
@@ -72,7 +107,7 @@ export function EntityLink({ title, text }: { title: string; text: string }) {
     setPos(p);
     mine.current = () => setPos(null);
     closeOpen = mine.current;
-    void summary(title).then(setData);
+    void summary(title).then((s) => (s ? s : snapshot(title, text, context))).then(setData);
   };
   const hide = () => {
     setPos(null);
@@ -143,7 +178,7 @@ export function EntityLink({ title, text }: { title: string; text: string }) {
             {data === undefined ? (
               <p className="animate-pulse text-muted">Looking up {text}…</p>
             ) : data === null ? (
-              <p className="text-muted">No short description found for {text}.</p>
+              <p className="text-muted">Couldn’t look up {text} just now. Try again in a minute.</p>
             ) : (
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain">
                 <div className="flex gap-3">
@@ -160,16 +195,20 @@ export function EntityLink({ title, text }: { title: string; text: string }) {
               </div>
             )}
             <p className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-2 text-[11px] text-faint">
-              <span>
-                From Wikipedia,{" "}
-                <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-                  CC BY-SA 4.0
-                </a>
-                {data?.image ? " (picture: see the article)" : ""}
-              </span>
+              {data?.ai ? (
+                <span>A short AI summary (Wikipedia has no single article for this name). It can be wrong.</span>
+              ) : (
+                <span>
+                  From Wikipedia,{" "}
+                  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                    CC BY-SA 4.0
+                  </a>
+                  {data?.image ? " (picture: see the article)" : ""}
+                </span>
+              )}
               {data && (
                 <a href={data.url} target="_blank" rel="noopener noreferrer" className="font-medium text-[#5f8fc4] hover:underline">
-                  Read more →
+                  {data.ai ? "Search Wikipedia →" : "Read more →"}
                 </a>
               )}
             </p>
