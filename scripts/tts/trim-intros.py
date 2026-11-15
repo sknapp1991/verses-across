@@ -24,7 +24,7 @@ DONE = CACHE / ".trimmed.json"
 HUMAN = ("armenta", "librivox")
 # "LibriVox" as Whisper writes it in the readers' languages (Latin, Hebrew, Greek letters)
 MARK = re.compile(r"libri|libr[ie]\s*vox|librivox|ליבר|λιμπρ|λιβρ|λίμπρ|λίβρ", re.I)
-LANGS = {"kjv": "en", "rvr1909": "es", "lsg1910": "fr", "luther1912": "de", "hebrew": "he", "greek": "el"}
+LANGS = {"kjv": "en", "bbe": "en", "ylt": "en", "asv": "en", "web": "en", "rvr1909": "es", "lsg1910": "fr", "luther1912": "de", "hebrew": "he", "greek": "el"}
 # What follows "visit LibriVox": ".org" (often spelled out: "l-i-b-r-i-v-o-x punto org"), the reader's credit
 AFTER = re.compile(r"\borg\b|o\s*rg|punto|point|punkt|τελεία|נקודה|\b\w-\w-\w", re.I)
 CREDIT = re.compile(r"\b(read|recorded|recording|reading|grabad|leíd|leid|lu |lue |enregistr|gelesen|vorgelesen|aufgenommen|gravad)", re.I)

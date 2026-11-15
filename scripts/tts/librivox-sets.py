@@ -39,6 +39,11 @@ SETS = {
     "luther1912": {"title": r"^Bibel \(LB 1912\)", "query": "Bibel (LB 1912)", "lang": "de"},
     "hebrew": {"title": r"^Bible \(Hebrew\)", "query": "Bible (Hebrew)", "lang": "he"},
     "greek": {"title": r"^Bible \((?:PE|STE)\)", "query": ["Bible (PE)", "Bible (STE)"], "lang": "el"},
+    # English Bibles after the other scriptures (Skylar, Nov 14): BBE, ASV, YLT, WEB last.
+    "bbe": {"title": r"^Bible \(BBE\)", "query": "Bible (BBE)", "lang": "en"},
+    "asv": {"title": r"^Bible \(ASV\)", "query": "Bible (ASV)", "lang": "en"},
+    "ylt": {"title": r"^Bible \(YLT\)", "query": "Bible (YLT)", "lang": "en"},
+    "web": {"title": r"^Bible \(WEB\)", "query": "Bible (WEB)", "lang": "en"},
     # Beyond the Bible (Skylar, Nov 14: other scriptures first, fastest first). Each reads the same edition the
     # site shows (checked against LibriVox's source text). "work" = our work; "version" = our version id;
     # without "books", a project may hold any book of the work (found by matching the words).
