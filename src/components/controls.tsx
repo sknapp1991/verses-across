@@ -621,13 +621,47 @@ export function WidthControl() {
   const [min, max, auto] = column ? [COL_MIN, COL_MAX, landscape ? 14 : 17] : [STACK_MIN, STACK_MAX, 48];
   // On "Auto" the slider starts at the columns' real width (they fill the page), so the first move doesn't jump
   // (ticket 19916b22): measured from the reader's first column, in rem.
-  const measured = () => {
-    if (!column || typeof document === "undefined") return null;
-    const el = document.querySelector<HTMLElement>("[role=columnheader]");
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    return el ? Math.round(el.getBoundingClientRect().width / rem) : null;
-  };
-  const value = s[key] ?? Math.min(max, Math.max(min, measured() ?? auto));
+  // Kept in state and re-measured whenever the first column resizes: tapping Auto re-lays the columns AFTER this
+  // render, so measuring during render read the old width and the slider only moved on a second tap.
+  const [measured, setMeasured] = useState<number | null>(null);
+  const isAuto = s[key] == null;
+  useEffect(() => {
+    if (!column || !isAuto) return;
+    // The first column can re-mount (versions changed in the same sheet) or not exist yet: re-find it each time.
+    let el: HTMLElement | null = null;
+    let frame = 0;
+    let tries = 0;
+    const ro = new ResizeObserver(() => read());
+    const read = () => {
+      if (!el || !el.isConnected) {
+        if (el) ro.unobserve(el);
+        el = document.querySelector<HTMLElement>("[role=columnheader]");
+        if (!el) {
+          if (tries++ < 120) frame = requestAnimationFrame(read); // ~2 s, then the MutationObserver below takes over
+          return;
+        }
+        ro.observe(el);
+      }
+      const w = el.getBoundingClientRect().width;
+      if (w <= 0) return;
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      setMeasured(Math.round(w / rem));
+    };
+    read();
+    const mo = new MutationObserver(() => {
+      if (!el || !el.isConnected) {
+        cancelAnimationFrame(frame);
+        read();
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [column, isAuto, landscape]);
+  const value = s[key] ?? Math.min(max, Math.max(min, (column ? measured : null) ?? auto));
   // While dragging, the settings sheet turns see-through (except this slider) to preview the text behind.
   const peek = (on: boolean) => {
     if (on) document.documentElement.dataset.peek = "1";
@@ -639,7 +673,7 @@ export function WidthControl() {
         <label htmlFor="width-range" className="text-xs font-semibold uppercase tracking-wide text-faint">
           {column ? `Column width${landscape ? " (landscape)" : ""}` : "Reading width"}
           <span className="ml-2 font-normal normal-case tracking-normal tabular-nums">
-            {s[key] == null ? "auto" : `${value} rem`}
+            {isAuto ? "auto" : `${value} rem`}
           </span>
         </label>
         <button type="button" onClick={() => updateSettings({ [key]: null })} className="min-h-8 text-xs text-accent underline-offset-2 hover:underline">
