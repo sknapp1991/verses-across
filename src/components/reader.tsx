@@ -1017,6 +1017,9 @@ function ColumnView({
   const { colWidth } = useSettings();
   const wideScreen = useMediaQuery(WIDE_QUERY, true);
   const fixedSingle = n === 1 && colWidth != null && wideScreen;
+  // Several versions with a chosen width (computer): each column is exactly that wide, centred, so the slider can
+  // make them narrower than the page as well as wider (ticket 19916b22); "Auto" fills the page as before.
+  const fixedMulti = n > 1 && colWidth != null && wideScreen;
   const loading = rows.length === 0 && cols.some((c) => c.entry.status === "loading");
   const chapter = cols.find((c) => c.entry.status === "ok")?.entry;
   const chNum = chapter?.status === "ok" ? chapter.data.chapter : 0;
@@ -1024,8 +1027,14 @@ function ColumnView({
     <div
       role="table"
       aria-label="Parallel versions"
-      className={`grid min-w-full ${fixedSingle ? "justify-center" : ""}`}
-      style={{ gridTemplateColumns: fixedSingle ? "minmax(0, max(var(--colmin), min(100%, 44rem)))" : `repeat(${n}, minmax(var(--colmin), 1fr))` }}
+      className={`grid min-w-full ${fixedSingle || fixedMulti ? "justify-center" : ""}`}
+      style={{
+        gridTemplateColumns: fixedSingle
+          ? "minmax(0, max(var(--colmin), min(100%, 44rem)))"
+          : fixedMulti
+            ? `repeat(${n}, var(--colmin))`
+            : `repeat(${n}, minmax(var(--colmin), 1fr))`,
+      }}
     >
       <div role="row" className="contents">
         {cols.map((c, i) => (
