@@ -159,6 +159,11 @@ export default function AboutPage() {
               feedback form, the anonymous counts, sync, study groups and the testers&rsquo; chat stop, and nothing leaves your device.
             </li>
             <li>
+              When you open or hover over a name in an Ask AI answer (a person or place in blue), your browser asks Wikipedia for
+              it directly, so Wikipedia (and Wikimedia, for the picture) sees that name and your IP address, as with any website
+              you visit. The short description shown is Wikipedia&rsquo;s (CC BY-SA 4.0).
+            </li>
+            <li>
               We count, anonymously, how often chapters are read, read-along audio is played and versions are downloaded:
               only daily totals per work, version and language. Nothing about you is stored with them (no IP address, no
               ID, no cookie), so the totals can&rsquo;t be linked to anyone.

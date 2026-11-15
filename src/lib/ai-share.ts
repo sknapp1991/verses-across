@@ -5,13 +5,14 @@
  * receives it can read them without looking them up.
  */
 import { SITE_HOST, SITE_NAME } from "@/lib/site";
+import { stripEntities } from "./entities";
 import { chapterTitle, DEFAULT_VERSIONS, findBook, getVersion } from "./catalog";
 import { fetchBook } from "./chapter-store";
 import { findRefs, type FoundRef } from "./refs";
 
 /** Messages and email show markdown as-is: drop the **bold** / *italic* markers and ### headings. */
 const plain = (t: string) =>
-  t
+  stripEntities(t)
     .trim()
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s.,;:!?)]|$)/g, "$1$2")
@@ -53,7 +54,7 @@ export async function buildShareText(pairs: SharePair[], opts: { versionsHere: s
   const seen = new Set<string>();
   const refs: FoundRef[] = [];
   for (const p of pairs)
-    for (const r of findRefs(p.answer, opts.workHere)) {
+    for (const r of findRefs(stripEntities(p.answer), opts.workHere)) {
       const k = `${r.ref.work}/${r.ref.book}/${r.ref.chapter}:${r.verse ?? ""}-${r.to ?? ""}`;
       if (seen.has(k) || refs.length >= MAX_REFS) continue;
       seen.add(k);

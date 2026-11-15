@@ -159,6 +159,8 @@ export async function POST(request: Request) {
         )
       : ASK_SYSTEM,
     "Format with short paragraphs; use **bold** sparingly and simple '-' lists when helpful (no tables). Give scripture references in the usual form (e.g. Numbers 21:4–9, Surah 2:255, MN 10).",
+    // The app shows these in blue with a short Wikipedia card (src/components/entity-link.tsx, ticket 839c4446).
+    "Wrap the names of notable people and places that a reader might want to look up (e.g. a church father, a king, a city, a mountain) in double square brackets with their English Wikipedia article title: [[Irenaeus]], [[Thomas Aquinas]], [[Mount Sinai|Sinai]] (title|text shown, when they differ). Only real, specific people and places, at most eight per answer, each only the first time it appears; never scripture references, books of scripture, concepts or groups, and never in the final 'Next:' line. It can go inside bold: **[[Athanasius of Alexandria|Athanasius]]**.",
     // The app turns this line into tappable suggestion bubbles (src/components/ai-window.tsx).
     "End with one final line in exactly this form: 'Next: <follow-up question> | <follow-up question>' — two short questions (under 12 words each) the reader might like to explore next, written as the reader would ask them.",
   ];

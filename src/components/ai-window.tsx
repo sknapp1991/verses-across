@@ -27,6 +27,8 @@ import {
 import { useMediaQuery, WIDE_QUERY } from "@/lib/settings";
 import { toast } from "@/lib/ui-store";
 import { RefLink } from "./ref-link";
+import { EntityLink } from "./entity-link";
+import { ENTITY, stripEntities } from "@/lib/entities";
 
 import { findRefs } from "@/lib/refs";
 import { getItem, saveNote, type StudyRef } from "@/lib/study";
@@ -310,7 +312,7 @@ export function AiWindow() {
                 <span className="mt-1 flex flex-wrap gap-1">
                   <button
                     type="button"
-                    onClick={() => navigator.clipboard?.writeText(splitNext(m.text).body).then(() => toast("Answer copied"), () => toast("Couldn’t copy"))}
+                    onClick={() => navigator.clipboard?.writeText(stripEntities(splitNext(m.text).body)).then(() => toast("Answer copied"), () => toast("Couldn’t copy"))}
                     className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-faint hover:bg-raised hover:text-ink"
                   >
                     <CopyIcon width={13} height={13} /> Copy
@@ -491,7 +493,9 @@ export function AiWindow() {
 }
 
 /** Light formatting for answers: paragraphs, "-"/"*"/"1." lists, ### headings and **bold**. */
-function Rich({ text, preferWork }: { text: string; preferWork?: string }) {
+function Rich({ text: raw, preferWork }: { text: string; preferWork?: string }) {
+  // A person / place mark still being written ("[[Mount Sinai|Si") stays hidden until it closes.
+  const text = raw.replace(/\[\[[^\]\n]*\]?$/, "");
   const inline = (t: string) => inlineRich(t, preferWork);
   const blocks: ReactNode[] = [];
   let list: { ordered: boolean; items: string[] } | null = null;
@@ -539,11 +543,28 @@ function Rich({ text, preferWork }: { text: string; preferWork?: string }) {
 function inlineRich(s: string, preferWork?: string): ReactNode {
   return s.split(/(\*\*(?:[^*]|\*(?!\*)|\*(?=\*\*))+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
-      <strong key={i}>{withWords(part.slice(2, -2), preferWork)}</strong>
+      <strong key={i}>{withEntities(part.slice(2, -2), preferWork)}</strong>
     ) : (
-      <Fragment key={i}>{withWords(part, preferWork)}</Fragment>
+      <Fragment key={i}>{withEntities(part, preferWork)}</Fragment>
     ),
   );
+}
+
+/** People and places the model marked [[Title|text]]: blue, with a Wikipedia card (entity-link.tsx, ticket 839c4446). */
+function withEntities(s: string, preferWork?: string): ReactNode {
+  if (!s.includes("[[")) return withWords(s, preferWork);
+  // "[[Isaiah]] 53" or "[[Mark the Evangelist|Mark]] 1:1": a book with a chapter, so plain text for the verse link.
+  s = s.replace(new RegExp(`${ENTITY.source}(?=\\s?\\d)`, "g"), (_, t: string, shown?: string) => shown ?? t);
+  if (!s.includes("[[")) return withWords(s, preferWork);
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const m of s.matchAll(ENTITY)) {
+    if (m.index! > last) out.push(<Fragment key={`t${last}`}>{withWords(s.slice(last, m.index), preferWork)}</Fragment>);
+    out.push(<EntityLink key={`e${m.index}`} title={m[1].trim()} text={(m[2] ?? m[1]).trim()} />);
+    last = m.index! + m[0].length;
+  }
+  if (last < s.length) out.push(<Fragment key={`t${last}`}>{withWords(s.slice(last), preferWork)}</Fragment>);
+  return out;
 }
 
 /** *italic* stretches (with what comes just before) and runs of Hebrew / Greek letters. (No lookbehind: older
@@ -593,7 +614,7 @@ function withWords(s: string, preferWork?: string): ReactNode {
 function splitNext(text: string): { body: string; next: string[] } {
   const m = /\n\s*\**\s*Next\s*:?\**\s*:?\s*([^\n]*)\s*$/i.exec(text) ?? /\n\s*\**N(?:e(?:x(?:t)?)?)?$/.exec(text);
   if (!m) return { body: text, next: [] };
-  const next = (m[1] ?? "")
+  const next = stripEntities(m[1] ?? "")
     .split("|")
     .map((q) => q.replace(/^[\s*"“'-]+|[\s*"”']+$/g, "").trim())
     .filter((q) => q.length > 3)
@@ -605,7 +626,7 @@ function splitNext(text: string): { body: string; next: string[] } {
 function saveAnswer(at: StudyRef, question: string | undefined, answer: string) {
   const prev = getItem("note", at)?.text ?? "";
   const q = question ? `Q: ${question.replace(/^\[About [^\]]*\]\s*/, "")}\n` : "";
-  const add = `${q}AI: ${answer.trim()}`;
+  const add = `${q}AI: ${stripEntities(answer).trim()}`;
   saveNote(at, prev ? `${prev}\n\n${add}` : add);
   toast(at.verse ? "Saved to the note on this verse (My Study → Notes)" : "Saved as a chapter note (My Study → Notes)", 3500);
 }
