@@ -619,7 +619,15 @@ export function WidthControl() {
   const column = view === "column";
   const key = column ? (landscape ? "colWidthLandscape" : "colWidth") : "stackWidth";
   const [min, max, auto] = column ? [COL_MIN, COL_MAX, landscape ? 14 : 17] : [STACK_MIN, STACK_MAX, 48];
-  const value = s[key] ?? auto;
+  // On "Auto" the slider starts at the columns' real width (they fill the page), so the first move doesn't jump
+  // (ticket 19916b22): measured from the reader's first column, in rem.
+  const measured = () => {
+    if (!column || typeof document === "undefined") return null;
+    const el = document.querySelector<HTMLElement>("[role=columnheader]");
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    return el ? Math.round(el.getBoundingClientRect().width / rem) : null;
+  };
+  const value = s[key] ?? Math.min(max, Math.max(min, measured() ?? auto));
   // While dragging, the settings sheet turns see-through (except this slider) to preview the text behind.
   const peek = (on: boolean) => {
     if (on) document.documentElement.dataset.peek = "1";

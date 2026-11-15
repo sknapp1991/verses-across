@@ -1027,8 +1027,10 @@ function ColumnView({
     <div
       role="table"
       aria-label="Parallel versions"
-      className={`grid min-w-full ${fixedSingle || fixedMulti ? "justify-center" : ""}`}
+      className="grid min-w-full"
       style={{
+        // "safe": wider than the screen (3 wide columns), start at the left edge instead of spilling off both sides
+        justifyContent: fixedSingle || fixedMulti ? "safe center" : undefined,
         gridTemplateColumns: fixedSingle
           ? "minmax(0, max(var(--colmin), min(100%, 44rem)))"
           : fixedMulti
