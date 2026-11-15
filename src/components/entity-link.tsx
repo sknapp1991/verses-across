@@ -41,7 +41,7 @@ function summary(title: string): Promise<Summary> {
 /** Only one card at a time: the open card's own closer. */
 let closeOpen: (() => void) | null = null;
 
-type Pos = { left: number; top?: number; bottom?: number };
+type Pos = { left: number; top?: number; bottom?: number; max: number };
 
 export function EntityLink({ title, text }: { title: string; text: string }) {
   const touch = useMediaQuery("(hover: none)", false);
@@ -59,7 +59,11 @@ export function EntityLink({ title, text }: { title: string; text: string }) {
     if (b.bottom < 0 || b.top > window.innerHeight) return null; // scrolled out of sight
     const W = Math.min(340, window.innerWidth - 16);
     const left = Math.max(8, Math.min(b.left, window.innerWidth - W - 8));
-    return window.innerHeight - b.bottom > 300 ? { left, top: b.bottom + 6 } : { left, bottom: window.innerHeight - b.top + 6 };
+    // Below the name if the card fits there (~420px), else the side with more room; capped to that room so the
+    // "Read more" line stays on screen (the text scrolls inside).
+    const below = window.innerHeight - b.bottom - 14;
+    const above = b.top - 14;
+    return below >= 420 || below >= above ? { left, top: b.bottom + 6, max: below } : { left, bottom: window.innerHeight - b.top + 6, max: above };
   };
   const show = () => {
     const p = place();
@@ -133,15 +137,15 @@ export function EntityLink({ title, text }: { title: string; text: string }) {
             onMouseLeave={() => {
               if (!touch) timer.current = setTimeout(hide, 200);
             }}
-            style={{ left: pos.left, top: pos.top, bottom: pos.bottom }}
-            className="fixed z-[60] w-[min(340px,calc(100vw-16px))] rounded-xl border border-line bg-panel p-3 text-left text-sm font-normal not-italic text-ink shadow-2xl"
+            style={{ left: pos.left, top: pos.top, bottom: pos.bottom, maxHeight: pos.max }}
+            className="fixed z-[60] flex w-[min(340px,calc(100vw-16px))] flex-col rounded-xl border border-line bg-panel p-3 text-left text-sm font-normal not-italic text-ink shadow-2xl"
           >
             {data === undefined ? (
               <p className="animate-pulse text-muted">Looking up {text}…</p>
             ) : data === null ? (
               <p className="text-muted">No short description found for {text}.</p>
             ) : (
-              <div className="max-h-[50vh] space-y-2 overflow-y-auto overscroll-contain">
+              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain">
                 <div className="flex gap-3">
                   {data.image && (
                     // eslint-disable-next-line @next/next/no-img-element -- a Wikipedia thumbnail, any size
@@ -155,7 +159,7 @@ export function EntityLink({ title, text }: { title: string; text: string }) {
                 <p className="leading-snug">{data.extract.length > 600 ? `${data.extract.slice(0, 600).replace(/\s+\S*$/, "")}…` : data.extract}</p>
               </div>
             )}
-            <p className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-faint">
+            <p className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-2 text-[11px] text-faint">
               <span>
                 From Wikipedia,{" "}
                 <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
