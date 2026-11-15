@@ -6,7 +6,8 @@
  */
 import { scriptureShelves, type BookRef } from "./catalog";
 
-export type FoundRef = { start: number; end: number; ref: BookRef; verse?: string; to?: string; label: string };
+/** toChapter: a chapter range ("Genesis 2–3") runs from ref.chapter to this chapter. */
+export type FoundRef = { start: number; end: number; ref: BookRef; verse?: string; to?: string; toChapter?: number; label: string };
 
 const norm = (s: string) =>
   s
@@ -68,7 +69,7 @@ function findBook(name: string, preferWork?: string): Book | undefined {
 }
 
 // Book name (optionally "1 "/"2 "/"3 " first), chapter, optional verse(s).
-const NAMED = /\b((?:[1-3]\s?)?[A-Z][a-zA-Z’']+\.?(?:\s(?:of\s)?[A-Z][a-zA-Z’']+)?)\s(\d{1,3})(?:\s?[:.]\s?(\d{1,3})(?:\s?[-–—‐‑‒]\s?(\d{1,3}))?)?\b/g; // any dash: AI models also write — or the non-breaking ‑
+const NAMED = /\b((?:[1-3]\s?)?[A-Z][a-zA-Z’']+\.?(?:\s(?:of\s)?[A-Z][a-zA-Z’']+)?)\s(\d{1,3})(?:\s?[:.]\s?(\d{1,3})(?:\s?[-–—‐‑‒]\s?(\d{1,3}))?|\s?[-–—‐‑‒]\s?(\d{1,3})(?!\s?[A-Z]|\s?[:.]\d))?\b/g; // "Genesis 2–3": group 5 is a range of chapters (not "John 3 – 1 John 4" or "Genesis 1–2:3"). Any dash: AI models also write — or the non-breaking ‑
 // Pali canon: DN 2, MN 10, SN 12.2, AN 4.170
 const NIKAYA = /\b(DN|MN|SN|AN)\s?(\d{1,2})(?:\.(\d{1,4}))?\b/g;
 
@@ -108,7 +109,11 @@ export function findRefs(text: string, preferWork?: string): FoundRef[] {
     const chapter = Number(m[2]);
     if (chapter < 1 || chapter > b.chapters) continue;
     // A bare "Genesis 1" is a reference; "Chapter 1" or "Verse 3" is not (no such book anyway).
-    out.push({ start, end: m.index! + m[0].length, ref: { work: b.work, book: b.id, chapter }, verse: m[3], to: m[4], label: text.slice(start, m.index! + m[0].length) });
+    // "Genesis 2–3": a range of chapters (ticket b6bd30ae); a range that runs backwards or past the book stops at the first.
+    const toCh = m[5] ? Number(m[5]) : undefined;
+    const range = toCh !== undefined && toCh > chapter && toCh <= b.chapters;
+    const end = m.index! + (m[5] && !range ? m[0].search(/\s?[-–—‐‑‒]\s?\d+$/) : m[0].length);
+    out.push({ start, end, ref: { work: b.work, book: b.id, chapter }, verse: m[3], to: m[4], ...(range ? { toChapter: toCh } : {}), label: text.slice(start, end) });
   }
   return out.sort((a, b) => a.start - b.start);
 }

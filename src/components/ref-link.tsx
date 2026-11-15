@@ -33,6 +33,10 @@ export function RefLink({ r }: { r: FoundRef }) {
   // "#v30-35": the reader puts verse 30 at the top and marks the whole passage.
   const href = readHref(r.ref, r.ref.work === here.work ? undefined : versions, r.verse && r.to ? `${r.verse}-${r.to}` : r.verse);
   const sameChapter = r.ref.work === here.work && r.ref.book === here.book && r.ref.chapter === here.chapter;
+  // "Genesis 2–3": each chapter of the range (at most three in the card)
+  const chapters = Array.from({ length: r.toChapter ? Math.min(r.toChapter - r.ref.chapter + 1, 3) : 1 }, (_, i) => r.ref.chapter + i);
+  const hrefFor = (c: number) => readHref({ ...r.ref, chapter: c }, r.ref.work === here.work ? undefined : versions);
+  const chapterName = (c: number) => chapterTitle(findBook(r.ref.work, r.ref.book), c, r.ref.book);
   /**
    * Same chapter: only the #hash changes, which the router doesn't treat as a navigation — so set it
    * here and tell the reader to move (reader.tsx listens for "va-jump"). Returns true when handled.
@@ -54,7 +58,7 @@ export function RefLink({ r }: { r: FoundRef }) {
       router.push(href, { scroll: false });
     }
   };
-  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number; max?: number } | null>(null);
   const link = useRef<HTMLAnchorElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -66,8 +70,15 @@ export function RefLink({ r }: { r: FoundRef }) {
     const b = el.getBoundingClientRect();
     const W = Math.min(columns ? 560 : 320, window.innerWidth - 16);
     const left = Math.max(8, Math.min(b.left, window.innerWidth - W - 8));
-    // Below the link when there's room, else above it.
-    setPos(window.innerHeight - b.bottom > 220 ? { left, top: b.bottom + 6 } : { left, bottom: window.innerHeight - b.top + 6 });
+    const below = window.innerHeight - b.bottom - 14;
+    const above = b.top - 14;
+    if (chapters.length > 1) {
+      // A range card is tall: the side with more room, capped to it so the buttons stay on screen.
+      setPos(below >= above ? { left, top: b.bottom + 6, max: below } : { left, bottom: window.innerHeight - b.top + 6, max: above });
+    } else {
+      // Below the link when there's room, else above it.
+      setPos(window.innerHeight - b.bottom > 220 ? { left, top: b.bottom + 6 } : { left, bottom: window.innerHeight - b.top + 6 });
+    }
     closeOpen = () => setPos(null);
   };
   const hide = () => {
@@ -136,18 +147,54 @@ export function RefLink({ r }: { r: FoundRef }) {
           onMouseLeave={() => {
             if (!touch) timer.current = setTimeout(hide, 200);
           }}
-          style={{ left: pos.left, top: pos.top, bottom: pos.bottom }}
+          style={{ left: pos.left, top: pos.top, bottom: pos.bottom, ...(pos.max ? { maxHeight: pos.max, display: "flex", flexDirection: "column" } : {}) }}
           className={`fixed z-[60] ${columns ? "w-[min(560px,calc(100vw-16px))]" : "w-[min(320px,calc(100vw-16px))]"} rounded-xl border border-line bg-panel p-3 text-left text-sm font-normal not-italic text-ink shadow-2xl`}
         >
-          <Preview r={r} versions={versions.slice(0, columns ? 3 : 2)} columns={columns} />
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {/* A range of chapters ("Genesis 2–3", ticket b6bd30ae): the start of each (up to three), one under another. */}
+          <div className={chapters.length > 1 ? "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain" : undefined}>
+            {chapters.map((c) => (
+              <Preview key={c} r={{ ...r, ref: { ...r.ref, chapter: c }, toChapter: undefined }} versions={versions.slice(0, columns ? 3 : 2)} columns={columns} />
+            ))}
+            {r.toChapter && r.toChapter > chapters[chapters.length - 1] && (
+              <p className="text-xs text-muted">
+                …and {r.toChapter - chapters[chapters.length - 1]} more {r.toChapter - chapters[chapters.length - 1] === 1 ? "chapter" : "chapters"}, to{" "}
+                {chapterName(r.toChapter)}: open them in the reader.
+              </p>
+            )}
+          </div>
+          <div className="mt-2 flex shrink-0 flex-wrap items-center gap-1.5">
             <Link
               href={href}
               scroll={false}
               onClick={open}
               className="inline-flex min-h-9 items-center rounded-lg bg-accent px-3 text-xs font-medium text-accent-ink">
-              Open {r.label} in the reader →
+              Open {chapters.length > 1 ? chapterName(chapters[0]) : r.label} in the reader →
             </Link>
+            {chapters.slice(1).map((c) => (
+              <Link
+                key={c}
+                href={hrefFor(c)}
+                scroll={false}
+                onClick={(e) => {
+                  hide();
+                  if (!wide) minimizeAi();
+                  if (r.ref.work === here.work && r.ref.book === here.book && c === here.chapter) {
+                    // Already on this chapter: only the #hash changes (see jumpHere)
+                    e.preventDefault();
+                    window.history.pushState(window.history.state, "", "#v1");
+                    window.dispatchEvent(new Event("va-jump"));
+                    return;
+                  }
+                  if (touch) {
+                    e.preventDefault();
+                    router.push(hrefFor(c), { scroll: false });
+                  }
+                }}
+                className="inline-flex min-h-9 items-center rounded-lg border border-accent px-3 text-xs font-medium text-accent hover:bg-accent-soft"
+              >
+                Open {chapterName(c)} →
+              </Link>
+            ))}
             {r.verse && <SaveButtons r={r} />}
           </div>
         </div>
