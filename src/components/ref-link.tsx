@@ -153,7 +153,7 @@ export function RefLink({ r }: { r: FoundRef }) {
           {/* A range of chapters ("Genesis 2–3", ticket b6bd30ae): the start of each (up to three), one under another. */}
           <div className={chapters.length > 1 ? "min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain" : undefined}>
             {chapters.map((c) => (
-              <Preview key={c} r={{ ...r, ref: { ...r.ref, chapter: c }, toChapter: undefined }} versions={versions.slice(0, columns ? 3 : 2)} columns={columns} />
+              <Preview key={c} r={{ ...r, ref: { ...r.ref, chapter: c }, toChapter: undefined }} versions={versions.slice(0, columns ? 3 : 2)} columns={columns} banded />
             ))}
             {r.toChapter && r.toChapter > chapters[chapters.length - 1] && (
               <p className="text-xs text-muted">
@@ -203,7 +203,7 @@ export function RefLink({ r }: { r: FoundRef }) {
   );
 }
 
-function Preview({ r, versions, columns = false }: { r: FoundRef; versions: string[]; columns?: boolean }) {
+function Preview({ r, versions, columns = false, banded = false }: { r: FoundRef; versions: string[]; columns?: boolean; banded?: boolean }) {
   const [rows, setRows] = useState<{ key: string; list: { id: string; abbr: string; v: string; t: string; dir: "ltr" | "rtl" }[] } | null>(null);
   const key = `${r.ref.work}/${r.ref.book}/${r.ref.chapter}:${r.verse ?? ""}-${r.to ?? ""}/${versions.join(",")}`;
   useEffect(() => {
@@ -229,7 +229,10 @@ function Preview({ r, versions, columns = false }: { r: FoundRef; versions: stri
   const list = rows?.key === key ? rows.list : null;
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-faint">{title}</p>
+      {/* Several chapters in one card: each title on a coloured bar so the chapters stand apart (ticket b6bd30ae). */}
+      <p className={banded ? "rounded-md bg-accent-soft px-2 py-1 text-xs font-semibold uppercase tracking-wide text-accent" : "text-xs font-semibold uppercase tracking-wide text-faint"}>
+        {title}
+      </p>
       <div className="mt-1 max-h-48 space-y-1.5 overflow-y-auto overscroll-contain font-serif leading-snug">
         {!list ? (
           <p className="animate-pulse text-muted">Loading…</p>
