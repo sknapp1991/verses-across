@@ -7,7 +7,7 @@
  * scripts/build-interlinear.mts and served from R2 by /api/interlinear (one chapter at a time).
  */
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
 import { closePanel, openPanel } from "@/lib/ui-store";
 import { PanelHeader } from "./panel-header";
@@ -54,12 +54,116 @@ function get<T>(path: string): Promise<T | null> {
   return p as Promise<T | null>;
 }
 const lexShard = (strong: string) => `lex/${strong[0]}${Math.floor(parseInt(strong.slice(1, 5), 10) / 1000)}.json`;
+/** Concordance (ROADMAP ST2, scripts/build-concordance.mts): one shard per hundred Strong's numbers. */
+const concShard = (strong: string) => `conc/${strong[0]}${Math.floor(parseInt(strong.slice(1, 5), 10) / 100)}.json`;
+type Conc = { n: number; f: string[]; g: string[]; r: string[] };
+const PAGE = 150;
+
+/** Every verse where one original word occurs: how it's translated, then the places, each opening that verse here. */
+function Concordance({ strong, word, translit, hebrew, onBack }: { strong: string; word: string; translit: string; hebrew: boolean; onBack: () => void }) {
+  const [c, setC] = useState<{ strong: string; e: Conc | null | false } | null>(null);
+  const [shown, setShown] = useState(PAGE);
+  useEffect(() => {
+    let live = true;
+    void get<Record<string, Conc>>(concShard(strong)).then((shard) => {
+      // shard null: couldn't load; entry missing: loaded, but no list for this word
+      if (live) setC({ strong, e: shard ? (shard[strong] ?? shard[strong.slice(0, 5)] ?? false) : null });
+    });
+    return () => {
+      live = false;
+    };
+  }, [strong]);
+  const back = useRef<HTMLButtonElement>(null);
+  useEffect(() => back.current?.focus(), []);
+  const font = { fontFamily: hebrew ? "var(--font-hebrew)" : "var(--font-greek)" };
+  const e = c?.strong === strong ? c.e : undefined;
+  const glossCounts = useMemo(() => {
+    if (!e) return [];
+    const n = new Array<number>(e.g.length).fill(0);
+    for (const x of e.r) n[+x.slice(x.lastIndexOf(" ") + 1)]++;
+    return e.g.map((g, i) => ({ g, n: n[i] })).sort((a, b) => b.n - a.n);
+  }, [e]);
+  return (
+    <div className="space-y-3">
+      <button ref={back} type="button" onClick={onBack} className="flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-muted hover:bg-raised">
+        <PrevIcon width={14} height={14} /> Back to the verse
+      </button>
+      <p>
+        <span lang={hebrew ? "he" : "grc"} className="text-xl text-ink" style={font}>
+          {word}
+        </span>{" "}
+        <span className="italic text-faint">{translit}</span> <span className="text-[11px] text-faint">Strong&rsquo;s {strong.replace(/^([HG])0*/, "$1")}</span>
+      </p>
+      {e === undefined ? (
+        <p role="status" className="animate-pulse text-muted">
+          Loading…
+        </p>
+      ) : e === null ? (
+        <p className="text-muted">Couldn&rsquo;t load the places for this word. Check the connection and try again.</p>
+      ) : e === false ? (
+        <p className="text-muted">There&rsquo;s no list of places for this word yet.</p>
+      ) : (
+        <>
+          <p className="text-muted">
+            Used in {e.n.toLocaleString()} verse{e.n === 1 ? "" : "s"} of the {strong[0] === "H" ? "Old" : "New"} Testament.
+          </p>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Translated as</h3>
+            <p className="text-xs leading-relaxed text-muted">
+              {glossCounts.slice(0, 12).map((x, i) => (
+                <span key={x.g}>
+                  {i > 0 && " · "}
+                  {x.g} <span className="text-faint">({x.n})</span>
+                </span>
+              ))}
+              {glossCounts.length > 12 && <span className="text-faint"> · and {glossCounts.length - 12} more</span>}
+            </p>
+          </div>
+          <ol className="divide-y divide-line rounded-xl border border-line">
+            {e.r.slice(0, shown).map((x) => {
+              const [book, cv, fi, gi] = x.split(" ");
+              const [ch, v] = cv.split(":");
+              const name = findBook("bible", book)?.name ?? book;
+              return (
+                <li key={x}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onBack();
+                      showInterlinear({ work: "bible", book, chapter: parseInt(ch, 10), verse: v });
+                    }}
+                    className="flex w-full min-h-10 items-baseline gap-2 px-3 py-1.5 text-left hover:bg-raised"
+                  >
+                    <span className="w-32 shrink-0 text-xs text-ink">
+                      {name} {ch}
+                      {v === "0" ? " (title)" : `:${v}`}
+                    </span>
+                    <span lang={hebrew ? "he" : "grc"} dir={hebrew ? "rtl" : "ltr"} className="text-sm text-ink" style={font}>
+                      {e.f[+fi]}
+                    </span>
+                    <span className="truncate text-xs text-muted">{e.g[+gi]}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          {shown < e.r.length && (
+            <button type="button" onClick={() => setShown(shown + PAGE)} className="min-h-9 text-xs text-accent underline-offset-2 hover:underline">
+              Show more ({(e.r.length - shown).toLocaleString()} left)
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 export function InterlinearPanel() {
   const r = useRef_();
   const [data, setData] = useState<{ key: string; verses: Record<string, Word[]> | null; grammar: string[] } | null>(null);
   const [pick, setPick] = useState<number | null>(null);
   const [lex, setLex] = useState<{ strong: string; e: Lex | null } | null>(null);
+  const [conc, setConc] = useState<{ strong: string; word: string; translit: string } | null>(null);
   const key = r ? `${r.book}/${r.chapter}` : "";
 
   useEffect(() => {
@@ -79,6 +183,7 @@ export function InterlinearPanel() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- a new verse: no word picked yet
     setPick(null);
+    setConc(null);
   }, [key, r?.verse]);
   useEffect(() => {
     if (!w || !/^[HG]\d{4}/.test(w[3])) return;
@@ -122,6 +227,8 @@ export function InterlinearPanel() {
           </p>
         ) : !data.verses ? (
           <p className="text-muted">Couldn&rsquo;t load the words for this chapter. Check the connection, then tap the verse&rsquo;s Interlinear again.</p>
+        ) : conc ? (
+          <Concordance strong={conc.strong} word={conc.word} translit={conc.translit} hebrew={conc.strong[0] === "H"} onBack={() => setConc(null)} />
         ) : !words ? (
           <p className="text-muted">No original-language words for this verse (some verses are numbered differently in Hebrew).</p>
         ) : (
@@ -185,6 +292,15 @@ export function InterlinearPanel() {
                   </div>
                 )}
                 <p className="text-[11px] text-faint">Strong&rsquo;s {w[3].replace(/^([HG])0*/, "$1")}</p>
+                {/^[HG]\d{4}/.test(w[3]) && !(w[3][0] === "H" && parseInt(w[3].slice(1, 5), 10) >= 9000) && (
+                  <button
+                    type="button"
+                    onClick={() => setConc({ strong: /^[HG]\d{4}[A-Z]?/.exec(w[3])![0], word: lex?.strong === w[3] && lex.e ? lex.e[0] : w[0], translit: lex?.strong === w[3] && lex.e ? lex.e[1] : w[1] })}
+                    className="min-h-9 text-xs text-accent underline-offset-2 hover:underline"
+                  >
+                    Every verse that uses this word
+                  </button>
+                )}
               </div>
             )}
             {r && (

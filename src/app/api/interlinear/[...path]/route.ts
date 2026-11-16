@@ -7,7 +7,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 type R2Object = { httpEtag: string; body?: ReadableStream; size: number };
 type R2BucketLike = { get(key: string, opts?: { onlyIf?: Headers }): Promise<R2Object | null> };
 
-const KEY = /^(?:[a-z0-9]{3}\/\d{1,3}|lex\/[HG]\d|grammar)\.json$/;
+const KEY = /^(?:[a-z0-9]{3}\/\d{1,3}|lex\/[HG]\d|conc\/[HG]\d{1,2}|grammar)\.json$/;
 
 export async function GET(request: Request, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;

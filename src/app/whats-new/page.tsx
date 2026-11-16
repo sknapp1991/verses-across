@@ -17,6 +17,12 @@ export const metadata: Metadata = {
  */
 const WEEKS: { week: string; items: string[] }[] = [
   {
+    week: "Week of November 16",
+    items: [
+      "Concordance: in the Interlinear, tap a Hebrew or Greek word, then “Every verse that uses this word”, to see each place it occurs, how it's translated there, and how often each translation is used. Tap a place to see that verse word by word.",
+    ],
+  },
+  {
     week: "Week of November 9",
     items: [
       "Why Bibles differ: the New Testament verses some Bibles leave out (Matthew 17:21, Acts 8:37…) and the passages they split on (the end of Mark, John 7:53–8:11, 1 John 5:7), the KJV, WEB and ASV side by side with a short note on why. A small mark under those verses in the reader links there.",
@@ -30,6 +36,17 @@ const WEEKS: { week: string; items: string[] }[] = [
       "Cross references now link books to books, and scriptures to the closest passages in the classic books.",
       "Thousands of small leftovers in the books tidied (stray underscores, margin notes, picture captions, accents), and 50 long book names shortened.",
       "The tour has two new steps: the two sites, and what's coming next.",
+      "A home page: new visitors start with tiles for reading, listening, themes and more (with a short questionnaire that suggests where to begin), and returning readers carry on where they left off.",
+      "Human voices: volunteer LibriVox readings now play with the text highlighted for the Spanish Reina-Valera, the French Louis Segond, Luther's German Bible, the Bible in Hebrew and Greek, the KJV Apocrypha, and for English the Bible in Basic English, Young's Literal Translation and the American Standard Version. Also readings of the Analects, Meditations, the Book of Enoch, the Yoga Sutras, the Kojiki, the Confessions, Lucretius and more. The spoken LibriVox introductions are trimmed so each chapter starts with the text.",
+      "Interlinear: tap a verse and choose Interlinear to see every Hebrew or Greek word with its transliteration, grammar, Strong's number and meaning (from STEP Bible's open data).",
+      "How the Bible came to be: a new page, from the first scrolls to printed Bibles, without taking a side.",
+      "Ask AI: names in an answer (people, places, gods) are marked in blue; tap one for a short card, usually from Wikipedia. A whole chapter range it mentions (like Genesis 1–3) opens in one go.",
+      "Listening with the screen off on Android now carries on from chapter to chapter, and you can have each new verse, chapter or book announced.",
+      "Progress: listening counts too (chapters and verses heard), with new badges, and a short animation when you level up.",
+      "Offline downloads: select all, or pick text, audio or both, and see what's already saved.",
+      "Column view on a computer: set the width of each column, from narrow to wide, and Auto fits them to the page again.",
+      "Cross references: a Show more under each collection.",
+      "On Library Across, a bar to skip a book's preface and go straight to the story.",
     ],
   },
   {

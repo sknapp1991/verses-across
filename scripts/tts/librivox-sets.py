@@ -43,7 +43,9 @@ SETS = {
     "bbe": {"title": r"^Bible \(BBE\)", "query": "Bible (BBE)", "lang": "en"},
     "asv": {"title": r"^Bible \(ASV\)", "query": "Bible (ASV)", "lang": "en"},
     "ylt": {"title": r"^Bible \(YLT\)", "query": "Bible (YLT)", "lang": "en"},
-    "web": {"title": r"^Bible \(WEB\)", "query": "Bible (WEB)", "lang": "en"},
+    # WEB: one complete single-reader recording (Ron Altman, LibriVox 21093) instead of the scattered per-book
+    # projects, which cover only 29 books (mostly the NT) plus a Psalms "Selections" that would be cut as all of Psalms.
+    "web": {"title": r"^Bible \(WEB\): Complete$", "query": "Bible (WEB): Complete", "lang": "en", "complete": True},
     # Beyond the Bible (Skylar, Nov 14: other scriptures first, fastest first). Each reads the same edition the
     # site shows (checked against LibriVox's source text). "work" = our work; "version" = our version id;
     # without "books", a project may hold any book of the work (found by matching the words).
@@ -128,6 +130,9 @@ def projects(name: str):
         if re.search(r"version 2", b["title"], re.I):
             continue
         ia = re.search(r"archive\.org/(?:compress|download)/([^/]+)", b.get("url_zip_file") or "")
+        if s.get("complete") and ia:  # one recording of the whole Bible: every book, found per file by which_chapters
+            out.append({"id": b["id"], "title": b["title"], "ia": ia.group(1), "books": OT + NT})
+            continue
         if s.get("work", "bible") != "bible" or s.get("books"):
             # Not numbered like LibriVox's Bible projects: the set's books (or the work's), or "Book N" in the title.
             if not ia:
