@@ -253,7 +253,7 @@ async function listReports(env: Env, url: URL) {
 
 async function createReport(env: Env, me: string, b: Row) {
   const type = clip(b.type, 20);
-  const body = clip(b.body, 8000);
+  const body = clip(b.body, 50000);
   if (!TYPES.has(type)) return bad("Pick a type");
   if (!body) return bad("Write what it is");
   const id = uid();
@@ -333,7 +333,7 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   if (b.body !== undefined) {
     // People edit their own text (the owner may tidy any); Claude never rewrites what someone wrote.
     if (me === "claude" || (report.author !== me && !owner)) return bad("Not your report", 403);
-    const body = clip(b.body, 8000);
+    const body = clip(b.body, 50000);
     if (!body) return bad("Write what it is");
     sets.push("body = ?");
     vals.push(body);
@@ -346,7 +346,7 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
 
 /** "Not fixed": either of you can send a finished report (Live or Done) back with a note; it shows as Reopened. */
 async function reopenReport(env: Env, me: string, id: string, b: Row) {
-  const note = clip(b.note, 4000);
+  const note = clip(b.note, 20000);
   if (!note) return bad("Say what's still wrong");
   const report = await env.DB.prepare("SELECT status FROM reports WHERE id = ?").bind(id).first<{ status: string }>();
   if (!report) return bad("Not found", 404);
@@ -362,7 +362,7 @@ async function reopenReport(env: Env, me: string, id: string, b: Row) {
 
 /** "Fixed, close it": the reporter (or Skylar) confirms a Live fix works → Done (shown as Resolved, in Cases Closed). */
 async function resolveReport(env: Env, me: string, id: string, b: Row) {
-  const note = clip(b?.note, 4000);
+  const note = clip(b?.note, 20000);
   const report = await env.DB.prepare("SELECT status FROM reports WHERE id = ?").bind(id).first<{ status: string }>();
   if (!report) return bad("Not found", 404);
   if (report.status !== "Live") return bad("Only a Live ticket can be closed this way");
@@ -387,7 +387,7 @@ async function listComments(env: Env, thread: string) {
 
 async function addComment(env: Env, me: string, owner: boolean, b: Row) {
   const thread = clip(b.thread, 40);
-  const body = clip(b.body, 4000);
+  const body = clip(b.body, 20000);
   if (!THREAD.test(thread)) return bad("Bad thread");
   if (!body) return bad("Write something");
   // Claude answers from the owner's browser and is shown as Claude.
