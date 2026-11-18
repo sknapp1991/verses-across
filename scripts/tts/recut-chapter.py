@@ -4,6 +4,8 @@ that chapter's text against a reading's transcript, keep the words around it, an
 Tries every given source file and keeps the one where the chapter's words match best.
 
   .venv-tts/Scripts/python -I scripts/tts/recut-chapter.py <version> <voice> <book> <chapter> <lang> <mp3> [<mp3> …]
+  --to-next: end the cut where the reader says "End of chapter" / announces the next chapter (for chapters whose
+  last words were cut off because they didn't match the text).
   e.g. rvr1909 librivox gen 5 es .cache-audio/librivox-rvr1909/<ia>/genesis_01_rv1909_64kb.mp3
 
 Transcripts must exist already (…/transcripts/<stem>.json next to the mp3's folder, as the import scripts leave them).
@@ -29,7 +31,8 @@ def transcript(mp3: Path):
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    version, voice, book, ch, lang, *mp3s = sys.argv[1:]
+    to_next = "--to-next" in sys.argv
+    version, voice, book, ch, lang, *mp3s = [a for a in sys.argv[1:] if a != "--to-next"]
     ch = int(ch)
     lvs.LANG = lang
     lvs.WORK = "bible" if (ROOT / "data" / "texts" / "bible" / version).exists() else next(p.parent.name for p in (ROOT / "data" / "texts").glob(f"*/{version}"))
@@ -47,6 +50,19 @@ def main():
     got, mp3, words, blocks = best
     a = words[blocks[0].b][1] - 8.0  # room for "Chapter N" before verse 1
     z = words[blocks[-1].b + blocks[-1].size - 1][2] + 0.5
+    if to_next:
+        # The last words didn't match (misheard names, etc.): run on to where the reader closes the chapter
+        # ("End of chapter N") or announces the next one, at most 30 s further.
+        last = blocks[-1].b + blocks[-1].size - 1
+        for i in range(last + 1, len(words)):
+            w = lvs.norm(words[i][0])
+            nxt = lvs.norm(words[i + 1][0]) if i + 1 < len(words) else ""
+            if words[i][1] - words[last][2] > 30:
+                break
+            if (w == "end" and nxt == "of") or w in ("chapter", "psalm"):
+                z = words[i][1] - 0.3
+                break
+            z = words[i][2] + 0.5
     win = [w for w in words if a <= w[1] and w[2] <= z]
     out = lvs.CACHE / version / voice
     line = lvs.cut(f"{version}-recut", version, out, mp3, [(book, ch)], win, mp3.name)

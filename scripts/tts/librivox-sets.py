@@ -25,6 +25,18 @@ import sys
 import time
 import unicodedata
 import urllib.parse
+
+if os.name == "nt":
+    # Started from a background shell, every ffmpeg/ffprobe would open its own hidden console, and the small
+    # desktop heap of a background session runs out after a few hundred (Windows rc 0xC0000142: "can't start").
+    # No console at all for child processes (ours and Whisper's own ffmpeg calls).
+    _popen_init = subprocess.Popen.__init__
+
+    def _no_window(self, *a, **kw):
+        kw["creationflags"] = kw.get("creationflags", 0) | 0x08000000  # CREATE_NO_WINDOW
+        _popen_init(self, *a, **kw)
+
+    subprocess.Popen.__init__ = _no_window
 import urllib.request
 from pathlib import Path
 
@@ -242,8 +254,16 @@ def transcribe(mp3: Path, lang: str):
 
 
 def duration(mp3: Path) -> float:
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(mp3)], capture_output=True, text=True)
-    return float(out.stdout.strip())
+    # ffprobe now and then prints nothing (seen once mid-run on a good file): try again before giving up.
+    for attempt in range(4):
+        out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(mp3)], capture_output=True, text=True)
+        if out.stdout.strip():
+            return float(out.stdout.strip())
+        time.sleep(2 + attempt * 3)
+    # Still nothing (happens deep into a long GPU run, rc printed below): LibriVox's _64kb files are constant
+    # 64 kbit/s, so the size gives the length closely enough for the cut's end limit.
+    print(f"  ffprobe gave nothing for {mp3.name} (rc {out.returncode}); length from file size", flush=True)
+    return mp3.stat().st_size * 8 / 64000
 
 
 def which_chapters(version: str, books, words):
@@ -425,7 +445,14 @@ def align_set(name: str, limit: int):
                 mark.parent.mkdir(parents=True, exist_ok=True)
                 mark.write_text("none", encoding="utf-8")
                 continue
-            line = cut(name, version, out, mp3, chs, words, f)
+            try:
+                line = cut(name, version, out, mp3, chs, words, f)
+            except (subprocess.CalledProcessError, OSError) as e:
+                # Windows sometimes can't start ffmpeg deep into a long run (rc 0xC0000142): skip this file
+                # (no .done mark, so the next run retries it) instead of ending the whole run.
+                print(f"{f}: FAILED to cut ({e.__class__.__name__}: {str(e)[-80:]}), will retry next run", flush=True)
+                time.sleep(10)
+                continue
             print(line, flush=True)
             log.append(line)
             mark.parent.mkdir(parents=True, exist_ok=True)
