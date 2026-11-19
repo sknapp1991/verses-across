@@ -6,12 +6,13 @@
  *
  *   npx tsx scripts/tts/catalog.ts --local
  */
-import { cp, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { booksOfWork, getVersion } from "../../src/lib/catalog";
 type Recording = { id: string; version: string; voice: string; label: string; engine: string; license: string; rev?: string; chapters?: Record<string, number[]> };
-/** Bumped when a voice's files are redone under the same names (browsers keep audio a year): Nov 14, LibriVox intros cut. */
-const REV: Record<string, string> = { armenta: "2", librivox: "2" };
+/** Bumped when a voice's files are redone under the same names (browsers keep audio a year): Nov 14, LibriVox intros
+ * cut; Nov 18, word times added to the timing files (scripts/tts/word-times.py). */
+const REV: Record<string, string> = { armenta: "3", librivox: "3" };
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const SRC = path.join(ROOT, ".cache-audio");
@@ -56,9 +57,15 @@ const dirs = async (p: string) => (await readdir(p, { withFileTypes: true }).cat
 async function main() {
   const local = process.argv.includes("--local");
   const recs: Recording[] = [];
+  // Voices not to list yet (still being imported or checked): "<version>/<voice>" per line in .cache-audio/hold.txt.
+  const held = (await readFile(path.join(SRC, "hold.txt"), "utf8").catch(() => ""))
+    .split(/\r?\n/)
+    .map((l) => l.replace(/#.*/, "").trim())
+    .filter(Boolean);
   for (const version of await dirs(SRC)) {
     if (version === "hf" || version === "piper" || version.startsWith("librivox")) continue; // tools / raw downloads, not recordings
     for (const voice of await dirs(path.join(SRC, version))) {
+      if (held.includes(`${version}/${voice}`)) continue;
       const chapters: Record<string, number[]> = {};
       let total = 0;
       let all = true;

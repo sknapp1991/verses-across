@@ -72,6 +72,43 @@ SETS = {
     "leonard": {"title": r"^On the Nature of Things \(Leonard", "query": "On the Nature of Things", "lang": "en", "work": "lucretius"},
     "pusey": {"title": r"^Confessions \(Pusey", "query": "Confessions (Pusey", "lang": "en", "work": "confessions"},
     "griffith-ry": {"title": r"^Ramayan, Book \d", "query": "Ramayan, Book", "lang": "en", "work": "ramayana", "book_re": r"Book (\d+)", "book_fmt": "ry{}"},
+    # Nov 18 (Skylar: go): every LibriVox reading whose source text is the edition the site shows (LibriVox's
+    # url_text_source checked against catalog.json's sourceUrl; same Gutenberg ebook, or the same translation).
+    # Scripture first, then classics and philosophy.
+    "pickthall": {"title": r"^Meaning of the Glorious Koran$", "query": "Meaning of the Glorious Koran", "lang": "en", "work": "quran"},
+    "jps1917": {"title": r"^Torah \(JPSA\) 0[1-5]:", "query": "Torah (JPSA)", "lang": "en", "work": "tanakh",
+                "books": ["gen", "exo", "lev", "num", "deu"]},
+    "long": {"title": r"^Meditations$", "query": "Meditations", "lang": "en", "work": "meditations"},  # Harvard Classics = Long
+    "benham": {"title": r"^Imitation of Christ$", "query": "Imitation of Christ", "lang": "en", "work": "imitation"},
+    "legge-ttc": {"title": r"^Tao Teh King$", "query": "Tao Teh King", "lang": "en", "work": "tao-te-ching"},
+    "legge-ic": {"title": r"^Yi King - I Ching", "query": "Yi King", "lang": "en", "work": "i-ching"},
+    "legge-gl": {"title": r"^Great Learning & The Doctrine of the Mean$", "query": "Great Learning", "lang": "en", "work": "great-learning"},
+    "legge-mean": {"title": r"^Great Learning & The Doctrine of the Mean$", "query": "Great Learning", "lang": "en", "work": "mean"},
+    "legge-men": {"title": r"^Works of Mencius$", "query": "Works of Mencius", "lang": "en", "work": "mencius"},
+    "dryden": {"title": r"^Aeneid$", "query": "Aeneid", "lang": "en", "work": "aeneid"},
+    "butler-il": {"title": r"^Iliad$", "query": "Iliad", "lang": "en", "work": "iliad"},
+    "butler-od": {"title": r"^Odyssey$", "query": "Odyssey", "lang": "en", "work": "odyssey"},
+    "evelyn-white": {"title": r"^Works and Days, The Theogony", "query": "Works and Days", "lang": "en", "work": "hesiod",
+                     "books": ["works-days", "theogony"]},
+    "zimmern": {"title": r"^Beyond Good and Evil$", "query": "Beyond Good and Evil", "lang": "en", "work": "beyond-good-evil"},
+    "common": {"title": r"^Thus Spake Zarathustra: A Book for All and None$", "query": "Thus Spake Zarathustra", "lang": "en", "work": "zarathustra"},
+    "veitch": {"title": r"^Discourse on the Method of Rightly", "query": "Discourse on the Method", "lang": "en", "work": "discourse-method"},
+    "emerson": {"title": r"^Essays, First Series$", "query": "Essays, First Series", "lang": "en", "work": "emerson-essays"},
+    "hall": {"title": r"^General Introduction to Psychoanalysis$", "query": "General Introduction to Psychoanalysis", "lang": "en", "work": "freud-intro"},
+    "hinkle": {"title": r"^Psychology of the Unconscious$", "query": "Psychology of the Unconscious", "lang": "en", "work": "jung-unconscious"},
+    "hume": {"title": r"^Dialogues Concerning Natural Religion$", "query": "Dialogues Concerning Natural Religion", "lang": "en", "work": "hume-dialogues"},
+    "abbott-cpr": {"title": r"^Critique of Practical Reason$", "query": "Critique of Practical Reason", "lang": "en", "work": "kant-practical"},
+    "meiklejohn": {"title": r"^Critique of Pure Reason$", "query": "Critique of Pure Reason", "lang": "en", "work": "kant-pure"},
+    "abbott-gw": {"title": r"^Fundamental Principles of the Metaphysic of Morals$", "query": "Fundamental Principles of the Metaphysic", "lang": "en", "work": "kant-groundwork"},
+    "hobbes": {"title": r"^Leviathan \(Books", "query": "Leviathan (Books", "lang": "en", "work": "leviathan"},
+    "mill": {"title": r"^On Liberty$", "query": "On Liberty", "lang": "en", "work": "on-liberty"},  # Harvard Classics text
+    "trotter": {"title": r"^Pensées$", "query": "Pensées", "lang": "en", "work": "pensees"},  # Harvard Classics = Trotter
+    "jowett-rep": {"title": r"^Republic$", "query": "Republic", "lang": "en", "work": "republic"},
+    "russell": {"title": r"^Problems of Philosophy$", "query": "Problems of Philosophy", "lang": "en", "work": "russell-problems"},
+    "locke": {"title": r"^Two Treatises of Civil Government$", "query": "Two Treatises of Civil Government", "lang": "en", "work": "second-treatise"},
+    "elwes": {"title": r"^Ethics$", "query": "Ethics", "lang": "en", "work": "spinoza-ethics"},
+    "james": {"title": r"^Varieties of Religious Experience$", "query": "Varieties of Religious Experience", "lang": "en", "work": "varieties"},
+    "le-bon": {"title": r"^Crowd: A Study of the Popular Mind$", "query": "Crowd: A Study", "lang": "en", "work": "the-crowd"},
     "kjv-apoc": {
         "title": r"^Bible \(KJV\) Apocrypha/Deuterocanon:",
         "query": "Bible (KJV) Apocrypha",

@@ -409,13 +409,17 @@ export function useReadAlong({
       const span = sc.querySelector(
         `[data-v="${CSS.escape(w.verse)}"] [data-ver="${CSS.escape(readingVersion)}"] [data-text]`,
       ) as HTMLElement | null;
-      const node = span?.firstChild;
-      if (!node || node.nodeType !== Node.TEXT_NODE) return clear();
-      const text = node.textContent ?? "";
+      if (!span) return clear();
+      // The verse's text can be in several pieces (words of Jesus in red): count words over all of it.
+      const nodes: Text[] = [];
+      const walk = document.createTreeWalker(span, NodeFilter.SHOW_TEXT);
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) nodes.push(n as Text);
+      if (!nodes.length) return clear();
+      const text = nodes.map((n) => n.data).join("");
       const all = [...text.matchAll(RAW_WORD)];
       let m: RegExpExecArray | RegExpMatchArray | undefined;
       if (w.word !== undefined) m = all[w.word];
-      else if (w.frac !== undefined) {
+      if (!m && w.frac !== undefined) {
         // Recordings only know how far through the verse they are: pick the word at that share of the text.
         const at = w.frac * text.length;
         // (no Array.findLast: it needs Safari 15.4+)
@@ -424,9 +428,19 @@ export function useReadAlong({
         m = all[i] ?? all[0];
       }
       if (!m) return clear();
+      // Character position in the whole verse -> the piece of text it falls in.
+      const at = (pos: number, end: boolean): [Text, number] => {
+        let base = 0;
+        for (const n of nodes) {
+          if (pos < base + n.data.length || (end && pos === base + n.data.length)) return [n, pos - base];
+          base += n.data.length;
+        }
+        const last = nodes[nodes.length - 1];
+        return [last, last.data.length];
+      };
       const range = document.createRange();
-      range.setStart(node, m.index!);
-      range.setEnd(node, m.index! + m[0].length);
+      range.setStart(...at(m.index!, false));
+      range.setEnd(...at(m.index! + m[0].length, true));
       css.highlights!.set("reading-word", new HighlightCtor(range));
     });
     return () => {

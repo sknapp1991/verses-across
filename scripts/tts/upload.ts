@@ -16,6 +16,12 @@ const BUCKET = "snoopwiggy-audio";
 const DONE = path.join(SRC, "uploaded.json");
 const PARALLEL = 8;
 
+/** Voices not to publish yet (still being imported or checked): "<version>/<voice>" per line in .cache-audio/hold.txt. */
+async function hold(): Promise<string[]> {
+  const t = await readFile(path.join(SRC, "hold.txt"), "utf8").catch(() => "");
+  return t.split(/\r?\n/).map((l) => l.replace(/#.*/, "").trim()).filter(Boolean);
+}
+
 async function walk(dir: string, out: string[] = []) {
   for (const d of await readdir(dir, { withFileTypes: true })) {
     const p = path.join(dir, d.name);
@@ -46,12 +52,16 @@ async function main() {
   const dry = process.argv.includes("--dry-run");
   const done: Record<string, number> = JSON.parse(await readFile(DONE, "utf8").catch(() => "{}"));
   const files: string[] = [];
+  const held = await hold();
   for (const v of await readdir(SRC, { withFileTypes: true }))
-    // (librivox-*: the raw LibriVox downloads and their transcripts, only cut into chapters here, never served)
-    if (v.isDirectory() && !["hf", "piper"].includes(v.name) && !v.name.startsWith("librivox")) await walk(path.join(SRC, v.name), files);
+    // (librivox-*: the raw LibriVox downloads and their transcripts, only cut into chapters here, never served;
+    // tools / *-backup / *-checks: working folders)
+    if (v.isDirectory() && !["hf", "piper", "__pycache__"].includes(v.name) && !/^(librivox|tools)|-(backup|checks)$/.test(v.name))
+      await walk(path.join(SRC, v.name), files);
   const todo: { key: string; file: string; mtime: number }[] = [];
   for (const f of files) {
     const key = path.relative(SRC, f).split(path.sep).join("/");
+    if (held.some((h) => key.startsWith(`${h}/`))) continue;
     const mtime = (await stat(f)).mtimeMs;
     if (done[key] !== mtime) todo.push({ key, file: f, mtime });
   }

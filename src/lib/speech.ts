@@ -225,7 +225,8 @@ function chunks(text: string): string[] {
 
 /* ---------- word-by-word position (boundary events; not every voice sends them) ---------- */
 
-/** `word`: exact word index (device voices); `frac`: how far through the verse (recordings, approximate). */
+/** `word`: exact word index (device voices, and recordings with word times); `frac`: how far through the verse
+ * (recordings: the estimate, used when there's no word index or it doesn't fit the text shown). */
 export type WordPos = { verse: string; word?: number; frac?: number } | null;
 const wordSubs = new Set<(w: WordPos) => void>();
 /** Called with the index of the word being spoken in the current verse (null when it ends). */
@@ -235,7 +236,14 @@ export function onWord(cb: (w: WordPos) => void) {
     wordSubs.delete(cb);
   };
 }
-const emitWord = (w: WordPos) => wordSubs.forEach((cb) => cb(w));
+let lastWord = "";
+const emitWord = (w: WordPos) => {
+  // Recordings report every frame: tell listeners only when the word changes (an estimate changes word with frac).
+  const key = w ? `${w.verse}|${w.word ?? ""}|${w.word === undefined ? Math.round((w.frac ?? 0) * 200) : ""}` : "";
+  if (key === lastWord) return;
+  lastWord = key;
+  wordSubs.forEach((cb) => cb(w));
+};
 const countWords = (s: string) => (s.match(RAW_WORD) ?? []).length;
 
 /* ---------- keep the screen on while listening (Screen Wake Lock API) ---------- */
@@ -525,7 +533,20 @@ export function close() {
 
 /* ---------- recorded audio (audio v2): an <audio> element keeps playing with the screen locked ---------- */
 
-export type Timing = { duration: number; verses: { v: string; s: number; e: number }[] };
+/** `w`: when each word of the verse starts (human voices, scripts/tts/word-times.py); missing = estimate it. */
+export type Timing = { duration: number; verses: { v: string; s: number; e: number; w?: number[] }[] };
+
+/** The word being heard at time t: the saved word times when the recording has them, else how far through the verse. */
+function wordAt(verse: string, t: number, s: number, e: number, w?: number[]): WordPos {
+  if (t < s || t > e) return null;
+  const frac = (t - s) / Math.max(0.1, e - s);
+  if (w?.length) {
+    let i = 0;
+    while (i + 1 < w.length && w[i + 1] <= t) i++;
+    return { verse, word: i, frac }; // (frac in case the text shown has another word count)
+  }
+  return { verse, frac };
+}
 let audio: HTMLAudioElement | null = null;
 let rec: {
   timing: Timing;
@@ -756,7 +777,7 @@ function streamCheck() {
 /* ---------- several recorded versions in turn (keeps going with the screen locked) ---------- */
 
 export type MixSeg = { v: string; version: string; rate: number };
-type Seg = MixSeg & { s: number; e: number };
+type Seg = MixSeg & { s: number; e: number; w?: number[] };
 type MixTrack = { src: string; timing: Timing; blob: boolean };
 type Mix = { seq: Seg[]; i: number; tracks: Record<string, MixTrack>; cur: string | null; timer: number; next?: Promise<MixNext | null> };
 export type MixTrackSpec = { version: string; url: string; timingUrl: string };
@@ -787,7 +808,7 @@ function resolveSeq(seq: MixSeg[], tracks: Record<string, MixTrack>): Seg[] {
   const out: Seg[] = [];
   for (const x of seq) {
     const t = tracks[x.version]?.timing.verses.find((y) => y.v === x.v);
-    if (t) out.push({ ...x, s: t.s, e: t.e });
+    if (t) out.push({ ...x, s: t.s, e: t.e, w: t.w });
   }
   return out;
 }
@@ -995,8 +1016,7 @@ function tick() {
   if (rec.mix) {
     // Several versions in turn: mixCheck moves between verses; this only follows the words.
     const seg = rec.mix.seq[rec.mix.i];
-    if (seg && rec.mix.cur === seg.version)
-      emitWord(t >= seg.s && t <= seg.e ? { verse: seg.v, frac: (t - seg.s) / Math.max(0.1, seg.e - seg.s) } : null);
+    if (seg && rec.mix.cur === seg.version) emitWord(wordAt(seg.v, t, seg.s, seg.e, seg.w));
     rec.raf = requestAnimationFrame(tick);
     return;
   }
@@ -1015,7 +1035,7 @@ function tick() {
       return;
     }
   }
-  if (cur) emitWord(t >= cur.s && t <= cur.e ? { verse: cur.v, frac: (t - cur.s) / Math.max(0.1, cur.e - cur.s) } : null);
+  if (cur) emitWord(wordAt(cur.v, t, cur.s, cur.e, cur.w));
   // End of a chosen verse range.
   if (rec.until) {
     const end = vs.find((x) => x.v === rec!.until);
