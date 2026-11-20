@@ -158,16 +158,23 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
       /* first run */
     }
     const OPEN = new Set(["New", "Seen", "Working", "Question", "Reopened"]);
+    // "Unreachable" only after 2 failed checks in a row (a single Cloudflare 500 or network blip is not news), and
+    // the error shortened to its first line (an HTML error page is not useful in a notification).
     let down = false;
+    let fails = 0;
     const tick = async () => {
       let list;
       try {
         list = await api("/api/reports");
         if (down) console.log("HUB BACK");
         down = false;
+        fails = 0;
       } catch (e) {
-        if (!down) console.log(`HUB UNREACHABLE ${e.message}`);
-        down = true;
+        fails++;
+        if (!down && fails >= 2) {
+          console.log(`HUB UNREACHABLE ${String(e.message).split("\n")[0].replace(/<[^>]*>/g, " ").slice(0, 120)}`);
+          down = true;
+        }
         return;
       }
       const next = {};
