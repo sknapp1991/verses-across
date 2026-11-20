@@ -3,6 +3,10 @@ import { booksOfWork, catalog, isLiteratureWork, sideOfWork } from "@/lib/catalo
 import { SITE_SIDE } from "@/lib/site";
 import { chapterPath, SITE } from "@/lib/seo-shared";
 import themes from "../../public/themes/index.json";
+import articleIndex from "../../public/articles/index.json";
+import type { ArticleSummary } from "@/lib/articles";
+
+const articles = articleIndex as ArticleSummary[];
 
 /** Every chapter's main address on this site (no ?v=), so search engines can find them all. Built once at build time. */
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -13,6 +17,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE}/whats-new`, priority: 0.3 },
     { url: `${SITE}/themes`, priority: 0.6 },
     ...(SITE_SIDE === "scriptures" ? [{ url: `${SITE}/differences`, priority: 0.5 }, { url: `${SITE}/bible-history`, priority: 0.5 }] : []),
+    // Articles: only published ones (previews in review are unlisted and noindex), plus the list once there is one.
+    ...(SITE_SIDE === "scriptures"
+      ? articles.filter((a) => a.status === "published").flatMap((a, i) => [...(i ? [] : [{ url: `${SITE}/articles`, priority: 0.5 }]), { url: `${SITE}/articles/${a.slug}`, priority: 0.5 }])
+      : []),
     ...themes.filter((t) => ((t as { side?: string }).side ?? "scriptures") === SITE_SIDE).map((t) => ({ url: `${SITE}/themes/${t.id}`, priority: 0.5 })),
   ];
   for (const w of catalog.works.filter((w) => sideOfWork(w.id) === SITE_SIDE))

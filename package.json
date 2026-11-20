@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
-  "author": "Skylar Knapp and Michael Knapp",
+  "author": "Skylar Knapp",
   "browserslist": [
     "chrome 111",
     "edge 111",
@@ -31,6 +31,7 @@
     "import-words": "tsx scripts/import-words.ts",
     "strongs:extract": "tsx scripts/build-strongs.ts --extract",
     "search-index": "tsx scripts/build-search.ts",
+    "articles": "tsx scripts/build-articles.mts",
     "dict": "tsx scripts/build-dict.ts",
     "predev": "node scripts/pack-if-stale.mjs",
     "prebuild": "node scripts/pack-if-stale.mjs"

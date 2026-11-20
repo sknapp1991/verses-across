@@ -1,50 +1,45 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { permanentRedirect } from "next/navigation";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
 import { BackLink, PageChrome } from "@/components/page-chrome";
+import { ArticlesBrowser } from "@/components/articles-browser";
+import index from "../../../public/articles/index.json";
+import type { ArticleSummary } from "@/lib/articles";
+
+/** Only published articles are listed (previews in review: /articles?preview=1 loads them in the browser). */
+const PUBLISHED = (index as ArticleSummary[]).filter((a) => a.status === "published");
 
 export const metadata: Metadata = {
   title: "Articles",
-  description: "Articles, research and insights on the world's scriptures: how they came to be, what they say, and how they speak to each other.",
+  description:
+    "Articles on the world's scriptures, symbols and ideas, each in up to three depths: a short read, a medium one and an extensive study.",
   alternates: { canonical: "/articles" },
-  robots: { index: false, follow: true }, // nothing to show yet: indexed once the first articles are up
+  ...(PUBLISHED.length ? {} : { robots: { index: false, follow: true } }), // indexed once the first article is up
 };
 
 const a = "underline underline-offset-2 hover:text-ink";
 
 /**
- * Articles (ticket e1decd4b, the brother's idea, Nov 13): a home-page tile and this page, empty for now. Later a
- * place for blog-like articles, research and insights. How articles are written, signed and approved is still to be
- * decided with Skylar (the brother's name never appears in public).
+ * Articles (ROADMAP AR, my brother's design, hub 5e5cf67c): published articles with search and filters, and the ten
+ * volumes. Articles: data/articles/<slug>/ → scripts/build-articles.mts → public/articles/.
  */
 export default function ArticlesPage() {
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/articles`); // a Verses Across page
   return (
     <main className="h-app overflow-y-auto bg-paper text-muted">
       <PageChrome fallback="/read" />
-      <div className="mx-auto max-w-3xl space-y-6 px-4 pb-16 pt-8 leading-relaxed md:px-8">
+      <div className="mx-auto max-w-4xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
           <BackLink fallback="/read" className={`text-sm ${a}`}>
             ← Home
           </BackLink>
           <h1 className="font-serif text-3xl font-semibold text-ink">Articles</h1>
-          <p>Articles, research and insights on the world&rsquo;s scriptures: how they came to be, what they say, and how they speak to each other.</p>
-        </header>
-        <section className="rounded-2xl border border-dashed border-line bg-panel px-5 py-8 text-center">
-          <p className="font-serif text-xl text-ink">The first articles are on their way.</p>
-          <p className="mt-2 text-sm">
-            Meanwhile, read{" "}
-            <Link href="/bible-history" className={a}>
-              How the Bible came to be
-            </Link>{" "}
-            or{" "}
-            <Link href="/differences" className={a}>
-              Why Bibles differ
-            </Link>
-            .
+          <p>
+            Articles on the world&rsquo;s scriptures, symbols and ideas: what the traditions say, where they meet and where they
+            differ. Each comes in up to three depths: a short read, a medium one and an extensive study. Switch at the top of an article.
           </p>
-        </section>
+        </header>
+        <ArticlesBrowser articles={PUBLISHED} />
       </div>
     </main>
   );

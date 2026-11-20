@@ -1,0 +1,69 @@
+[
+ {
+  "slug": "if-i-were-the-devil",
+  "title": "If I Were the Devil",
+  "subtitle": "A warning for our time. Inspired by Paul Harvey's 1965 radio broadcast \"If I Were the Devil\": a new piece written for today, not his words.",
+  "volume": 6,
+  "traditions": [
+   "Christianity",
+   "Judaism"
+  ],
+  "themes": [
+   "evil",
+   "temptation",
+   "pride",
+   "society",
+   "repentance"
+  ],
+  "status": "review",
+  "date": "2026-11-20",
+  "summary": "How evil might quietly take a society apart, written as a mirror rather than a finger pointed at others, and then a way back.",
+  "aiNote": "Drafted with AI from the Verses Across team's outline, in its own words, inspired by Paul Harvey's 1965 broadcast. Scripture is quoted from the King James Version on this site.",
+  "depths": {
+   "medium": {
+    "words": 1711,
+    "minutes": 9
+   }
+  }
+ },
+ {
+  "slug": "worship",
+  "title": "What Do You Worship?",
+  "subtitle": "Everyone kneels somewhere. On the oldest question of the human heart, and how to tell what we really serve.",
+  "volume": 1,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Islam",
+   "Hinduism",
+   "Buddhism",
+   "Philosophy"
+  ],
+  "themes": [
+   "worship",
+   "idolatry",
+   "devotion",
+   "sacrifice",
+   "the self",
+   "ultimate concern"
+  ],
+  "status": "review",
+  "date": "2026-11-20",
+  "summary": "Worship is not only what happens in a temple: it is where we give our attention, love and effort. How the traditions describe it, how it has changed through history, and one test that shows what any of us really serves.",
+  "aiNote": "Drafted with AI from the Verses Across team's own outline, then edited and checked by the team. Scripture is quoted from the public-domain translations on this site (King James Version, Pickthall's Qur'an, Besant's Bhagavad Gita, Pusey's Augustine).",
+  "depths": {
+   "short": {
+    "words": 479,
+    "minutes": 2
+   },
+   "medium": {
+    "words": 1556,
+    "minutes": 8
+   },
+   "long": {
+    "words": 3512,
+    "minutes": 18
+   }
+  }
+ }
+]
