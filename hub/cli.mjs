@@ -14,6 +14,7 @@
 //   node hub/cli.mjs say <id> <message…>            (a reply on the report, as Claude)
 //   node hub/cli.mjs approval <title> <clip path> [detail…]
 //   node hub/cli.mjs approvals | feedback
+//   node hub/cli.mjs ask <question…> [--site verses|library]   (a question for Skylar as a ticket: reaches his phone)
 //   node hub/cli.mjs shipped <text> [url]
 //   node hub/cli.mjs get <media id> <save to path>   (download a report's photo/video to look at)
 //   node hub/cli.mjs autoreview                     (tickets closed automatically a week+ ago, to check they stayed fixed)
@@ -136,6 +137,15 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
     for (const x of await api("/api/approvals")) console.log(`${x.id}  ${x.status.padEnd(8)} ${x.title}${x.note ? `  (${x.note})` : ""}`);
   } else if (cmd === "feedback") {
     for (const f of await api("/api/feedback")) console.log(`${f.id}  ${f.status.padEnd(6)} ${f.topic}  ${f.page}  ${f.message.replace(/\s+/g, " ").slice(0, 100)}`);
+  } else if (cmd === "ask") {
+    // A question for Skylar as a hub ticket (SESSION-PLAYBOOK: 6 AM-6 PM ET questions go to the hub, which reaches his
+    // phone). Type Question, from Claude, status Question; his replies show up in the watch as NEW REPLY.
+    const site = a.includes("--site") ? a[a.indexOf("--site") + 1] : "verses";
+    const text = a.filter((x, i) => x !== "--site" && a[i - 1] !== "--site").join(" ").trim();
+    if (!text) throw new Error("ask <question…> [--site verses|library]");
+    const { id } = await send("/api/reports", { type: "Question", body: text, place: "Claude", site, priority: "normal" });
+    await send(`/api/reports/${id}`, { status: "Question" }, "PATCH");
+    console.log(`asked ${id}`);
   } else if (cmd === "shipped") {
     await send("/api/shipped", { text: a[0], url: a[1] ?? "" });
     console.log("ok");
@@ -185,7 +195,9 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
       } else {
         for (const r of list) {
           const was = state[r.id];
-          if (!was) console.log(`NEW TICKET ${line(r)}`);
+          if (!was) {
+            if (r.author !== "claude") console.log(`NEW TICKET ${line(r)}`);
+          }
           else {
             if (r.status !== was.s && (r.status === "Reopened" || r.status === "New")) console.log(`REOPENED ${line(r)}`);
             if ((r.comments || 0) > was.c) {

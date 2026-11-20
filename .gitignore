@@ -94,3 +94,6 @@ __pycache__/
 # Articles: raw drafts from the team stay private (only the edited depths are public)
 /data/articles/*-raw.md
 /data/articles/*/_source-draft.md
+
+# Roadmap page build (published as an Artifact)
+/.cache-roadmap/
