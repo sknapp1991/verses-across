@@ -80,6 +80,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   hadith: ["hadith-ar"],
   upanishads: ["muller"],
   ramayana: ["griffith-ry"],
+  "vishnu-purana": ["wilson-vp"],
   vedas: ["griffith"],
   mahabharata: ["ganguli"],
   quran: ["pickthall", "tanzil"],

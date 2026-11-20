@@ -17,6 +17,7 @@
     { "id": "hadith", "name": "Hadith", "versification": "hadith" },
     { "id": "upanishads", "name": "Upanishads", "versification": "upanishads" },
     { "id": "ramayana", "name": "Ramayana", "versification": "ramayana" },
+    { "id": "vishnu-purana", "name": "Vishnu Purana", "versification": "vishnu-purana" },
     { "id": "vedas", "name": "Vedas", "versification": "vedas" },
     { "id": "mahabharata", "name": "Mahabharata", "versification": "mahabharata" },
     { "id": "tao-te-ching", "name": "Tao Te Ching", "versification": "tao-te-ching" },
@@ -495,6 +496,15 @@
       "attribution": "Translated by Ralph T. H. Griffith (1870–74), public domain; transcription from the Internet Sacred Text Archive.",
       "sourceUrl": "https://sacred-texts.com/hin/rama/index.htm",
       "licensed": false, "versification": "ramayana"
+    },
+    {
+      "id": "wilson-vp", "work": "vishnu-purana", "abbr": "Wilson", "name": "The Vishnu Purana (H. H. Wilson)",
+      "language": "en", "kind": "native", "dir": "ltr", "year": 1840, "yearNote": "Prose translation, 1840",
+      "translator": "Horace Hayman Wilson",
+      "license": "Public Domain", "licenseNote": "Paragraphs are numbered as verses; each chapter's title is the start of Wilson's own summary (the full summary is in the chapter note). Wilson's preface, footnotes, tables, index and the passages he appended from other works (the Sacrifice of Daksha from the Vayu Purana, his topographical lists, the Legend of Parasurama from the Mahabharata) are not included.",
+      "attribution": "Translated by Horace Hayman Wilson (1840), public domain; transcription from the Internet Sacred Text Archive.",
+      "sourceUrl": "https://sacred-texts.com/hin/vp/index.htm",
+      "licensed": false, "versification": "vishnu-purana"
     },
     {
       "id": "griffith", "work": "vedas", "abbr": "Griffith", "name": "The Vedas (Ralph T. H. Griffith)",
@@ -2054,6 +2064,14 @@
           {"id": "ry4", "name": "Kishkindha Kanda (Kishkindha)", "work": "ramayana", "chapters": 67, "chapterName": "Kishkindha Kanda, canto"},
           {"id": "ry5", "name": "Sundara Kanda (Beautiful)", "work": "ramayana", "chapters": 55, "chapterName": "Sundara Kanda, canto"},
           {"id": "ry6", "name": "Yuddha Kanda (War)", "work": "ramayana", "chapters": 102, "chapterName": "Yuddha Kanda, canto"}
+        ] },
+        { "id": "puranas", "name": "Puranas", "items": [
+          {"id": "vp1", "name": "Vishnu Purana, Book I", "work": "vishnu-purana", "chapters": 22, "chapterName": "Vishnu Purana I, chapter"},
+          {"id": "vp2", "name": "Vishnu Purana, Book II", "work": "vishnu-purana", "chapters": 16, "chapterName": "Vishnu Purana II, chapter"},
+          {"id": "vp3", "name": "Vishnu Purana, Book III", "work": "vishnu-purana", "chapters": 18, "chapterName": "Vishnu Purana III, chapter"},
+          {"id": "vp4", "name": "Vishnu Purana, Book IV", "work": "vishnu-purana", "chapters": 24, "chapterName": "Vishnu Purana IV, chapter"},
+          {"id": "vp5", "name": "Vishnu Purana, Book V", "work": "vishnu-purana", "chapters": 38, "chapterName": "Vishnu Purana V, chapter"},
+          {"id": "vp6", "name": "Vishnu Purana, Book VI", "work": "vishnu-purana", "chapters": 8, "chapterName": "Vishnu Purana VI, chapter"}
         ] },
         { "id": "upanishads", "name": "Upanishads", "items": [
           {"id": "isha", "name": "Isha Upanishad", "work": "upanishads", "chapters": 1, "chapterName": "Isha Upanishad"},

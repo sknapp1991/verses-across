@@ -171,6 +171,15 @@ Brihadaranyaka, Svetasvatara, Kaushitaki, Maitrayaniya) in F. Max Müller's tran
 the East vols. 1 (1879) and 15 (1884), public domain, from the Internet Sacred Text Archive
 (`scripts/import-upanishads.ts`). Footnotes are left out. (Müller didn't translate the Mandukya.)
 
+## Vishnu Purana (Hinduism, added Nov 19 2026)
+
+Horace Hayman Wilson's translation, "The Vishnu Purana: A System of Hindu Mythology and Tradition" (1840, public
+domain), six books, 126 chapters, from the Internet Sacred Text Archive (`scripts/import-world.ts vishnuPurana`).
+Paragraphs are numbered as verses; Wilson's chapter summaries kept as titles and notes. Left out: his preface,
+footnotes, tables, page numbers, index, and the passages he appended from other works (Sacrifice of Daksha from the
+Vayu Purana, topographical lists, Legend of Parasurama from the Mahabharata). Two transcription slips restored
+(III, 3 "seventeenth"; IV, 24 a missing full stop).
+
 ## Ramayana (Hinduism, added Nov 2026)
 
 Ralph T. H. Griffith's verse translation, "The Rámáyan of Válmíki" (1870–74, public domain), six books,

@@ -548,6 +548,65 @@ async function jaina() {
   void ordinal;
 }
 
+/** Vishnu Purana — H. H. Wilson (1840), archive.sacred-texts.com hin/vp/vp.txt.gz (fetched in the browser,
+ * Skylar OK'd Nov 19). Six books, 126 chapters; the chapter's summary line is its title (shortened), paragraphs are
+ * verses. Wilson's preface, footnotes, page numbers and the index are left out. */
+async function vishnuPurana() {
+  const p = await sacredTextsGz("vishnu-purana", "vp.txt.gz", { footnoteBlocks: true });
+  const BOOK = /^BOOK ([IVX]+)\.?$/;
+  // The body starts at the second "BOOK I." (the first is in the table of contents) and ends at the index.
+  const starts = p.map((x, i) => [i, x] as const).filter(([, x]) => x === "BOOK I." || x === "BOOK I");
+  const from = starts[starts.length - 1][0];
+  const end = p.findIndex((x, i) => i > from && /^INDEX\.?$/.test(x));
+  const body = p.slice(from, end > 0 ? end : undefined);
+  await resetVersion("vishnu-purana", "wilson-vp");
+  let book = 0;
+  let total = 0;
+  let chapters = 0;
+  const heads = body.map((x, i) => [i, x] as const).filter(([, x]) => BOOK.test(x) || /^CHAP\.? ?[IVXL]+\.?$/.test(x));
+  for (const [k, [at, head]] of heads.entries()) {
+    if (BOOK.test(head)) {
+      book = roman(BOOK.exec(head)![1]);
+      continue;
+    }
+    const ch = roman(/^CHAP\.? ?([IVXL]+)/.exec(head)![1]);
+    const stop = k + 1 < heads.length ? heads[k + 1][0] : body.length;
+    const summary = body[at + 1] ?? "";
+    // "Invocation. Maitreya inquires of … Vishnu the origin … of all things." → its first sentence as the title.
+    const first = summary.split(/(?<=[a-z\])])(?<!\bviz|&c|\bp)\.\s/)[0].replace(/\.$/, "");
+    const title = first.length > 90 ? first.slice(0, first.lastIndexOf(" ", 88)) + "…" : first;
+    // Page numbers ("[p. 666]") out; a line that starts in lower case continues the paragraph a page break cut.
+    const paras: string[] = [];
+    for (const raw of body.slice(at + 2, stop)) {
+      const x = raw
+        .replace(/\s*\[p\. ?[\divxl]+\]\s*/gi, " ")
+        .replace(/,?\s*<page \d+>\.?/g, "")
+        .replace(/(\w)- (\w)/g, "$1-$2") // "counter- acting", "Veda- vyasa": the hyphen stays, the space goes
+        .replace(/\s+([,;:])/g, "$1")
+        // Slips in the transcription, checked against the printed edition's sequence:
+        .replace("in the sixteenth, Dhananjaya; in the, Kritanjaya", "in the sixteenth, Dhananjaya; in the seventeenth, Kritanjaya")
+        .replace(/root out the nine Nandas$/, "root out the nine Nandas.")
+        .trim();
+      if (!x || /^VISHNU PURANA\.?$/.test(x)) continue;
+      // Wilson appends material from other works under an all-capitals heading ("SACRIFICE OF DAKSHA. (From the
+      // Vayu Purana.)" in I, 8; "TOPOGRAPHICAL LISTS," in II, 3; "LEGEND OF PARAS'URAMA. (From the Mahabharata.)" in
+      // IV, 7): not the Vishnu Purana, so the chapter ends there.
+      if (paras.length && /^[^a-z]{10,}$/.test(x)) break;
+      // Cells of Wilson's tables (lists of kings and reigns in IV, 24): bare numbers, single names, "Total".
+      if (x.length <= 25 && (/^[\d.]+$/.test(x) || /\d/.test(x) || !/[.,:;!?"')]$/.test(x))) {
+        if (process.env.VP_DEBUG) console.log("DROP", x);
+        continue;
+      }
+      if (paras.length && /^[a-z]/.test(x)) paras[paras.length - 1] += ` ${x}`;
+      else paras.push(x);
+    }
+    await writeChapter("vishnu-purana", "wilson-vp", `vp${book}`, ch, numbered(paras), `Summary (Wilson): ${summary.replace(/--P\.\s*<page \d+>\.?$/, "").trim()}`, title);
+    total += paras.length;
+    chapters++;
+  }
+  report("vishnu-purana", chapters, total);
+}
+
 /** Myths and Legends of China — E. T. C. Werner (1922), sacred-texts mlc.txt.gz. 16 chapters. */
 async function chineseMyths() {
   const p = await sacredTextsGz("chinese-myths", "mlc.txt.gz");
@@ -836,6 +895,7 @@ const ALL: Record<string, () => Promise<unknown>> = {
   kojiki,
   yoruba,
   chineseMyths,
+  vishnuPurana,
   jaina,
   ttc,
   analects,

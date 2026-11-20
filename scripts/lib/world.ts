@@ -110,14 +110,25 @@ export function roman(s: string) {
  * scripts away) → its paragraphs, one per line: no page headers, page numbers, footnotes or note marks;
  * paragraphs split across a page break are joined again.
  */
-export async function sacredTextsGz(dir: string, file: string) {
+export async function sacredTextsGz(dir: string, file: string, opts: { footnoteBlocks?: boolean } = {}) {
   const { gunzipSync } = await import("node:zlib");
   const raw = gunzipSync(await readFile(path.join(ROOT, "data", "raw", dir, file))).toString("latin1");
   // The files are Windows-1252; latin1 keeps the bytes, then the few curly quotes are mapped.
   const text = raw.replace(/\r\n/g, "\n").replace(/[\x91\x92]/g, "'").replace(/[\x93\x94]/g, '"').replace(/\x97/g, "—").replace(/\x96/g, "–");
   const out: string[] = [];
+  // footnoteBlocks: each page's "Footnotes" heading starts a block that runs to the page footer ("… at
+  // sacred-texts.com"); drop all of it, including footnote lines that don't start with "^" (quoted verse, tables).
+  let inNotes = false;
   for (let line of text.split("\n")) {
     line = line.trim();
+    if (opts.footnoteBlocks) {
+      if (line === "Footnotes") inNotes = true;
+      if (inNotes) {
+        if (/at sacred-texts\.com\s*$/.test(line)) inNotes = false;
+        continue;
+      }
+      if (/^this page consists (entire(ly)?|solely) of footnotes/i.test(line)) continue;
+    }
     if (!line) continue;
     if (/at sacred-texts\.com\s*$/.test(line) || /^\[p\. [\divxlcdm]+\]$/i.test(line) || /^Click to enlarge/i.test(line)) continue;
     if (line === "Footnotes" || line.startsWith("^")) continue; // footnotes ("^19:1 …")
