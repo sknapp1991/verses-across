@@ -930,7 +930,7 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
 
   if (tucked)
     return (
-      <div data-no-swipe className="absolute bottom-3 right-3 z-20 mb-[env(safe-area-inset-bottom)] flex animate-[chip-in_200ms_ease-out] items-center gap-1 rounded-full border border-line bg-panel/90 p-1 shadow-lg backdrop-blur">
+      <div data-no-swipe data-audio-dock className="absolute bottom-3 right-3 z-20 mb-[env(safe-area-inset-bottom)] flex animate-[chip-in_200ms_ease-out] items-center gap-1 rounded-full border border-line bg-panel/90 p-1 shadow-lg backdrop-blur">
         <button type="button" onClick={ra.toggle} aria-label={playing ? "Pause" : "Play"} className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-ink">
           {playing ? <PauseIcon width={18} height={18} /> : <PlayIcon width={18} height={18} />}
         </button>
@@ -959,6 +959,7 @@ export function ReadAlongBar({ ra }: { ra: ReadAlong }) {
       role="region"
       aria-label="Read aloud"
       data-no-swipe
+      data-audio-dock
       {...swipe}
       style={{ transform: slide, transition: `transform ${ease}` }}
       className="absolute inset-x-0 bottom-0 z-20 animate-[sheet-in_220ms_ease-out] touch-none border-t border-line bg-panel/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] backdrop-blur"

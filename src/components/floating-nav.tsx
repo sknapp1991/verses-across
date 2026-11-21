@@ -61,7 +61,7 @@ export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: Bo
     let cur: HTMLElement | null = null;
     let ro: ResizeObserver | null = null;
     const find = () => {
-      const el = document.querySelector<HTMLElement>('[role="region"][aria-label="Read aloud"]');
+      const el = document.querySelector<HTMLElement>('section[data-audio-dock], [role="region"][data-audio-dock]');
       if (el === cur) return;
       cur = el;
       ro?.disconnect();
@@ -173,6 +173,7 @@ export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: Bo
   return (
     <div
       data-no-swipe
+      data-note-avoid
       style={{ left, top }}
       className={`fixed z-40 flex items-center gap-0.5 rounded-full border border-line/70 bg-panel/55 p-0.5 shadow-lg backdrop-blur-sm transition-opacity duration-300 ${
         aside ? "pointer-events-none opacity-0" : dragging ? "opacity-100" : faint ? "opacity-40 hover:opacity-100" : "opacity-90"

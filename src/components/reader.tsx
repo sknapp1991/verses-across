@@ -136,7 +136,22 @@ function ReadingProgress({ scroller, end, chapter, versions }: { scroller: RefOb
       const left = Math.round(((1 - f) * words) / 230);
       note.current.textContent = f >= 0.995 ? "End of chapter" : `${Math.round(f * 100)}%${words > 150 ? ` · ${left < 1 ? "under a minute" : `${left} min`} left` : ""}`;
       if (showNote) {
-        note.current.style.opacity = "1";
+        // Sit above the read-aloud player (its bar, or the tucked chip in the same corner) instead of on top of it.
+        const n = note.current;
+        n.style.transform = "";
+        // (and above the floating chapter buttons, which sit just above the player on a phone): a few passes, since
+        // clearing one can put it on the other
+        const box = n.getBoundingClientRect();
+        const avoid = [...document.querySelectorAll<HTMLElement>("[data-audio-dock], [data-note-avoid]")].map((el) => el.getBoundingClientRect()).filter((p) => p.height);
+        let lift = 0;
+        for (let pass = 0; pass < 3; pass++) {
+          const top = box.top - lift, bottom = box.bottom - lift;
+          const hit = avoid.filter((p) => p.left < box.right && p.right > box.left && p.top < bottom && p.bottom > top);
+          if (!hit.length) break;
+          lift += bottom - Math.min(...hit.map((p) => p.top)) + 8;
+        }
+        if (lift) n.style.transform = `translateY(-${Math.round(lift)}px)`;
+        n.style.opacity = "1";
         clearTimeout(hide);
         hide = window.setTimeout(() => note.current && (note.current.style.opacity = "0"), 1400);
       }
