@@ -86,7 +86,7 @@ const STEPS: Step[] = [
     icon: <LanguagesIcon />,
     title: "Tap a word for the original",
     body: "In Words mode, tap a word to see its Hebrew or Greek original and meaning, with the same word lit up in every version on screen.",
-    where: "The Words mode button at the top (or More ⋯ → Tap a verse on a phone), then tap any word.",
+    where: "The Tap a verse button above the text (on a phone, beside Aa), choose Words, then tap any word.",
   },
   {
     icon: <StarIcon />,

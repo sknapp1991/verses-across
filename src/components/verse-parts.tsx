@@ -10,6 +10,7 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { removeItem, type StudyItem, type StudyKind } from "@/lib/study";
 import { toast } from "@/lib/ui-store";
+import { readerInk, useSettings } from "@/lib/settings";
 import { ClockIcon, NoteIcon, StarIcon, TrashIcon } from "./icons";
 import { useTapGestures, type TapPoint } from "./use-gestures";
 
@@ -86,6 +87,7 @@ export function VerseText({
   children: ReactNode;
 }) {
   const a = useVerse();
+  const { textContrast } = useSettings();
   const g = useTapGestures({
     onTap: (p) => a.textTap(v, version, p),
     onDouble: (p) => a.textDouble(p, version),
@@ -96,7 +98,7 @@ export function VerseText({
       dir={dir}
       data-ver={version}
       className="reader-text block cursor-pointer touch-manipulation"
-      style={{ color }}
+      style={{ color: readerInk(color, textContrast) }}
       onPointerDown={g.onPointerDown}
       onPointerUp={g.onPointerUp}
       onPointerMove={g.onPointerMove}

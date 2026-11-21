@@ -114,11 +114,18 @@ dialog.sheet[open] {
   from { transform: translateY(16px) scale(0.92); opacity: 0; }
 }
 
+/* Typeface, line spacing and contrast come from the reader's text settings (--reader-font, --reader-leading,
+   data-contrast on the reading area); Hebrew, Greek and Arabic keep their own typefaces. */
 .reader-text {
-  font-family: var(--font-serif);
+  font-family: var(--reader-font, var(--font-serif));
   font-size: var(--reader-size);
-  line-height: 1.65;
+  line-height: var(--reader-leading, 1.65);
   text-align: var(--reader-align, start);
+}
+/* Soft contrast is a colour mix (readerInk); Strong thickens the strokes, which works for every typeface
+   (a heavier weight does nothing for Georgia or Consolas). */
+[data-contrast="strong"] .reader-text {
+  -webkit-text-stroke: 0.018em currentColor;
 }
 .reader-text:lang(es),
 .reader-text:lang(en),
@@ -134,12 +141,12 @@ dialog.sheet[open] {
 .reader-text:lang(he) {
   font-family: var(--font-hebrew), "SBL Hebrew", "Ezra SIL", serif;
   font-size: calc(var(--reader-size) * 1.12);
-  line-height: 1.85; /* room for vowel points and cantillation marks */
+  line-height: calc(var(--reader-leading, 1.65) + 0.2); /* room for vowel points and cantillation marks */
 }
 .reader-text:lang(ar) {
   font-family: var(--font-arabic), "Noto Naskh Arabic", serif;
   font-size: calc(var(--reader-size) * 1.1);
-  line-height: 2;
+  line-height: calc(var(--reader-leading, 1.65) + 0.35);
 }
 
 :target .verse-flash,

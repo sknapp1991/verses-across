@@ -17,7 +17,12 @@ import {
   useSettings,
   useViewMode,
   versionColor,
+  LINE_SPACINGS,
+  PARA_SPACINGS,
+  READER_FONTS,
+  type ReaderFont,
   type TextAlign,
+  type TextContrast,
 } from "@/lib/settings";
 import type { Version } from "@/lib/schema";
 import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PaletteIcon, PencilIcon, RowsIcon, SunIcon, WidthIcon } from "./icons";
@@ -415,6 +420,11 @@ export function SavedSetups() {
       colWidth: null,
       colWidthLandscape: null,
       stackWidth: null,
+      readerFont: "reading",
+      lineSpacing: LINE_SPACINGS.normal,
+      paraSpacing: 1,
+      textContrast: "normal",
+      textAlign: "start",
       activeSetup: null,
     });
     setVersions(DEFAULT_VERSIONS[ref.work] ?? versionsForWork(ref.work).slice(0, 1).map((v) => v.id));
@@ -819,6 +829,114 @@ export function AlignButton() {
   );
 }
 
+const FONTS: { id: ReaderFont; label: string }[] = [
+  { id: "reading", label: "Default" },
+  { id: "serif", label: "Serif" },
+  { id: "sans", label: "Sans" },
+  { id: "mono", label: "Mono" },
+];
+const SPACINGS: { id: keyof typeof LINE_SPACINGS; label: string }[] = [
+  { id: "tight", label: "Tight" },
+  { id: "normal", label: "Normal" },
+  { id: "loose", label: "Loose" },
+];
+const CONTRASTS: { id: TextContrast; label: string }[] = [
+  { id: "soft", label: "Soft" },
+  { id: "normal", label: "Normal" },
+  { id: "strong", label: "Strong" },
+];
+const PARA_NAMES = ["Tightest", "Tight", "Normal", "Roomy", "Roomiest"];
+
+/** A row of choices with one picked (font, line spacing, contrast). */
+function Choices<T extends string | number>({ label, items, value, onPick, render }: { label: string; items: { id: T; label: string }[]; value: T; onPick: (id: T) => void; render?: (it: { id: T; label: string }) => React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">{label}</h3>
+      <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-lg border border-line bg-raised p-0.5">
+        {items.map((it) => (
+          <button
+            key={String(it.id)}
+            type="button"
+            role="radio"
+            aria-checked={value === it.id}
+            onClick={() => onPick(it.id)}
+            className={`flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 text-xs ${
+              value === it.id ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-ink"
+            }`}
+          >
+            {render ? render(it) : it.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * How the reading text looks (hub 1e79e2c3, Nov 21): typeface, line spacing, space between verses and text
+ * contrast. Shared by the desktop Text menu, the narrow-screen panel and the phone's Aa sheet.
+ */
+export function TypographyControls() {
+  const { readerFont, lineSpacing, paraSpacing, textContrast } = useSettings();
+  const spacing = (Object.keys(LINE_SPACINGS) as (keyof typeof LINE_SPACINGS)[]).find((k) => LINE_SPACINGS[k] === lineSpacing) ?? "normal";
+  const at = PARA_SPACINGS.indexOf(paraSpacing as (typeof PARA_SPACINGS)[number]);
+  const step = at < 0 ? PARA_SPACINGS.indexOf(1) : at;
+  const setStep = (i: number) => updateSettings({ paraSpacing: PARA_SPACINGS[Math.max(0, Math.min(PARA_SPACINGS.length - 1, i))] });
+  return (
+    <>
+      <Choices
+        label="Font"
+        items={FONTS}
+        value={readerFont}
+        onPick={(id) => updateSettings({ readerFont: id })}
+        render={(it) => (
+          <>
+            <span aria-hidden className="text-lg leading-none text-ink" style={{ fontFamily: READER_FONTS[it.id] }}>
+              Aa
+            </span>
+            {it.label}
+          </>
+        )}
+      />
+      <Choices label="Line spacing" items={SPACINGS} value={spacing} onPick={(id) => updateSettings({ lineSpacing: LINE_SPACINGS[id] })} />
+      <div className="space-y-1">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Space between verses and paragraphs</h3>
+        <div role="group" aria-label="Space between verses and paragraphs" className="flex items-center rounded-lg border border-line bg-raised p-0.5">
+          <button type="button" onClick={() => setStep(step - 1)} disabled={step <= 0} aria-label="Less space between verses and paragraphs" className="flex h-11 w-12 items-center justify-center rounded-md text-lg text-muted hover:text-ink disabled:opacity-40">
+            −
+          </button>
+          <span aria-live="polite" className="flex-1 text-center text-sm">
+            {PARA_NAMES[step]}
+          </span>
+          <button type="button" onClick={() => setStep(step + 1)} disabled={step >= PARA_SPACINGS.length - 1} aria-label="More space between verses and paragraphs" className="flex h-11 w-12 items-center justify-center rounded-md text-lg text-muted hover:text-ink disabled:opacity-40">
+            +
+          </button>
+        </div>
+      </div>
+      <Choices label="Text contrast" items={CONTRASTS} value={textContrast} onPick={(id) => updateSettings({ textContrast: id })} />
+    </>
+  );
+}
+
+/**
+ * Desktop reading toolbar: everything about how the text looks in one Aa menu (size, font, spacing, contrast,
+ * alignment, reading levels, colours). Columns/stacked and width keep their own buttons.
+ */
+export function TextMenuButton() {
+  return (
+    <ToolPopover label="Text: size, font, spacing, contrast, alignment, reading levels and colours" title="Text: size, font, spacing, contrast, alignment, reading levels and colours" text="Text" wide icon={<span aria-hidden className="font-serif text-base font-semibold leading-none">Aa</span>}>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text size</h3>
+        <FontSizeControl />
+      </div>
+      <TypographyControls />
+      <AlignControl />
+      <LevelMarksControl />
+      <LanguageColors />
+    </ToolPopover>
+  );
+}
+
 /** Reading toolbar when the reading area is narrow: every text setting in one panel. */
 export function TextSettingsButton() {
   return (
@@ -831,6 +949,7 @@ export function TextSettingsButton() {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text size</h3>
         <FontSizeControl />
       </div>
+      <TypographyControls />
       <WidthControl />
       <AlignControl />
       <LevelMarksControl />

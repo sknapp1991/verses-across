@@ -36,6 +36,7 @@ import {
   VersionChooser,
   ViewToggle,
   WidthControl,
+  TypographyControls,
 } from "./controls";
 import { HighlightModeToggle } from "./highlight-mode";
 import { WordModeToggle } from "./word-study";
@@ -112,6 +113,7 @@ function Body({ section }: { section: string }) {
               </h4>
               <ViewToggle full />
             </div>
+            <TypographyControls />
             <AlignControl />
             <WidthControl />
             <LevelMarksControl />

@@ -1,7 +1,7 @@
 "use client";
 /**
- * Phone: the "Tap a verse" modes (Highlight, Words, Cross refs) one tap away, beside Aa in the pinned
- * chapter bar, instead of only inside the ⋯ sheet. The button shows the mode that's on (lit up); tap it
+ * The "Tap a verse" modes (Highlight, Words, Cross refs) one tap away: on a phone beside Aa in the pinned
+ * chapter bar, on a computer above the text (they left the top bar, Nov 21). The button shows the mode that's on (lit up); tap it
  * for a small card with the three switches. They're still in the ⋯ sheet too.
  */
 import { useEffect, useRef, useState } from "react";
@@ -26,7 +26,7 @@ const XrefIcon = () => (
 export function TapModesButton() {
   const { highlightMode, wordMode, xrefMode } = useSettings();
   const [open, setOpen] = useState(false);
-  const [at, setAt] = useState(0); // the card's top: just under the button
+  const [at, setAt] = useState({ top: 0, right: 16 }); // the card: just under the button, lined up with its right edge
   const box = useRef<HTMLDivElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const on = highlightMode || wordMode || xrefMode;
@@ -53,13 +53,16 @@ export function TapModesButton() {
       <button
         type="button"
         onClick={(e) => {
-          setAt(e.currentTarget.getBoundingClientRect().bottom + 6);
+          const r = e.currentTarget.getBoundingClientRect();
+          const w = Math.min(288, window.innerWidth - 32); // the card's width (18rem, or the screen less 2rem)
+          // under the button's right edge, but never off either side of the screen
+          setAt({ top: r.bottom + 6, right: Math.min(Math.max(16, window.innerWidth - r.right), window.innerWidth - w - 16) });
           setOpen((o) => !o);
         }}
         aria-expanded={open}
         aria-label={`Tap a verse${name ? ` (${name} is on)` : ""}: highlight, words, cross references`}
         title="Tap a verse: Highlight, Words, Cross references"
-        className={`flex h-11 w-11 items-center justify-center rounded-lg border ${
+        className={`flex h-11 w-11 items-center justify-center rounded-lg border desk:h-9 desk:w-9 ${
           on ? "border-accent bg-accent-soft text-accent" : "border-line bg-raised text-muted hover:text-ink"
         }`}
       >
@@ -72,9 +75,9 @@ export function TapModesButton() {
           ref={card}
           role="group"
           aria-label="Tap a verse"
-          // Fixed to the screen's right edge (the button sits mid-bar, so a card hung from it would run off the left).
-          style={{ top: at }}
-          className="fixed right-4 z-30 w-[min(18rem,calc(100vw-2rem))] space-y-2 rounded-2xl border border-line bg-panel p-3 shadow-xl"
+          // Right edge under the button's (never closer than 16 px to the screen's edge, so it can't run off).
+          style={{ top: at.top, right: at.right }}
+          className="fixed z-30 w-[min(18rem,calc(100vw-2rem))] space-y-2 rounded-2xl border border-line bg-panel p-3 shadow-xl"
         >
           <p className="text-xs text-muted">With one of these on, tapping a verse does that instead of opening its menu.</p>
           <div className="grid grid-cols-3 gap-2" onClick={() => setOpen(false)}>

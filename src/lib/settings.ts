@@ -13,6 +13,25 @@ export type Theme = "light" | "dark" | "system";
 
 /** A saved study setup ("template"): versions + how they look. */
 export type TextAlign = "start" | "center" | "end" | "justify";
+/** The reading text's typeface (Hebrew, Greek and Arabic keep their own). */
+export type ReaderFont = "reading" | "serif" | "sans" | "mono";
+export type TextContrast = "soft" | "normal" | "strong";
+/** CSS font stacks for each ReaderFont (the "reading" face is Source Serif 4, loaded in the layout). */
+export const READER_FONTS: Record<ReaderFont, string> = {
+  reading: "var(--font-serif)",
+  serif: 'Georgia, "Times New Roman", "Noto Serif", serif',
+  sans: "var(--font-sans)",
+  mono: 'ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace',
+};
+/**
+ * The verse text's colour under the contrast setting: Soft mixes it toward the page (the version's own colour,
+ * or the inherited one), leaving verse numbers, red letters and highlights as they are.
+ */
+export function readerInk(color: string | undefined, contrast: TextContrast) {
+  return contrast === "soft" ? `color-mix(in srgb, ${color ?? "currentColor"} 74%, var(--paper))` : color;
+}
+export const LINE_SPACINGS = { tight: 1.45, normal: 1.65, loose: 1.95 } as const;
+export const PARA_SPACINGS = [0.4, 0.7, 1, 1.5, 2.2] as const; // × the usual space between verses
 
 export type Setup = {
   id: string;
@@ -105,6 +124,11 @@ export type Settings = {
   privateMode: boolean;
   /** Verse text alignment ("start" = left, or right for Hebrew and Arabic). */
   textAlign: TextAlign;
+  /** Typeface, line spacing, space between verses (× the usual) and text contrast (hub 1e79e2c3, Nov 21). */
+  readerFont: ReaderFont;
+  lineSpacing: number;
+  paraSpacing: number;
+  textContrast: TextContrast;
   /** Saved setups, in the order they were made. */
   setups: Setup[];
   /** The saved setup last switched to (so changes can be saved back into it). */
@@ -177,6 +201,10 @@ const DEFAULTS: Settings = {
   floatingNav: true,
   privateMode: false,
   textAlign: "start",
+  readerFont: "reading",
+  lineSpacing: LINE_SPACINGS.normal,
+  paraSpacing: 1,
+  textContrast: "normal",
   setups: [],
   activeSetup: null,
 };
@@ -237,6 +265,10 @@ function read(): Settings {
       floatingNav: p.floatingNav !== false,
       privateMode: (p as { privateMode?: unknown }).privateMode === true,
       textAlign: (["center", "end", "justify"] as const).find((x) => x === (p as { textAlign?: unknown }).textAlign) ?? "start",
+      readerFont: (["serif", "sans", "mono"] as const).find((x) => x === (p as { readerFont?: unknown }).readerFont) ?? "reading",
+      lineSpacing: Object.values(LINE_SPACINGS).find((x) => x === (p as { lineSpacing?: unknown }).lineSpacing) ?? LINE_SPACINGS.normal,
+      paraSpacing: PARA_SPACINGS.find((x) => x === (p as { paraSpacing?: unknown }).paraSpacing) ?? 1,
+      textContrast: (["soft", "strong"] as const).find((x) => x === (p as { textContrast?: unknown }).textContrast) ?? "normal",
       setups: Array.isArray(p.setups)
         ? p.setups.filter((x): x is Setup => !!x && typeof x.name === "string" && Array.isArray(x.versions)).slice(0, 30)
         : [],

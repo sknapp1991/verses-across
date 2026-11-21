@@ -1,6 +1,6 @@
 "use client";
 import { SITE_NAME } from "@/lib/site";
-import { AlignButton, ColoursButton, FontSizeControl, TextSettingsButton, ViewToggle, WidthButton } from "./controls";
+import { TextMenuButton, TextSettingsButton, ViewToggle, WidthButton } from "./controls";
 import { SkipFrontMatter } from "./skip-front-matter";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,8 +20,7 @@ import {
   useMediaQuery,
   useSettings,
   useViewMode,
-  WIDE_QUERY,
-} from "@/lib/settings";
+  WIDE_QUERY, READER_FONTS, readerInk } from "@/lib/settings";
 import { ChevronDown, ChevronLeft, ChevronRight, GripIcon, LanguagesIcon, PauseIcon, PlayIcon } from "./icons";
 import { useColumnDrag } from "./use-column-drag";
 import { openSearch } from "./search-panel";
@@ -29,7 +28,7 @@ import { NoteLine, VerseBox, VerseCtx, VerseText, type Marks, type VerseActions 
 import { VerseMenu, verseReference, type VerseText as VerseTextInfo } from "./verse-menu";
 import { VerseQuick, type QuickAt } from "./verse-quick";
 import { pickWord, WordStudy } from "./word-study";
-import { LevelLegend, LevelsButton, useLevelMarks } from "./reading-levels";
+import { LevelLegend, useLevelMarks } from "./reading-levels";
 import { RedLetterCtx, useRedLetter, VerseWords } from "./red-letter";
 import { DiffMark } from "./diff-mark";
 import { StudiedBox } from "./studied-box";
@@ -275,9 +274,9 @@ function NextChapterFlow({
           ))}
           {rows.slice(0, 12).flatMap((row) =>
             versions.map((id, i) => (
-              <div key={`${row.v}-${id}`} data-pv-cell className="border-b border-line/60 px-3 py-2.5 md:px-4">
+              <div key={`${row.v}-${id}`} data-pv-cell className="border-b border-line/60 px-3 py-[var(--verse-pad,0.625rem)] md:px-4">
                 {entries[i]?.status === "ok" ? (
-                  <p lang={vers[i]?.language} dir={vers[i]?.dir} className="reader-text" style={{ color: vers[i] ? versionColor(settings, vers[i]!) : undefined }}>
+                  <p lang={vers[i]?.language} dir={vers[i]?.dir} className="reader-text" style={{ color: readerInk(vers[i] ? versionColor(settings, vers[i]!) : undefined, settings.textContrast) }}>
                     {!row.cells[i]?.cont && <span className="mr-1 font-sans text-[0.62em] font-semibold text-accent">{row.v}</span>}
                     {row.cells[i]?.t}
                   </p>
@@ -293,7 +292,7 @@ function NextChapterFlow({
         // placeholder line for a version still loading, so nothing pops in or moves when it becomes real.
         <ol className="mx-auto max-w-[var(--stackw)] divide-y divide-line/70 px-3 md:px-6">
           {rows.slice(0, 12).map((row) => (
-            <li key={row.v} className="rounded-sm px-1 py-3">
+            <li key={row.v} className="rounded-sm px-1 py-[var(--verse-pad-s,0.75rem)]">
               <div className="min-w-0 space-y-2">
                 {versions.map((id, i) => {
                   const v = vers[i];
@@ -306,7 +305,7 @@ function NextChapterFlow({
                         </div>
                       )}
                       {entries[i]?.status === "ok" ? (
-                        <p lang={v.language} dir={v.dir} className="reader-text" style={{ color: versionColor(settings, v) }}>
+                        <p lang={v.language} dir={v.dir} className="reader-text" style={{ color: readerInk(versionColor(settings, v), settings.textContrast) }}>
                           {i === 0 && <span className="mr-1 font-sans text-xs font-semibold text-accent">{row.v}</span>}
                           {row.cells[i]?.t}
                         </p>
@@ -626,6 +625,10 @@ export function ReaderView() {
     "--colmin": colMin,
     "--stackw": `${settings.stackWidth ?? 48}rem`,
     "--reader-align": settings.textAlign,
+    "--reader-font": READER_FONTS[settings.readerFont],
+    "--reader-leading": settings.lineSpacing,
+    "--verse-pad": `${(0.625 * settings.paraSpacing).toFixed(3)}rem`,
+    "--verse-pad-s": `${(0.75 * settings.paraSpacing).toFixed(3)}rem`,
   } as CSSProperties;
   const column = view === "column";
 
@@ -640,6 +643,7 @@ export function ReaderView() {
     <div
       ref={scroller}
       style={style}
+      data-contrast={settings.textContrast}
       className={`@container absolute inset-0 touch-pan-x touch-pan-y overflow-auto overscroll-contain ${
         column ? "snap-x snap-mandatory desk:snap-none" : ""
       }`}
@@ -905,13 +909,14 @@ function ReaderToolbar({ title, subtitle, bookRef, versions, prev, next }: { tit
       <div role="group" aria-label="Text settings" className="hidden shrink-0 items-center gap-1 @min-[48rem]:flex">
         <ViewToggle compact />
         <WidthButton />
-        <AlignButton />
-        <FontSizeControl compact />
-        <ColoursButton />
-        <LevelsButton />
+        <TextMenuButton />
       </div>
       <div className="flex shrink-0 @min-[48rem]:hidden">
         <TextSettingsButton />
+      </div>
+      {/* the tap-a-verse modes stay reachable when the text settings fold into one button */}
+      <div className="hidden shrink-0 desk:flex">
+        <TapModesButton />
       </div>
       <div className="flex shrink-0 items-center gap-1">
         <span aria-hidden className="mx-1 h-6 w-px bg-line" />
@@ -1094,7 +1099,7 @@ function ColumnView({
                     id={i === 0 ? `v${row.v}` : undefined}
                     data-v={row.v}
                     style={bg ? { background: bg } : undefined}
-                    className="verse-flash snap-start scroll-mt-12 border-b border-line/60 px-3 py-2.5 md:px-4"
+                    className="verse-flash snap-start scroll-mt-12 border-b border-line/60 px-3 py-[var(--verse-pad,0.625rem)] md:px-4"
                   >
                     {cols[i].entry.status === "loading" ? (
                       <SkeletonLine />
@@ -1150,7 +1155,7 @@ function StackedView({ cols, rows, marks }: { cols: Col[]; rows: AlignedRow[]; m
                 id={`v${row.v}`}
                 data-v={row.v}
                 style={bg ? { background: bg } : undefined}
-                className="verse-flash scroll-mt-4 rounded-sm px-1 py-3"
+                className="verse-flash scroll-mt-4 rounded-sm px-1 py-[var(--verse-pad-s,0.75rem)]"
               >
                 <div className="min-w-0 space-y-2">
                   {row.cells.map((verse, i) => {
