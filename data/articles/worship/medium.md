@@ -100,4 +100,10 @@ If everyone kneels somewhere, the question that matters is where, and whether th
 
 "Wherewith shall I come before the LORD, and bow myself before the high God?... He hath shewed thee, O man, what is good; and what doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?" (Micah 6:6, 8)
 
+## Reflection
+
+- What do you protect first when you feel threatened?
+- What would you give up before you gave that up?
+- Over the last month, where has most of your attention gone, and what has it been making of you?
+
 Choose your altar on purpose. Then watch what it makes of you.

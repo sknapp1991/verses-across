@@ -33,4 +33,7 @@ The prophet Micah answered long ago: "He hath shewed thee, O man, what is good; 
 
 ## Reflection
 
-What do you protect first when you feel threatened? What would you give up before you gave that up? The answer is your altar. Choose it on purpose, then watch what it makes of you.
+- What do you protect first when you feel threatened?
+- What would you give up before you gave that up?
+
+The answer is your altar. Choose it on purpose, then watch what it makes of you.

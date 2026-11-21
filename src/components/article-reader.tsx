@@ -1,11 +1,127 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { findRefs } from "@/lib/refs";
+import { RefLink } from "@/components/ref-link";
 import { BackLink, PageChrome } from "@/components/page-chrome";
 import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type Depth } from "@/lib/articles";
 
 const PREF = "va-article-depth:v1"; // localStorage: the depth a reader last chose
+const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/depth/n": answer } (this device only)
+const READ = "va-article-read:v1"; // localStorage: { slug: { depth: "YYYY-MM-DD" } }
+
+function load<T>(key: string, empty: T): T {
+  try {
+    return (JSON.parse(localStorage.getItem(key) ?? "null") as T) ?? empty;
+  } catch {
+    return empty;
+  }
+}
+function save(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage blocked: nothing kept */
+  }
+}
+
+/** A box under a reflection question; the answer is kept on this device as it's typed. */
+function Answer({ id, question }: { id: string; question: string }) {
+  const [text, setText] = useState("");
+  const [saved, setSaved] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's saved answer is only readable after hydration
+    setText(load<Record<string, string>>(ANSWERS, {})[id] ?? "");
+  }, [id]);
+  const store = (v: string) => {
+    clearTimeout(timer.current);
+    const all = load<Record<string, string>>(ANSWERS, {});
+    if (v.trim()) all[id] = v;
+    else delete all[id];
+    save(ANSWERS, all);
+    setSaved(true);
+  };
+  const change = (v: string) => {
+    setText(v);
+    setSaved(false);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => store(v), 500);
+  };
+  return (
+    <span className="mt-2 block">
+      <textarea
+        value={text}
+        onChange={(e) => change(e.target.value)}
+        onBlur={(e) => store(e.target.value)}
+        rows={3}
+        aria-label={`Your answer: ${question}`}
+        placeholder="Your answer (kept on this device only)"
+        className="block w-full resize-y rounded-lg border border-line bg-panel px-3 py-2 font-sans text-base not-italic text-ink placeholder:text-faint focus:border-accent focus:outline-none"
+      />
+      <span aria-live="polite" className="mt-1 block h-4 font-sans text-xs text-faint">
+        {saved && text.trim() ? "Saved on this device" : ""}
+      </span>
+    </span>
+  );
+}
+
+/**
+ * The article's text. Scripture references become links with a preview card (like Ask AI's), opening in one
+ * shared tab; each reflection question gets an answer box. The HTML comes from build-articles (escaped there).
+ * Memo: the page's progress bar re-renders on every scroll, and this must not rebuild the text each time.
+ */
+const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: string; slug: string; depth: Depth }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [slots, setSlots] = useState<{ el: HTMLElement; node: ReactNode }[]>([]);
+  useEffect(() => {
+    const root = box.current;
+    if (!root) return;
+    root.innerHTML = html; // start from the built HTML each time (the effect can run twice in development)
+    const out: { el: HTMLElement; node: ReactNode }[] = [];
+    // References in the running text (not inside links or headings).
+    const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const texts: Text[] = [];
+    while (walk.nextNode()) {
+      const t = walk.currentNode as Text;
+      if (!t.parentElement?.closest("a, h1, h2, h3")) texts.push(t);
+    }
+    for (const t of texts) {
+      const refs = findRefs(t.data);
+      if (!refs.length) continue;
+      const frag = document.createDocumentFragment();
+      let at = 0;
+      for (const r of refs) {
+        frag.append(t.data.slice(at, r.start));
+        const slot = document.createElement("span");
+        frag.append(slot);
+        out.push({ el: slot, node: <RefLink r={r} target="va-verses" /> });
+        at = r.end;
+      }
+      frag.append(t.data.slice(at));
+      t.replaceWith(frag);
+    }
+    // An answer box under each question of the Reflection section (the list right after its heading).
+    const head = [...root.querySelectorAll("h2")].find((h) => /^reflection$/i.test(h.textContent?.trim() ?? ""));
+    for (let el = head?.nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) {
+      if (el.tagName !== "UL" && el.tagName !== "OL") continue;
+      [...el.children].forEach((li, n) => {
+        const slot = document.createElement("span");
+        li.append(slot);
+        out.push({ el: slot, node: <Answer id={`${slug}/${depth}/${n}`} question={li.textContent ?? ""} /> });
+      });
+    }
+    setSlots(out);
+  }, [html, slug, depth]);
+  return (
+    <>
+      <div ref={box} className={PROSE} dangerouslySetInnerHTML={{ __html: html }} />
+      {slots.map((s, i) => createPortal(s.node, s.el, `${depth}-${i}`))}
+    </>
+  );
+});
 const a = "underline underline-offset-2 hover:text-ink";
 
 /** Prose styles for the article body (no typography plugin: the few elements articles use). */
@@ -33,7 +149,22 @@ export function ArticleReader({ article }: { article: Article }) {
   const have = DEPTHS.filter((d) => article.tiers[d]);
   const [depth, setDepth] = useState<Depth>(have.includes("medium") ? "medium" : have[0]);
   const [progress, setProgress] = useState(0);
+  const [read, setRead] = useState<Partial<Record<Depth, string>>>({});
   const scroller = useRef<HTMLElement>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's record is only readable after hydration
+    setRead(load<Record<string, Partial<Record<Depth, string>>>>(READ, {})[article.slug] ?? {});
+  }, [article.slug]);
+  const markRead = (d: Depth, on: boolean) => {
+    const all = load<Record<string, Partial<Record<Depth, string>>>>(READ, {});
+    const mine = { ...(all[article.slug] ?? {}) };
+    if (on) mine[d] = new Date().toLocaleDateString("en-CA"); // this device's date, YYYY-MM-DD
+    else delete mine[d];
+    if (Object.keys(mine).length) all[article.slug] = mine;
+    else delete all[article.slug];
+    save(READ, all);
+    setRead(mine);
+  };
 
   // The saved / linked depth, once on the client (the server renders the default).
   useEffect(() => {
@@ -101,6 +232,12 @@ export function ArticleReader({ article }: { article: Article }) {
                   onClick={() => choose(d)}
                   className={`rounded-full px-3 py-1.5 transition ${d === depth ? "bg-ink text-paper" : "hover:text-ink"}`}
                 >
+                  {read[d] && (
+                    <>
+                      <span aria-hidden>✓ </span>
+                      <span className="sr-only">Read: </span>
+                    </>
+                  )}
                   {DEPTH_LABEL[d]} · {article.tiers[d]!.minutes} min
                 </button>
               ))}
@@ -123,7 +260,19 @@ export function ArticleReader({ article }: { article: Article }) {
           </details>
         )}
 
-        <div className={PROSE} dangerouslySetInnerHTML={{ __html: tier.html }} />
+        <ArticleBody html={tier.html} slug={article.slug} depth={depth} />
+
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-ink">
+          <input type="checkbox" checked={!!read[depth]} onChange={(e) => markRead(depth, e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
+          <span>
+            I read the {DEPTH_LABEL[depth]} version
+            {read[depth] && (
+              <span className="ml-2 text-sm text-muted">
+                on {new Date(`${read[depth]}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+          </span>
+        </label>
 
         <footer className="space-y-2 border-t border-line pt-6 text-sm">
           {article.aiNote && <p>{article.aiNote}</p>}

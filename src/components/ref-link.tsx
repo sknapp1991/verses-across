@@ -21,7 +21,11 @@ import { useReaderState } from "./use-reader-state";
 /** Only one card at a time, across all references. */
 let closeOpen: (() => void) | null = null;
 
-export function RefLink({ r }: { r: FoundRef }) {
+/**
+ * `target`: open the passage in that named browser tab instead of this page (articles: "va-verses", so a
+ * reader who opens three verses gets one tab, reused, not three).
+ */
+export function RefLink({ r, target }: { r: FoundRef; target?: string }) {
   const touch = useMediaQuery("(hover: none)", false);
   const wide = useMediaQuery(WIDE_QUERY, true);
   const router = useRouter();
@@ -48,8 +52,18 @@ export function RefLink({ r }: { r: FoundRef }) {
     window.dispatchEvent(new Event("va-jump"));
     return true;
   };
+  /** Open `url` in the shared tab (see `target`), bringing it to the front. */
+  const inTab = (e: React.MouseEvent, url: string) => {
+    // Ctrl/Cmd/Shift/middle click: the browser's own new tab or window, as with any link
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+    e.preventDefault();
+    hide();
+    // Already in the shared tab (an article opened there): don't replace this page, use a fresh tab.
+    window.open(url, window.name === target ? "_blank" : target)?.focus();
+  };
   /** Go to the passage; on a phone the AI sheet covers the reader, so tuck it away. */
   const open = (e: React.MouseEvent) => {
+    if (target) return inTab(e, href);
     hide();
     if (!wide) minimizeAi();
     if (jumpHere(e)) return;
@@ -120,6 +134,8 @@ export function RefLink({ r }: { r: FoundRef }) {
             if (pos) return open(e); // second tap: open it
             e.preventDefault();
             show();
+          } else if (target) {
+            inTab(e, href);
           } else {
             hide();
             jumpHere(e);
@@ -168,7 +184,7 @@ export function RefLink({ r }: { r: FoundRef }) {
               scroll={false}
               onClick={open}
               className="inline-flex min-h-9 items-center rounded-lg bg-accent px-3 text-xs font-medium text-accent-ink">
-              Open {chapters.length > 1 ? chapterName(chapters[0]) : r.label} in the reader →
+              Open {chapters.length > 1 ? chapterName(chapters[0]) : r.label} {target ? "in a new tab" : "in the reader"} →
             </Link>
             {chapters.slice(1).map((c) => (
               <Link
@@ -176,6 +192,7 @@ export function RefLink({ r }: { r: FoundRef }) {
                 href={hrefFor(c)}
                 scroll={false}
                 onClick={(e) => {
+                  if (target) return inTab(e, hrefFor(c));
                   hide();
                   if (!wide) minimizeAi();
                   if (r.ref.work === here.work && r.ref.book === here.book && c === here.chapter) {

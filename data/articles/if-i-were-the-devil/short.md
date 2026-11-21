@@ -38,4 +38,5 @@ To the restless: "Come unto me, all ye that labour and are heavy laden, and I wi
 
 ## Reflection
 
-Which of these whispers do you recognize in your own week? Pick one, and do the opposite of it today.
+- Which of these whispers do you recognize in your own week?
+- Pick one: what would doing the opposite of it look like today?

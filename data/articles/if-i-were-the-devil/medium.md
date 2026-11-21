@@ -175,3 +175,9 @@ To the restless: "Come unto me, all ye that labour and are heavy laden, and I wi
 And to all of us: "What doth the LORD require of thee, but to do justly, and to love mercy, and to walk humbly with thy God?" (Micah 6:8)
 
 The darkness is real, but it is not the end of the story. "And the light shineth in darkness; and the darkness comprehended it not." (John 1:5)
+
+## Reflection
+
+- Which of these whispers do you recognize in your own week?
+- Which one do you most often blame on someone else?
+- What is one small, concrete thing you could do today that is the opposite of it?
