@@ -39,4 +39,4 @@ To the restless: "Come unto me, all ye that labour and are heavy laden, and I wi
 ## Reflection
 
 - Which of these whispers do you recognize in your own week?
-- Pick one: what would doing the opposite of it look like today?
+- What is one small, concrete thing you could do today that is the opposite of it?

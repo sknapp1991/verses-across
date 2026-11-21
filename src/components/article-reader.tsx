@@ -10,7 +10,7 @@ import { BackLink, PageChrome } from "@/components/page-chrome";
 import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type Depth } from "@/lib/articles";
 
 const PREF = "va-article-depth:v1"; // localStorage: the depth a reader last chose
-const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/depth/n": answer } (this device only)
+const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/q/<question words>": answer } (this device only)
 const READ = "va-article-read:v1"; // localStorage: { slug: { depth: "YYYY-MM-DD" } }
 
 function load<T>(key: string, empty: T): T {
@@ -28,26 +28,54 @@ function save(key: string, value: unknown) {
   }
 }
 
-/** A box under a reflection question; the answer is kept on this device as it's typed. */
-function Answer({ id, question }: { id: string; question: string }) {
+/**
+ * A box under a reflection question; the answer is kept on this device as it's typed. `id` is the article and the
+ * question's own words, so the same question in Short, Medium and Extensive shares one answer (hub e9965564).
+ * `legacy`: the key answers had before (slug/depth/position). An old answer there is moved over when the box opens,
+ * and joined to the shared one if both exist and differ (two depths answered separately before): nothing is lost.
+ */
+function Answer({ id, legacy, question }: { id: string; legacy: string; question: string }) {
   const [text, setText] = useState("");
   const [saved, setSaved] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pending = useRef<string | null>(null);
   useEffect(() => {
+    const all = load<Record<string, string>>(ANSWERS, {});
+    const old = all[legacy];
+    if (old !== undefined) {
+      const now = all[id];
+      all[id] = !now ? old : now.includes(old) ? now : `${now}\n\n${old}`;
+      delete all[legacy];
+      save(ANSWERS, all);
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's saved answer is only readable after hydration
-    setText(load<Record<string, string>>(ANSWERS, {})[id] ?? "");
-  }, [id]);
+    setText(all[id] ?? "");
+  }, [id, legacy]);
   const store = (v: string) => {
     clearTimeout(timer.current);
+    pending.current = null;
     const all = load<Record<string, string>>(ANSWERS, {});
     if (v.trim()) all[id] = v;
     else delete all[id];
     save(ANSWERS, all);
     setSaved(true);
   };
+  // switching depth while a save is pending: save it now, before the next depth's box reads the answer
+  useEffect(
+    () => () => {
+      if (pending.current === null) return;
+      clearTimeout(timer.current);
+      const all = load<Record<string, string>>(ANSWERS, {});
+      if (pending.current.trim()) all[id] = pending.current;
+      else delete all[id];
+      save(ANSWERS, all);
+    },
+    [id],
+  );
   const change = (v: string) => {
     setText(v);
     setSaved(false);
+    pending.current = v;
     clearTimeout(timer.current);
     timer.current = setTimeout(() => store(v), 500);
   };
@@ -124,7 +152,11 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
       [...el.children].forEach((li, n) => {
         const slot = document.createElement("span");
         li.append(slot);
-        out.push({ el: slot, node: <Answer id={`${slug}/${depth}/${n}`} question={said.get(li) ?? ""} /> });
+        const q = said.get(li) ?? "";
+        // the question's words (case, spacing and punctuation aside): the same question in every depth, one answer
+        const key = q.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim().slice(0, 200);
+        if (!key) return; // (an empty list item: no box)
+        out.push({ el: slot, node: <Answer id={`${slug}/q/${key}`} legacy={`${slug}/${depth}/${n}`} question={q} /> });
       });
     }
     setSlots(out);
