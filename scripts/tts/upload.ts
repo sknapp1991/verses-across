@@ -37,7 +37,7 @@ function put(key: string, file: string, type: string, cache: string): Promise<bo
       "npx",
       // Quoted: the command runs through a shell and the project path contains spaces.
       ["wrangler", "r2", "object", "put", `"${BUCKET}/${key}"`, "--file", `"${file}"`, "--content-type", `"${type}"`, "--cache-control", `"${cache}"`, "--remote"],
-      { cwd: ROOT, shell: true, stdio: ["ignore", "ignore", "pipe"] },
+      { cwd: ROOT, shell: true, windowsHide: true, stdio: ["ignore", "ignore", "pipe"] }, // (windowsHide: no console flashes while Skylar types)
     );
     let err = "";
     p.stderr.on("data", (d) => (err += d));

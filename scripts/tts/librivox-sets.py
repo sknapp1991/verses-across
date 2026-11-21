@@ -76,8 +76,9 @@ SETS = {
     # url_text_source checked against catalog.json's sourceUrl; same Gutenberg ebook, or the same translation).
     # Scripture first, then classics and philosophy.
     "pickthall": {"title": r"^Meaning of the Glorious Koran$", "query": "Meaning of the Glorious Koran", "lang": "en", "work": "quran"},
+    # One book per project (matching by words alone ran Genesis on into Exodus).
     "jps1917": {"title": r"^Torah \(JPSA\) 0[1-5]:", "query": "Torah (JPSA)", "lang": "en", "work": "tanakh",
-                "books": ["gen", "exo", "lev", "num", "deu"]},
+                "book_re": r"\) 0(\d):", "book_ids": ["gen", "exo", "lev", "num", "deu"]},
     "long": {"title": r"^Meditations$", "query": "Meditations", "lang": "en", "work": "meditations"},  # Harvard Classics = Long
     "benham": {"title": r"^Imitation of Christ$", "query": "Imitation of Christ", "lang": "en", "work": "imitation"},
     "legge-ttc": {"title": r"^Tao Teh King$", "query": "Tao Teh King", "lang": "en", "work": "tao-te-ching"},
@@ -188,7 +189,10 @@ def projects(name: str):
                 print("?? skipped", b["title"])
                 continue
             bm = re.search(s["book_re"], b["title"]) if s.get("book_re") else None
-            books = [s["book_fmt"].format(bm.group(1))] if bm else (s.get("books") or list(WORK_BOOKS.get(s.get("work", "bible"), {})))
+            if bm and s.get("book_ids"):  # "Torah (JPSA) 03: Leviticus" -> the 3rd of the set's books
+                books = [s["book_ids"][int(bm.group(1)) - 1]]
+            else:
+                books = [s["book_fmt"].format(bm.group(1))] if bm else (s.get("books") or list(WORK_BOOKS.get(s.get("work", "bible"), {})))
             books = [x for x in books if x not in taken] if bm else books
             if not books:
                 continue
@@ -235,6 +239,15 @@ def fetch(name: str):
 
 HE_FINALS = str.maketrans("ךםןףץ", "כמנפצ")
 LANG = "en"  # set per set in align_set: Hebrew needs its own matching
+
+
+def roman(w: str) -> str:
+    """"xiv" → "14" ("" if w isn't a Roman numeral)."""
+    v = {"i": 1, "v": 5, "x": 10, "l": 50, "c": 100}
+    if not w or not re.fullmatch(r"[ivxlc]+", w):
+        return ""
+    n = sum(-v[a] if v[a] < v[b] else v[a] for a, b in zip(w, w[1:])) + v[w[-1]]
+    return str(n)
 
 
 def norm(w: str) -> str:
@@ -351,7 +364,10 @@ def align(version: str, chapters, words):
             starts[key] = None
             order.append((key, i))
             first_of[key] = i
-        if starts[key] is None and ref_time[i] is not None and i - first_of[key] <= 3:
+        # A verse starts at its first matched word near the start, but only one the next word confirms: a lone "and"
+        # matched seconds early (the previous verse's "and built there an altar") pulled Genesis 14 into 13's end.
+        ok_next = ref_time[i] is not None and i + 1 < len(ref) and ref_time[i + 1] is not None and 0 <= ref_time[i + 1] - ref_time[i] < 1.5
+        if starts[key] is None and ref_time[i] is not None and i - first_of[key] <= 3 and (ok_next or i + 1 >= len(ref) or ref[i + 1][1:] != key):
             starts[key] = ref_time[i] - 0.15 * (i - first_of[key])  # trust only a match near the verse's start
     times = [starts[k] for k, _ in order]
     last = -1.0
@@ -386,6 +402,106 @@ def cut(name, version, out, mp3, chs, words, label):
     ch_start = {}
     for (b, ch, v), t in verses:
         ch_start.setdefault((b, ch), max(0.0, t - 2.5))  # "Capítulo 3" is heard just before verse 1
+    # ...but never before the previous chapter's last words: readers who don't announce chapters (the Quran,
+    # Meditations) ran straight on, and the 2.5 s took the end of the previous chapter's last verse with it.
+    ref = ref_words(version, chs)
+    vstart = {key: t for key, t in verses}
+    for i, key in enumerate(chs[1:], 1):
+        if key not in ch_start or chs[i - 1] not in ch_start:
+            continue
+        prev = [k for k, _ in verses if (k[0], k[1]) == chs[i - 1]]
+        if not prev:
+            continue
+        last = prev[-1]
+        tail = [n for n, b, c, v in ref if (b, c, v) == last]
+        t_last, t_next = vstart[last], ch_start[key] + 2.5
+        p, end = 0, None
+        span = [(w, s0, e0) for w, s0, e0 in words if t_last - 0.2 <= s0 < t_next]
+        HEADING = {"chapter", "section", "canto", "kanto", "book", "part", "psalm", "surah", "sura", "capitulo", "salmo", "kapitel", "chapitre", "hymn"}
+        for k, (w, s0, e0) in enumerate(span):
+            if end is not None and s0 - end > 1.2 and p >= len(tail) - 1:
+                break  # a pause after (nearly) all of the last verse: what follows is the next chapter's opening
+            nw = norm(w)
+            nxt = norm(span[k + 1][0]) if k + 1 < len(span) else ""
+            # A spoken heading ("Chapter 14, On avoiding…", "Canto 11") or closing ("End of Canto 10") starts here:
+            # the last verse is over, even if some of its words were misheard.
+            if end is not None and ((nw in HEADING and (nxt.isdigit() or re.fullmatch(r"[ivxlc]+", nxt or "-"))) or (nw == "end" and nxt == "of")):
+                break
+            if nw and nw in tail[p : p + 4]:
+                p = tail.index(nw, p) + 1
+                end, end_s = e0, s0
+            if p >= len(tail):
+                break
+        if os.environ.get("CUT_DEBUG") == f"{key[0]}/{key[1]}":
+            print(f"  DEBUG {key}: t_last {t_last:.1f} t_next {t_next:.1f} p {p}/{len(tail)} end {end}", flush=True)
+            print("   ", " ".join(f"{w.strip()}@{s0:.1f}" for w, s0, e0 in words if t_next - 25 <= s0 < t_next + 3), flush=True)
+        if end is not None and p < len(tail):
+            # The last verse's final words weren't heard as our text: the reader's wording differs (the JPS Torah read
+            # in KJV words, "stretched-out arm" for "outstretched arm"), so matching stopped a few words early and
+            # they went to the next chapter. Take in about as many more words as are missing, up to a real pause.
+            left = len(tail) - p
+            left += max(2, left // 3)
+            prev_e = end
+            for k, (w, s0, e0) in enumerate(span):
+                nw = norm(w)
+                if s0 < end - 0.01 or not nw:
+                    continue
+                if s0 <= end + 0.01:
+                    continue
+                nxt = norm(span[k + 1][0]) if k + 1 < len(span) else ""
+                if left <= 0 or s0 - prev_e > 0.7 or (nw in HEADING and (nxt.isdigit() or re.fullmatch(r"[ivxlc]+", nxt or "-"))) or (nw == "end" and nxt == "of"):
+                    break
+                end = prev_e = e0
+                end_s = s0
+                left -= 1
+        if end is not None:
+            # the reader's closing words stay with the chapter they close ("End of chapter 29", "Fin del capítulo")
+            closing = {"end", "of", "the", "chapter", "psalm", "book", "section", "canto", "kanto", "part", "fin", "del", "capitulo", "salmo", "ende", "kapitel", "des", "fin", "du", "chapitre"}
+            after = [(norm(w), s0, e0) for w, s0, e0 in words if end_s < s0 < t_next]
+            first = after[1][0] if len(after) > 1 and after[0][0] == "the" else (after[0][0] if after else "")
+            if first not in ("end", "fin", "ende"):  # "End of canto 10", "The end of canto 10"
+                after = []  # (a heading like "The Emulous Desire" is not a closing)
+            for nw, s0, e0 in after[:6]:
+                if nw in closing or nw.isdigit():
+                    end, end_s = e0, s0
+                else:
+                    break
+        if end is not None:
+            # Right after the previous chapter's last word: a heading read before verse 1 ("Chapter 3", "The Emulous
+            # Desire, revealed at Mecca. In the name of Allah...") belongs to this chapter, however long it is.
+            # Whisper's word ends run early: leave 0.45 s (into the pause) so the last syllable isn't clipped, but
+            # never past the next word.
+            nxt_start = next((s0 for w, s0, e0 in words if s0 > end_s + 0.01 and norm(w)), t_next)
+            end = min(end, nxt_start)  # (Whisper's end of "hateth" ran past the start of "Thou")
+            cut_at = min(end + 0.45, max(min(end + 0.1, nxt_start - 0.02), nxt_start - 0.1))
+            # (cut_at is already kept before the next word; a reader who runs straight on leaves only ~0.2 s, and the
+            # old "t_next - 0.2" check then threw the cut away: 2.5 s of the previous chapter came back, Nov 20)
+            if cut_at <= t_next:
+                ch_start[key] = cut_at
+        if end is None:
+            # The last verse wasn't found at all (the reader's wording is too far from ours: Deuteronomy read in KJV
+            # words). Don't take 2.5 s of it into this chapter: cut in the gap after the last word before verse 1.
+            before = [(s0, e0) for w, s0, e0 in words if s0 < t_next - 0.05 and norm(w)]
+            if before and before[-1][1] > ch_start[key]:
+                gap = max(0.0, t_next - before[-1][1])
+                ch_start[key] = before[-1][1] + min(0.45, gap / 2)
+        # A spoken heading with this chapter's own number ("Chapter 2. Of thinking humbly of oneself", "Canto 11",
+        # "Sura 102") starts the chapter, however long the title after it is: the 2.5 s before verse 1 isn't always
+        # enough, and the last verse's words aren't always found (then the title's start went to the chapter before).
+        num = str(key[1]).lstrip("0")
+        for k, (w, s0, e0) in enumerate(words):
+            if not (t_next - 20 <= s0 < t_next) or norm(w) not in HEADING or k + 1 >= len(words):
+                continue
+            n2 = norm(words[k + 1][0])
+            if n2.lstrip("0") != num and roman(n2) != num:
+                continue
+            if k > 0 and norm(words[k - 1][0]) == "of":
+                continue  # "End of chapter 2" closes a chapter, it doesn't open one
+            prev_e = max((e for _, s, e in words[:k] if s < s0), default=0.0)
+            h_at = max(prev_e + 0.05, s0 - 0.6)  # (Whisper starts "Chapter" late: "Chap" was left behind)
+            if h_at < ch_start[key]:  # (not bounded by the last verse's start: that can be a guess, seconds late)
+                ch_start[key] = h_at
+            break
     for i, key in enumerate(chs):
         if key not in ch_start:
             continue
@@ -461,7 +577,9 @@ def align_set(name: str, limit: int):
                     parts.append(part)
                 lst = trim / "list.txt"
                 lst.write_text("".join(f"file '{p.name}'\n" for p in parts), encoding="utf-8")
-                subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c", "copy", str(joined)], check=True)
+                # Re-encoded, not "-c copy": copying keeps every part's encoder padding (~40 ms each), so the joined
+                # file ran seconds longer than the word times say (the Quran: 4.4 s by the end, chapters cut early).
+                subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-c:a", "libmp3lame", "-b:a", "64k", "-ac", "1", str(joined)], check=True)
                 line = cut(name, version, out, joined, chs, words, it["title"])
             print(line, flush=True)
             mark.parent.mkdir(parents=True, exist_ok=True)

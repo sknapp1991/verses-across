@@ -12,7 +12,7 @@ import { booksOfWork, getVersion } from "../../src/lib/catalog";
 type Recording = { id: string; version: string; voice: string; label: string; engine: string; license: string; rev?: string; chapters?: Record<string, number[]> };
 /** Bumped when a voice's files are redone under the same names (browsers keep audio a year): Nov 14, LibriVox intros
  * cut; Nov 18, word times added to the timing files (scripts/tts/word-times.py). */
-const REV: Record<string, string> = { armenta: "3", librivox: "3" };
+const REV: Record<string, string> = { armenta: "3", librivox: "4" }; // librivox 4: every LibriVox voice re-cut Nov 21 (chapter boundaries)
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const SRC = path.join(ROOT, ".cache-audio");

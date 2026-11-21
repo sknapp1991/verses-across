@@ -19,6 +19,11 @@ const WEEKS: { week: string; items: string[] }[] = [
   {
     week: "Week of November 16",
     items: [
+      "Human voices for 31 more works, read by LibriVox volunteers: the Quran (Pickthall), the Torah (JPS 1917), the Tao Te Ching, the I Ching, the Great Learning and the Doctrine of the Mean, the Imitation of Christ, a second Meditations, the Iliad, the Odyssey, the Aeneid and Hesiod, and on Library Across Plato's Republic, Descartes, Hume, Kant, Hobbes, Locke, Spinoza, Mill, Russell, Nietzsche, Emerson, William James, Freud, Jung and more.",
+      "Every human voice now lights up each word as it's read, not just the verse, and chapters start and end in the right place (no more last words of the previous chapter at the start).",
+      "The Vishnu Purana, all six books, in H. H. Wilson's 1840 translation.",
+      "Reading settings: choose the font, line spacing, space between verses and text contrast. On a computer they're together under Aa above the text, with Highlight, Words and Cross references under the Tap a verse button beside it; on a phone, under Aa.",
+      "Study groups and Read together are now one Together menu at the top.",
       "Concordance: in the Interlinear, tap a Hebrew or Greek word, then “Every verse that uses this word”, to see each place it occurs, how it's translated there, and how often each translation is used. Tap a place to see that verse word by word.",
     ],
   },
