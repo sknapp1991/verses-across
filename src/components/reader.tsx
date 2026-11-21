@@ -170,7 +170,9 @@ function ReadingProgress({ scroller, end, chapter, versions }: { scroller: RefOb
   }, [scroller, end, chapter, versions]);
   return (
     <>
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-40 h-[3px] bg-line/40">
+      {/* z-[15]: over the sticky column headers (z-10), under the top bar's menus (z-30): at z-40 this line showed
+          through an open Versions or Display options menu (hub affa2012) */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[15] h-[3px] bg-line/40">
         <div ref={bar} className="h-full origin-left bg-accent/80 transition-transform duration-150 ease-out" style={{ transform: "scaleX(0)" }} />
       </div>
       <div
