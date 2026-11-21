@@ -8,7 +8,7 @@ Seen that way, the question is not *whether* we worship, but *what*. If we don't
 
 Most of what pulls on a human life is good: safety, love, work, beauty, being respected. The trouble begins when a good thing is asked to be the ultimate thing. Jesus put it in one line: "For where your treasure is, there will your heart be also." (Matthew 6:21)
 
-The traditions agree on the danger. The first commandment is "Thou shalt have no other gods before me." (Exodus 20:3) The Qur'an's opening prayer says "Thee (alone) we worship; Thee (alone) we ask for help." (1:5) In the Bhagavad Gita, Krishna asks for nothing grand, only devotion: "a leaf, a flower, a fruit, water" offered with a whole heart (9:26).
+The traditions agree on the danger. The first commandment is "Thou shalt have no other gods before me." (Exodus 20:3) The Qur'an's opening prayer says "Thee (alone) we worship; Thee (alone) we ask for help." (Qur'an 1:5) In the Bhagavad Gita, Krishna asks for nothing grand, only devotion: "a leaf, a flower, a fruit, water" offered with a whole heart (Bhagavad Gita 9:26).
 
 ## We become like what we worship
 

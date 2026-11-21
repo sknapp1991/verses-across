@@ -112,8 +112,22 @@ export function findRefs(text: string, preferWork?: string): FoundRef[] {
     // "Genesis 2–3": a range of chapters (ticket b6bd30ae); a range that runs backwards or past the book stops at the first.
     const toCh = m[5] ? Number(m[5]) : undefined;
     const range = toCh !== undefined && toCh > chapter && toCh <= b.chapters;
-    const end = m.index! + (m[5] && !range ? m[0].search(/\s?[-–—‐‑‒]\s?\d+$/) : m[0].length);
-    out.push({ start, end, ref: { work: b.work, book: b.id, chapter }, verse: m[3], to: m[4], ...(range ? { toChapter: toCh } : {}), label: text.slice(start, end) });
+    let end = m.index! + (m[5] && !range ? m[0].search(/\s?[-–—‐‑‒]\s?\d+$/) : m[0].length);
+    let to = m[4];
+    // "Psalm 115:5,8" / "Micah 6:6, 8": later verses of the same chapter listed after a comma → show the span from the
+    // first to the last (hub e9965564). Only rising verse numbers, and not ", 4:2" (another chapter's reference).
+    if (m[3] && !to) {
+      // Whole numbers only (not the "2" of ", 23:1"), not a chapter ("4:2"), not a word or a book after it ("5 times",
+      // "2 Corinthians"); each one higher than the one before, so "5:3, 1, 9" stays verse 3.
+      const more = /^(?:\s?,\s?\d{1,3}(?!\d)(?![:.]\d)(?!\s?[A-Za-z]))+/.exec(text.slice(end));
+      const nums = more ? more[0].match(/\d+/g)!.map(Number) : [];
+      const rising = nums.length > 0 && nums.every((n, i) => n > (i ? nums[i - 1] : Number(m[3])));
+      if (more && rising && nums[nums.length - 1] - Number(m[3]) <= 40) {
+        to = String(nums[nums.length - 1]);
+        end += more[0].length;
+      }
+    }
+    out.push({ start, end, ref: { work: b.work, book: b.id, chapter }, verse: m[3], to, ...(range ? { toChapter: toCh } : {}), label: text.slice(start, end) });
   }
   return out.sort((a, b) => a.start - b.start);
 }

@@ -5,6 +5,7 @@ import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { findRefs } from "@/lib/refs";
 import { RefLink } from "@/components/ref-link";
+import { AiWord, looksForeign } from "@/components/ai-word";
 import { BackLink, PageChrome } from "@/components/page-chrome";
 import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type Depth } from "@/lib/articles";
 
@@ -80,7 +81,17 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
     const root = box.current;
     if (!root) return;
     root.innerHTML = html; // start from the built HTML each time (the effect can run twice in development)
+    // each list item's words before the italic words and references become (still empty) slots: the answer boxes' labels
+    const said = new Map<Element, string>([...root.querySelectorAll("li")].map((li) => [li, li.textContent ?? ""]));
     const out: { el: HTMLElement; node: ReactNode }[] = [];
+    // An italic word from another language (*hishtachaveh*, *proskuneo*) gets the same word card as Ask AI.
+    for (const em of [...root.querySelectorAll("em")]) {
+      const w = em.textContent?.trim() ?? "";
+      if (w.length < 3 || /\s/.test(w) || !looksForeign(w) || em.closest("a, h1, h2, h3")) continue;
+      const slot = document.createElement("span");
+      em.replaceWith(slot);
+      out.push({ el: slot, node: <AiWord word={w} italic notEnglish={!/[^\x00-\x7F]/.test(w)} /> });
+    }
     // References in the running text (not inside links or headings).
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const texts: Text[] = [];
@@ -110,7 +121,7 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
       [...el.children].forEach((li, n) => {
         const slot = document.createElement("span");
         li.append(slot);
-        out.push({ el: slot, node: <Answer id={`${slug}/${depth}/${n}`} question={li.textContent ?? ""} /> });
+        out.push({ el: slot, node: <Answer id={`${slug}/${depth}/${n}`} question={said.get(li) ?? ""} /> });
       });
     }
     setSlots(out);
@@ -195,6 +206,24 @@ export function ArticleReader({ article }: { article: Article }) {
   };
 
   const tier = article.tiers[depth]!;
+  const toc = depth !== "short" && tier.toc.length > 2 ? tier.toc : null;
+  // The section being read (for the side contents): the last heading above the top of the screen.
+  const [here, setHere] = useState<string | null>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || !toc) return;
+    const onScroll = () => {
+      let id: string | null = null;
+      for (const t of toc) {
+        const h = document.getElementById(t.id);
+        if (h && h.getBoundingClientRect().top < 120) id = t.id;
+      }
+      setHere(id);
+    };
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [toc]);
   const date = new Date(`${article.date}T12:00:00`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
@@ -203,7 +232,28 @@ export function ArticleReader({ article }: { article: Article }) {
         <div className="h-full bg-accent transition-[width] duration-150" style={{ width: `${Math.round(progress * 100)}%` }} />
       </div>
       <PageChrome fallback="/articles" />
-      <article className="mx-auto max-w-3xl space-y-6 px-4 pb-16 pt-8 md:px-8">
+      <div className="mx-auto flex max-w-6xl justify-center gap-10 px-4 md:px-8">
+      {toc && (
+        <nav aria-label="Contents" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-56 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 text-sm xl:block">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">Contents</p>
+          <ol className="space-y-1 border-l border-line">
+            {toc.map((t) => (
+              <li key={t.id}>
+                <a
+                  href={`#${t.id}`}
+                  aria-current={here === t.id ? "location" : undefined}
+                  className={`-ml-px block border-l-2 py-1 leading-snug ${t.level === 3 ? "pl-6" : "pl-3"} ${
+                    here === t.id ? "border-accent font-medium text-ink" : "border-transparent hover:text-ink"
+                  }`}
+                >
+                  {t.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
+      <article className="w-full min-w-0 max-w-3xl space-y-6 pb-16 pt-8">
         {article.status !== "published" && (
           <p className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-ink">
             <strong>Preview for review — not published.</strong> This page is unlisted and hidden from search engines until it is
@@ -245,11 +295,11 @@ export function ArticleReader({ article }: { article: Article }) {
           )}
         </header>
 
-        {depth !== "short" && tier.toc.length > 2 && (
-          <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm" open={depth === "long"}>
+        {toc && (
+          <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm xl:hidden" open={depth === "long"}>
             <summary className="cursor-pointer font-medium text-ink">Contents</summary>
             <ol className="mt-2 space-y-1">
-              {tier.toc.map((t) => (
+              {toc.map((t) => (
                 <li key={t.id} className={t.level === 3 ? "pl-4" : ""}>
                   <a href={`#${t.id}`} className={a}>
                     {t.text}
@@ -284,6 +334,7 @@ export function ArticleReader({ article }: { article: Article }) {
           </p>
         </footer>
       </article>
+      </div>
     </main>
   );
 }

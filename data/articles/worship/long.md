@@ -26,7 +26,7 @@ The New Testament's commonest word, *proskuneo*, probably meant "to kiss toward"
 
 ### Arabic: the servant
 
-In Arabic, worship is *ibadah*, from the same root as *abd*, "servant" or "slave". To worship is to live as the servant of the one you serve. The Qur'an states the purpose of human life in exactly these terms: "I created the jinn and humankind only that they might worship Me." (51:56) Islamic teaching has always read *ibadah* broadly: not only the five daily prayers, the fast and the pilgrimage, but honest trade, care for parents and kindness to neighbors, done for God's sake.
+In Arabic, worship is *ibadah*, from the same root as *abd*, "servant" or "slave". To worship is to live as the servant of the one you serve. The Qur'an states the purpose of human life in exactly these terms: "I created the jinn and humankind only that they might worship Me." (Qur'an 51:56) Islamic teaching has always read *ibadah* broadly: not only the five daily prayers, the fast and the pilgrimage, but honest trade, care for parents and kindness to neighbors, done for God's sake.
 
 ### Sanskrit: sharing and honoring
 
@@ -58,13 +58,13 @@ Augustine, writing his Confessions around 400, says on its first page, in a line
 
 ### Islam: tawhid and the hidden idol
 
-The Qur'an's opening chapter, recited in every prayer, contains its creed of worship in one line: "Thee (alone) we worship; Thee (alone) we ask for help." (1:5) The central teaching is *tawhid*, the oneness of God, and its opposite is *shirk*, associating anything else with God. Muslim scholars have long spoken of a "hidden shirk": not bowing to statues, but doing good deeds to be seen and praised, so that the audience quietly becomes the god.
+The Qur'an's opening chapter, recited in every prayer, contains its creed of worship in one line: "Thee (alone) we worship; Thee (alone) we ask for help." (Qur'an 1:5) The central teaching is *tawhid*, the oneness of God, and its opposite is *shirk*, associating anything else with God. Muslim scholars have long spoken of a "hidden shirk": not bowing to statues, but doing good deeds to be seen and praised, so that the audience quietly becomes the god.
 
-The Qur'an is also sharp about worship that stops at ritual: "It is not righteousness that ye turn your faces to the East and the West; but righteous is he who believeth in Allah and the Last Day and the angels and the Scripture and the prophets; and giveth wealth, for love of Him, to kinsfolk and to orphans and the needy and the wayfarer and to those who ask, and to set slaves free; and observeth proper worship and payeth the poor-due." (2:177) The direction of your face in prayer matters less than the direction of your life.
+The Qur'an is also sharp about worship that stops at ritual: "It is not righteousness that ye turn your faces to the East and the West; but righteous is he who believeth in Allah and the Last Day and the angels and the Scripture and the prophets; and giveth wealth, for love of Him, to kinsfolk and to orphans and the needy and the wayfarer and to those who ask, and to set slaves free; and observeth proper worship and payeth the poor-due." (Qur'an 2:177) The direction of your face in prayer matters less than the direction of your life.
 
 ### Hinduism: a leaf, a flower
 
-The Bhagavad Gita teaches several paths to the divine: knowledge, disciplined action and devotion. Of devotion Krishna says: "He who offereth to Me with devotion a leaf, a flower, a fruit, water, that I accept from the striving self, offered as it is with devotion." (9:26) The size of the gift does not matter; the heart behind it does. A little later he gathers worship into one sentence: "On Me fix thy mind, be devoted to Me; sacrifice to Me; prostrate thyself before Me..." (9:34) Mind, love, offering and bowing: the same four strands the old words described.
+The Bhagavad Gita teaches several paths to the divine: knowledge, disciplined action and devotion. Of devotion Krishna says: "He who offereth to Me with devotion a leaf, a flower, a fruit, water, that I accept from the striving self, offered as it is with devotion." (Bhagavad Gita 9:26) The size of the gift does not matter; the heart behind it does. A little later he gathers worship into one sentence: "On Me fix thy mind, be devoted to Me; sacrifice to Me; prostrate thyself before Me..." (Bhagavad Gita 9:34) Mind, love, offering and bowing: the same four strands the old words described.
 
 ### Buddhism: refuge rather than worship
 

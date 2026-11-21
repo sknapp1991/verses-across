@@ -23,6 +23,26 @@ const loadIndex = () =>
 /** Italic or Hebrew / Greek words worth checking: one to three words, letters only. */
 export const looksForeign = (w: string) => !!scriptOf(w) || /^[\p{L}\p{M}ʼʽʾʿ'’‘-]{2,24}$/u.test(w.trim());
 
+/**
+ * Popular spellings the dictionary index writes differently ("proskineo", "hesed", "tora"): straight to the Strong's
+ * number, so articles and Ask AI answers that use the usual English spelling still get the card (hub e9965564).
+ */
+const SPELLINGS: Record<string, string[]> = {
+  proskuneo: ["G4352"],
+  proskyneo: ["G4352"],
+  hishtachaveh: ["H7812"],
+  hishtachavah: ["H7812"],
+  shachah: ["H7812"],
+  chesed: ["H2617"],
+  hesed: ["H2617"],
+  charis: ["G5485"],
+  ruach: ["H7307"],
+  torah: ["H8451"],
+  emunah: ["H530"],
+  avodah: ["H5656"],
+  cherem: ["H2764"],
+};
+
 /** An everyday English word (a learner level up to C1): *very*, *holy*, *time*. Rare words (cherem, parthenos) aren't. */
 async function everyday(w: string) {
   const card = await lookupWord(w.toLowerCase().replace(/[‘’']/g, ""), "en").catch(() => null);
@@ -36,7 +56,8 @@ export function AiWord({ word, italic = false, notEnglish = false }: { word: str
     let live = true;
     loadIndex()
       .then(async (i) => {
-        const found = i[wordKey(word)] ?? [];
+        const key = wordKey(word);
+        const found = i[key] ?? SPELLINGS[key] ?? [];
         // a plain spelling: only if it isn't an everyday English word
         return found.length && notEnglish && (await everyday(word)) ? [] : found;
       })
