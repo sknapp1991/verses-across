@@ -90,7 +90,10 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
       if (w.length < 3 || /\s/.test(w) || !looksForeign(w) || em.closest("a, h1, h2, h3")) continue;
       const slot = document.createElement("span");
       em.replaceWith(slot);
-      out.push({ el: slot, node: <AiWord word={w} italic notEnglish={!/[^\x00-\x7F]/.test(w)} /> });
+      // the paragraph names Islam, the Qur'an or Arabic: prefer the Arabic dictionary (*din*, *salah*, *ibadah*)
+      const about = em.closest("p, li, blockquote")?.textContent ?? "";
+      const arabic = /\b(arabic|islam\w*|muslim\w*|qur'?an|koran|sufi\w*|allah)\b/i.test(about);
+      out.push({ el: slot, node: <AiWord word={w} italic notEnglish={!/[^\x00-\x7F]/.test(w)} arabic={arabic} /> });
     }
     // References in the running text (not inside links or headings).
     const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

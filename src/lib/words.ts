@@ -3,7 +3,7 @@
  * Word lookup (meaning, synonyms, other languages, reading level) from public/words, built by
  * scripts/build-words.ts. See src/lib/word-norm.ts for the lookup rules.
  */
-import { lookupKeys, normWord, shardFile, shardFor, WORD_LANGS, type WordEntry, type WordShard, type WordsMeta } from "./word-norm";
+import { lookupKeys, normWord, romanKey, shardFile, shardFor, WORD_LANGS, type WordEntry, type WordShard, type WordsMeta } from "./word-norm";
 
 const has = (o: object | undefined, k: string) => !!o && Object.prototype.hasOwnProperty.call(o, k);
 export const hasWords = (lang: string) => (WORD_LANGS as readonly string[]).includes(lang);
@@ -50,6 +50,19 @@ export async function lookupWord(raw: string, lang: string): Promise<WordCard | 
       return { head: entry.hw ?? headKey, entry, archaic };
     }
     if (archaic) return { head: key, entry: { pos: [], defs: [], level: "archaic" }, archaic };
+  }
+  return null;
+}
+
+let romanP: Promise<Record<string, string[]> | null> | null = null;
+/** An Arabic word from its Latin spelling ("ibadah", "tawhid"): the card of the Arabic headword it names, or null. */
+export async function lookupArabicRoman(raw: string): Promise<WordCard | null> {
+  const k = romanKey(raw);
+  if (k.length < 3) return null;
+  const map = await (romanP ??= json<Record<string, string[]>>("/words/ar/roman.json"));
+  for (const head of (map && has(map, k) ? map[k] : null) ?? []) {
+    const card = await lookupWord(head, "ar");
+    if (card) return card;
   }
   return null;
 }

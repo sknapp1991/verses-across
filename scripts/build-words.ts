@@ -38,6 +38,7 @@ const SOURCES: Record<string, string[]> = {
     "Archaic forms: Verses Across",
   ],
   la: ["Wiktionary (CC BY-SA 4.0), via kaikki.org / wiktextract", "Level estimated from word frequency in the site's Latin texts"],
+  ar: ["Wiktionary (CC BY-SA 4.0), via kaikki.org / wiktextract", "No reading levels yet (no word-frequency list for Arabic)"],
 };
 const DEFAULT_SOURCES = ["Wiktionary (CC BY-SA 4.0), via kaikki.org / wiktextract", "wordfreq (CC BY-SA 4.0)"];
 
@@ -169,7 +170,8 @@ async function main() {
         e.level = "archaic";
         delete e.arch;
       } else if (lang === "en" && has(cefr, k)) e.level = cefr[k];
-      else if (!nameOnly && e.defs.length) {
+      // (no frequency data, as for Arabic so far: no level, rather than "hard" for every word)
+      else if (!nameOnly && e.defs.length && Object.keys(freq).length) {
         e.level = estimate(has(freq, k) ? freq[k] : undefined, cut);
         e.est = 1;
       }
@@ -228,6 +230,14 @@ async function main() {
   for (const [i, part] of zhParts.entries()) {
     const body = JSON.stringify(part);
     await writeFile(path.join(OUT, "zh-chars", `${i.toString(16)}.json`), body);
+    files++;
+    bytes += body.length;
+  }
+  // Arabic from its Latin spelling (articles: *ibadah*): romanKey → headwords, made by import-words
+  if (existsSync(path.join(SRC, "roman-ar.json"))) {
+    const body = await readFile(path.join(SRC, "roman-ar.json"), "utf8");
+    await mkdir(path.join(OUT, "ar"), { recursive: true });
+    await writeFile(path.join(OUT, "ar", "roman.json"), body);
     files++;
     bytes += body.length;
   }

@@ -28,7 +28,33 @@
 export const WORD_RE = /[\p{L}\p{M}\p{N}]+(?:['’ʼ][\p{L}\p{M}\p{N}]+)*/gu;
 
 /** Languages with word data (public/words/<lang>/). */
-export const WORD_LANGS = ["en", "es", "fr", "de", "it", "pt", "ru", "la", "el"] as const;
+export const WORD_LANGS = ["en", "es", "fr", "de", "it", "pt", "ru", "la", "el", "ar"] as const;
+
+/**
+ * A romanized Arabic word as a lookup key (hub e9965564: articles write *ibadah*, *tawhid*, *shirk*): accents and
+ * ʿ ʾ ' dropped, doubled letters single, a final -ah/-at (ta marbuta) as -a, "aa/ee/oo" as a/i/u, "ou" as u.
+ * Wiktionary's romanizations (ʕibāda, tawḥīd) and everyday spellings (ibadah, tawheed) meet at the same key.
+ */
+export function romanKey(raw: string): string {
+  return raw
+    .toLowerCase()
+    // Wiktionary's one-letter sounds, as everyday spellings write them (širk → shirk, ṯawāb → thawab, ḵalīfa → khalifa)
+    .replace(/š/g, "sh")
+    .replace(/ṯ/g, "th")
+    .replace(/ḏ/g, "dh")
+    .replace(/[ḵx]/g, "kh")
+    .replace(/[ġḡ]/g, "gh")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[ʿʾʕʔ'’‘`´-]/g, "")
+    .replace(/ee/g, "i")
+    .replace(/oo|ou/g, "u")
+    .replace(/(a|i|u)\1/g, "$1")
+    .replace(/(.)\1/g, "$1")
+    .replace(/(ah|at)$/, "a")
+    .replace(/[^a-z]/g, "");
+}
 
 const STRIP_MARKS = new Set(["la", "el", "ru", "he", "ar", "grc"]);
 

@@ -24,7 +24,7 @@ import path from "node:path";
 import readline from "node:readline";
 import zlib from "node:zlib";
 import { scanCorpus } from "./lib/word-corpus";
-import { lookupKeys, normWord, WORD_LANGS } from "../src/lib/word-norm";
+import { lookupKeys, normWord, romanKey, WORD_LANGS } from "../src/lib/word-norm";
 
 const ROOT = path.resolve(__dirname, "..");
 const RAW = path.join(ROOT, "data", "raw", "words");
@@ -33,7 +33,7 @@ const DUMP = path.join(RAW, "kaikki", "raw-wiktextract-data.jsonl.gz");
 const SLIM = (l: string) => path.join(RAW, "kaikki", `slim-${l}.jsonl`);
 
 /** Wiktionary language code → site language. The site's Greek texts are Koine/LXX → Ancient Greek. */
-const WIKT_LANG: Record<string, string> = { en: "en", es: "es", fr: "fr", de: "de", it: "it", pt: "pt", ru: "ru", la: "la", grc: "el" };
+const WIKT_LANG: Record<string, string> = { en: "en", es: "es", fr: "fr", de: "de", it: "it", pt: "pt", ru: "ru", la: "la", grc: "el", ar: "ar" };
 /** Translation-table language code → site language key in "tr". */
 const TR_LANG: Record<string, string> = {
   es: "es", fr: "fr", de: "de", it: "it", pt: "pt", ru: "ru", la: "la", grc: "el", el: "el~", he: "he", ar: "ar", cmn: "zh", zh: "zh~",
@@ -58,6 +58,7 @@ type Slim = {
   fm?: [string, string[]][];
   sy?: string[];
   tr?: [lang: string, word: string, sense: string][];
+  ro?: string; // Arabic: Wiktionary's romanization
 };
 
 type Raw = {
@@ -83,6 +84,11 @@ function slim(r: Raw): Slim {
     .map((f) => [f.form, f.tags ?? []] as [string, string[]]);
   if (fm.length) out.fm = fm;
   if (r.synonyms?.length) out.sy = r.synonyms.map((y) => y.word);
+  // Arabic: Wiktionary's romanization ("ʕibāda"), for looking a word up from its Latin spelling (romanKey)
+  if (r.lang_code === "ar") {
+    const ro = (r.forms ?? []).find((f) => (f.tags ?? []).includes("romanization"))?.form;
+    if (ro) out.ro = ro;
+  }
   if (r.lang_code === "en" && r.translations?.length)
     out.tr = r.translations
       .filter((t) => t.word && TR_LANG[t.lang_code ?? t.code ?? ""])
@@ -132,7 +138,7 @@ async function extract(corpus: Map<string, Set<string>>) {
     const r = JSON.parse(line) as Raw;
     const set = corpus.get(lang)!;
     const k = normWord(r.word, lang);
-    let hit = set.has(k);
+    let hit = lang === "ar" || set.has(k);
     if (!hit) for (const f of r.forms ?? []) if (set.has(normWord(f.form, lang))) { hit = true; break; }
     if (!hit) continue;
     const s = slim(r);
@@ -765,6 +771,25 @@ async function main() {
     console.log(`  wrote data/words/${l}.json ${(body.length / 1e6).toFixed(1)} MB, freq-${l}.json ${Object.keys(fq).length} words`);
   }
   await writeFile(path.join(OUT, "cefr-en.json"), JSON.stringify(await cefr()));
+
+  // Arabic from its Latin spelling (articles: *ibadah*, *tawhid*): romanKey(Wiktionary's romanization) → headwords
+  // that have a card, nouns and verbs first (several words can share a romanization).
+  const ar = lexes.get("ar");
+  if (ar) {
+    const roman: Record<string, string[]> = {};
+    const rank = (p: string) => (p === "noun" ? 0 : p === "verb" ? 1 : p === "name" ? 2 : 3);
+    const recs = (await readSlim("ar")).filter((r) => r.ro).sort((a, b) => rank(a.p) - rank(b.p));
+    for (const r of recs) {
+      const head = normWord(r.w, "ar");
+      if (!Object.prototype.hasOwnProperty.call(ar.w, head)) continue;
+      const k = romanKey(r.ro!);
+      if (k.length < 3) continue;
+      const list = (roman[k] ??= []);
+      if (!list.includes(head) && list.length < 3) list.push(head);
+    }
+    await writeFile(path.join(OUT, "roman-ar.json"), JSON.stringify(roman));
+    console.log(`  wrote data/words/roman-ar.json ${Object.keys(roman).length} romanized spellings`);
+  }
 }
 
 main().catch((e) => {
