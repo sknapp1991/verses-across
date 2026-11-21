@@ -788,9 +788,11 @@ export function ToolPopover({ label, title, icon, text, children, wide = false }
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute right-0 top-full z-40 mt-2 max-h-[calc(var(--app-h,100dvh)-10rem)] ${wide ? "w-96" : "w-80"} max-w-[calc(100vw-2rem)] space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 text-left shadow-xl`}
+          className={`absolute right-0 top-full z-40 mt-2 flex max-h-[calc(var(--app-h,100dvh)-10rem)] ${wide ? "w-96" : "w-80"} max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-line bg-panel text-left shadow-xl`}
         >
-          {children}
+          <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-4">{children}</div>
+          <span aria-hidden className="fade-edge fade-top" />
+          <span aria-hidden className="fade-edge fade-bottom" />
         </div>
       )}
     </div>

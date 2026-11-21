@@ -206,10 +206,14 @@ function VersionsPopover({ count }: { count: number }) {
         <div
           role="dialog"
           aria-label="Versions and languages"
-          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(var(--app-h,100dvh)-5rem)] w-96 space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-3 shadow-xl"
+          className="absolute right-0 top-full z-30 mt-2 flex max-h-[calc(var(--app-h,100dvh)-5rem)] w-96 flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-xl"
         >
-          <VersionChooser />
-          <p className="px-2 text-xs text-faint">Saved setups (your favourite sets of versions) are in Display options.</p>
+          <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain px-3 py-4">
+            <VersionChooser />
+            <p className="px-2 text-xs text-faint">Saved setups (your favourite sets of versions) are in Display options.</p>
+          </div>
+          <span aria-hidden className="fade-edge fade-top" />
+          <span aria-hidden className="fade-edge fade-bottom" />
         </div>
       )}
     </div>
@@ -276,9 +280,13 @@ function TopPopover({ label, title, icon, children }: { label: string; title: st
         <div
           role="dialog"
           aria-label={label}
-          className="absolute right-0 top-full z-30 mt-2 max-h-[calc(var(--app-h,100dvh)-5rem)] w-80 space-y-4 overflow-y-auto overscroll-contain rounded-xl border border-line bg-panel p-4 shadow-xl"
+          className="absolute right-0 top-full z-30 mt-2 flex max-h-[calc(var(--app-h,100dvh)-5rem)] w-80 flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-xl"
         >
-          {typeof children === "function" ? children(() => setOpen(false)) : children}
+          <div className="min-h-0 space-y-4 overflow-y-auto overscroll-contain p-4">
+            {typeof children === "function" ? children(() => setOpen(false)) : children}
+          </div>
+          <span aria-hidden className="fade-edge fade-top" />
+          <span aria-hidden className="fade-edge fade-bottom" />
         </div>
       )}
     </div>

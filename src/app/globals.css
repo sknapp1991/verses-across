@@ -149,6 +149,26 @@ dialog.sheet[open] {
   line-height: calc(var(--reader-leading, 1.65) + 0.35);
 }
 
+/* A scrolling panel inside a fixed frame (the dropdown menus): two strips in the panel's colour over its top and
+   bottom 14 px, so whatever is scrolled past slides out of view softly instead of being cut off flat at the frame's
+   edge (hub affa2012). Overlays, not a mask: a mask would also clip the colour picker that pops out of the panel.
+   The panels' padding (16 px) is at least as tall, so nothing is faded when the menu isn't scrolled. */
+.fade-edge {
+  position: absolute;
+  inset-inline: 0;
+  height: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+.fade-top {
+  top: 0;
+  background: linear-gradient(to bottom, var(--panel), transparent);
+}
+.fade-bottom {
+  bottom: 0;
+  background: linear-gradient(to top, var(--panel), transparent);
+}
+
 :target .verse-flash,
 .verse-flash.is-target {
   animation: flash 1.6s ease-out;
