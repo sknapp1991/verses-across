@@ -91,7 +91,7 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
       const slot = document.createElement("span");
       em.replaceWith(slot);
       // the paragraph names Islam, the Qur'an or Arabic: prefer the Arabic dictionary (*din*, *salah*, *ibadah*)
-      const about = em.closest("p, li, blockquote")?.textContent ?? "";
+      const about = slot.closest("p, li, blockquote")?.textContent ?? ""; // (the slot: the <em> has left the page)
       const arabic = /\b(arabic|islam\w*|muslim\w*|qur'?an|koran|sufi\w*|allah)\b/i.test(about);
       out.push({ el: slot, node: <AiWord word={w} italic notEnglish={!/[^\x00-\x7F]/.test(w)} arabic={arabic} /> });
     }
