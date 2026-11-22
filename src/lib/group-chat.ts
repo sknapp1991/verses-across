@@ -109,6 +109,10 @@ export async function sendChat(g: MyGroup, members: Member[], input: string): Pr
   let text = input.trim();
   if (!text) return null;
   let to: Member | undefined;
+  // "/r" is turned into "/w name" in the chat box; one that reaches here has no one to reply to. Never post it (or
+  // any other /command) to the whole group: it may be a private message.
+  if (/^\/r(\s|$)/i.test(text)) return "No one to reply to yet: /w name message";
+  if (/^\/(?!w\b|whisper\b)\S/i.test(text)) return "To whisper: /w name your message. (Other / commands aren’t sent.)";
   const w = /^\/(?:w|whisper)\s+([\s\S]+)$/i.exec(text);
   if (/^\/(?:w|whisper)\b/i.test(text)) {
     if (!w) return "To whisper: /w name your message";

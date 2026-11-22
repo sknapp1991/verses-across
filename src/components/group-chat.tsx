@@ -85,6 +85,7 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
 
   // keep the newest line in view, unless the reader has scrolled up to read earlier ones
   const nearBottom = useRef(true);
+  const tabAt = useRef(-1); // where Tab is in the list of names (-1: start from the name in the line)
   useEffect(() => {
     const el = list.current;
     if (el && nearBottom.current) el.scrollTop = el.scrollHeight;
@@ -111,6 +112,45 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
   };
 
   const nameOf = (id: string) => names.get(id)?.name ?? "Someone not in the list";
+
+  // Whisper partners, most recent first: those who whispered me, then those I whispered, then everyone else here.
+  const others = members.filter((m) => !m.mine);
+  const recent: string[] = [];
+  for (const l of [...(lines ?? [])].reverse()) {
+    if (!l.whisper) continue;
+    const id = l.mine ? l.whisper.to : l.from;
+    if (!l.mine && !recent.includes(id)) recent.unshift(id); // (unshift then reverse below keeps whisperers first)
+  }
+  recent.reverse();
+  for (const l of [...(lines ?? [])].reverse()) if (l.whisper && l.mine && !recent.includes(l.whisper.to)) recent.push(l.whisper.to);
+  const cycle = [...recent.filter((id) => others.some((m) => m.id === id)), ...others.map((m) => m.id).filter((id) => !recent.includes(id))];
+  // the last person who whispered me and is still here (else the next most recent)
+  const lastWhisperer = recent.find((id) => others.some((m) => m.id === id));
+
+  /** "/r " → "/w <the last person who whispered me> " (as in game chat). */
+  const replyTo = (v: string) => {
+    const m = /^\/r\s([\s\S]*)$/i.exec(v);
+    if (!m) return v;
+    if (!lastWhisperer) {
+      setErr("No one has whispered you yet: /w name message");
+      return v;
+    }
+    setErr(null);
+    return `/w ${nameOf(lastWhisperer)} ${m[1]}`;
+  };
+  /** Tab after /w: the next name in `cycle`, keeping the message typed after the name. */
+  const nextName = (v: string) => {
+    if (!cycle.length) return v;
+    const rest = v.replace(/^\/(?:whisper|w|r)\b\s*/i, "");
+    // the name now in the line (the longest member name it starts with), and the message after it
+    const cur = others
+      .filter((m) => rest.toLowerCase().startsWith(m.name.toLowerCase()) && /^(\s|$)/.test(rest.slice(m.name.length)))
+      .sort((a, b) => b.name.length - a.name.length)[0];
+    const msg = cur ? rest.slice(cur.name.length).replace(/^\s/, "") : rest.includes(" ") ? rest.slice(rest.indexOf(" ") + 1) : "";
+    const at = tabAt.current >= 0 ? tabAt.current : cur ? cycle.indexOf(cur.id) : -1;
+    tabAt.current = (at + 1) % cycle.length;
+    return `/w ${nameOf(cycle[tabAt.current])} ${msg}`;
+  };
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-line px-3 py-2">
       <div
@@ -126,14 +166,17 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
         {lines === null && !err && <p className="text-xs text-faint">Loading the chat…</p>}
         {lines?.length === 0 && <p className="text-xs text-faint">No messages yet. Say hello! To whisper to one person: /w name message</p>}
         {lines?.map((l) => {
-          const other = l.whisper ? nameOf(l.mine ? l.whisper.to : l.from) : null;
           return (
             <p key={l.id} className="break-words leading-snug" style={l.whisper ? { color: "var(--whisper)" } : undefined}>
-              <span className="font-semibold" style={l.whisper ? undefined : { color: `hsl(${hue(l.from)} 65% var(--name-l))` }}>
-                {l.mine ? "You" : nameOf(l.from)}
-              </span>
-              {l.whisper && <span className="text-xs"> {l.mine ? `whisper to ${other}` : "whispers to you"}</span>}
-              <span className="text-faint">: </span>
+              {l.whisper ? (
+                // a whisper, short as in game chat: "To Skylar" when I sent it, "Skylar whispers" when I got it
+                <span className="font-semibold">{l.mine ? `To ${nameOf(l.whisper.to)}` : `${nameOf(l.from)} whispers`}</span>
+              ) : (
+                <span className="font-semibold" style={{ color: `hsl(${hue(l.from)} 65% var(--name-l))` }}>
+                  {l.mine ? "You" : nameOf(l.from)}
+                </span>
+              )}
+              <span className={l.whisper ? "" : "text-faint"}>: </span>
               <span className={l.whisper ? "" : "text-ink"}>{l.text}</span>
               <span className="ml-1.5 whitespace-nowrap text-[11px] text-faint">
                 {time(l.at)}
@@ -150,7 +193,20 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
       </div>
       {sending && (
         <p aria-hidden className="break-words text-sm leading-snug opacity-60">
-          <span className="font-semibold">You</span>: {sending} <span className="text-[11px] text-faint">sending…</span>
+          {(() => {
+            const w = /^\/(?:whisper|w)\s+([\s\S]+)$/i.exec(sending);
+            const to = w ? others.filter((m) => w[1].toLowerCase().startsWith(m.name.toLowerCase())).sort((a, b) => b.name.length - a.name.length)[0] : undefined;
+            return to ? (
+              <span style={{ color: "var(--whisper)" }}>
+                <span className="font-semibold">To {to.name}</span>: {w![1].slice(to.name.length).trim()}
+              </span>
+            ) : (
+              <>
+                <span className="font-semibold">You</span>: {sending}
+              </>
+            );
+          })()}{" "}
+          <span className="text-[11px] text-faint">sending…</span>
         </p>
       )}
       {err && (
@@ -171,17 +227,28 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
         <input
           id={`chat-${g.code}`}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            tabAt.current = -1;
+            setDraft(replyTo(e.target.value));
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== "Tab" || e.shiftKey || e.nativeEvent.isComposing || !cycle.length || !/^\/(whisper|w|r)\b/i.test(draft)) return;
+            e.preventDefault(); // (Tab cycles names here instead of leaving the box; Shift+Tab still leaves)
+            setDraft(nextName(draft));
+          }}
+          aria-describedby={`chat-help-${g.code}`}
           maxLength={1100}
-          placeholder="Message, or /w name …"
+          placeholder="Message, /w name …, /r to reply (Tab: next name)"
           className="min-h-11 min-w-0 flex-1 rounded-lg border border-line bg-panel px-3 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none"
         />
         <button type="submit" disabled={!draft.trim() || !!sending} className="min-h-11 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink disabled:opacity-50">
           Send
         </button>
       </form>
-      <p className="text-[11px] text-faint">
-        Anyone with this group&rsquo;s code can read the chat; a whisper only the two of you. Messages stay after someone leaves.
+      <p id={`chat-help-${g.code}`} className="text-[11px] text-faint">
+        /w name message whispers to one person; /r replies to the last one who whispered you; Tab after /w goes to the
+        next name. Anyone with this group&rsquo;s code can read the chat; a whisper only the two of you. Messages stay
+        after someone leaves.
       </p>
     </div>
   );
