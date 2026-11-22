@@ -135,6 +135,8 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   hafiz: ["bell"],
   "legends-jews": ["ginzberg"],
   "guide-perplexed": ["friedlander"],
+  mabinogion: ["guest"],
+  bustan: ["edwards"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

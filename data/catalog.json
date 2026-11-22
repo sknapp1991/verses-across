@@ -65,6 +65,8 @@
     { "id": "hafiz", "name": "Poems from the Divan of Hafiz", "versification": "hafiz" },
     { "id": "legends-jews", "name": "The Legends of the Jews", "versification": "legends-jews" },
     { "id": "guide-perplexed", "name": "The Guide for the Perplexed", "versification": "guide-perplexed" },
+    { "id": "mabinogion", "name": "The Mabinogion", "versification": "mabinogion" },
+    { "id": "bustan", "name": "The Bustan of Sadi", "versification": "bustan" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2095,6 +2097,40 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/73584",
       "licensed": false,
       "versification": "guide-perplexed"
+    },
+    {
+      "id": "guest",
+      "work": "mabinogion",
+      "abbr": "Guest",
+      "name": "The Mabinogion (Lady Charlotte Guest)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1849,
+      "translator": "Lady Charlotte Guest",
+      "license": "Public Domain",
+      "licenseNote": "Twelve tales in her order: the three romances, Kilhwch and Olwen, the Dream of Rhonabwy, the Four Branches of the Mabinogi, the Dream of Maxen Wledig, Lludd and Llevelys and Taliesin (which breaks off before the last prophecies, as in her book). Verse = paragraph; poems keep their lines; the headings of the second to fourth Branches are their chapter notes. Her introduction and footnotes are left out.",
+      "attribution": "The Mabinogion, translated by Lady Charlotte Guest (1838–1849), public domain; Project Gutenberg #5160.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/5160",
+      "licensed": false,
+      "versification": "mabinogion"
+    },
+    {
+      "id": "edwards",
+      "work": "bustan",
+      "abbr": "Edwards",
+      "name": "The Bustan of Sadi (A. Hart Edwards)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1911,
+      "translator": "A. Hart Edwards",
+      "license": "Public Domain (US)",
+      "licenseNote": "A prose rendering: the Prologue and Sa'di's ten chapters. Verse = paragraph; each story's or discourse's title labels the paragraph it opens. His introduction and notes are left out.",
+      "attribution": "The Bustān of Sadi, translated from the Persian with an introduction by A. Hart Edwards (Wisdom of the East; London: John Murray, 1911), public domain in the US; Project Gutenberg #60471.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/60471",
+      "licensed": false,
+      "versification": "bustan"
     }
   ],
   "religions": [
@@ -2456,7 +2492,9 @@
             { "id": "masnavi-1", "name": "Rumi's Masnavi, Book I", "work": "masnavi", "chapters": 18, "chapterName": "Masnavi I" },
             { "id": "first-edition", "name": "The Rubaiyat of Omar Khayyam (FitzGerald, 1st edition)", "work": "rubaiyat", "chapters": 1, "chapterName": "Rubaiyat" },
             { "id": "fifth-edition", "name": "The Rubaiyat of Omar Khayyam (FitzGerald, 5th edition)", "work": "rubaiyat", "chapters": 1, "chapterName": "Rubaiyat" },
-            { "id": "hafiz", "name": "Hafiz: Poems from the Divan", "work": "hafiz", "chapters": 43, "chapterName": "Poem" }
+            { "id": "hafiz", "name": "Hafiz: Poems from the Divan", "work": "hafiz", "chapters": 43, "chapterName": "Poem" },
+            { "id": "prologue", "name": "Sadi, The Bustan: Prologue", "work": "bustan", "chapters": 1, "chapterName": "Prologue" },
+            { "id": "bustan", "name": "Sadi, The Bustan (The Orchard)", "work": "bustan", "chapters": 10, "chapterName": "Chapter" }
           ]
         }
       ]
@@ -3015,6 +3053,13 @@
           "name": "Finnish",
           "items": [
             { "id": "kalevala", "name": "The Kalevala", "work": "kalevala", "chapters": 50, "chapterName": "Runo" }
+          ]
+        },
+        {
+          "id": "welsh",
+          "name": "Welsh",
+          "items": [
+            { "id": "mabinogion", "name": "The Mabinogion", "work": "mabinogion", "chapters": 12, "chapterName": "Tale" }
           ]
         }
       ]

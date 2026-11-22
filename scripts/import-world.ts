@@ -2578,7 +2578,150 @@ async function guide() {
   report("guide-perplexed", 4 + 2 + 178, total);
 }
 
+/**
+ * The Mabinogion — tr. Lady Charlotte Guest (1838–49), Gutenberg #5160. One chapter
+ * per tale (12, in her order: the three romances, Kilhwch and Olwen, Rhonabwy, the Four Branches, Maxen, Lludd and
+ * Llevelys, Taliesin); verse = paragraph, poems keep their lines. Each Branch's own heading ("Here is the second
+ * portion of the Mabinogi") is the chapter note. Her introduction, footnotes and the dividers are left out.
+ */
+async function mabinogion() {
+  const txt = gutenbergBody(await cached("mabinogion", "pg5160.txt", GUT(5160)));
+  const lines = txt.split("\n");
+  const tales: [RegExp, string][] = [
+    [/^THE LADY OF THE FOUNTAIN$/, "The Lady of the Fountain"],
+    [/^PEREDUR THE SON OF EVRAWC$/, "Peredur the Son of Evrawc"],
+    [/^GERAINT THE SON OF ERBIN$/, "Geraint the Son of Erbin"],
+    [/^KILHWCH AND OLWEN$/, "Kilhwch and Olwen, or the Twrch Trwyth"],
+    [/^THE DREAM OF RHONABWY$/, "The Dream of Rhonabwy"],
+    [/^PWYLL PRINCE OF DYVED$/, "Pwyll Prince of Dyved"],
+    [/^BRANWEN THE DAUGHTER OF LLYR$/, "Branwen the Daughter of Llyr"],
+    [/^MANAWYDDAN THE SON OF LLYR$/, "Manawyddan the Son of Llyr"],
+    [/^MATH THE SON OF MATHONWY$/, "Math the Son of Mathonwy"],
+    [/^THE DREAM OF MAXEN WLEDIG$/, "The Dream of Maxen Wledig"],
+    [/^HERE IS THE STORY OF LLUDD AND LLEVELYS$/, "The Story of Lludd and Llevelys"],
+    [/^TALIESIN$/, "Taliesin"],
+  ];
+  const intro = lines.findIndex((l) => l.trim() === "INTRODUCTION" && !l.startsWith(" "));
+  const end = lines.findIndex((l) => l.trim() === "FOOTNOTES");
+  let from = intro;
+  const starts = tales.map(([re]) => {
+    const i = lines.findIndex((l, k) => k > from && re.test(l.trim()));
+    if (i < 0) throw new Error(`mabinogion: ${re} not found`);
+    return (from = i);
+  });
+  await resetVersion("mabinogion", "guest");
+  let total = 0;
+  for (const [k, s] of starts.entries()) {
+    const body = lines.slice(s + 1, starts[k + 1] ?? end);
+    let note: string | undefined;
+    const paras: string[] = [];
+    let buf: string[] = [];
+    let poem = false;
+    const flush = () => {
+      if (buf.length) {
+        const t = (poem ? buf.map((x) => x.trim()).join("\n") : unwrap(buf.map((x) => x.trim()).join(" ")))
+          .replace(/\s*\{\d+\}/g, "") // footnote marks
+          .replace(/_/g, "")
+          .replace(/ {2,}/g, " ");
+        // the Branch headings ("HERE IS THE SECOND PORTION OF THE MABINOGI") and Kilhwch's "OR THE / TWRCH TRWYTH"
+        if (!paras.length && !note && /^[A-Z][A-Z ,.'’\n-]+$/.test(t)) {
+          if (/PORTION OF THE MABINOGI/.test(t)) note = titleCase(t.replace(/\n/g, " ")) + ".";
+        } else paras.push(t);
+      }
+      buf = [];
+    };
+    for (const raw of body) {
+      const l = raw.trim();
+      if (!l || /^(\* ?)+$/.test(l)) {
+        flush();
+        continue;
+      }
+      const ind = /^ {2,}\S/.test(raw);
+      if (buf.length && ind !== poem) flush();
+      poem = ind;
+      buf.push(raw);
+    }
+    flush();
+    // "Pwyll PRINCE OF DYVED was lord…": the opening words set in capitals, as in her book
+    if (paras[0]) paras[0] = paras[0].replace(/^(\w+) ([A-Z][A-Z ]+[A-Z])(?= [a-z])/, (_, a: string, b: string) => `${a} ${titleCase(b)}`);
+    // and the closing "And this is the tale of THE LADY OF THE FOUNTAIN." likewise
+    const last = paras.length - 1;
+    paras[last] = paras[last].replace(/\b([A-Z]{2,}(?: [A-Z]{2,})+)(?=\.$)/, (m) => titleCase(m).replace(/^the /, "the "));
+    if (!paras.length) throw new Error(`mabinogion: ${tales[k][1]} is empty`);
+    await writeChapter("mabinogion", "guest", "mabinogion", k + 1, paras.map((t, j) => ({ v: String(j + 1), t })), note, tales[k][1]);
+    total += paras.length;
+  }
+  report("mabinogion", tales.length, total);
+}
+
+/**
+ * The Bustan of Sadi — tr. A. Hart Edwards (Wisdom of the East, London: John Murray, 1911), Gutenberg #60471:
+ * a prose rendering of Sa'di's Bustan in two books, the Prologue and the ten chapters ("Concerning Justice" …
+ * "Concerning Prayer"). Verse = paragraph; each story's or discourse's title labels the paragraph it opens. His
+ * introduction and notes (and their marks) are left out.
+ */
+async function bustan() {
+  const txt = gutenbergBody(await cached("bustan", "pg60471.txt", GUT(60471)));
+  const lines = txt.split("\n");
+  const pro = lines.findIndex((l) => l === "PROLOGUE");
+  const end = lines.findIndex((l, k) => k > pro && l === "NOTES");
+  const isHead = (l: string) => /^[\p{Lu}][\p{Lu}0-9 ,.;:'’"“”!?()&—\[\]-]*[\p{Lu}.)\]]$/u.test(l) && /\p{Lu}{3}/u.test(l);
+  const chapters: { book: string; title?: string; verses: Verse[] }[] = [];
+  let label = "";
+  let buf: string[] = [];
+  const clean = (t: string) => t.replace(/\[\d+\]/g, "").replace(/_/g, "").replace(/ {2,}/g, " ").trim();
+  const flush = () => {
+    const cur = chapters[chapters.length - 1];
+    if (buf.length && cur) {
+      cur.verses.push({ v: String(cur.verses.length + 1), t: clean(unwrap(buf.join(" "))), ...(label ? { n: label } : {}) });
+      label = "";
+    }
+    buf = [];
+  };
+  for (let k = pro; k < end; k++) {
+    const l = lines[k].trim();
+    if (l === "PROLOGUE") {
+      chapters.push({ book: "prologue", verses: [] });
+      continue;
+    }
+    const ch = /^CHAPTER ([IVX]+)$/.exec(l);
+    if (ch) {
+      flush();
+      // the chapter's subject is on the next line that has text
+      let j = k + 1;
+      while (!lines[j].trim()) j++;
+      chapters.push({ book: "bustan", title: titleCase(clean(lines[j].trim())), verses: [] });
+      if (roman(ch[1]) !== chapters.filter((c) => c.book === "bustan").length) throw new Error(`bustan: ${l} out of order`);
+      k = j;
+      continue;
+    }
+    if (isHead(l) && !lines[k - 1].trim() && !lines[k + 1]?.trim()) {
+      flush();
+      // titleCase takes the "At" of "Atābak" for the small word "at"
+      label = titleCase(clean(l)).replace(/(\p{L})’S\b/gu, "$1’s").replace(/\batābak\b/, "Atābak");
+      continue;
+    }
+    if (!l) flush();
+    else buf.push(l);
+  }
+  flush();
+  await resetVersion("bustan", "edwards");
+  let total = 0;
+  const pr = chapters.filter((c) => c.book === "prologue");
+  const bs = chapters.filter((c) => c.book === "bustan");
+  if (pr.length !== 1 || bs.length !== 10) throw new Error(`bustan: ${pr.length} prologue, ${bs.length} chapters`);
+  await writeChapter("bustan", "edwards", "prologue", 1, pr[0].verses, undefined, "Prologue");
+  total += pr[0].verses.length;
+  for (const [k, c] of bs.entries()) {
+    await writeChapter("bustan", "edwards", "bustan", k + 1, c.verses, undefined, c.title);
+    total += c.verses.length;
+  }
+  report("bustan", 11, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  bustan,
+  mabinogion,
   guide,
   legends,
   hafiz,

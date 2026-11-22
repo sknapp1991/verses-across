@@ -422,6 +422,18 @@ All public domain, from Project Gutenberg (read from its mirror).
   paragraph it heads, and epigraphs keep their reference on its own line. Friedländer's own introduction (his
   life of Maimonides and analysis of the Guide) is left out; this edition has no notes to the text.
 
+## The Mabinogion and the Bustan of Sadi (added Nov 22 2026, `scripts/import-world.ts`)
+
+From Project Gutenberg (read from its mirror).
+
+- **The Mabinogion** — Lady Charlotte Guest (1838–1849), public domain, #5160. Twelve tales in her order (the
+  three romances, Kilhwch and Olwen, Rhonabwy, the Four Branches, Maxen, Lludd and Llevelys, Taliesin, which breaks
+  off before the last prophecies, as in her book). Verse = paragraph, poems keep their lines; the headings of the
+  second to fourth Branches are their chapter notes. Her introduction and footnotes are left out.
+- **The Bustan of Sadi** — A. Hart Edwards (Wisdom of the East, London: John Murray, 1911), public domain in the
+  US, #60471. A prose rendering: the Prologue and the ten chapters, verse = paragraph, each story's or
+  discourse's title labelling the paragraph it opens. His introduction and notes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
