@@ -1,5 +1,166 @@
 [
  {
+  "slug": "clean-vs-pure",
+  "title": "Clean, Pure, and the Pork Question",
+  "subtitle": "What the Bible means by clean, holy, dirty and impure, why the pig was forbidden, and the two Christian readings of whether the ban still stands.",
+  "volume": 1,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Islam"
+  ],
+  "themes": [
+   "purity",
+   "holiness",
+   "food laws",
+   "covenant",
+   "law and grace",
+   "conscience"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "Clean is not the same as holy, and dirty is not the same as impure. The four words, the difference between ritual impurity and forbidden food, why the pig stood out, and the strongest case on each side of the Christian debate over eating pork.",
+  "aiNote": "Rough draft for review: the Verses Across team's own essay, edited and fact-checked with AI. Scripture is quoted from the King James Version and Pickthall's Qur'an on this site. Both Christian positions are presented in their own terms; the site does not take a side.",
+  "depths": {
+   "medium": {
+    "words": 2059,
+    "minutes": 10
+   }
+  }
+ },
+ {
+  "slug": "truth-part-1",
+  "title": "On Truth, Part 1: What Is Truth?",
+  "subtitle": "Worship's natural companion is truth. What the traditions mean by it, what holds it up, and what it costs.",
+  "volume": 3,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Islam",
+   "Hinduism",
+   "Buddhism",
+   "Taoism",
+   "Confucianism",
+   "Philosophy",
+   "Psychology"
+  ],
+  "themes": [
+   "truth",
+   "deception",
+   "honesty",
+   "meaning",
+   "freedom",
+   "sacrifice"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "What do the scriptures and the philosophers mean by truth? Its pillars, why we are drawn to it, the parable of the painted well, how believers and non-believers see it, and what it asks of us.",
+  "aiNote": "Rough draft for review: the Verses Across team's own text, edited and fact-checked with AI. Scripture is quoted from the public-domain translations on this site (King James Version, Pickthall's Qur'an, Muller's Upanishads, Legge's Tao Te Ching).",
+  "depths": {
+   "medium": {
+    "words": 1321,
+    "minutes": 7
+   }
+  }
+ },
+ {
+  "slug": "truth-part-2",
+  "title": "On Truth, Part 2: The Crucible of Truth",
+  "subtitle": "Transformation, technology and the universal thread: how to know you have found truth, and how to share it without building walls.",
+  "volume": 3,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Islam",
+   "Hinduism",
+   "Buddhism",
+   "Taoism",
+   "Confucianism",
+   "Philosophy",
+   "Psychology"
+  ],
+  "themes": [
+   "truth",
+   "transformation",
+   "artificial intelligence",
+   "science",
+   "theology",
+   "unity"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "The test of truth is the fruit it bears. How each tradition locates truth, a common thread without tribalism, truth in the age of AI, modern parables, science and theology as maps, and a further-study index.",
+  "aiNote": "Rough draft for review: the Verses Across team's own text, edited and fact-checked with AI. Scripture is quoted from the public-domain translations on this site (King James Version, Pickthall's Qur'an, Muller's Upanishads, Legge's Tao Te Ching, Besant's Bhagavad Gita, Johnston's Yoga Sutras).",
+  "depths": {
+   "medium": {
+    "words": 1812,
+    "minutes": 9
+   }
+  }
+ },
+ {
+  "slug": "truth-part-3",
+  "title": "On Truth, Part 3: Beyond the Binary",
+  "subtitle": "The collapse of the yes-or-no question, the self-sustaining loop, and the void of Genesis.",
+  "volume": 3,
+  "traditions": [
+   "Buddhism",
+   "Judaism",
+   "Christianity",
+   "Philosophy"
+  ],
+  "themes": [
+   "truth",
+   "emptiness",
+   "creation",
+   "dependent origination",
+   "logic",
+   "the void"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "Is every question a yes or a no? How Buddhist logic answers the question of a creator, the seed and the tree, the “without form, and void” of Genesis read as potential, four classical critiques, and Indra's net.",
+  "aiNote": "Rough draft for review: the Verses Across team's own text, edited and fact-checked with AI. It sets out a Buddhist line of thought in its own voice, beside the Bible; it is one tradition's view, not the site's verdict. Scripture is quoted from the King James Version on this site.",
+  "depths": {
+   "medium": {
+    "words": 1604,
+    "minutes": 8
+   }
+  }
+ },
+ {
+  "slug": "enoch-8",
+  "title": "Promethean Shadows: Enoch 8 and the Arc of Human Progress",
+  "subtitle": "The arts the fallen Watchers taught, read as a picture of human history: every leap in technique brings its own crisis of wisdom.",
+  "volume": 1,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Greek religion",
+   "Mesopotamian religion",
+   "Hinduism",
+   "Philosophy"
+  ],
+  "themes": [
+   "technology",
+   "knowledge",
+   "the Watchers",
+   "progress",
+   "wisdom",
+   "stewardship"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "In 1 Enoch 8 fallen angels teach humanity metalwork, cosmetics, herb-lore and star-lore, and the world is corrupted. Read as an allegory of human ages, from the forge to the algorithm, with parallels from Greece, Mesopotamia, Genesis and India.",
+  "aiNote": "Rough draft for review: the Verses Across team's own essay, edited and fact-checked with AI. 1 Enoch is quoted from R. H. Charles's public-domain translation on this site, and Genesis from the King James Version. The Watcher-to-age mapping is the essay's interpretation, not the text's.",
+  "depths": {
+   "medium": {
+    "words": 1631,
+    "minutes": 8
+   }
+  }
+ },
+ {
   "slug": "blind-sculptor",
   "title": "The Blind Sculptor and the Primordial Name",
   "subtitle": "On outside-in imitation, inside-out creation, and the gap between a machine's likeness and the image of God.",
@@ -33,6 +194,39 @@
    },
    "long": {
     "words": 2395,
+    "minutes": 12
+   }
+  }
+ },
+ {
+  "slug": "eden-what-if",
+  "title": "What If? The Untrodden Paths of Eden",
+  "subtitle": "Three other ways the story of the two trees could have gone, and what each one shows about freedom, suffering and eternal life.",
+  "volume": 1,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Philosophy"
+  ],
+  "themes": [
+   "Eden",
+   "the tree of life",
+   "free will",
+   "innocence",
+   "suffering",
+   "redemption"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "Genesis tells of one choice: the fruit of knowledge, then exile. What if Adam and Eve had eaten only from the tree of life? Or from life first, then knowledge? Or knowledge first, and life afterward? Three thought experiments, with parables.",
+  "aiNote": "Rough draft for review: the Verses Across team's own essay, edited and fact-checked with AI. The three scenarios, proverbs and parables are the essay's own imaginative reflections, not traditional texts. Scripture is quoted from the King James Version on this site.",
+  "depths": {
+   "short": {
+    "words": 589,
+    "minutes": 3
+   },
+   "medium": {
+    "words": 2419,
     "minutes": 12
    }
   }
