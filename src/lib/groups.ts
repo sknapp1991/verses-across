@@ -8,6 +8,8 @@ import { useSyncExternalStore } from "react";
 import { dayKey, getActivity, periodStart, streaks, totals } from "./activity";
 import { findBook } from "./catalog";
 import { bookProgress } from "./goals";
+import { BADGES, earned, levelOf, xpOf } from "./achievements";
+import { statsNow } from "./stats-now";
 import { deriveKeys, fromBase64, hex, newCode, normalizeCode, open, seal, type CodeKeys } from "./secret-code";
 import { allItems } from "./study";
 import { isPrivate, PrivateModeError } from "./privacy";
@@ -25,9 +27,27 @@ export type Card = {
   weekChapters?: number;
   studied?: number;
   book?: { done: number; total: number } | null;
+  /** Chapters of the group's book listened to all the way through (hub 65b00b23). */
+  heard?: { done: number; total: number } | null;
+  /** The scorecard others see when they tap this member's name (only with progress shared). */
+  profile?: Profile;
   reading?: { work: string; book: string; chapter: number } | null;
   /** Public key for whispers in the group chat (ECDH P-256), when this member has opened the chat. */
   pub?: JsonWebKey;
+};
+export type Profile = {
+  level: number;
+  title: string;
+  /** Earned badge ids (achievements.ts BADGES). */
+  badges: string[];
+  chaptersRead: number;
+  chaptersHeard: number;
+  studied: number;
+  bestStreak: number;
+  /** All-time reading and listening, in minutes. */
+  mins: number;
+  traditions: number;
+  booksDone: number;
 };
 export type Member = Card & { id: string; mine: boolean };
 export type GroupView = { meta: GroupMeta | null; metaEtag: string | null; members: Member[] };
@@ -98,6 +118,28 @@ async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
     card.weekChapters = t.chapters;
     card.studied = items.filter((i) => i.kind === "studied").length;
     card.book = meta?.book ? bookProgress(map, meta.book.work, meta.book.book) : null;
+    if (meta?.book) {
+      // chapters of the book heard (every verse played), at any time
+      const prefix = `${meta.book.work}/${meta.book.book}/`;
+      const total = card.book?.total ?? findBook(meta.book.work, meta.book.book)?.chapters ?? 0;
+      let done = 0;
+      for (const k of totals(a).heard.keys()) if (k.startsWith(prefix)) done++;
+      card.heard = { done: Math.min(done, total), total };
+    } else card.heard = null;
+    const s = statsNow(a, map);
+    const lv = levelOf(xpOf(s));
+    card.profile = {
+      level: lv.level,
+      title: lv.title,
+      badges: BADGES.filter((b) => earned(b, s)).map((b) => b.id),
+      chaptersRead: s.chaptersRead,
+      chaptersHeard: s.chaptersHeard,
+      studied: s.studied,
+      bestStreak: s.bestStreak,
+      mins: Math.round((s.readSecs + s.listenSecs) / 60),
+      traditions: s.traditions,
+      booksDone: s.booksDone,
+    };
   }
   if (g.share.reading) {
     const m = /^\/read\/([^/]+)\/([^/]+)\/(\d+)/.exec(location.pathname);

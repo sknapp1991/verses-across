@@ -47,6 +47,7 @@ html { touch-action: manipulation; }
   /* The traditions row above the book tabs (orange, a step apart from the amber book tabs). */
   --color-trad: var(--trad);
   --color-trad-soft: var(--trad-soft);
+  --color-heard: var(--heard);
 }
 
 :root {
@@ -64,6 +65,7 @@ html { touch-action: manipulation; }
   --accent-soft: #fdf1df;
   --trad: #c2410c;
   --trad-soft: #ffedd5;
+  --heard: #0f766e; /* study groups: the "heard" bar beside the accent "read" bar */
   --reader-size: 18px;
   color-scheme: light;
 }
@@ -83,6 +85,7 @@ html { touch-action: manipulation; }
   --accent-soft: #3a2a10;
   --trad: #fb923c;
   --trad-soft: #3a1f0b;
+  --heard: #2dd4bf;
   color-scheme: dark;
 }
 

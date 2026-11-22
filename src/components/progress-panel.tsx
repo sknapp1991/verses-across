@@ -7,18 +7,18 @@
 import { ProgressGlyph, ProgressIconPicker } from "./trophy-icon";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
-import { addGoalMet, BADGES, computeStats, deviceCounts, deviceCountsKey, parseCounts, subscribeDeviceCounts, type DeviceCounts, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
-import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
+import { addGoalMet, BADGES, deviceCountsKey, parseCounts, subscribeDeviceCounts, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
+import { finishedPlans, useStartedPlans } from "@/lib/plans";
 import { findBook, scriptureShelves } from "@/lib/catalog";
 import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
 import { StreakIcon } from "./streak-icon";
-import { getItem, useStudy } from "@/lib/study";
-import type { StudyItem } from "@/lib/storage";
+import { useStudy } from "@/lib/study";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
 import { TrashIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 import { startSync } from "@/lib/sync";
 import { startGroups } from "@/lib/groups";
+import { statsNow } from "@/lib/stats-now";
 import { PanelHeader } from "./panel-header";
 
 type Period = "day" | "week" | "month" | "year" | "all";
@@ -502,20 +502,7 @@ export function useGoalRing(): number | null {
   return p.target ? Math.min(1, p.value / p.target) : 0;
 }
 
-/* ---------- stats with plans and goals; the level card ---------- */
-
-function statsNow(
-  a: Activity,
-  items: Map<string, StudyItem>,
-  started: Record<string, { start: number }>,
-  finished = finishedPlans(),
-  goalsMet = goalsMetCount(),
-  counts: DeviceCounts = deviceCounts(),
-): Stats {
-  const done = new Set(finished);
-  for (const p of PLANS) if (started[p.id] && planDays(p).every((d) => d.every((r) => !!getItem("studied", r)))) done.add(`${p.id}@${started[p.id].start}`);
-  return computeStats(a, items, { plansDone: done.size, goalsMet, counts });
-}
+/* ---------- stats with plans and goals (src/lib/stats-now.ts); the level card ---------- */
 
 const noSubscribe = () => () => {};
 const finishedKey = () => finishedPlans().join("|");

@@ -23,8 +23,11 @@ import {
   updateMyGroup,
   useGroups,
   type GroupView,
+  type Member,
   type MyGroup,
 } from "@/lib/groups";
+import { BADGES } from "@/lib/achievements";
+import { fmtDuration } from "@/lib/activity";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
 import { CloseIcon, UsersIcon } from "./icons";
 import { Modal } from "./modal";
@@ -173,7 +176,7 @@ function JoinForm({ onDone, code }: { onDone: () => void; code?: string }) {
         />
       )}
       <input value={me} onChange={(e) => setMe(e.target.value)} placeholder="Your name in the group" aria-label="Your name in the group" maxLength={40} className={field} autoFocus={!!code} />
-      <p className="text-xs text-faint">The group sees your name, streak, time read this week and progress in the group’s book. You can turn that off after joining.</p>
+      <p className="text-xs text-faint">The group sees your name, streak, time this week, chapters of the group’s book you’ve studied and heard, and your scorecard (level, badges and totals). You can turn that off after joining.</p>
       {err && <p role="alert" className="text-ink">{err}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className={`${btn} flex-1 bg-accent font-medium text-accent-ink disabled:opacity-60`}>
@@ -196,6 +199,92 @@ function ago(t: number) {
   return `${Math.round(h / 24)} d ago`;
 }
 
+/** Progress in the group's book: "Studied" (chapters marked studied) in the accent colour, "Heard" (listened all the way through) in teal. */
+function BookBar({ kind, done, total, book }: { kind: "Studied" | "Heard"; done: number; total: number; book: string }) {
+  return (
+    <p className="mt-1 flex items-center gap-2 text-[11px] text-muted" role="img" aria-label={`${kind} ${done} of ${total} chapters of ${book}`}>
+      <span className="w-12 shrink-0" aria-hidden>
+        {kind}
+      </span>
+      <span className="block h-1.5 flex-1 overflow-hidden rounded-full bg-line" aria-hidden>
+        <span className={`block h-full rounded-full ${kind === "Studied" ? "bg-accent" : "bg-heard"}`} style={{ width: `${Math.min(100, (done / total) * 100)}%` }} />
+      </span>
+      <span className="shrink-0 tabular-nums" aria-hidden>
+        {done}/{total}
+      </span>
+    </p>
+  );
+}
+
+
+/** A member's scorecard: level, totals and badges, as they share them with the group. */
+function Scorecard({ id, m, onClose }: { id: string; m: Member; onClose: () => void }) {
+  const p = m.profile!;
+  const [all, setAll] = useState(false);
+  // a card comes from someone else's device: take only what has the right shape
+  const ids = Array.isArray(p.badges) ? [...new Set(p.badges.filter((b) => typeof b === "string"))] : [];
+  const badges = ids.map((b) => BADGES.find((x) => x.id === b)).filter((b): b is (typeof BADGES)[number] => !!b);
+  const n = (x: unknown) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? Math.round(x) : 0);
+  const show = all ? badges : badges.slice(0, 12);
+  const rows: [string, string][] = [
+    ["Chapters read", String(n(p.chaptersRead))],
+    ["Chapters heard", String(n(p.chaptersHeard))],
+    ["Chapters studied", String(n(p.studied))],
+    ["Best streak", `${n(p.bestStreak)} ${n(p.bestStreak) === 1 ? "day" : "days"}`],
+    ["Time reading and listening", fmtDuration(n(p.mins) * 60)],
+    ["Books finished", String(n(p.booksDone))],
+    ["Traditions explored", String(n(p.traditions))],
+  ];
+  return (
+    <div
+      id={id}
+      role="region"
+      aria-label={`${m.name}’s scorecard`}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      className="mt-2 rounded-lg border border-line bg-raised p-3 text-xs"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p>
+          <span className="text-sm font-semibold text-ink">Level {n(p.level) || 1}</span>
+          {typeof p.title === "string" && <span className="text-muted"> · {p.title.slice(0, 30)}</span>}
+        </p>
+        <button type="button" onClick={onClose} aria-label={`Close ${m.name}’s scorecard`} className="-m-2 rounded p-2.5 text-faint hover:text-ink">
+          <CloseIcon className="h-4 w-4" />
+        </button>
+      </div>
+      <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+        {rows.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="text-muted">{k}</dt>
+            <dd className="text-right tabular-nums text-ink">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-3 font-medium text-ink">Badges ({badges.length})</p>
+      {badges.length ? (
+        <>
+          <ul className="mt-1 flex flex-wrap gap-1">
+            {show.map((b) => (
+              <li key={b.id} title={b.how} className="rounded-full border border-line px-2 py-0.5 text-ink">
+                <span aria-hidden>{b.icon}</span> {b.name}
+              </li>
+            ))}
+          </ul>
+          {badges.length > 12 && (
+            <button type="button" onClick={() => setAll(!all)} className="mt-1 text-accent underline-offset-2 hover:underline">
+              {all ? "Show fewer" : `Show all ${badges.length}`}
+            </button>
+          )}
+        </>
+      ) : (
+        <p className="mt-1 text-faint">No badges yet.</p>
+      )}
+    </div>
+  );
+}
+
 function GroupCard({ g }: { g: MyGroup }) {
   const { ref } = useReaderState();
   const [view, setView] = useState<GroupView | null>(null);
@@ -204,6 +293,8 @@ function GroupCard({ g }: { g: MyGroup }) {
   // the card under the buttons: the invite (QR) or the chat, one at a time (hub a3b33a99)
   const [card, setCard] = useState<null | "invite" | "chat">(null);
   const [settings, setSettings] = useState(false);
+  // whose scorecard is open (one at a time)
+  const [shown, setShown] = useState<string | null>(null);
   const refresh = useCallback(
     (publishFirst = true) =>
       loadGroup(g, { publishFirst })
@@ -248,24 +339,48 @@ function GroupCard({ g }: { g: MyGroup }) {
               {view.members.map((m) => (
                 <li key={m.id} className="py-2">
                   <p className="flex items-baseline justify-between gap-2">
-                    <span className="truncate font-medium text-ink">
-                      {m.name}
-                      {m.mine ? " (you)" : ""}
-                    </span>
+                    {m.profile && typeof m.profile === "object" ? (
+                      // tap a name for that person's scorecard (hub 65b00b23)
+                      <button
+                        type="button"
+                        id={`name-${m.id}`}
+                        onClick={() => setShown(shown === m.id ? null : m.id)}
+                        aria-expanded={shown === m.id}
+                        aria-controls={`scorecard-${m.id}`}
+                        className="-my-1 min-w-0 truncate py-1 text-left font-medium text-ink underline-offset-2 hover:underline"
+                      >
+                        {m.name}
+                        {m.mine ? " (you)" : ""}
+                        <span className="ml-1 text-[10px] text-faint" aria-hidden>
+                          {shown === m.id ? "▴" : "▾"}
+                        </span>
+                      </button>
+                    ) : (
+                      <span className="truncate font-medium text-ink">
+                        {m.name}
+                        {m.mine ? " (you)" : ""}
+                      </span>
+                    )}
                     <span className="shrink-0 text-[11px] text-faint">{ago(m.at)}</span>
                   </p>
                   {m.weekMins != null ? (
                     <p className="text-xs text-muted">
                       <StreakIcon days={m.streak ?? 0} /> {m.streak ?? 0} · {m.weekMins} min this week · {m.weekChapters ?? 0} {m.weekChapters === 1 ? "chapter" : "chapters"}
-                      {book && m.book ? ` · ${bookLabel(book)} ${m.book.done}/${m.book.total}` : ""}
                     </p>
                   ) : (
                     <p className="text-xs text-faint">Progress not shared</p>
                   )}
-                  {book && m.book && m.book.total > 0 && (
-                    <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-line" aria-hidden>
-                      <span className="block h-full rounded-full bg-accent" style={{ width: `${(m.book.done / m.book.total) * 100}%` }} />
-                    </span>
+                  {book && m.book && m.book.total > 0 && <BookBar kind="Studied" done={m.book.done} total={m.book.total} book={bookLabel(book) ?? "the group's book"} />}
+                  {book && m.heard && m.heard.total > 0 && <BookBar kind="Heard" done={m.heard.done} total={m.heard.total} book={bookLabel(book) ?? "the group's book"} />}
+                  {shown === m.id && m.profile && (
+                    <Scorecard
+                      id={`scorecard-${m.id}`}
+                      m={m}
+                      onClose={() => {
+                        setShown(null);
+                        document.getElementById(`name-${m.id}`)?.focus(); // back to the name that opened it
+                      }}
+                    />
                   )}
                   {m.reading && !m.mine && (
                     <Link
@@ -337,7 +452,7 @@ function GroupCard({ g }: { g: MyGroup }) {
                   }}
                   className="h-4 w-4 accent-[var(--accent)]"
                 />
-                Share my streak, time and progress
+                Share my streak, time, progress, level and badges
               </label>
               <label className="flex items-center gap-2 text-muted">
                 <input

@@ -188,8 +188,12 @@ export default function AboutPage() {
             </li>
             <li>
               <strong className="text-ink">Study groups (optional).</strong> In a group you join, the other members see the
-              name you choose and, unless you turn it off, your streak, reading time and chapters this week and your progress
-              in the group&rsquo;s book; if you turn it on, also the chapter you&rsquo;re reading. This is encrypted with the
+              name you choose and, unless you turn it off, your streak, reading time and chapters this week, your progress
+              in the group&rsquo;s book (chapters studied and chapters listened to) and a scorecard: your level, badges and
+              totals (chapters read, heard and studied, best streak, time, books finished, traditions explored). Badges can
+              show other activity too, such as notes, highlights, favourites, articles read, reflections, plans and goals
+              finished and groups joined (never what you wrote). If you turn it on, they also see the chapter you&rsquo;re
+              reading. This is encrypted with the
               group&rsquo;s code, so only people with the code can see it. Leaving a group removes your card. Messages in a
               group&rsquo;s chat are encrypted the same way before they leave your device; a whisper (/w) is encrypted so
               only you and the person you whisper to can read it. The server keeps a group&rsquo;s newest 300 messages
