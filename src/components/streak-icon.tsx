@@ -2,7 +2,8 @@
 /**
  * The streak icon grows with the streak (hub a3b33a99): an unlit campfire (no streak yet), a spark, a small flame,
  * a flame, a bigger flame, a big flame, and a trophy at 30 days. A hidden treat: tapping the icon in Progress
- * changes the kind of growth (music, a rainbow, a tree, a chicken), remembered on this device; everywhere else it
+ * changes the kind of growth (music, a rainbow, a tree, a chicken, gold, a snake, a puppy, a house, a treasure hunt,
+ * a galaxy, water), remembered on this device; everywhere else it
  * just shows. Only long-supported emoji (no Unicode 13+: they are empty boxes on Windows 10 and older Android).
  */
 import { useSyncExternalStore } from "react";
@@ -73,6 +74,98 @@ const THEMES: { id: string; name: string; stages: Stage[] }[] = [
       { icon: "🐤", scale: 1.05 },
       { icon: "🐔", scale: 1.15 },
       { icon: "🐓", scale: 1.25 },
+    ],
+  },
+  // more kinds (hub a3b33a99, Nov 21)
+  {
+    id: "gold",
+    name: "Gold",
+    stages: [
+      { icon: "⛏️", scale: 0.85, dim: true },
+      { icon: "⛏️", scale: 0.9 },
+      { icon: "✨", scale: 0.9 },
+      { icon: "💰", scale: 0.75 },
+      { icon: "💰", scale: 1 },
+      { icon: "💰", scale: 1.3 },
+      { icon: "👑", scale: 1.2 },
+    ],
+  },
+  {
+    id: "snake",
+    name: "Snake",
+    stages: [
+      { icon: "🥚", scale: 0.75, dim: true },
+      { icon: "🥚", scale: 0.85 },
+      { icon: "🐍", scale: 0.6 },
+      { icon: "🐍", scale: 0.8 },
+      { icon: "🐍", scale: 1 },
+      { icon: "🐍", scale: 1.2 },
+      { icon: "🐍", scale: 1.4 },
+    ],
+  },
+  {
+    id: "puppy",
+    name: "Puppy",
+    stages: [
+      { icon: "🐾", scale: 0.85, dim: true },
+      { icon: "🐾", scale: 0.9 },
+      { icon: "🐶", scale: 0.8 },
+      { icon: "🐶", scale: 1 },
+      { icon: "🐕", scale: 0.9 },
+      { icon: "🐕", scale: 1.15 },
+      { icon: "🐕", scale: 1.35 },
+    ],
+  },
+  {
+    id: "house",
+    name: "House",
+    stages: [
+      { icon: "🧱", scale: 0.8, dim: true },
+      { icon: "🧱", scale: 0.9 },
+      { icon: "🚧", scale: 1 },
+      { icon: "🏠", scale: 0.85 },
+      { icon: "🏠", scale: 1.05 },
+      { icon: "🏡", scale: 1.15 },
+      { icon: "🏰", scale: 1.25 },
+    ],
+  },
+  {
+    id: "treasure",
+    name: "Treasure hunt",
+    stages: [
+      { icon: "🗺️", scale: 0.85, dim: true },
+      { icon: "🗺️", scale: 0.9 },
+      { icon: "📍", scale: 0.95 },
+      { icon: "🧭", scale: 1 },
+      { icon: "🔑", scale: 1 },
+      { icon: "💰", scale: 1.15 },
+      { icon: "💎", scale: 1.25 },
+    ],
+  },
+  {
+    id: "galaxy",
+    name: "Galaxy",
+    stages: [
+      { icon: "⭐", scale: 0.6, dim: true },
+      { icon: "⭐", scale: 0.75 },
+      { icon: "⭐", scale: 1 },
+      { icon: "🌟", scale: 1 },
+      { icon: "✨", scale: 1.15 },
+      { icon: "💫", scale: 1.2 },
+      { icon: "🌌", scale: 1.25 },
+    ],
+  },
+  {
+    id: "water",
+    name: "Water",
+    stages: [
+      { icon: "💧", scale: 0.6, dim: true },
+      { icon: "💧", scale: 0.75 },
+      { icon: "💧", scale: 1 },
+      { icon: "💦", scale: 1 },
+      { icon: "🥛", scale: 0.9 },
+      { icon: "🥛", scale: 1.15 },
+      { icon: "🌊", scale: 1.25 },
     ],
   },
 ];

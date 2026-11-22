@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { progressChanged } from "@/lib/achievements";
 import { findRefs } from "@/lib/refs";
 import { RefLink } from "@/components/ref-link";
 import { AiWord, looksForeign } from "@/components/ai-word";
@@ -59,6 +60,7 @@ function Answer({ id, legacy, question }: { id: string; legacy: string; question
     else delete all[id];
     save(ANSWERS, all);
     setSaved(true);
+    progressChanged();
   };
   // switching depth while a save is pending: save it now, before the next depth's box reads the answer
   useEffect(
@@ -210,6 +212,7 @@ export function ArticleReader({ article }: { article: Article }) {
     else delete all[article.slug];
     save(READ, all);
     setRead(mine);
+    progressChanged();
   };
 
   // The saved / linked depth, once on the client (the server renders the default).

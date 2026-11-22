@@ -37,10 +37,58 @@ export type Stats = {
   plansDone: number;
   /** Goals reached so far (each daily or weekly goal counts once per day or week). */
   goalsMet: number;
+  /** Articles: each depth marked "I read the … version" (Short, Medium, Extensive count separately). */
+  articlesRead: number;
+  /** Articles read in all three depths. */
+  articlesDeep: number;
+  /** Reflection questions answered (answer boxes with something written). */
+  reflections: number;
+  /** Study groups this device is in. */
+  groups: number;
 };
 
+export type DeviceCounts = { articlesRead: number; articlesDeep: number; reflections: number; groups: number };
+const NO_COUNTS: DeviceCounts = { articlesRead: 0, articlesDeep: 0, reflections: 0, groups: 0 };
+/** Sent when an article is ticked, a reflection saved, or a study group joined or left (badges update at once). */
+export const PROGRESS_EVENT = "va-progress";
+export const progressChanged = () => typeof window !== "undefined" && window.dispatchEvent(new Event(PROGRESS_EVENT));
+/** For useSyncExternalStore: the counts as a string (a stable snapshot), "" on the server. */
+export const deviceCountsKey = () => JSON.stringify(deviceCounts());
+export function subscribeDeviceCounts(f: () => void) {
+  window.addEventListener(PROGRESS_EVENT, f);
+  window.addEventListener("storage", f);
+  return () => {
+    window.removeEventListener(PROGRESS_EVENT, f);
+    window.removeEventListener("storage", f);
+  };
+}
+export const parseCounts = (key: string): DeviceCounts => (key ? { ...NO_COUNTS, ...(JSON.parse(key) as DeviceCounts) } : NO_COUNTS);
+
+/** What the article and study-group features keep on this device (badges, hub 76210685); zero where unreadable. */
+export function deviceCounts(): DeviceCounts {
+  const read = (k: string) => {
+    try {
+      return JSON.parse(localStorage.getItem(k) ?? "null");
+    } catch {
+      return null;
+    }
+  };
+  if (typeof window === "undefined") return NO_COUNTS;
+  const r = (read("va-article-read:v1") ?? {}) as Record<string, Record<string, string>>;
+  const depths = Object.values(r).map((x) => Object.keys(x ?? {}).length);
+  const answers = (read("va-article-answers:v1") ?? {}) as Record<string, string>;
+  const groups = read("va-groups:v1");
+  return {
+    articlesRead: depths.reduce((a, b) => a + b, 0),
+    articlesDeep: depths.filter((n) => n >= 3).length,
+    reflections: Object.values(answers).filter((v) => typeof v === "string" && v.trim()).length,
+    groups: Array.isArray(groups) ? groups.length : 0,
+  };
+}
+
 /** Counts kept elsewhere (plans.ts, the goal watcher) that feed badges and levels. */
-export type Extras = { plansDone: number; goalsMet: number };
+/** `counts`: articles, reflections and groups on this device (passed in, so the hydration render can use zeros). */
+export type Extras = { plansDone: number; goalsMet: number; counts?: DeviceCounts };
 
 export function computeStats(a: Activity, items: Map<string, StudyItem>, extras: Extras = { plansDone: 0, goalsMet: 0 }): Stats {
   const t = totals(a);
@@ -123,6 +171,7 @@ export function computeStats(a: Activity, items: Map<string, StudyItem>, extras:
     bestStreak: s.best,
     plansDone: extras.plansDone,
     goalsMet: extras.goalsMet,
+    ...(extras.counts ?? NO_COUNTS),
   };
 }
 
@@ -153,13 +202,24 @@ export const BADGES: Badge[] = [
   tier("verses-10000", "💫", "10,000 verses", "Read 10,000 verses", (s) => s.verses, 10000),
   tier("verses-31102", "☀️", "31,102 verses", "Read 31,102 verses (as many as the whole Bible has)", (s) => s.verses, 31102),
   tier("verses-100000", "🌠", "100,000 verses", "Read 100,000 verses", (s) => s.verses, 100000),
-  // Streaks
+  // Streaks: every day from 1 to 15 (the early days count most), then 30, 45, 60, 75, 90, 100, 200, 300, a year, two
+  // (hub 76210685; 3, 7, 14, 30, 60, 100 and 365 keep their old ids, so nothing earned is lost)
+  tier("streak-1", "🌅", "Day one", "Read or listen today: a streak begins", (s) => s.bestStreak, 1),
+  tier("streak-2", "✌️", "2-day streak", "Read or listen 2 days in a row", (s) => s.bestStreak, 2),
   tier("streak-3", "🔥", "3-day streak", "Read or listen 3 days in a row", (s) => s.bestStreak, 3),
+  ...[4, 5, 6].map((n) => tier(`streak-${n}`, "🔥", `${n}-day streak`, `Read or listen ${n} days in a row`, (s) => s.bestStreak, n)),
   tier("streak-7", "🔥", "7-day streak", "Read or listen 7 days in a row", (s) => s.bestStreak, 7),
+  ...[8, 9, 10, 11, 12, 13].map((n) => tier(`streak-${n}`, n === 10 ? "🔟" : "🕯️", `${n}-day streak`, `Read or listen ${n} days in a row`, (s) => s.bestStreak, n)),
   tier("streak-14", "🕯️", "14-day streak", "Read or listen 14 days in a row", (s) => s.bestStreak, 14),
+  tier("streak-15", "🌠", "15-day streak", "Read or listen 15 days in a row", (s) => s.bestStreak, 15),
   tier("streak-30", "🏆", "30-day streak", "Read or listen 30 days in a row", (s) => s.bestStreak, 30),
+  tier("streak-45", "🌙", "45-day streak", "Read or listen 45 days in a row", (s) => s.bestStreak, 45),
   tier("streak-60", "🥇", "60-day streak", "Read or listen 60 days in a row", (s) => s.bestStreak, 60),
+  tier("streak-75", "🌞", "75-day streak", "Read or listen 75 days in a row", (s) => s.bestStreak, 75),
+  tier("streak-90", "🏵️", "90-day streak", "Read or listen 90 days in a row", (s) => s.bestStreak, 90),
   tier("streak-100", "👑", "100-day streak", "Read or listen 100 days in a row", (s) => s.bestStreak, 100),
+  tier("streak-200", "🗻", "200-day streak", "Read or listen 200 days in a row", (s) => s.bestStreak, 200),
+  tier("streak-300", "🌋", "300-day streak", "Read or listen 300 days in a row", (s) => s.bestStreak, 300),
   tier("streak-365", "💎", "A whole year", "Read or listen 365 days in a row", (s) => s.bestStreak, 365),
   tier("streak-730", "💠", "Two whole years", "Read or listen 730 days in a row", (s) => s.bestStreak, 730),
   // Time
@@ -217,6 +277,18 @@ export const BADGES: Badge[] = [
   tier("highlights-100", "🎨", "Illuminator", "Highlight 100 verses", (s) => s.highlights, 100),
   tier("favorites-10", "⭐", "Treasured", "Save 10 favorite verses", (s) => s.favorites, 10),
   tier("favorites-50", "🌻", "Collector", "Save 50 favorite verses", (s) => s.favorites, 50),
+  // Articles and reflections (hub 76210685)
+  tier("article-1", "📰", "First article", "Read an article (tick “I read the … version” at the end)", (s) => s.articlesRead, 1),
+  tier("article-5", "🗞️", "5 article reads", "Read articles 5 times (Short, Medium and Extensive each count)", (s) => s.articlesRead, 5),
+  tier("article-15", "📰", "15 article reads", "Read articles 15 times (Short, Medium and Extensive each count)", (s) => s.articlesRead, 15),
+  tier("article-deep-1", "🔎", "Deep dive", "Read one article in all three depths: Short, Medium and Extensive", (s) => s.articlesDeep, 1),
+  tier("reflection-1", "💭", "First reflection", "Answer a reflection question at the end of an article", (s) => s.reflections, 1),
+  tier("reflection-10", "🕊️", "Reflective", "Answer 10 reflection questions", (s) => s.reflections, 10),
+  tier("reflection-25", "🧘", "Deep thinker", "Answer 25 reflection questions", (s) => s.reflections, 25),
+  // Study groups (hub 76210685): joining, and keeping a streak going while in one
+  tier("group-1", "🤝", "Better together", "Join or start a study group", (s) => s.groups, 1),
+  tier("group-streak-7", "👥", "Group week", "Be in a study group with a 7-day streak", (s) => (s.groups ? s.bestStreak : 0), 7),
+  tier("group-streak-30", "🏕️", "Group month", "Be in a study group with a 30-day streak", (s) => (s.groups ? s.bestStreak : 0), 30),
 ];
 
 export const earned = (b: Badge, s: Stats) => b.value(s) >= b.target;

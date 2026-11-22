@@ -54,6 +54,7 @@ function saveGroups(next: MyGroup[]) {
     /* private mode */
   }
   subs.forEach((l) => l());
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("va-progress")); // (badges: PROGRESS_EVENT)
 }
 export function useGroups(): MyGroup[] {
   return useSyncExternalStore(

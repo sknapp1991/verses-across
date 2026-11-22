@@ -6,7 +6,7 @@
  */
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
-import { addGoalMet, BADGES, computeStats, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
+import { addGoalMet, BADGES, computeStats, deviceCounts, deviceCountsKey, parseCounts, subscribeDeviceCounts, type DeviceCounts, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
 import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
 import { findBook, scriptureShelves } from "@/lib/catalog";
 import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
@@ -388,6 +388,7 @@ export function ProgressWatcher() {
   const a = useActivity();
   const { items, ready } = useStudy();
   const started = useStartedPlans();
+  const counts = useSyncExternalStore(subscribeDeviceCounts, deviceCountsKey, () => ""); // (re-check badges when they change)
   const [levelUp, setLevelUp] = useState<{ level: number; title: string; max: boolean } | null>(null);
   useEffect(() => {
     startActivityTracking();
@@ -443,7 +444,7 @@ export function ProgressWatcher() {
       }
     }, 1500);
     return () => clearTimeout(t);
-  }, [a, items, ready, started]);
+  }, [a, items, ready, started, counts]);
   return levelUp ? <LevelUpCelebration key={levelUp.level} {...levelUp} onDone={() => setLevelUp(null)} /> : null;
 }
 
@@ -502,10 +503,17 @@ export function useGoalRing(): number | null {
 
 /* ---------- stats with plans and goals; the level card ---------- */
 
-function statsNow(a: Activity, items: Map<string, StudyItem>, started: Record<string, { start: number }>, finished = finishedPlans(), goalsMet = goalsMetCount()): Stats {
+function statsNow(
+  a: Activity,
+  items: Map<string, StudyItem>,
+  started: Record<string, { start: number }>,
+  finished = finishedPlans(),
+  goalsMet = goalsMetCount(),
+  counts: DeviceCounts = deviceCounts(),
+): Stats {
   const done = new Set(finished);
   for (const p of PLANS) if (started[p.id] && planDays(p).every((d) => d.every((r) => !!getItem("studied", r)))) done.add(`${p.id}@${started[p.id].start}`);
-  return computeStats(a, items, { plansDone: done.size, goalsMet });
+  return computeStats(a, items, { plansDone: done.size, goalsMet, counts });
 }
 
 const noSubscribe = () => () => {};
@@ -521,7 +529,12 @@ export function useStats(): Stats {
   const started = useStartedPlans();
   const goalsMet = useSyncExternalStore(noSubscribe, goalsMetCount, () => 0);
   const finished = useSyncExternalStore(noSubscribe, finishedKey, () => "");
-  return useMemo(() => statsNow(a, items, started, finished ? finished.split("|") : [], goalsMet), [a, items, started, finished, goalsMet]);
+  // articles, reflections, groups: zeros on the hydration render, then live (PROGRESS_EVENT)
+  const counts = useSyncExternalStore(subscribeDeviceCounts, deviceCountsKey, () => "");
+  return useMemo(
+    () => statsNow(a, items, started, finished ? finished.split("|") : [], goalsMet, parseCounts(counts)),
+    [a, items, started, finished, goalsMet, counts],
+  );
 }
 
 /** The current level (1–60), for the top-bar trophy. */
