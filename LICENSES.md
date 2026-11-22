@@ -459,6 +459,16 @@ From Project Gutenberg (read from its mirror).
   London: John Murray, 1909; Field died in 1941); public domain, Project Gutenberg #58977 (read from its mirror). His eight
   sections, verse = paragraph, verse quotations keeping their lines. His introduction and footnotes are left out.
 
+## Sophocles (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **Sophocles, The Seven Plays in English Verse** — Lewis Campbell (1883; World's Classics edition, revised,
+  Oxford, 1906); public domain, Project Gutenberg #14484 (read from its mirror). All seven plays in his order, each
+  in its parts (the opening scene, then each choral ode and the scene after it). Verse = a speech or a stanza,
+  labelled with the speaker, his abbreviations written out from the play's list of persons (the misprints "CB."
+  and "CE." for Creon corrected, and the lost stop in "CR He saith" restored); stage directions in brackets, and the
+  lines Campbell supplies in brackets too; the scene and his argument as the note of each
+  play's first part. His margin numbers for the strophes, note marks, preface and notes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

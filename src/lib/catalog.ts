@@ -140,6 +140,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   josephus: ["whiston"],
   aesop: ["townsend"],
   ghazali: ["field"],
+  sophocles: ["campbell"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

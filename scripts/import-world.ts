@@ -3057,7 +3057,250 @@ async function ghazali() {
   report("ghazali", at.length, total);
 }
 
+/**
+ * Sophocles — The Seven Plays in English Verse, tr. Lewis Campbell (1883; World's Classics, revised, 1906),
+ * Gutenberg #14484. One book per play, in his order. Chapters follow the play's parts: the opening scene, then each
+ * choral ode and the scene after it ("Prologue", "Choral Ode 1", "Scene 1" …). Verse = a speech or a stanza,
+ * labelled with the speaker (his abbreviations written out from the play's list of persons); stage directions are
+ * their own verses in brackets. The scene and his argument are the note of chapter 1. His margin numbers for the
+ * strophes, note marks, preface and notes are left out.
+ */
+async function sophocles() {
+  const txt = gutenbergBody(await cached("sophocles", "pg14484.txt", GUT(14484)))
+    .replace(/^CR He saith/m, "CR. He saith") // a lost full stop (King Oedipus)
+    .replace(/_\(([^)]*)\)_/g, "(_$1_)") // "HYLLUS _(re-entering)_."
+    .replace(/^\[([A-Z]{2,}\.) (.*)\](\[\d+\])?$/gm, "$1 [$2]"); // a line Campbell supplies: "[CR. You'll ne'er relent…]"
+  const lines = txt.split("\n");
+  const plays: [string, string][] = [
+    ["ANTIGONE", "Antigone"],
+    ["AIAS", "Aias"],
+    ["KING OEDIPUS", "King Oedipus"],
+    ["ELECTRA", "Electra"],
+    ["THE TRACHINIAN MAIDENS", "The Trachinian Maidens"],
+    ["PHILOCTETES", "Philoctetes"],
+    ["OEDIPUS AT COLONOS", "Oedipus at Colonos"],
+  ];
+  const headAt = (t: string, from: number) => lines.findIndex((l, k) => k > from && /^ {15,}\S/.test(l) && l.trim() === t);
+  const notesAt = lines.findIndex((l, k) => k > 14000 && /^ {15,}NOTES$/.test(l));
+  const unmapped = new Set<string>();
+  await resetVersion("sophocles", "campbell");
+  let total = 0;
+  let chapters = 0;
+  let from = 600;
+  // a speaker: "CREON.", "COR. SH.", "CH. A.", "LEADER OF CH.", "CHORUS (_entering_).", alone or before the speech;
+  // group 3 is the full stop that ends it (needed when a speech follows on the line)
+  // ("CH. A." / "CH. B." are the half-choruses: the letter only counts with its full stop, so "ATH. A fair…" is Athena)
+  // ("2ND MESS.", "OLD M.": a one-letter word counts only before its full stop)
+  // (and "CH. 2." is one of the Chorus, "HALF-CH." a half-chorus)
+  const LABEL = /^((?:2ND )?(?:HALF-)?[A-Z]{2,}(?:(?:\. ?| )[A-Z]{2,}| [A-Z](?=\.))*(?:\. (?:[AB]|\d{1,2})(?=\.))?(?: OF (?:CHORUS|CH))?)(\.?)( \(_[^)]*\))?(\.?)(?:\s+(\S.*))?$/;
+  for (const [k, [head, name]] of plays.entries()) {
+    const p1 = headAt(head, from); // the list of persons and the argument
+    const p2 = headAt(head, p1); // the play
+    const nextP = k + 1 < plays.length ? headAt(plays[k + 1][0], p2) : notesAt;
+    if (p1 < 0 || p2 < 0 || nextP < 0) throw new Error(`sophocles: ${head} not found`);
+    from = p2;
+    // persons: "CREON, _King of Thebes._", "_A Watchman._", "ANTIGONE,} _Daughters…_"
+    const persons: string[] = [];
+    let scene = "";
+    let noteLine = "";
+    const arg: string[] = [];
+    let buf: string[] = [];
+    // a word broken at a line's end ("brother-" / "in-law") is joined without a space
+    const joinLines = (ls: string[]) => unwrap(ls.reduce((a, l) => (/\w-$/.test(a) ? a + l : a ? `${a} ${l}` : l), ""));
+    for (const l of [...lines.slice(p1 + 1, p2), ""]) {
+      const t = l.trim();
+      // "CREON, _King of Thebes._", "_A Watchman._", "_Priest of Zeus._", "_A_ Nurse.", "Messenger, _disguised as a
+      // Merchantman_"
+      const disguise = /_disguised as an? (\w+)_/.exec(t);
+      if (disguise) persons.push(disguise[1]);
+      const pm =
+        /^([A-Z][A-Z ]+[A-Z])(?:[,}.\s]|$)/.exec(t) ??
+        /^_(?:(?:An?|The|Another) )?([A-Z][\w ]+?)\.?_/.exec(t) ??
+        /^_(?:An?|The)_ ([A-Z][\w ]+?)\.?$/.exec(t) ??
+        /^(?:An?|The) ([A-Z]\w+(?: [A-Z]\w+)*)[,.]/.exec(t); // "An Old Man, _formerly one of the retainers…_"
+      if (/^THE PERSONS$/.test(t)) continue;
+      if (/^_Note\._/.test(t)) {
+        noteLine = t.replace(/_/g, "");
+        continue;
+      }
+      if (/^SCENE\./.test(t)) {
+        scene = t.replace(/_/g, "");
+        continue;
+      }
+      if (!scene && pm) {
+        persons.push(pm[1].replace(/\s+/g, " "));
+        continue;
+      }
+      if (!scene) continue;
+      if (t) buf.push(t);
+      else if (buf.length) {
+        arg.push(joinLines(buf).replace(/_/g, ""));
+        buf = [];
+      }
+    }
+    if (noteLine) scene = `${scene}\n\n${noteLine}`;
+    persons.push("CHORUS", "LEADER OF THE CHORUS", "MESSENGER", "ATTENDANT", "OLD MAN");
+    const full = (label: string): string => {
+      // "CB." (Antigone) and "CE." (King Oedipus) are misprints for Creon's "CR."
+      const l = label
+        .replace(/\.$/, "")
+        .replace(/^C[BE]$/, "CR")
+        .replace(/\s+of\s+(?:the\s+)?/i, " OF ");
+      if (/^2ND /i.test(l)) return `Second ${full(l.slice(4))}`;
+      if (/^LEADER OF (CHORUS|CH)$/.test(l)) return "Leader of the Chorus";
+      const semi = /^CH\. ([AB]|\d{1,2})$/.exec(l);
+      if (semi) return `Chorus (${semi[1]})`;
+      if (/^HALF-CH/.test(l)) return "Half-Chorus";
+      const toks = l.split(/\.?\s+/).map((x) => x.replace(/\.$/, "").toLowerCase());
+      for (const p of persons) {
+        const words = p.toLowerCase().split(/\s+/);
+        for (let s = 0; s + toks.length <= words.length; s++)
+          if (toks.every((t, j) => words[s + j].startsWith(t))) return titleCase(p);
+      }
+      unmapped.add(`${head}: ${label}`);
+      return titleCase(l);
+    };
+    // names in capitals inside a direction ("Enter TEUCER.", "to TEC.") written out; an abbreviation loses its stop
+    const named = (s: string) =>
+      // a name of several words is one name ("CORINTHIAN SHEPHERD", "LEADER of the CHORUS", "2ND MESS.")
+      s.replace(/\b((?:2ND |2nd )?[A-Z]{2,}(?:(?:\. ?| )(?:OF |of (?:the )?)?[A-Z]{2,})*)(\.?)/g, (all, tok: string, dot: string) => {
+        if (/^[IVX]+$/.test(tok)) return all; // "HALF-CHORUS II."
+        if (tok === "MONODY") return `Monody${dot}`;
+        const f = full(tok);
+        const abbrev = f.replace(/\s+/g, "").toUpperCase() !== tok.replace(/[.\s]/g, "");
+        return f + (abbrev ? "" : dot);
+      });
+    // paragraphs of the play
+    type Part = { title: string; verses: Verse[]; ode: boolean };
+    const parts: Part[] = [{ title: "Prologue", verses: [], ode: false }];
+    let speaker = "";
+    let odes = 0;
+    let scenes = 0;
+    // names in capitals anywhere in a verse are directions' names (the speeches never set words in capitals)
+    const push = (t: string, n?: string) => {
+      const cur = parts[parts.length - 1];
+      cur.verses.push({ v: String(cur.verses.length + 1), t: named(t).replace(/\b2nd Messenger\b/, "Second Messenger"), ...(n ? { n } : {}) });
+    };
+    const clean = (l: string) =>
+      l
+        .replace(/\s{3,}(?:[IVX]+(?: \d)?|\d)\s*$/, "") // strophe numbers in the margin ("I 1", "III", "1")
+        .replace(/\[\d+\]/g, "")
+        // who sings in the margin ("[_Half-Chorus._") goes before the line; other margin directions after it
+        .replace(/^\s*(.*\S)\s{2,}(\[_?(?:HALF-CH|Half-Ch|CH\.|SEMI)[^\]]*)\]?\s*$/, "$2]\n$1")
+        .replace(/\s{2,}(\[[^\]]*)\]?\s*$/, "\n$1]") // a direction in the right margin ("[_Exit_ TECMESSA.")
+        .replace(/(\[[^\]]*)$/, "$1]") // a direction never closed
+        .replace(/_/g, "")
+        .replace(/--/g, "—")
+        .trimEnd();
+    let para: string[] = [];
+    const flush = () => {
+      if (!para.length) return;
+      const ls = para;
+      para = [];
+      const first = ls[0].trim();
+      const dirText = (xs: string[]) => named(xs.map((x) => clean(x).trim()).join(" ").replace(/\[|\]/g, "").replace(/\s+/g, " ").trim());
+      // a line naming who is on stage ("ANTIGONE. ISMENE.") at a scene's start: a direction
+      if (/^([A-Z]{2,}\. ?)+$/.test(first) && ls.length === 1 && /[A-Z]{4,}\. [A-Z]{4,}/.test(first)) {
+        push(`[${titleCase(first.replace(/\.$/, "")).replace(/\. /g, ", ")}]`);
+        return;
+      }
+      // "OEDIPUS--Priest of Zeus (_with the_ Train of Suppliants …)": who is on stage, likewise
+      if (/^[A-Z]{3,}--/.test(first)) {
+        push(`[${dirText(ls).replace(/^(\S+)—/, "$1, ")}]`);
+        return;
+      }
+      // a stage direction: "_Enter_ CREON.", "_Exit_ …", wholly in italics; an entrance after an ode opens the scene
+      // ("HERACLES _appears from above._" likewise)
+      if ((/^_/.test(first) && !LABEL.exec(first)) || /^[A-Z]{3,} _[a-z]/.test(first)) {
+        if (/^_?Enter/.test(first) && parts[parts.length - 1].ode) parts.push({ title: `Scene ${++scenes}`, verses: [], ode: false });
+        push(`[${dirText(ls)}]`);
+        return;
+      }
+      const m0 = LABEL.exec(first);
+      const m = m0 && !/^[IVX]+$/.test(m0[1]) ? m0 : null; // a margin numeral ("II") is no speaker
+      let body = ls;
+      // "ATHENA (_above_). ODYSSEUS.": who is on stage, not a speech
+      if (m && m[5] && /^([A-Z]{2,}\.? ?)+$/.test(m[5].trim())) {
+        push(`[${dirText([first]).replace(/\. (?=\S)/g, ", ").replace(/\.$/, "")}]`);
+        return;
+      }
+      // before anyone has spoken, a line without a speaker ("ORESTES and the Old Man—PYLADES is present.")
+      if (!speaker && !(m && (m[2] || m[4] || !m[5]))) {
+        push(`[${dirText(ls)}]`);
+        return;
+      }
+      if (m && !/^(SCENE|MONODY)$/.test(m[1]) && (m[2] || m[4] || !m[5])) {
+        const who = full(m[1]);
+        const dir = m[3] ? ` (${named(m[3].replace(/[_()]/g, "").replace(/\s+/g, " ").trim()).replace(/\.$/, "")})` : "";
+        const cur = parts[parts.length - 1];
+        // an ode begins where the Chorus sings alone, on a line of its own (or "CH." alone after the stage empties)
+        const last = cur.verses[cur.verses.length - 1]?.t ?? "";
+        const isChorus = !m[5] && (/^CHORUS/.test(m[1]) || (m[1] === "CH" && /^\[Exe?(unt|it)\b[^\]]*\]$|\n\[Exe?(unt|it)\b[^\]]*\]$/.test(last)));
+        if (isChorus && !cur.ode && cur.verses.length) parts.push({ title: `Choral Ode ${++odes}`, verses: [], ode: true });
+        else if (!/^(CHORUS|CH|LEADER)/.test(m[1]) && cur.ode) parts.push({ title: `Scene ${++scenes}`, verses: [], ode: false });
+        // the direction goes with the first verse only
+        speaker = who + dir;
+        pendingPlain = who;
+        body = m[5] ? [m[5], ...ls.slice(1)] : ls.slice(1);
+      } else if (m && /^(SCENE|MONODY)/.test(m[1])) {
+        push(`[${ls.map((x) => clean(x).trim()).join(" ")}]`);
+        return;
+      }
+      if (!body.length) return;
+      // directions inside a speech ("(to TEC.)", "[Exit TECMESSA]") with the names written out
+      push(
+        body
+          .map((x) => clean(x).trim())
+          .join("\n")
+          .replace(/\(([^()]*[A-Z]{2,}[^()]*)\)|\[([^[\]]*[A-Z]{2,}[^[\]]*)\]/g, (all, a?: string, b?: string) => (a !== undefined ? `(${named(a)})` : `[${named(b ?? "")}]`)),
+        speaker || undefined,
+      );
+      if (pendingPlain) speaker = pendingPlain;
+      pendingPlain = "";
+    };
+    let pendingPlain = "";
+    for (const raw of lines.slice(p2 + 1, nextP)) {
+      if (!raw.trim()) flush();
+      else if (/^\s*(\*\s*)+$/.test(raw)) flush();
+      else para.push(raw);
+    }
+    flush();
+    // a lyric exchange cut by a few spoken lines (the thunder in Oedipus at Colonos) is one ode: a scene of four
+    // verses or fewer between two odes joins them
+    for (let i = parts.length - 2; i > 0; i--)
+      if (
+        !parts[i].ode &&
+        parts[i].verses.length <= 4 &&
+        parts[i].verses.reduce((a, v) => a + v.t.length, 0) < 600 && // not a speech such as Aias' farewell
+        !parts[i].verses.some((v) => /^\[Enter/.test(v.t)) &&
+        parts[i - 1].ode &&
+        parts[i + 1].ode
+      ) {
+        parts[i - 1].verses.push(...parts[i].verses, ...parts[i + 1].verses);
+        parts.splice(i, 2);
+      }
+    let o = 0;
+    let sc = 0;
+    for (const [j, p] of parts.entries()) {
+      if (j) p.title = p.ode ? `Choral Ode ${++o}` : `Scene ${++sc}`;
+      p.verses.forEach((v, n) => (v.v = String(n + 1)));
+    }
+    const note = [scene, ...arg].filter(Boolean).join("\n\n");
+    const book = slug(name);
+    for (const [j, p] of parts.entries()) {
+      if (!p.verses.length) continue;
+      await writeChapter("sophocles", "campbell", book, j + 1, p.verses, j === 0 ? note : undefined, p.title);
+      total += p.verses.length;
+      chapters++;
+    }
+    console.log(`${book}: ${parts.length} parts, ${parts.reduce((a, p) => a + p.verses.length, 0)} verses`);
+  }
+  if (unmapped.size) console.warn("sophocles: unmapped speakers", [...unmapped].join(" | "));
+  report("sophocles", chapters, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  sophocles,
   ghazali,
   aesop,
   josephus,

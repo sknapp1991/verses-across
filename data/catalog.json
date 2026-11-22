@@ -70,6 +70,7 @@
     { "id": "josephus", "name": "Josephus: Antiquities and Wars of the Jews", "versification": "josephus" },
     { "id": "aesop", "name": "Aesop's Fables", "versification": "aesop" },
     { "id": "ghazali", "name": "The Confessions of al-Ghazali", "versification": "ghazali" },
+    { "id": "sophocles", "name": "Sophocles: The Seven Plays", "versification": "sophocles" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2185,6 +2186,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/58977",
       "licensed": false,
       "versification": "ghazali"
+    },
+    {
+      "id": "campbell",
+      "work": "sophocles",
+      "abbr": "Campbell",
+      "name": "Sophocles, The Seven Plays (Lewis Campbell)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1883,
+      "translator": "Lewis Campbell",
+      "license": "Public Domain",
+      "licenseNote": "All seven plays, in his order. Each play is in its parts: the opening scene, then each choral ode and the scene after it. Verse = a speech or a stanza, labelled with the speaker (his abbreviations written out); stage directions are in brackets. The scene and his argument are the note of each play's first part. His margin numbers for the strophes, note marks, preface and notes are left out; the misprints \"CB.\" and \"CE.\" for Creon are corrected, and lines Campbell supplies stay in brackets.",
+      "attribution": "Sophocles, The Seven Plays in English Verse, translated by Lewis Campbell (1883; World's Classics edition, revised, Oxford University Press, 1906), public domain; Project Gutenberg #14484.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/14484",
+      "licensed": false,
+      "versification": "sophocles"
     }
   ],
   "religions": [
@@ -3132,6 +3150,19 @@
           "name": "Aesop",
           "items": [
             { "id": "aesop", "name": "Aesop's Fables", "work": "aesop", "chapters": 313, "chapterName": "Fable" }
+          ]
+        },
+        {
+          "id": "tragedy",
+          "name": "Greek Tragedy",
+          "items": [
+            { "id": "antigone", "name": "Sophocles, Antigone", "work": "sophocles", "chapters": 13, "chapterName": "Part" },
+            { "id": "aias", "name": "Sophocles, Aias (Ajax)", "work": "sophocles", "chapters": 11, "chapterName": "Part" },
+            { "id": "king-oedipus", "name": "Sophocles, King Oedipus", "work": "sophocles", "chapters": 11, "chapterName": "Part" },
+            { "id": "electra", "name": "Sophocles, Electra", "work": "sophocles", "chapters": 7, "chapterName": "Part" },
+            { "id": "the-trachinian-maidens", "name": "Sophocles, The Trachinian Maidens", "work": "sophocles", "chapters": 13, "chapterName": "Part" },
+            { "id": "philoctetes", "name": "Sophocles, Philoctetes", "work": "sophocles", "chapters": 7, "chapterName": "Part" },
+            { "id": "oedipus-at-colonos", "name": "Sophocles, Oedipus at Colonos", "work": "sophocles", "chapters": 13, "chapterName": "Part" }
           ]
         }
       ]
