@@ -363,6 +363,25 @@ asterisks kept). Legge's notes before a book or ode are the chapter note. Left o
 work and to each part and book of the Shih, headings, page numbers, footnotes, and Wikisource's hidden
 alignment text and section menus.
 
+## Enuma Elish, the Code of Hammurabi and Ptah-hotep (Ancient Near East, added Nov 22 2026, `scripts/import-world.ts`)
+
+All public domain, from Project Gutenberg (read from its mirror).
+
+- **Enuma Elish** — The Seven Tablets of Creation from E. A. Wallis Budge, The Babylonian Legends of the Creation
+  (British Museum, 1921, #9914). One chapter per tablet; verse = Budge's line number, his bracketed remarks on
+  gaps kept after the line they follow ("62a"; where he explains a gap only in a footnote, as in the Second
+  Tablet after line 101, the numbers simply jump); the Epilogue is the Seventh Tablet from line 125. His introduction,
+  notes, footnotes and illustrations are left out.
+- **The Code of Hammurabi** — C. H. W. Johns, The Oldest Code of Laws in the World (Edinburgh, 1903, #17150).
+  Verse = section number (1–65 and 100–282; five columns of the stone were erased, and Johns' note at that point
+  is kept), the lettered list of section 274 kept as lines, words broken at line ends rejoined; chapter 2 holds the three sections known only from
+  later Assyrian copies (X, Y, Z). His introduction and index are left out.
+- **The Instruction of Ptah-hotep** — Battiscombe G. Gunn (Wisdom of the East, 1906, #30508), with the
+  Instruction of Ke'gemni and, from his appendix, the Instruction of Amenemhe'et I. Verse = paragraph, labelled
+  with Gunn's letters and numbers; each closing colophon ("It is finished…") is the last verse; his topic lines
+  are the chapter notes. His introduction, footnotes, page
+  numbers and bibliography are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

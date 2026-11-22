@@ -49,6 +49,9 @@
     { "id": "kalevala", "name": "Kalevala", "versification": "kalevala" },
     { "id": "book-of-the-dead", "name": "The Egyptian Book of the Dead", "versification": "book-of-the-dead" },
     { "id": "gilgamesh", "name": "The Epic of Gilgamesh", "versification": "gilgamesh" },
+    { "id": "enuma-elish", "name": "Enuma Elish (The Seven Tablets of Creation)", "versification": "enuma-elish" },
+    { "id": "hammurabi", "name": "The Code of Hammurabi", "versification": "hammurabi" },
+    { "id": "ptahhotep", "name": "The Instruction of Ptah-hotep", "versification": "ptahhotep" },
     { "id": "shu-king", "name": "The Shu King (Book of History)", "versification": "shu-king" },
     { "id": "shih-king", "name": "The Shih King (Book of Poetry)", "versification": "shih-king" },
     { "id": "hsiao-king", "name": "The Hsiao King (Classic of Filial Piety)", "versification": "hsiao-king" },
@@ -1915,6 +1918,57 @@
       "sourceUrl": "https://en.wikisource.org/wiki/Sacred_Books_of_the_East/Volume_3/The_Hsiao",
       "licensed": false,
       "versification": "hsiao-king"
+    },
+    {
+      "id": "budge",
+      "work": "enuma-elish",
+      "abbr": "Budge",
+      "name": "The Seven Tablets of Creation (E. A. Wallis Budge)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1921,
+      "translator": "E. A. Wallis Budge",
+      "license": "Public Domain",
+      "licenseNote": "Verse = Budge's line number; his bracketed remarks on the gaps in the tablets are kept after the line they follow (where he explains a gap only in a footnote, as in the Second Tablet after line 101, the numbers simply jump). The Epilogue is the Seventh Tablet from line 125. His introduction, notes, footnotes and illustrations are left out.",
+      "attribution": "The Babylonian Legends of the Creation, translated by E. A. Wallis Budge (British Museum, 1921), public domain; Project Gutenberg #9914.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/9914",
+      "licensed": false,
+      "versification": "enuma-elish"
+    },
+    {
+      "id": "johns",
+      "work": "hammurabi",
+      "abbr": "Johns",
+      "name": "The Code of Hammurabi (C. H. W. Johns)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1903,
+      "translator": "C. H. W. Johns",
+      "license": "Public Domain",
+      "licenseNote": "Verse = section number: 1–65 and 100–282 (five columns of the stone were erased; Johns' note at that point is kept). The three sections known only from later Assyrian copies form the second chapter. His introduction and index are left out.",
+      "attribution": "The Oldest Code of Laws in the World, translated by C. H. W. Johns (Edinburgh, 1903), public domain; Project Gutenberg #17150.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/17150",
+      "licensed": false,
+      "versification": "hammurabi"
+    },
+    {
+      "id": "gunn",
+      "work": "ptahhotep",
+      "abbr": "Gunn",
+      "name": "The Instruction of Ptah-hotep and of Ke'gemni (Battiscombe G. Gunn)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1906,
+      "translator": "Battiscombe G. Gunn",
+      "license": "Public Domain",
+      "licenseNote": "With the Instruction of Amenemhe'et I from his appendix. Verse = paragraph, labelled with Gunn's letters and numbers; each closing colophon (\"It is finished…\") is the last verse; his topic lines are the chapter notes. His introduction, footnotes and bibliography are left out.",
+      "attribution": "The Instruction of Ptah-hotep and the Instruction of Ke'gemni, translated by Battiscombe G. Gunn (Wisdom of the East, 1906), public domain; Project Gutenberg #30508.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/30508",
+      "licensed": false,
+      "versification": "ptahhotep"
     }
   ],
   "religions": [
@@ -2800,14 +2854,17 @@
           "id": "egypt",
           "name": "Egypt",
           "items": [
-            { "id": "book-of-the-dead", "name": "The Book of the Dead", "work": "book-of-the-dead", "chapters": 186, "chapterName": "Chapter" }
+            { "id": "book-of-the-dead", "name": "The Book of the Dead", "work": "book-of-the-dead", "chapters": 186, "chapterName": "Chapter" },
+            { "id": "ptahhotep", "name": "The Instruction of Ptah-hotep", "work": "ptahhotep", "chapters": 3, "chapterName": "Instruction" }
           ]
         },
         {
           "id": "mesopotamia",
           "name": "Mesopotamia",
           "items": [
-            { "id": "gilgamesh", "name": "The Epic of Gilgamesh", "work": "gilgamesh", "chapters": 12, "chapterName": "Tablet" }
+            { "id": "gilgamesh", "name": "The Epic of Gilgamesh", "work": "gilgamesh", "chapters": 12, "chapterName": "Tablet" },
+            { "id": "enuma-elish", "name": "Enuma Elish (The Seven Tablets of Creation)", "work": "enuma-elish", "chapters": 7, "chapterName": "Tablet" },
+            { "id": "hammurabi", "name": "The Code of Hammurabi", "work": "hammurabi", "chapters": 2, "chapterName": "Part" }
           ]
         }
       ]

@@ -1893,7 +1893,207 @@ async function sbe3() {
   report("hsiao-king", 18, h);
 }
 
+/**
+ * The Seven Tablets of Creation (Enuma Elish) — E. A. Wallis Budge, The Babylonian Legends of the Creation
+ * (British Museum, 1921), Gutenberg #9914. One chapter per tablet; verse = Budge's line number ("26-28."
+ * covers several), his bracketed remarks on gaps kept after the line they follow ("26a"). The Epilogue
+ * continues Tablet VII's numbering and stays in it. His introduction, footnotes and illustrations are left out.
+ */
+async function enumaElish() {
+  const txt = gutenbergBody(await cached("enuma-elish", "pg9914.txt", GUT(9914)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "THE SEVEN TABLETS OF CREATION.--TRANSLATION.");
+  // the translation ends where Budge's NOTES (or his star list) begin
+  const end = lines.findIndex((l, i) => i > start && /^(NOTES\.|LIST OF THE NAMES OF THE STARS)/.test(l.trim()));
+  const tablets: Verse[][] = [];
+  const names = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH"];
+  let cur: Verse[] | null = null;
+  let para: string[] = [];
+  let skip = false; // inside a [Footnote …] or [Illustration …] block
+  let last = "0";
+  let suffix = 0;
+  const flush = () => {
+    const t = unwrap(para.join(" ")).replace(/\[\d+\]/g, "").replace(/_/g, "").trim();
+    para = [];
+    if (!cur || !t) return;
+    const m = /^(\d+)(?:-(\d+))?\.\s+(.*)$/.exec(t);
+    if (m) {
+      last = m[1];
+      suffix = 0;
+      const glued = /^(.*["”])\s+(\[[^\]]+\])$/.exec(m[3]);
+      cur.push({ v: m[1], t: glued ? glued[1] : m[3], ...(m[2] ? { to: m[2] } : {}) });
+      if (glued) cur.push({ v: `${m[1]}${String.fromCharCode(96 + ++suffix)}`, t: glued[2] });
+    } else {
+      // Budge's own bracketed remark on a gap, after the line it follows
+      suffix++;
+      cur.push({ v: `${last}${String.fromCharCode(96 + suffix)}`, t });
+    }
+  };
+  for (let i = start + 1; i < end; i++) {
+    const l = lines[i].trim();
+    if (skip) {
+      if (/\]\s*$/.test(l)) skip = false;
+      continue;
+    }
+    if (/^\[(Footnote|Illustration)/.test(l)) {
+      flush();
+      skip = !/\]\s*$/.test(l);
+      continue;
+    }
+    const tab = /^([A-Z]+) TABLET\./.exec(l);
+    if (tab && names.includes(tab[1])) {
+      flush();
+      cur = [];
+      tablets.push(cur);
+      last = "0";
+      suffix = 0;
+      continue;
+    }
+    if (l === "EPILOGUE.") {
+      flush();
+      continue;
+    }
+    if (!l) {
+      flush();
+      continue;
+    }
+    para.push(l);
+  }
+  flush();
+  await resetVersion("enuma-elish", "budge");
+  let total = 0;
+  for (const [k, vs] of tablets.entries()) {
+    await writeChapter("enuma-elish", "budge", "enuma-elish", k + 1, vs, undefined, `The ${titleCase(names[k])} Tablet`);
+    total += vs.length;
+  }
+  report("enuma-elish", tablets.length, total);
+}
+
+/**
+ * The Code of Hammurabi — C. H. W. Johns, The Oldest Code of Laws in the World (Edinburgh, 1903), Gutenberg
+ * #17150. Chapter 1: the laws, verse = Johns' section number (1–65 and 100–282: five columns of the stone
+ * were erased, as his note at that point explains, kept as "65a"), with the closing line after 282. Chapter 2:
+ * the three sections known only from later Assyrian copies, which he adds (X, Y, Z). His introduction and
+ * index are left out.
+ */
+async function hammurabi() {
+  const txt = gutenbergBody(await cached("hammurabi", "pg17150.txt", GUT(17150)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "THE TEXT OF THE CODE");
+  const end = lines.findIndex((l, i) => i > start && l.trim() === "INDEX");
+  const paras: string[] = [];
+  let para: string[] = [];
+  // a word broken at a line's end ("cow-" / "hide") is joined without a space; "--" is a dash
+  const join = (ls: string[]) => unwrap(ls.reduce((a, l) => (/[^-]-$/.test(a) ? a + l : a ? `${a} ${l}` : l), ""));
+  for (const raw of lines.slice(start + 1, end)) {
+    if (!raw.trim()) {
+      if (para.length) paras.push(join(para));
+      para = [];
+    } else para.push(raw.trim());
+  }
+  if (para.length) paras.push(join(para));
+  const laws: Verse[] = [];
+  const later: Verse[] = [];
+  let intro = "";
+  let inLater = false;
+  let last = "0";
+  let suffix = 0;
+  for (const p0 of paras) {
+    const p = p0.replace(/_/g, "").replace(/\s*\[See page \d+\.\]/g, "");
+    if (/^\*[\s*]*$/.test(p)) continue;
+    if (/^The following three sections/.test(p)) {
+      inLater = true;
+      intro = p;
+      continue;
+    }
+    const m = /^section (\d+|[XYZ])\.\s*(.*)$/.exec(p);
+    // the lettered items of a section's list ("(a) the hire of a brickmaker …", section 274) stay in it, as lines
+    if (/^\([a-z]\)\s/.test(p) && laws.length && !inLater) {
+      laws[laws.length - 1].t += `\n${p}`;
+      continue;
+    }
+    if (m && inLater) later.push({ v: String(later.length + 1), t: m[2], n: m[1] });
+    else if (m) {
+      last = m[1];
+      suffix = 0;
+      laws.push({ v: m[1], t: m[2] });
+    } else {
+      suffix++;
+      (inLater ? later : laws).push({ v: inLater ? String(later.length + 1) : `${last}${String.fromCharCode(96 + suffix)}`, t: p });
+    }
+  }
+  await resetVersion("hammurabi", "johns");
+  await writeChapter("hammurabi", "johns", "hammurabi", 1, laws, undefined, "The Laws");
+  await writeChapter("hammurabi", "johns", "hammurabi", 2, later, intro || undefined, "Three Sections from Later Assyrian Copies");
+  report("hammurabi", 2, laws.length + later.length);
+}
+
+/**
+ * The Instruction of Ptah-hotep and the Instruction of Ke'gemni — Battiscombe G. Gunn (Wisdom of the East,
+ * 1906), Gutenberg #30508, with the Instruction of Amenemhe'et I that he gives in his appendix. One chapter
+ * each; verse = paragraph, labelled with Gunn's own letters and numbers ("A", "1"); his list of topics under
+ * each title is the chapter note. His introduction, footnotes, page numbers and bibliography are left out.
+ */
+async function ptahhotep() {
+  const txt = gutenbergBody(await cached("ptahhotep", "pg30508.txt", GUT(30508)));
+  const lines = txt.split("\n");
+  const heads = ["THE INSTRUCTION OF PTAH-HOTEP", "THE INSTRUCTION OF KE'GEMNI", "THE INSTRUCTION OF AMENEMHE'ET"];
+  const titles = ["The Instruction of Ptah-hotep", "The Instruction of Ke'gemni", "The Instruction of Amenemhe'et"];
+  await resetVersion("ptahhotep", "gunn");
+  let total = 0;
+  for (const [k, h] of heads.entries()) {
+    // the last line with this heading (the first Ptah-hotep one is the title page of the introduction)
+    const at = lines.reduce((acc, l, i) => (l.trim() === h ? i : acc), -1);
+    const paras: string[] = [];
+    let para: string[] = [];
+    let colophon = "";
+    for (let i = at + 1; i < lines.length; i++) {
+      const l = lines[i].trim();
+      if (/^IT IS FINISHED/.test(l)) {
+        // the scribe's colophon is part of the text: its lines run on until a gap of two blank lines
+        const col: string[] = [];
+        for (let j = i; j < lines.length && !(lines[j].trim() === "" && lines[j + 1]?.trim() === "" && col.length); j++) if (lines[j].trim()) col.push(lines[j].trim());
+        colophon = col.join("\n");
+        break;
+      }
+      if (heads.includes(l) || l === "APPENDIX") break;
+      if (!l) {
+        if (para.length) paras.push(unwrap(para.join(" ")));
+        para = [];
+      } else para.push(l);
+    }
+    if (para.length) paras.push(unwrap(para.join(" ")));
+    if (colophon) paras.push(`\u0001${colophon}`); // kept with its lines (marked so it is not unwrapped below)
+    // the first paragraph is Gunn's list of topics ("The Ethics of Argument--Manners for Guests--…")
+    const note = (/--/.test(paras[0]) && paras[0].length < 400) || (paras[0].length < 60 && !/\.$/.test(paras[0])) ? paras.shift()!.replace(/--/g, "; ") : "";
+    const verses: Verse[] = [];
+    for (const p of paras) {
+      if (p.startsWith("\u0001")) {
+        verses.push({ v: String(verses.length + 1), t: p.slice(1) });
+        continue;
+      }
+      let t = p
+        .replace(/\{\d+\}\s*/g, "") // page numbers
+        .replace(/\[\d+\]/g, "") // note marks
+        .replace(/_/g, "")
+        .replace(/\s+([,.;:])/g, "$1")
+        .trim();
+      // a closing quote with no opening one (Amenemhe'et 15, as printed)
+      if ((t.match(/"/g) ?? []).length % 2 === 1 && /"$/.test(t)) t = t.slice(0, -1);
+      if (!t) continue;
+      const m = /^([A-D]|\d+)\.\s+(.*)$/.exec(t);
+      verses.push({ v: String(verses.length + 1), t: m ? m[2] : t, ...(m ? { n: m[1] } : {}) });
+    }
+    await writeChapter("ptahhotep", "gunn", "ptahhotep", k + 1, verses, note || undefined, titles[k]);
+    total += verses.length;
+  }
+  report("ptahhotep", heads.length, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  ptahhotep,
+  hammurabi,
+  enumaElish,
   sbe3,
   gilgamesh,
   masnavi,
