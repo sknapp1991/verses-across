@@ -56,7 +56,7 @@ This is more than a warning against hypocrisy. It challenges a split way of seei
 
 In the teaching of Adi Shankara, a traveler walks a dusty road at dusk. Suddenly he sees a coiled snake in his path. His heart races and he freezes in fear. Then someone brings a lamp, and he sees that the "snake" was only a coil of old rope.
 
-**Superimposition (*adhyasa*).** The traveler's fear was real, but the snake never existed. It was laid over the rope by dim light: ignorance (*avidya*). In the same way, Advaita teaches, the separate ego, fear, death and division are laid over the one rope of pure Consciousness, Brahman. Liberation (*moksha*) does not mean killing the snake. It means lighting the lamp, and seeing that there was only ever the rope.
+**Superimposition** (*adhyasa*). The traveler's fear was real, but the snake never existed. It was laid over the rope by dim light: ignorance (*avidya*). In the same way, Advaita teaches, the separate ego, fear, death and division are laid over the one rope of pure Consciousness, Brahman. Liberation (*moksha*) does not mean killing the snake. It means lighting the lamp, and seeing that there was only ever the rope.
 
 ### Moses and al-Khidr (Qur'an 18:60–82)
 

@@ -35,7 +35,8 @@ function inline(s: string) {
       const ext = u.startsWith("http");
       return `<a href="${u}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ""}>${t}</a>`;
     })
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    // bold may hold italics: **Judaism (*emet*).**
+    .replace(/\*\*((?:[^*]|\*(?!\*))+?)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*\s][^*]*?)\*/g, "$1<em>$2</em>");
 }
 
