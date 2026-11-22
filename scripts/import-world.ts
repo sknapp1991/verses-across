@@ -1478,7 +1478,218 @@ async function lotus() {
   report("lotus", chapters.length, total);
 }
 
+/**
+ * The Jataka tales, volume 1 — Buddhist Birth Stories, tr. T. W. Rhys Davids from Fausbøll's Pali (1880),
+ * Gutenberg #51880. Two books: the Nidanakatha (the Buddha's lineage and life that opens the Jataka
+ * commentary, in its three Epochs: Distant, Intermediate, Proximate), and Jatakas 1–40 under their standard numbers (7 and 8 are not in this volume: a note
+ * gives Rhys Davids' cross-reference). Verse = paragraph, verses keep their lines; his introduction, tables,
+ * footnotes, "END OF THE STORY…" lines and the index are left out.
+ */
+async function jataka() {
+  const txt = gutenbergBody(await cached("jataka", "pg51880.txt", GUT(51880)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "THE NIDĀNAKATHĀ");
+  const end = lines.findIndex((l, i) => i > start && /^END OF BOOK I\./.test(l.trim()));
+  type Ch = { book: "nidana" | "jataka"; n: number; title: string; paras: string[] };
+  const chapters: Ch[] = [{ book: "nidana", n: 1, title: "The Distant Epoch", paras: [] }];
+  let cur = chapters[0];
+  let block: string[] = [];
+  let pendingNo = 0; // "No. 17." found at the end of a line: the story starts at the next heading
+  const clean = (s: string) =>
+    s
+      .replace(/\[\d+\]/g, "")
+      .replace(/\[vv?\. [\d-]+\.\]\s*/g, "") // "[vv. 1-11.]": verse numbers of the Pali
+      // inside a word, underscores mark the transcriber's dotted letters: Nirvā_n_a → Nirvāṇa, Buddhava_m_sa → Buddhavaṃsa
+      .replace(/(?<=\p{L})_([a-z]{1,2})_|_([a-z]{1,2})_(?=\p{L})/gu, (_, a?: string, b?: string) =>
+        (a ?? b ?? "").replace(/[nmdt]/g, (c) => ({ n: "ṇ", m: "ṃ", d: "ḍ", t: "ṭ" })[c] ?? c),
+      )
+      .replace(/_/g, "")
+      .replace(/\s+([,.;:])/g, "$1")
+      .trim();
+  const flush = () => {
+    if (block.length) {
+      const verse = block.length > 1 && block.every((x) => /^\s{2,}\S/.test(x));
+      // a verse line too long for the page goes on, indented deeper, on the next line: join it back
+      const vlines: string[] = [];
+      if (verse) {
+        // indent of the text itself, after a Buddhavamsa verse number ("   12. Four…" counts as 7)
+        const indent = (x: string) => /^\s*(\d+\.\s+)?/.exec(x)![0].length;
+        const ind = Math.min(...block.map(indent));
+        for (const x of block) {
+          if (vlines.length && indent(x) > ind + 1 && !/^\s*\d+\.\s/.test(x)) vlines[vlines.length - 1] += ` ${x.trim()}`;
+          else vlines.push(x.trim().replace(/^\d+\.\s+/, "")); // "12. Four asankheyyas…": the Buddhavamsa's verse numbers
+        }
+      }
+      const t = verse ? vlines.map((x) => clean(x)).join("\n") : clean(unwrap(block.join(" ")));
+      if (t) cur.paras.push(t);
+    }
+    block = [];
+  };
+  const startStory = (n: number, i: number) => {
+    // The Pali name ("MAKHĀ-DEVA JĀTAKA.") and the English title ("The Story of Makhā Deva.") follow.
+    const next = lines.slice(i + 1, i + 12).map((x) => x.trim()).filter(Boolean);
+    const pi = next.findIndex((x) => /JĀTAKA\.?(\[\d+\])?$/.test(x));
+    const pali = pi >= 0 ? next[pi] : "";
+    // the English title is the line right under the Pali name; story 1 has it in its heading ("No. 1.--Holding to the Truth.")
+    const english = pi >= 0 ? next[pi + 1] : "";
+    const inHead = /^No\. \d+\.--(.+?)\.?(\[\d+\])?$/.exec(lines[i].trim())?.[1] ?? "";
+    const name = pali.replace(/\[\d+\]/g, "").replace(/\.$/, "");
+    const nice = name ? name.toLowerCase().replace(/(^|[\s-])(\p{Ll})/gu, (_, a: string, b: string) => a + b.toUpperCase()) : "";
+    const eng = (inHead || english).replace(/\[\d+\]/g, "").replace(/\.$/, "").replace(/\.’$/, "’").trim();
+    cur = { book: "jataka", n, title: [nice, eng].filter(Boolean).join(": "), paras: [] };
+    chapters.push(cur);
+    return [pali, english].filter(Boolean);
+  };
+  let skipHeads: string[] = [];
+  for (let i = start + 1; i < end; i++) {
+    const raw = lines[i];
+    const l = raw.trim();
+    if (!l) {
+      flush();
+      continue;
+    }
+    if (l === "THE DISTANT EPOCH.") {
+      // "The following is" leads straight into this heading
+      flush();
+      const last = cur.paras.length - 1;
+      if (last >= 0 && /The following is$/.test(cur.paras[last])) cur.paras[last] += " the Distant Epoch.";
+      continue;
+    }
+    if (l === "OR" || l === "THE THREE EPOCHS.") continue;
+    if (/^II\.--AVIDŪRE NIDĀNA\./.test(l)) {
+      flush();
+      cur = { book: "nidana", n: 2, title: "The Intermediate Epoch", paras: [] };
+      chapters.push(cur);
+      continue;
+    }
+    if (/^THE PROXIMATE OR LAST EPOCH\./.test(l)) {
+      flush();
+      cur = { book: "nidana", n: 3, title: "The Proximate Epoch", paras: [] };
+      chapters.push(cur);
+      continue;
+    }
+    if (/^End of the Story of Sumedha\.?$/i.test(l)) continue;
+    if (/^END OF THE ACCOUNT OF THE CAUSES|^ATTAINMENT OF BUDDHAHOOD\.$|^GLORY BE TO THE BLESSED|^BOOK I\.$|^CHAPTER [IVX]+\./.test(l)) continue;
+    // "No. 9.[269]" or "No. 1.--Holding to the Truth." starts a story; "… No. 17." at a line's end marks the next one.
+    const no = /^No\. (\d+)\./.exec(l);
+    const tail = /No\. (\d+)\.\s*$/.exec(l);
+    if (no) {
+      flush();
+      skipHeads = startStory(Number(no[1]), i);
+      continue;
+    }
+    if (/^END OF THE STORY|^END OF THE/.test(l)) {
+      flush();
+      if (tail) pendingNo = Number(tail[1]);
+      // a two-line "END OF THE STORY ON OFFERINGS GIVEN UNDER / …" ending
+      while (i + 1 < end && lines[i + 1].trim() && /^[A-Z ,.’'-]+$/.test(lines[i + 1].trim())) i++;
+      continue;
+    }
+    if (pendingNo && /JĀTAKA\.?(\[\d+\])?$/.test(l)) {
+      flush();
+      skipHeads = startStory(pendingNo, i - 1);
+      pendingNo = 0;
+    }
+    if (skipHeads.includes(l)) continue; // the story's own name and title lines
+    block.push(raw);
+  }
+  flush();
+  const byKey = new Map(chapters.map((c) => [`${c.book}/${c.n}`, c]));
+  // Rhys Davids' note on story 9: "For Nos. 7 and 8, see respectively Bhaddasāla Jātaka, Book xii., and Saŋvara Jātaka, Book xi."
+  const stub: Record<number, string> = {
+    7: "Story 7 is not translated in this volume; Rhys Davids refers it to the Bhaddasāla Jātaka (Book XII).",
+    8: "Story 8 is not translated in this volume; Rhys Davids refers it to the Saŋvara Jātaka (Book XI).",
+  };
+  await resetVersion("jataka", "rhys-davids");
+  let total = 0;
+  for (const c of chapters.filter((x) => x.book === "nidana")) {
+    const verses = c.paras.map((t, k) => ({ v: String(k + 1), t }));
+    await writeChapter("jataka", "rhys-davids", "nidana", c.n, verses, undefined, c.title);
+    total += verses.length;
+  }
+  for (let n = 1; n <= 40; n++) {
+    const c = byKey.get(`jataka/${n}`);
+    if (!c && !stub[n]) throw new Error(`jataka: story ${n} missing`);
+    const verses = (c ? c.paras : [stub[n]]).map((t, k) => ({ v: String(k + 1), t }));
+    await writeChapter("jataka", "rhys-davids", "jataka", n, verses, undefined, c?.title || undefined);
+    total += verses.length;
+  }
+  report("jataka", chapters.length, total);
+}
+
+/**
+ * Rumi's Masnavi, Book I — tr. James W. Redhouse (1881), Gutenberg #61724. Chapter 1 is the Proem (the Song
+ * of the Reed-Flute); chapters 2–18 are Redhouse's seventeen tales (I–XVII). Verse = couplet, counted afresh in
+ * each section as Redhouse does (he prints every fifth number; in tales III and XI his numbers slip by one). His preface, the "Acts of the
+ * Adepts" anecdotes before the poem, and his footnotes are left out.
+ */
+async function masnavi() {
+  const txt = gutenbergBody(await cached("masnavi", "pg61724.txt", GUT(61724)));
+  const lines = txt.split("\n");
+  const proem = lines.findIndex((l) => /^\s+PROEM\. The Reed-Flute\.\s*$/.test(l));
+  const end = lines.findIndex((l, i) => i > proem && l.trim() === "THE END.");
+  type Sec = { title: string; couplets: string[]; marks: [number, number][] };
+  const secs: Sec[] = [{ title: "Proem: The Reed-Flute", couplets: [], marks: [] }];
+  let pend: string[] = [];
+  let warn = 0;
+  for (let i = proem + 1; i < end; i++) {
+    const raw = lines[i];
+    const l = raw.trim();
+    if (!l) continue;
+    const num = /^([IVXL]+)\.$/.exec(l);
+    if (num) {
+      const title = lines[i + 2]?.trim().replace(/\[\d+\]/g, "").replace(/\.$/, "") ?? "";
+      secs.push({ title: `${num[1]}. ${title}`, couplets: [], marks: [] });
+      pend = [];
+      i += 2;
+      continue;
+    }
+    if (!/^\s{2,}\S/.test(raw)) continue;
+    // Redhouse's couplet number, at the right margin (sometimes only a space or two away) or, once, at the start
+    const mark = /\s+(\d{1,3})\s*$/.exec(raw) ?? /^\s*(\d{1,3})\s{2,}/.exec(raw);
+    const text = raw
+      .replace(/\s+\d{1,3}\s*$/, "")
+      .replace(/^\s*\d{1,3}\s{2,}/, "")
+      .replace(/\[\d+\]/g, "")
+      .replace(/_/g, "")
+      .replace(/--/g, "—")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    const sec = secs[secs.length - 1];
+    // A line too long for the page goes on, indented deeper, on the next line: join it back.
+    if (/^\s{6,}\S/.test(raw)) {
+      if (pend.length) pend[pend.length - 1] += ` ${text}`;
+      else if (sec.couplets.length) sec.couplets[sec.couplets.length - 1] += ` ${text}`;
+      if (mark && sec.couplets.length !== Number(mark[1])) warn++;
+      continue;
+    }
+    pend.push(text);
+    if (pend.length === 2) {
+      sec.couplets.push(pend.join("\n"));
+      pend = [];
+    }
+    if (mark) {
+      // Redhouse's number should close that couplet; if not, note it (and trust our pairing).
+      if (sec.couplets.length !== Number(mark[1]) || pend.length) {
+        warn++;
+        console.warn(`masnavi "${sec.title}": mark ${mark[1]} at couplet ${sec.couplets.length}${pend.length ? " (mid-couplet)" : ""}`);
+      }
+    }
+  }
+  await resetVersion("masnavi", "redhouse");
+  let total = 0;
+  for (const [k, s] of secs.entries()) {
+    const verses = s.couplets.map((t, j) => ({ v: String(j + 1), t }));
+    await writeChapter("masnavi", "redhouse", "masnavi-1", k + 1, verses, undefined, s.title);
+    total += verses.length;
+  }
+  report("masnavi", secs.length, total);
+  if (warn) console.warn(`masnavi: ${warn} number marks out of step`);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  masnavi,
+  jataka,
   lotus,
   edda,
   proseEdda,

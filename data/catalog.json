@@ -49,6 +49,8 @@
     { "id": "kalevala", "name": "Kalevala", "versification": "kalevala" },
     { "id": "book-of-the-dead", "name": "The Egyptian Book of the Dead", "versification": "book-of-the-dead" },
     { "id": "lotus", "name": "The Lotus Sutra", "versification": "lotus" },
+    { "id": "jataka", "name": "The Jataka Tales", "versification": "jataka" },
+    { "id": "masnavi", "name": "The Masnavi of Rumi", "versification": "masnavi" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -1807,6 +1809,40 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/79267",
       "licensed": false,
       "versification": "lotus"
+    },
+    {
+      "id": "rhys-davids",
+      "work": "jataka",
+      "abbr": "Rhys Davids",
+      "name": "Buddhist Birth Stories (T. W. Rhys Davids), volume 1",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1880,
+      "translator": "T. W. Rhys Davids",
+      "license": "Public Domain",
+      "licenseNote": "Volume 1 only: the Nidanakatha (the Buddha's lineage and life) and Jatakas 1–40 under their standard numbers; 7 and 8 are not in this volume (a note gives Rhys Davids' cross-reference). His introduction, tables, footnotes and index are left out.",
+      "attribution": "Buddhist Birth Stories; or, Jataka Tales, volume 1, translated by T. W. Rhys Davids from V. Fausbøll's Pali text (1880), public domain; Project Gutenberg #51880.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/51880",
+      "licensed": false,
+      "versification": "jataka"
+    },
+    {
+      "id": "redhouse",
+      "work": "masnavi",
+      "abbr": "Redhouse",
+      "name": "The Mesnevi, Book I (James W. Redhouse)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1881,
+      "translator": "James W. Redhouse",
+      "license": "Public Domain",
+      "licenseNote": "Book I only, in verse: the Proem (the Song of the Reed-Flute) and Redhouse's seventeen tales. Verse = couplet, counted afresh in each section; in a few places Redhouse's printed numbers slip by a couplet, so ours can differ from his by one or two. His preface, the Acts of the Adepts and his footnotes are left out.",
+      "attribution": "The Mesnevi of Mevlana Jelalu-'d-Din Rumi, Book the First, translated by James W. Redhouse (1881), public domain; Project Gutenberg #61724.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/61724",
+      "licensed": false,
+      "versification": "masnavi"
     }
   ],
   "religions": [
@@ -2119,7 +2155,14 @@
           { "id": "tawil", "name": "Ta'wil (inner meaning) — al-Kashani", "status": "coming-soon" },
           { "id": "tafsir-salafi", "name": "Salafi / Wahhabi — al-Sa'di", "status": "coming-soon" },
           { "id": "tafsir-modern", "name": "Modern & thematic — Wahiduddin Khan", "status": "coming-soon" }
-        ] }
+        ] },
+        {
+          "id": "sufi",
+          "name": "Sufi Poetry",
+          "items": [
+            { "id": "masnavi-1", "name": "Rumi's Masnavi, Book I", "work": "masnavi", "chapters": 18, "chapterName": "Masnavi I" }
+          ]
+        }
       ]
     },
     {
@@ -2337,6 +2380,14 @@
           "name": "Mahayana Sutras",
           "items": [
             { "id": "lotus", "name": "The Lotus Sutra (Soothill, abridged)", "work": "lotus", "chapters": 28, "chapterName": "Lotus Sutra" }
+          ]
+        },
+        {
+          "id": "jataka-tales",
+          "name": "Jataka Tales",
+          "items": [
+            { "id": "nidana", "name": "The Lineage (Nidanakatha)", "work": "jataka", "chapters": 3, "chapterName": "Epoch" },
+            { "id": "jataka", "name": "Jataka Tales 1–40", "work": "jataka", "chapters": 40, "chapterName": "Jataka" }
           ]
         }
       ]

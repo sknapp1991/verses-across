@@ -322,6 +322,25 @@ titled from his contents; verse = paragraph, verses keep their lines. Left out: 
 illustrations, glossary and index, and the Gutenberg transcriber's notes on the spellings
 they corrected (the corrections are kept).
 
+## The Jataka Tales, volume 1 (Buddhism, added Nov 22 2026, `scripts/import-world.ts jataka`)
+
+T. W. Rhys Davids, Buddhist Birth Stories; or, Jataka Tales, volume 1 (1880, public domain), translated from
+V. Fausbøll's Pali text, Project Gutenberg #51880 (read from its mirror). Two books: the Nidanakatha (the
+Buddha's lineage and life that opens the Jataka commentary, in its three Epochs: Distant, Intermediate and
+Proximate) and Jatakas 1–40 under their standard numbers. Stories 7 and 8 are not in this volume: a one-line note gives Rhys Davids' cross-reference. Verse =
+paragraph; verses keep their lines (lines the page wrapped are joined back). The transcription's underscores
+for dotted letters are restored (Nirvāṇa, Buddhavaṃsa). Left out: his introduction and tables, footnotes, the
+Pali and Buddhavaṃsa verse numbers, the "END OF THE STORY…" lines and the index.
+
+## Rumi's Masnavi, Book I (Islam, Sufi poetry, added Nov 22 2026, `scripts/import-world.ts masnavi`)
+
+James W. Redhouse, The Mesnevi, Book the First (1881, public domain), Project Gutenberg #61724 (read from its
+mirror). Chapter 1 is the Proem (the Song of the Reed-Flute); chapters 2–18 are Redhouse's seventeen tales
+(I–XVII). Verse = couplet, counted afresh in each section; lines the page wrapped are joined back. Redhouse
+prints every fifth couplet number, and in two tales (III and XI) his printed numbers slip by a couplet, so
+our numbers can differ from his by one or two there. Left out: his preface, the anecdotes from the Acts of the
+Adepts that come before the poem, and his footnotes.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

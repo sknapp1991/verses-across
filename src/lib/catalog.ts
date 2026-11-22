@@ -126,6 +126,8 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   kalevala: ["kirby"],
   "book-of-the-dead": ["renouf"],
   lotus: ["soothill"],
+  jataka: ["rhys-davids"],
+  masnavi: ["redhouse"],
   aeneid: ["dryden"],
   metamorphoses: ["riley"],
   republic: ["jowett-rep"],
