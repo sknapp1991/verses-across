@@ -1407,7 +1407,79 @@ async function bookOfTheDead() {
   report("book-dead", max, total);
 }
 
+/**
+ * The Lotus Sutra — W. E. Soothill, The Lotus of the Wonderful Law (Oxford, 1930), Gutenberg #79267: an
+ * abridgement from Kumarajiva's Chinese, in which Soothill translates the key passages and summarizes the
+ * rest in his own words (the indented paragraphs). Both are kept, as he gives them: 28 chapters, titled from
+ * his contents; verse = paragraph, verses keep their lines. His introduction, illustrations, glossary and
+ * index are left out.
+ */
+async function lotus() {
+  const txt = gutenbergBody(await cached("lotus", "pg79267.txt", GUT(79267)));
+  const lines = txt.split("\n");
+  // Chapter titles from the contents ("   III. Parable of the Burning House   81").
+  const titles = new Map<number, string>();
+  for (const l of lines.slice(0, 400)) {
+    const m = /^\s+([IVXL]+)\. (.+?)\s{2,}\d+\s*$/.exec(l);
+    if (m) titles.set(roman(m[1]), m[2].trim());
+  }
+  const glossary = lines.findIndex((l) => l.trim() === "GLOSSARY");
+  const first = lines.findIndex((l, i) => i > 400 && /^\s{20,}I\s*$/.test(l));
+  const body = lines.slice(first, glossary);
+  const chapters: { n: number; paras: string[] }[] = [];
+  let block: string[] = [];
+  let illus = false;
+  const flush = () => {
+    if (block.length && chapters.length) {
+      // Verse (indented four or more) keeps its lines; prose is unwrapped.
+      const verse = block.every((x) => /^\s{4,}\S/.test(x));
+      const t = verse ? block.map((x) => x.trim()).join("\n") : unwrap(block.join(" "));
+      if (t && !/^[*\s]+$/.test(t)) chapters[chapters.length - 1].paras.push(t);
+    }
+    block = [];
+  };
+  for (const raw of body) {
+    const l = raw.trim();
+    if (illus) {
+      if (l.endsWith("]")) illus = false;
+      continue;
+    }
+    if (l.startsWith("[Illustration")) {
+      flush();
+      illus = !l.endsWith("]");
+      continue;
+    }
+    const head = /^\s{20,}([IVXL]+)\s*$/.exec(raw);
+    if (head) {
+      flush();
+      chapters.push({ n: roman(head[1]), paras: [] });
+      continue;
+    }
+    if (!l) {
+      flush();
+      continue;
+    }
+    // The transcriber's correction notes ("♦ “Puddha-way” replaced with “Buddha-way”") are not the text; the
+    // corrections themselves stay.
+    if (l.startsWith("♦")) {
+      flush();
+      continue;
+    }
+    block.push(raw.replace(/[_♦]/g, ""));
+  }
+  flush();
+  await resetVersion("lotus", "soothill");
+  let total = 0;
+  for (const c of chapters) {
+    const verses = c.paras.map((t, k) => ({ v: String(k + 1), t }));
+    await writeChapter("lotus", "soothill", "lotus", c.n, verses, undefined, titles.get(c.n));
+    total += verses.length;
+  }
+  report("lotus", chapters.length, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  lotus,
   edda,
   proseEdda,
   kalevala,

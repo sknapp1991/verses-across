@@ -125,6 +125,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   "prose-edda": ["anderson"],
   kalevala: ["kirby"],
   "book-of-the-dead": ["renouf"],
+  lotus: ["soothill"],
   aeneid: ["dryden"],
   metamorphoses: ["riley"],
   republic: ["jowett-rep"],

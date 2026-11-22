@@ -48,6 +48,7 @@
     { "id": "prose-edda", "name": "Prose Edda", "versification": "prose-edda" },
     { "id": "kalevala", "name": "Kalevala", "versification": "kalevala" },
     { "id": "book-of-the-dead", "name": "The Egyptian Book of the Dead", "versification": "book-of-the-dead" },
+    { "id": "lotus", "name": "The Lotus Sutra", "versification": "lotus" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -1789,6 +1790,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/69566",
       "licensed": false,
       "versification": "book-of-the-dead"
+    },
+    {
+      "id": "soothill",
+      "work": "lotus",
+      "abbr": "Soothill",
+      "name": "The Lotus of the Wonderful Law (W. E. Soothill, abridged)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1930,
+      "translator": "W. E. Soothill",
+      "license": "Public Domain",
+      "licenseNote": "An abridgement from Kumarajiva's Chinese: Soothill translates the key passages (in quotation marks) and summarizes the rest in his own words; both are kept as he gives them. His introduction, illustrations, glossary and index, and the transcriber's notes on corrected spellings, are left out.",
+      "attribution": "The Lotus of the Wonderful Law, or The Lotus Gospel, by W. E. Soothill (Oxford, 1930), public domain; Project Gutenberg #79267.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79267",
+      "licensed": false,
+      "versification": "lotus"
     }
   ],
   "religions": [
@@ -2313,7 +2331,14 @@
           {"id": "kv", "name": "Kathāvatthu", "work": "abhidhamma", "chapters": 219, "chapterName": "Kv, part"},
           {"id": "ya", "name": "Yamaka", "work": "abhidhamma", "chapters": 77, "chapterName": "Ya, part"},
           {"id": "patthana", "name": "Paṭṭhāna", "work": "abhidhamma", "chapters": 728, "chapterName": "Paṭṭhāna, part"}
-        ] }
+        ] },
+        {
+          "id": "mahayana",
+          "name": "Mahayana Sutras",
+          "items": [
+            { "id": "lotus", "name": "The Lotus Sutra (Soothill, abridged)", "work": "lotus", "chapters": 28, "chapterName": "Lotus Sutra" }
+          ]
+        }
       ]
     },
     {

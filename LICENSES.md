@@ -312,6 +312,16 @@ repeats 48, 49, 73, 111, 120–122, 129 and 139 (of 10, 11, 9, 108, 12, 13, 58, 
 Renouf's and Naville's introductions and notes, the plates, the note marks and the hieroglyphs quoted in
 the notes.
 
+## The Lotus Sutra (Buddhism, added Nov 22 2026, `scripts/import-world.ts lotus`)
+
+W. E. Soothill, The Lotus of the Wonderful Law, or The Lotus Gospel (Oxford, 1930; public domain in the US as
+published before 1931, and Soothill died in 1935), Project Gutenberg #79267 (read from its mirror). It is an
+abridgement from Kumarajiva's Chinese: Soothill translates the key passages (in quotation marks) and summarizes
+the rest in his own words; both are kept as he gives them, and the library names it "abridged". 28 chapters
+titled from his contents; verse = paragraph, verses keep their lines. Left out: his introduction,
+illustrations, glossary and index, and the Gutenberg transcriber's notes on the spellings
+they corrected (the corrections are kept).
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
