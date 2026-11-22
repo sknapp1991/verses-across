@@ -54,6 +54,8 @@ html { touch-action: manipulation; }
   --panel: #f3f1ec;
   --raised: #ffffff;
   --ink: #1f1d1a;
+  --whisper: #b0236e; /* group chat: whispers (readable on the light page) */
+  --name-l: 36%; /* group chat: lightness of each person's name colour */
   --muted: #5f5a52;
   --faint: #8d877d;
   --line: #e2ded6;
@@ -71,6 +73,8 @@ html { touch-action: manipulation; }
   --panel: #1c1a16;
   --raised: #24211c;
   --ink: #ece7de;
+  --whisper: #f472b6;
+  --name-l: 70%;
   --muted: #b3ab9e;
   --faint: #847c70;
   --line: #34302a;

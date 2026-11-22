@@ -190,7 +190,12 @@ export default function AboutPage() {
               <strong className="text-ink">Study groups (optional).</strong> In a group you join, the other members see the
               name you choose and, unless you turn it off, your streak, reading time and chapters this week and your progress
               in the group&rsquo;s book; if you turn it on, also the chapter you&rsquo;re reading. This is encrypted with the
-              group&rsquo;s code, so only people with the code can see it. Leaving a group removes your card.
+              group&rsquo;s code, so only people with the code can see it. Leaving a group removes your card. Messages in a
+              group&rsquo;s chat are encrypted the same way before they leave your device; a whisper (/w) is encrypted so
+              only you and the person you whisper to can read it. The server keeps a group&rsquo;s newest 300 messages
+              (it shows none older than 90 days and removes them the next time someone writes), can&rsquo;t read any of
+              them, and sees only when each was sent, by which anonymous member number, and to whom a whisper goes.
+              Messages stay after you leave a group.
             </li>
             {!LIB && (
               <li>

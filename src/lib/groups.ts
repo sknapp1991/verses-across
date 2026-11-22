@@ -13,7 +13,8 @@ import { allItems } from "./study";
 import { isPrivate, PrivateModeError } from "./privacy";
 
 export type Share = { progress: boolean; reading: boolean };
-export type MyGroup = { code: string; name: string; me: string; secret: string; share: Share; joined: number };
+/** `dh`: this device's key pair for whispers in the group chat (made the first time the chat opens). */
+export type MyGroup = { code: string; name: string; me: string; secret: string; share: Share; joined: number; dh?: { pub: JsonWebKey; priv: JsonWebKey } };
 export type GroupMeta = { name: string; book?: { work: string; book: string } | null; created: number };
 export type Card = {
   name: string;
@@ -25,6 +26,8 @@ export type Card = {
   studied?: number;
   book?: { done: number; total: number } | null;
   reading?: { work: string; book: string; chapter: number } | null;
+  /** Public key for whispers in the group chat (ECDH P-256), when this member has opened the chat. */
+  pub?: JsonWebKey;
 };
 export type Member = Card & { id: string; mine: boolean };
 export type GroupView = { meta: GroupMeta | null; metaEtag: string | null; members: Member[] };
@@ -65,7 +68,7 @@ export function useGroups(): MyGroup[] {
 
 const keyCache = new Map<string, Promise<CodeKeys>>();
 /** Every group request starts here, so Private mode pauses them all (src/lib/privacy.ts). */
-const keysFor = (code: string) => {
+export const keysFor = (code: string) => {
   if (isPrivate()) return Promise.reject(new PrivateModeError("Study groups"));
   return keysAlways(code);
 };
@@ -75,11 +78,11 @@ const keysAlways = (code: string) => {
   if (!p) keyCache.set(code, (p = deriveKeys(code, "group")));
   return p;
 };
-const memberId = async (secret: string) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret)));
+export const memberId = async (secret: string) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret)));
 
 /** My card for a group, from what this device knows and what I chose to share. */
 async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
-  const card: Card = { name: g.me.slice(0, 40), at: Date.now() };
+  const card: Card = { name: g.me.slice(0, 40), at: Date.now(), ...(g.dh ? { pub: g.dh.pub } : {}) };
   if (g.share.progress) {
     const a = getActivity();
     const items = await allItems();
@@ -189,7 +192,7 @@ export async function leaveGroup(g: MyGroup) {
   saveGroups(getGroups().filter((x) => x.code !== g.code));
 }
 
-export function updateMyGroup(code: string, patch: Partial<Pick<MyGroup, "me" | "share">>) {
+export function updateMyGroup(code: string, patch: Partial<Pick<MyGroup, "me" | "share" | "dh">>) {
   saveGroups(getGroups().map((x) => (x.code === code ? { ...x, ...patch } : x)));
 }
 

@@ -4,6 +4,7 @@
  * streak, time this week and progress in the group's book. Plus the prompt shown when an invite link
  * is opened.
  */
+import { GroupChat } from "./group-chat";
 import { StreakIcon } from "./streak-icon";
 import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
@@ -12,6 +13,7 @@ import { chapterTitle, findBook, readHref, DEFAULT_VERSIONS } from "@/lib/catalo
 import {
   bookLabel,
   createGroup,
+  getGroups,
   inviteLink,
   joinGroup,
   leaveGroup,
@@ -199,7 +201,8 @@ function GroupCard({ g }: { g: MyGroup }) {
   const [view, setView] = useState<GroupView | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
+  // the card under the buttons: the invite (QR) or the chat, one at a time (hub a3b33a99)
+  const [card, setCard] = useState<null | "invite" | "chat">(null);
   const [settings, setSettings] = useState(false);
   const refresh = useCallback(
     (publishFirst = true) =>
@@ -214,6 +217,13 @@ function GroupCard({ g }: { g: MyGroup }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+  // the chat made this device's whisper keys: publish my card again (with them), from the saved group
+  const onKeysMade = useCallback(() => {
+    const saved = getGroups().find((x) => x.code === g.code);
+    if (saved) void loadGroup(saved).then(setView).catch(() => {});
+  }, [g.code]);
+  // the chat saw someone not in the list (or a whisper key it lacks): load the list again, without republishing
+  const onStale = useCallback(() => void refresh(false), [refresh]);
   const book = view?.meta?.book ?? null;
   const here = findBook(ref.work, ref.book);
 
@@ -271,9 +281,24 @@ function GroupCard({ g }: { g: MyGroup }) {
           )}
 
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => setShowInvite(!showInvite)} className={`${btn} flex-1 border border-line text-ink hover:bg-raised`}>
+            <button
+              type="button"
+              onClick={() => setCard(card === "invite" ? null : "invite")}
+              aria-pressed={card === "invite"}
+              className={`${btn} flex-1 border border-line ${card === "invite" ? "bg-accent-soft text-accent" : "text-ink hover:bg-raised"}`}
+            >
               Invite
             </button>
+            {view && view.members.length >= 2 && (
+              <button
+                type="button"
+                onClick={() => setCard(card === "chat" ? null : "chat")}
+                aria-pressed={card === "chat"}
+                className={`${btn} flex-1 border border-line ${card === "chat" ? "bg-accent-soft text-accent" : "text-ink hover:bg-raised"}`}
+              >
+                Chat
+              </button>
+            )}
             <button type="button" onClick={() => void refresh()} className={`${btn} border border-line text-ink hover:bg-raised`}>
               Refresh
             </button>
@@ -282,7 +307,8 @@ function GroupCard({ g }: { g: MyGroup }) {
             </button>
           </div>
 
-          {showInvite && <Invite g={g} />}
+          {card === "invite" && <Invite g={g} />}
+          {card === "chat" && view && view.members.length >= 2 && <GroupChat g={g} members={view.members} onKeysMade={onKeysMade} onStale={onStale} />}
 
           {settings && (
             <div className="space-y-2 rounded-lg border border-line px-3 py-2">
