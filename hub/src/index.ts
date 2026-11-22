@@ -42,6 +42,15 @@ const DEVICES = new Set(["iPhone", "Android", "computer"]);
 const SITES = new Set(["verses", "library"]);
 const PART = 10 * 1024 * 1024; // upload parts (the page sends 10 MB at a time)
 const MAX_FILE = 2 * 1024 * 1024 * 1024; // 2 GB per file
+/** Documents (hub 3e4fb130: articles sent in as PDF or Word): always downloaded, never shown inside the hub. */
+const DOC_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/markdown",
+]);
+const MAX_DOC = 100 * 1024 * 1024; // 100 MB per document
 /** Exactly these: photos and phone videos. Never SVG or HTML (they could run code on the hub's address). */
 const MEDIA_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif", "image/avif", "video/mp4", "video/quicktime", "video/webm", "video/x-m4v", "video/3gpp"]);
 
@@ -406,8 +415,10 @@ async function startUpload(env: Env, me: string, owner: boolean, b: Row) {
   const type = clip(b.type, 100) || "application/octet-stream";
   const name = clip(b.name, 200).replace(/[^\w.\- ()]+/g, "_") || "file";
   if (!/^[a-f0-9]{16}$/.test(ownerId)) return bad("Bad owner");
-  if (!Number.isFinite(size) || size <= 0 || size > MAX_FILE) return bad("That file is too big (2 GB at most)");
-  if (!MEDIA_TYPES.has(type)) return bad("Photos and videos only (JPEG, PNG, HEIC, MP4, MOV…)");
+  if (!Number.isFinite(size) || size <= 0) return bad("That file is empty");
+  if (size > MAX_FILE) return bad("That file is too big (2 GB at most)");
+  if (!MEDIA_TYPES.has(type) && !DOC_TYPES.has(type)) return bad("Photos, videos or documents only (JPEG, PNG, HEIC, MP4, MOV, PDF, Word, TXT, MD)");
+  if (DOC_TYPES.has(type) && size > MAX_DOC) return bad("That document is too big (100 MB at most)");
   if (kind === "approval" && !owner) return bad("Only the owner adds approval files", 403);
   const table = kind === "report" ? "reports" : "approvals";
   const exists = await env.DB.prepare(`SELECT id, ${kind === "report" ? "author" : "created_by"} AS who FROM ${table} WHERE id = ?`).bind(ownerId).first<{ who: string }>();
@@ -447,7 +458,8 @@ async function completeUpload(env: Env, me: string, id: string, b: Row) {
   return json({ ok: true });
 }
 
-/** Photos and videos, with Range support (iPhone Safari needs it to play and seek a video). */
+/** Photos and videos (shown), with Range support (iPhone Safari needs it to play and seek a video); documents and
+ * anything else only as a download. */
 async function serveMedia(env: Env, req: Request, id: string) {
   const row = await env.DB.prepare("SELECT key, type, name, size FROM media WHERE id = ? AND state = 'done'").bind(id).first<{ key: string; type: string; name: string; size: number }>();
   if (!row) return bad("Not found", 404);
@@ -460,7 +472,7 @@ async function serveMedia(env: Env, req: Request, id: string) {
     // Even opened on its own, a file is never a page that can run anything.
     "content-security-policy": "default-src 'none'; media-src 'self'; img-src 'self'; sandbox",
   };
-  if (!MEDIA_TYPES.has(row.type)) headers["content-disposition"] = "attachment";
+  if (!MEDIA_TYPES.has(row.type)) headers["content-disposition"] = `attachment; filename="${row.name.replace(/"/g, "")}"`;
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get("range") ?? "");
   if (range && (range[1] || range[2])) {
     const size = row.size;

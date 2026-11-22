@@ -120,11 +120,24 @@ const who = (email) => email === "claude" ? "Claude" : email === ME.email ? "You
 const status = (s) => h("span.status.s-" + s, {}, s === "sheet" ? "Waiting" : s === "go" ? "Go" : s === "no" ? "No" : s === "Done" ? "Resolved" : s === "Live" ? "Live · check it" : s);
 
 /* ---------- uploads: 10 MB parts straight into the hub's private storage, with progress ---------- */
+/** A file's type, from its name when the browser gives none (Markdown and some Word files come without one). */
+const DOC_EXT = { pdf: "application/pdf", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", txt: "text/plain", md: "text/markdown" };
+function fileType(f) {
+  const ext = ((/[.]([a-z0-9]+)$/i.exec(f.name) || [])[1] || "").toLowerCase();
+  if (DOC_EXT[ext]) return DOC_EXT[ext];
+  if (f.type) return f.type;
+  // no type from the browser: only a known video name counts as one (else the hub says which files it takes)
+  return ext === "mov" ? "video/quicktime" : ["mp4", "m4v"].includes(ext) ? "video/mp4" : ext === "webm" ? "video/webm" : "application/octet-stream";
+}
+const isDoc = (t) => Object.values(DOC_EXT).includes(t);
 async function uploadFiles(files, ownerKind, ownerId, onProgress) {
+  // a document over 100 MB is refused before anything is sent (not after the files before it went up)
+  const big = files.find((f) => isDoc(fileType(f)) && f.size > 100 * 1024 * 1024);
+  if (big) throw new Error(big.name + " is too big (documents: 100 MB at most)");
   const total = files.reduce((n, f) => n + f.size, 0) || 1;
   let sent = 0;
   for (const f of files) {
-    const start = await post("/api/uploads", { ownerKind, ownerId, name: f.name, type: f.type || (/\\.mov$/i.test(f.name) ? "video/quicktime" : "video/mp4"), size: f.size });
+    const start = await post("/api/uploads", { ownerKind, ownerId, name: f.name, type: fileType(f), size: f.size });
     const parts = [];
     for (let i = 0; i < start.parts; i++) {
       const blob = f.slice(i * start.partSize, Math.min(f.size, (i + 1) * start.partSize));
@@ -143,7 +156,7 @@ async function uploadFiles(files, ownerKind, ownerId, onProgress) {
   }
 }
 function filePicker() {
-  const input = h("input", { type: "file", accept: "image/*,video/*", multiple: true, class: "hidden" });
+  const input = h("input", { type: "file", accept: "image/*,video/*,.pdf,.doc,.docx,.txt,.md,application/pdf", multiple: true, class: "hidden" });
   const list = h("div.file");
   // Files add up (pick one, then another…), each with a preview (only on this device until sent) and a remove button.
   const previews = h("div.thumbs");
@@ -158,13 +171,15 @@ function filePicker() {
       urls.push(url);
       const name = h("div.faint", { style: "font-size:11px;overflow-wrap:anywhere" }, f.name + " (" + Math.round(f.size / 1048576 * 10) / 10 + " MB)");
       // (a photo the browser can't show, like some HEIC files, shows just its name)
-      const media = (f.type || "").startsWith("video/") || /[.](mov|mp4|m4v|webm)$/i.test(f.name)
+      const media = isDoc(fileType(f))
+        ? h("div.doc", { style: "padding:12px;border:1px solid var(--line, #ccc);border-radius:8px;font-size:28px;text-align:center" }, "📄")
+        : (f.type || "").startsWith("video/") || /[.](mov|mp4|m4v|webm)$/i.test(f.name)
         ? h("video", { src: url, muted: true, playsinline: true, preload: "metadata", controls: true })
         : h("img", { src: url, alt: f.name, onerror: (e) => e.currentTarget.remove() });
       const remove = h("button.btn.small", { type: "button", "aria-label": "Remove " + f.name, style: "width:100%;margin-top:4px", onclick: () => { chosen.splice(i, 1); draw(); } }, "✕ Remove");
       return h("div", {}, media, name, remove);
     }));
-    btn.textContent = chosen.length ? "📎 Add another photo or video" : "📎 Add photos or a screen recording";
+    btn.textContent = chosen.length ? "📎 Add another file" : "📎 Add photos, a recording or a document (PDF, Word)";
   };
   input.addEventListener("change", () => {
     // the same file picked twice counts once
@@ -172,12 +187,14 @@ function filePicker() {
     input.value = ""; // so the next pick (even the same file again after removing it) is seen
     draw();
   });
-  const btn = h("button.btn", { type: "button", onclick: () => input.click() }, "📎 Add photos or a screen recording");
+  const btn = h("button.btn", { type: "button", onclick: () => input.click() }, "📎 Add photos, a recording or a document (PDF, Word)");
   return { el: h("div", {}, btn, input, previews, list), files: () => [...chosen], clear: () => { chosen = []; draw(); } };
 }
 function mediaEl(f) {
   const src = "/api/media/" + f.id;
   if ((f.type || "").startsWith("video/")) return h("video", { src, controls: true, playsinline: true, preload: "metadata" });
+  // a document: its name, to download (the hub never opens one inside itself)
+  if (isDoc(f.type)) return h("a", { href: src, download: f.name, style: "display:flex;gap:8px;align-items:center;padding:10px;border:1px solid var(--line, #ccc);border-radius:8px;text-decoration:none;overflow-wrap:anywhere" }, h("span", { style: "font-size:24px" }, "📄"), h("span", {}, f.name + (f.size ? " (" + Math.max(0.1, Math.round(f.size / 104857.6) / 10) + " MB)" : "")));
   return h("a", { href: src, target: "_blank", rel: "noopener" }, h("img", { src, alt: f.name, loading: "lazy" }));
 }
 
@@ -567,7 +584,7 @@ async function showOne(id) {
     h("h3", {}, "Conversation"), thread, reply,
     ME.owner ? h("label", { style: "display:flex;gap:6px;align-items:center" }, asClaude, "Post as Claude") : null,
     h("div.row", { style: "margin-top:8px" }, send),
-    h("h3", {}, "Add more photos or video"), picker.el, bar, h("div", { style: "margin-top:8px" }, addFiles));
+    h("h3", {}, "Add more photos, video or documents"), picker.el, bar, h("div", { style: "margin-top:8px" }, addFiles));
   await loadThread();
 }
 
