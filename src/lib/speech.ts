@@ -1159,6 +1159,7 @@ export async function playRecording(opts: {
   }
   if (!stream) audio.src = opts.url;
   audio.playbackRate = opts.rate;
+  audio.defaultPlaybackRate = opts.rate;
   const start = opts.startVerse ? timing.verses.find((x) => x.v === opts.startVerse) ?? timing.verses.find((x) => parseInt(x.v, 10) >= parseInt(opts.startVerse!, 10)) : null;
   rec = { timing, until: opts.until, onDone: opts.onDone, raf: 0, lastVerse: null, getNext: opts.getNext, onAdvance: opts.onAdvance, title: opts.title, artist: opts.artist, base: 0, ...(stream ? { stream } : {}) };
   const a = audio;
@@ -1182,8 +1183,11 @@ export async function playRecording(opts: {
       // Keep the audio session alive: go straight into the next chapter, then tell the page.
       r.timing = next.timing;
       r.lastVerse = null;
+      // the speed being heard now, not the one playing started with (2× chosen mid-chapter stays 2×, hub 752f46f0)
+      const rate = a.playbackRate;
       a.src = next.url;
-      a.playbackRate = opts.rate;
+      a.playbackRate = rate;
+      a.defaultPlaybackRate = rate;
       const from = state.chapterKey ?? "";
       set({ chapterKey: next.chapterKey, verse: next.timing.verses[0]?.v ?? null });
       mediaSession(next.title, r.artist);
@@ -1252,7 +1256,9 @@ export function seekRecording(v: string, version?: string): boolean {
 }
 
 export function setRecordingRate(rate: number) {
-  if (audio) audio.playbackRate = rate;
+  if (!audio) return;
+  audio.playbackRate = rate;
+  audio.defaultPlaybackRate = rate; // (a new source starts at the default rate: keep it through chapter changes)
 }
 
 /**
