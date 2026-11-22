@@ -10,6 +10,7 @@ import { addGoalMet, BADGES, computeStats, earned, goalsMetCount, levelOf, markL
 import { finishedPlans, planDays, PLANS, useStartedPlans } from "@/lib/plans";
 import { findBook, scriptureShelves } from "@/lib/catalog";
 import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
+import { StreakIcon } from "./streak-icon";
 import { getItem, useStudy } from "@/lib/study";
 import type { StudyItem } from "@/lib/storage";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
@@ -93,9 +94,7 @@ export function ProgressPanel() {
 
         {/* Streak headline */}
         <div className="flex items-center gap-3 rounded-xl border border-line bg-raised px-4 py-3">
-          <span className="text-3xl" aria-hidden>
-            🔥
-          </span>
+          <StreakIcon days={stats.streak} changeable className="text-3xl" />
           <div>
             <p className="font-serif text-2xl font-semibold leading-tight text-ink">
               {stats.streak} {stats.streak === 1 ? "day" : "days"}

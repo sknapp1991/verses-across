@@ -4,6 +4,7 @@
  * streak, time this week and progress in the group's book. Plus the prompt shown when an invite link
  * is opened.
  */
+import { StreakIcon } from "./streak-icon";
 import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -245,7 +246,7 @@ function GroupCard({ g }: { g: MyGroup }) {
                   </p>
                   {m.weekMins != null ? (
                     <p className="text-xs text-muted">
-                      🔥 {m.streak ?? 0} · {m.weekMins} min this week · {m.weekChapters ?? 0} {m.weekChapters === 1 ? "chapter" : "chapters"}
+                      <StreakIcon days={m.streak ?? 0} /> {m.streak ?? 0} · {m.weekMins} min this week · {m.weekChapters ?? 0} {m.weekChapters === 1 ? "chapter" : "chapters"}
                       {book && m.book ? ` · ${bookLabel(book)} ${m.book.done}/${m.book.total}` : ""}
                     </p>
                   ) : (
