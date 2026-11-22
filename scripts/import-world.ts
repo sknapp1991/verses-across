@@ -1770,7 +1770,131 @@ async function gilgamesh() {
   report("gilgamesh", 12, total);
 }
 
+/**
+ * Legge's Sacred Books of the East, volume 3 (1879): the Shû King (Book of History), the Shih King (Book of
+ * Poetry: the religious odes Legge selected) and the Hsiâo King (Classic of Filial Piety), from Wikisource's
+ * proofread transcription. Pages were saved rendered (data/raw/sbe3html) and turned into blocks by
+ * scripts/wikisource-blocks.py (data/raw/sbe3blocks). Legge's small-print notes before a book or ode become the
+ * chapter note; his introductions to each work (and to each part and book of the Shih), the headings, footnotes
+ * and Wikisource's hidden alignment text and section menus are left out.
+ */
+async function sbe3() {
+  const { readFile, readdir } = await import("node:fs/promises");
+  type Block = { kind: "heading" | "note" | "poem" | "prose"; text: string };
+  const dir = path.join(ROOT, "data", "raw", "sbe3blocks");
+  const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
+  const load = async (f: string) => JSON.parse(await readFile(path.join(dir, f), "utf8")) as Block[];
+  const romanOf = (n: number) => {
+    const r: [number, string][] = [[10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
+    let s = "";
+    for (const [v, l] of [[50, "L"], [40, "XL"], ...r] as [number, string][]) while (n >= v) (s += l), (n -= v);
+    return s;
+  };
+  // one chapter from pages' blocks: notes → chapter note, headings left out, the rest verses (poems keep lines)
+  const chapterOf = (pages: { label?: string; blocks: Block[] }[]) => {
+    const notes: string[] = [];
+    const verses: Verse[] = [];
+    for (const p of pages) {
+      let first = true;
+      for (const b of p.blocks) {
+        if (b.kind === "heading") continue;
+        if (b.kind === "note") {
+          if (!verses.length) notes.push(b.text);
+          else verses.push({ v: String(verses.length + 1), t: b.text }); // a note between stanzas is Legge's own text
+          continue;
+        }
+        verses.push({ v: String(verses.length + 1), t: b.text, ...(first && p.label ? { n: p.label } : {}) });
+        first = false;
+      }
+    }
+    return { note: notes.join("\n\n"), verses };
+  };
+  const nums = (f: string) => [...f.matchAll(/(Part|Book|Section|Decade|Ode|Chapter)_(\d+)/g)].map((m) => Number(m[2]));
+  const byNums = (a: string, b: string) => {
+    const x = nums(a), y = nums(b);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
+    return 0;
+  };
+  let total = 0;
+
+  // The Shû: one chapter per book; a book's sections follow its own page, each labelled "§1" …
+  await resetVersion("shu-king", "legge-shu");
+  const shuFiles = files.filter((f) => /^The_Shu__Part_\d+__Book_\d+(__Section_\d+)?\.json$/.test(f)).sort(byNums);
+  const books = new Map<string, string[]>();
+  for (const f of shuFiles) {
+    const key = /^The_Shu__Part_(\d+)__Book_(\d+)/.exec(f)!.slice(1).join("/");
+    books.set(key, [...(books.get(key) ?? []), f]);
+  }
+  let k = 0;
+  for (const [key, fs] of books) {
+    const [part, book] = key.split("/").map(Number);
+    const pages = await Promise.all(fs.map(async (f) => ({ label: /Section_(\d+)/.exec(f) ? `§${/Section_(\d+)/.exec(f)![1]}` : undefined, blocks: await load(f) })));
+    // the book's title: its "Book III. The Counsels of Kâo-yâo." heading
+    const heads = pages.flatMap((p) => p.blocks).filter((b) => b.kind === "heading").map((b) => b.text);
+    // Part I has a single book, headed only "The Canon of Yâo."
+    const head = heads.find((h) => /^Book [IVXL]+\./.test(h)) ?? heads.find((h) => h !== h.toUpperCase() && !/^Section \d/.test(h)) ?? "";
+    const name = head.replace(/^Book [IVXL]+\.\s*/, "").replace(/\.$/, "");
+    const c = chapterOf(pages);
+    // Legge numbers the text of each book from "1."; anything before it is his introduction, even where
+    // Wikisource sets it in ordinary type (Part IV, Book III)
+    if (c.verses.some((v) => /^1\.\s/.test(v.t))) {
+      const lead: string[] = [];
+      while (c.verses.length && !/^\d+\.\s/.test(c.verses[0].t) && !c.verses[0].n) lead.push(c.verses.shift()!.t);
+      if (lead.length) {
+        c.note = [c.note, ...lead].filter(Boolean).join("\n\n");
+        c.verses.forEach((v, j) => (v.v = String(j + 1)));
+      }
+    }
+    await writeChapter("shu-king", "legge-shu", "shu-king", ++k, c.verses, c.note || undefined, `Part ${romanOf(part)}, Book ${romanOf(book)}${name ? `: ${name}` : ""}`);
+    total += c.verses.length;
+  }
+  report("shu-king", k, total);
+
+  // The Shih: one chapter per ode, in Legge's printed order (his Part IV: I. Shang, II. Kâu, III. Lû)
+  await resetVersion("shih-king", "legge-shih");
+  const parts: [RegExp, string][] = [
+    [/^The_Shih__Lessons_from_the_States__Book_\d+__Ode_\d+/, "Lessons from the States"],
+    [/^The_Shih__The_Minor_Odes_of_the_Kingdom__Decade_\d+__Ode_\d+/, "Minor Odes of the Kingdom"],
+    [/^The_Shih__The_Major_Odes_of_the_Kingdom__Decade_\d+__Ode_\d+/, "Major Odes of the Kingdom"],
+    [/^The_Shih__Odes_of_the_Temple_and_the_Altar__The_Sacrificial_Odes_of_Shang__Ode_\d+/, "Sacrificial Odes of Shang"],
+    [/^The_Shih__Odes_of_the_Temple_and_the_Altar__The_Sacrificial_Odes_of_Kâu__Decade_\d+__Ode_\d+/, "Sacrificial Odes of Kâu"],
+    [/^The_Shih__Odes_of_the_Temple_and_the_Altar__The_Praise_Odes_of_Lû__Ode_\d+/, "Praise Odes of Lû"],
+  ];
+  let o = 0;
+  let shih = 0;
+  for (const [re, label] of parts) {
+    for (const f of files.filter((x) => re.test(x)).sort(byNums)) {
+      const blocks = await load(f);
+      const head = blocks.find((b) => b.kind === "heading" && /^Ode \d+/i.test(b.text))?.text ?? ""; // "Ode 5." or "ODE 11, …"
+      const [bk, ode] = nums(f).slice(-2);
+      const where = /Book_\d+/.test(f) ? `Book ${romanOf(bk)}, ` : /Decade_\d+/.test(f) ? `Decade ${bk}, ` : "";
+      const name = head.replace(/^Ode \d+(, Stanzas?[^.]*)?\.\s*/i, "").replace(/\.$/, "");
+      const stanzas = /^Ode \d+, (Stanzas?[^.]*)\./i.exec(head)?.[1];
+      const c = chapterOf([{ blocks }]);
+      const only = stanzas ? `${stanzas} only, as Legge gives ${/^Stanzas/.test(stanzas) ? "them" : "it"}.` : "";
+      const note = [only, c.note].filter(Boolean).join("\n\n");
+      await writeChapter("shih-king", "legge-shih", "shih-king", ++o, c.verses, note || undefined, `${label}, ${where}Ode ${ode ?? nums(f).slice(-1)[0]}${name ? `: ${name}` : ""}`);
+      shih += c.verses.length;
+    }
+  }
+  report("shih-king", o, shih);
+
+  // The Hsiâo: eighteen chapters
+  await resetVersion("hsiao-king", "legge-hsiao");
+  let h = 0;
+  for (let n = 1; n <= 18; n++) {
+    const blocks = await load(`The_Hsiao__Chapter_${n}.json`);
+    const heads = blocks.filter((b) => b.kind === "heading").map((b) => b.text).filter((x) => !/^THE HSI/.test(x));
+    const name = heads.join(" ").replace(/^Chapter [IVXL]+\.\s*/, "").replace(/\.$/, "").trim();
+    const c = chapterOf([{ blocks }]);
+    await writeChapter("hsiao-king", "legge-hsiao", "hsiao-king", n, c.verses, c.note || undefined, name || undefined);
+    h += c.verses.length;
+  }
+  report("hsiao-king", 18, h);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  sbe3,
   gilgamesh,
   masnavi,
   jataka,

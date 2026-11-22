@@ -49,6 +49,9 @@
     { "id": "kalevala", "name": "Kalevala", "versification": "kalevala" },
     { "id": "book-of-the-dead", "name": "The Egyptian Book of the Dead", "versification": "book-of-the-dead" },
     { "id": "gilgamesh", "name": "The Epic of Gilgamesh", "versification": "gilgamesh" },
+    { "id": "shu-king", "name": "The Shu King (Book of History)", "versification": "shu-king" },
+    { "id": "shih-king", "name": "The Shih King (Book of Poetry)", "versification": "shih-king" },
+    { "id": "hsiao-king", "name": "The Hsiao King (Classic of Filial Piety)", "versification": "hsiao-king" },
     { "id": "lotus", "name": "The Lotus Sutra", "versification": "lotus" },
     { "id": "jataka", "name": "The Jataka Tales", "versification": "jataka" },
     { "id": "masnavi", "name": "The Masnavi of Rumi", "versification": "masnavi" },
@@ -1861,6 +1864,57 @@
       "sourceUrl": "https://archive.sacred-texts.com/ane/eog/index.htm",
       "licensed": false,
       "versification": "gilgamesh"
+    },
+    {
+      "id": "legge-shu",
+      "work": "shu-king",
+      "abbr": "Legge",
+      "name": "The Shû King (James Legge, SBE 3)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1879,
+      "translator": "James Legge",
+      "license": "Public Domain",
+      "licenseNote": "All fifty books in the five parts; a book's sections are labelled §1, §2…; Legge's paragraph numbers and asterisks are kept. His notes before each book are the chapter note; his introduction and footnotes are left out.",
+      "attribution": "The Shû King, Sacred Books of the East, volume 3, translated by James Legge (1879), public domain; transcription from Wikisource.",
+      "sourceUrl": "https://en.wikisource.org/wiki/Sacred_Books_of_the_East/Volume_3/The_Shu",
+      "licensed": false,
+      "versification": "shu-king"
+    },
+    {
+      "id": "legge-shih",
+      "work": "shih-king",
+      "abbr": "Legge",
+      "name": "The Shih King, religious odes (James Legge, SBE 3)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1879,
+      "translator": "James Legge",
+      "license": "Public Domain",
+      "licenseNote": "Legge's selection for the Sacred Books of the East: the odes (some only in part, as he notes) that bear on religion, in his printed order. His notes before each ode are the chapter note; his introductions to the work and to each part and book, and his footnotes, are left out.",
+      "attribution": "The Shih King (selections), Sacred Books of the East, volume 3, translated by James Legge (1879), public domain; transcription from Wikisource.",
+      "sourceUrl": "https://en.wikisource.org/wiki/Sacred_Books_of_the_East/Volume_3/The_Shih",
+      "licensed": false,
+      "versification": "shih-king"
+    },
+    {
+      "id": "legge-hsiao",
+      "work": "hsiao-king",
+      "abbr": "Legge",
+      "name": "The Hsiâo King (James Legge, SBE 3)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1879,
+      "translator": "James Legge",
+      "license": "Public Domain",
+      "licenseNote": "The eighteen chapters; Legge's introduction and footnotes are left out.",
+      "attribution": "The Hsiâo King, Sacred Books of the East, volume 3, translated by James Legge (1879), public domain; transcription from Wikisource.",
+      "sourceUrl": "https://en.wikisource.org/wiki/Sacred_Books_of_the_East/Volume_3/The_Hsiao",
+      "licensed": false,
+      "versification": "hsiao-king"
     }
   ],
   "religions": [
@@ -2544,7 +2598,16 @@
           "id": "five-classics",
           "name": "The Five Classics",
           "items": [
-            { "id": "i-ching", "name": "I Ching (Book of Changes)", "work": "i-ching", "chapters": 64, "chapterName": "I Ching, Hexagram" }
+            { "id": "i-ching", "name": "I Ching (Book of Changes)", "work": "i-ching", "chapters": 64, "chapterName": "I Ching, Hexagram" },
+            { "id": "shu-king", "name": "Shu King (Book of History)", "work": "shu-king", "chapters": 50, "chapterName": "Shu King" },
+            { "id": "shih-king", "name": "Shih King (Book of Poetry), religious odes", "work": "shih-king", "chapters": 102, "chapterName": "Shih King" }
+          ]
+        },
+        {
+          "id": "other-classics",
+          "name": "Other Classics",
+          "items": [
+            { "id": "hsiao-king", "name": "Classic of Filial Piety (Hsiao King)", "work": "hsiao-king", "chapters": 18, "chapterName": "Hsiao King" }
           ]
         }
       ]

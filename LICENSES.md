@@ -351,6 +351,18 @@ square brackets for restored words and his notes on the gaps; the first verse of
 it ("col. II"), and his small centred sub-headings open the passage they head. Left out: his preface,
 addenda, footnotes, the page and margin line numbers, the note marks and the printer's imprint.
 
+## Legge's Shu King, Shih King and Hsiao King (Confucianism, added Nov 22 2026, `scripts/import-world.ts sbe3`)
+
+James Legge, The Sacred Books of China, part I (Sacred Books of the East, volume 3, 1879; public domain), from
+Wikisource's proofread transcription (pages saved rendered, then turned into blocks by
+`scripts/wikisource-blocks.py`). The Shû King (Book of History): all fifty books of the five parts, a book's
+sections labelled §1, §2…; the Shih King (Book of Poetry): the 102 odes Legge selected for their bearing on
+religion (some only in part, as he notes), in his printed order; the Hsiâo King (Classic of Filial Piety): its
+eighteen chapters. Verse = paragraph or stanza (stanzas keep their lines; Legge's own paragraph numbers and
+asterisks kept). Legge's notes before a book or ode are the chapter note. Left out: his introductions to each
+work and to each part and book of the Shih, headings, page numbers, footnotes, and Wikisource's hidden
+alignment text and section menus.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
