@@ -44,6 +44,10 @@
     { "id": "iliad", "name": "The Iliad", "versification": "iliad" },
     { "id": "odyssey", "name": "The Odyssey", "versification": "odyssey" },
     { "id": "hesiod", "name": "Hesiod and the Homeric Hymns", "versification": "hesiod" },
+    { "id": "edda", "name": "Poetic Edda", "versification": "edda" },
+    { "id": "prose-edda", "name": "Prose Edda", "versification": "prose-edda" },
+    { "id": "kalevala", "name": "Kalevala", "versification": "kalevala" },
+    { "id": "book-of-the-dead", "name": "The Egyptian Book of the Dead", "versification": "book-of-the-dead" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -1717,6 +1721,74 @@
       "sourceUrl": "https://en.wikisource.org/wiki/Index:Nihongi_by_Aston.djvu",
       "licensed": false,
       "versification": "nihongi"
+    },
+    {
+      "id": "bellows",
+      "work": "edda",
+      "abbr": "Bellows",
+      "name": "The Poetic Edda (Henry Adams Bellows)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1923,
+      "translator": "Henry Adams Bellows",
+      "license": "Public Domain",
+      "licenseNote": "Bellows' introductions and notes are left out; the manuscript's prose passages are kept, and a row of dots (lines lost from the manuscript) is shown as ….",
+      "attribution": "The Poetic Edda, translated by Henry Adams Bellows (1923), public domain; Project Gutenberg #73533.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/73533",
+      "licensed": false,
+      "versification": "edda"
+    },
+    {
+      "id": "anderson",
+      "work": "prose-edda",
+      "abbr": "Anderson",
+      "name": "The Prose Edda (Rasmus B. Anderson)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1880,
+      "translator": "Rasmus B. Anderson",
+      "license": "Public Domain",
+      "licenseNote": "Snorri Sturluson's Edda as The Younger Edda: his Foreword, the Fooling of Gylfe and Brage's Talk (each with its Afterword), and the stories from the Poetical Diction. Anderson's introduction, footnotes, notes and vocabulary are left out.",
+      "attribution": "The Younger Edda (Prose Edda) by Snorri Sturluson, translated by Rasmus B. Anderson (1880), public domain; Project Gutenberg #18947.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/18947",
+      "licensed": false,
+      "versification": "prose-edda"
+    },
+    {
+      "id": "kirby",
+      "work": "kalevala",
+      "abbr": "Kirby",
+      "name": "Kalevala, the Land of Heroes (W. F. Kirby)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1907,
+      "translator": "W. F. Kirby",
+      "license": "Public Domain",
+      "licenseNote": "Each verse is a stanza, labelled with Kirby's line numbers; his summary of each runo is the chapter note, and his notes are left out. The umlauts the volume 1 transcription dropped are restored in names (Väinämöinen).",
+      "attribution": "Kalevala, the Land of Heroes, translated by W. F. Kirby (1907), public domain; Project Gutenberg #25953 and #33089.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/25953",
+      "licensed": false,
+      "versification": "kalevala"
+    },
+    {
+      "id": "renouf",
+      "work": "book-of-the-dead",
+      "abbr": "Renouf",
+      "name": "The Egyptian Book of the Dead (P. Le Page Renouf and É. Naville)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1904,
+      "translator": "P. Le Page Renouf, completed by É. Naville",
+      "license": "Public Domain",
+      "licenseNote": "Chapters keep Naville's standard numbers; a number with no text of its own (a repeat, a picture, chapters translated together) has a one-line note saying where to look, and three chapters known only from a description keep the editors' description. Renouf's and Naville's introductions, notes, plates and note marks are left out.",
+      "attribution": "The Egyptian Book of the Dead, translated by P. Le Page Renouf, completed by É. Naville (1904), public domain; Project Gutenberg #69566.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/69566",
+      "licensed": false,
+      "versification": "book-of-the-dead"
     }
   ],
   "religions": [
@@ -2535,6 +2607,43 @@
           "items": [
             { "id": "metamorphoses", "name": "Metamorphoses (Books I–VII)", "work": "metamorphoses", "chapters": 7, "chapterName": "Metamorphoses" },
             { "id": "metamorphoses-2", "name": "Metamorphoses (Books VIII–XV)", "work": "metamorphoses", "chapters": 8, "chapterName": "Metamorphoses II" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "european",
+      "name": "European Mythology",
+      "collections": [
+        {
+          "id": "norse",
+          "name": "Norse",
+          "items": [
+            { "id": "poetic-edda", "name": "The Poetic Edda", "work": "edda", "chapters": 35, "chapterName": "Poem" },
+            { "id": "prologue", "name": "Prose Edda: Foreword", "work": "prose-edda", "chapters": 1, "chapterName": "Foreword" },
+            { "id": "gylfaginning", "name": "Prose Edda: The Fooling of Gylfe", "work": "prose-edda", "chapters": 18, "chapterName": "Gylfaginning" },
+            { "id": "bragaraedur", "name": "Prose Edda: Brage's Talk", "work": "prose-edda", "chapters": 5, "chapterName": "Brage's Talk" },
+            { "id": "skaldskaparmal", "name": "Prose Edda: The Poetical Diction", "work": "prose-edda", "chapters": 10, "chapterName": "Poetical Diction" }
+          ]
+        },
+        {
+          "id": "finnish",
+          "name": "Finnish",
+          "items": [
+            { "id": "kalevala", "name": "The Kalevala", "work": "kalevala", "chapters": 50, "chapterName": "Runo" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ancient-near-east",
+      "name": "Ancient Egypt & Near East",
+      "collections": [
+        {
+          "id": "egypt",
+          "name": "Egypt",
+          "items": [
+            { "id": "book-of-the-dead", "name": "The Book of the Dead", "work": "book-of-the-dead", "chapters": 186, "chapterName": "Chapter" }
           ]
         }
       ]

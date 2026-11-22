@@ -15,7 +15,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function cached(dir: string, name: string, url: string): Promise<string> {
   const file = path.join(ROOT, "data", "raw", dir, name);
   if (await exists(file)) return readFile(file, "utf8");
-  const res = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 VersesAcross-import" } });
+  let res = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 VersesAcross-import" } });
+  // gutenberg.org itself is sometimes down (503 for days in Nov 2026); its official mirror has the same files.
+  if (!res.ok && url.startsWith("https://www.gutenberg.org/cache/")) {
+    res = await fetch(url.replace("https://www.gutenberg.org/", "https://gutenberg.pglaf.org/"), { headers: { "user-agent": "Mozilla/5.0 VersesAcross-import" } });
+  }
   if (!res.ok) throw new Error(`download ${url}: ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   // Old sacred-texts pages are Windows-1252; everything else here is UTF-8.

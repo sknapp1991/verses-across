@@ -439,7 +439,7 @@ async function paine() {
 const titleCase = (s: string) =>
   s
     .toLowerCase()
-    .replace(/(^|[\s(-])([a-z])/g, (_, a: string, b: string) => a + b.toUpperCase())
+    .replace(/(^|[\s(-])(\p{Ll})/gu, (_, a: string, b: string) => a + b.toUpperCase())
     .replace(/(?<=\S\s)(The|And|Of|A|An|In|To|On|At|By|With|From|For|As|Upon|Or|Is)\b/g, (w) => w.toLowerCase());
 
 /** Kojiki — Basil Hall Chamberlain (1882; 1919 reprint), sacred-texts kj.txt.gz. 180 sections. */
@@ -884,7 +884,534 @@ async function quranSpanish() {
   report("quran es", bySura.size, total);
 }
 
+/**
+ * The Poetic Edda — Henry Adams Bellows (1923), Gutenberg #73533. One chapter per poem (Svipdagsmol keeps
+ * its two parts together, as Bellows numbers them straight through; a poem whose numbering restarted at 1
+ * would get its own chapter).
+ * Verse = Bellows' stanza number; his half-line bars become a wide space and each line stays a line.
+ * The manuscript's prose passages are kept, numbered after the stanza they follow ("12a"; before stanza
+ * 1: "0", "0a"). Bellows' introductions and his NOTES at the end of each poem are left out.
+ */
+async function edda() {
+  const txt = gutenbergBody(await cached("edda", "pg73533.txt", GUT(73533)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "VOLUSPO");
+  const end = lines.findIndex((l, i) => i > start && /^\s*(PRONOUNCING INDEX|INDEX)\s*$/.test(l));
+  const body = lines.slice(start, end > 0 ? end : undefined);
+  type Poem = { title: string; sub: string; verses: Verse[] };
+  const poems: Poem[] = [];
+  const caps = (l: string) => /^[A-ZÆØÖÞÐ][A-ZÆØÖÞÐ ,.'’-]{3,}$/.test(l.trim());
+  let mode: "skip" | "poem" | "notes" = "skip";
+  let cur: Poem | null = null;
+  let last = 0; // last stanza number
+  let suffix = 0; // prose passages after it
+  let blank = 0;
+  let para: string[] = [];
+  let titleAt = -10; // line of the last poem title (its English subtitle follows within a few lines)
+  let speaker = ""; // "Groa spake:" goes on the first line of the next stanza
+  // A row of dots marks lines lost from the manuscript: kept as one "…" line. Asterisk rows are dividers.
+  const verseLine = (x: string) => (/^[.\s|]+$/.test(x) ? "…" : x.replace(/\s*\|\s*/g, " ").trim());
+  const flushProse = () => {
+    const t = unwrap(para.join(" "));
+    para = [];
+    if (!cur || !t || /^[.\s*]+$/.test(t) || /^\([IVXL]+\)$/.test(t)) return;
+    if (t.length < 80 && /:$/.test(t)) {
+      speaker = speaker ? `${speaker} ${t}` : t;
+      return;
+    }
+    cur.verses.push({ v: `${last}${suffix ? String.fromCharCode(96 + suffix) : ""}`, t });
+    suffix++;
+  };
+  for (let i = 0; i < body.length; i++) {
+    const raw = body[i];
+    const l = raw.trim();
+    if (!l) {
+      blank++;
+      if (mode === "poem") flushProse();
+      // Four blank lines end Bellows' introductory note; the poem follows.
+      if (blank >= 4 && mode === "skip" && cur) mode = "poem";
+      continue;
+    }
+    const wasBlank = blank;
+    blank = 0;
+    // A poem title: capitals, followed within a few lines by INTRODUCTORY NOTE.
+    if (caps(l) && body.slice(i + 1, i + 7).some((x) => x.trim() === "INTRODUCTORY NOTE")) {
+      if (mode === "poem") flushProse();
+      if (cur && !cur.verses.length && i - titleAt <= 4) {
+        // The English name under the Norse one ("VOLUSPO" / "THE WISE-WOMAN'S PROPHECY").
+        cur.sub = cur.sub || l;
+        continue;
+      }
+      titleAt = i;
+      speaker = "";
+      cur = { title: l, sub: "", verses: [] };
+      poems.push(cur);
+      mode = "skip";
+      last = 0;
+      suffix = 0;
+      continue;
+    }
+    if (l === "NOTES" || l === "NOTE") {
+      flushProse();
+      mode = "notes";
+      continue;
+    }
+    if (mode === "notes" || mode === "skip") {
+      // A second poem after the notes of the first (the Lay of Fjolsvith) — its title has no note of its own.
+      if (mode === "notes" && caps(l) && wasBlank >= 2 && /^THE (LAY|BALLAD|POEM|SONG)/.test(l)) {
+        cur = { title: l, sub: "", verses: [] };
+        poems.push(cur);
+        mode = "poem";
+        last = 0;
+        suffix = 0;
+      }
+      continue;
+    }
+    // In a poem: a stanza starts "12.  text | text".
+    const m = /^(\d+)\.\s+(.*)$/.exec(raw);
+    if (m && Number(m[1]) > last - 5) {
+      flushProse();
+      const n = Number(m[1]);
+      if (n < last && cur && cur.verses.length) {
+        // Numbering starts again: a new poem without its own heading line (or with one we skipped).
+        cur = { title: `${cur.title} (continued)`, sub: "", verses: [] };
+        poems.push(cur);
+        suffix = 0;
+      }
+      const st = [m[2]];
+      while (i + 1 < body.length && body[i + 1].trim() && !/^\d+\.\s/.test(body[i + 1])) st.push(body[++i].trim());
+      const t = st
+        .filter((x) => !/^[\s*]+$/.test(x))
+        .map(verseLine)
+        .join("\n");
+      last = n;
+      suffix = 1;
+      cur!.verses.push({ v: String(n), t: speaker ? `${speaker}\n${t}` : t });
+      speaker = "";
+      continue;
+    }
+    // Indented verse lines with no number continue the last stanza, often after a speaker line
+    // (stanza 17 of Svipdagsmol: two lines, "Svipdag spake:", two more lines).
+    if (/^\s{4,}\S/.test(raw) || raw.includes("|")) {
+      flushProse();
+      const st = [l];
+      while (i + 1 < body.length && body[i + 1].trim() && !/^\d+\.\s/.test(body[i + 1])) st.push(body[++i].trim());
+      const t = st
+        .filter((x) => !/^[\s*]+$/.test(x))
+        .map(verseLine)
+        .join("\n");
+      if (!t) continue;
+      const prev = cur?.verses[cur.verses.length - 1];
+      if (prev && prev.v === String(last)) prev.t += `\n${speaker ? `${speaker}\n` : ""}${t}`;
+      else cur?.verses.push({ v: `${last}${suffix ? String.fromCharCode(96 + suffix++) : ""}`, t: speaker ? `${speaker}\n${t}` : t });
+      speaker = "";
+      continue;
+    }
+    // A capitals subheading inside a poem ("OF HJORVARTH AND SIGRLIN") is the editor's, not the text's.
+    if (caps(l)) continue;
+    para.push(l);
+  }
+  await resetVersion("edda", "bellows");
+  let total = 0;
+  const kept = poems.filter((p) => p.verses.length);
+  for (const [k, p] of kept.entries()) {
+    // Bellows' English title, then the Norse name: "The Ballad of the High One (Hovamol)".
+    // "HELGAKVITHA HUNDINGSBANA II" → "Helgakvitha Hundingsbana II"; Norse small words stay small ("Brot af …").
+    const norse = p.title
+      .replace(/\b([A-ZÆØÖÞÐ])([A-ZÆØÖÞÐ’']*)/g, (w: string, a: string, b: string) => (/^[IVX]+$/.test(w) ? w : a + b.toLowerCase()))
+      .replace(/(?<=\S )(Af|En|Ok|At)\b/g, (w) => w.toLowerCase())
+      .replace(/(?<=\ben )(\p{Lu}\S*)/gu, (w) => w.toLowerCase());
+    const title = p.sub ? `${titleCase(p.sub)} (${norse})` : norse.replace(/^The\b/, "The");
+    // Any run of spaced dots (lost words, also mid-line: "“.  .  .  .") becomes "…"; repeated "…" lines become one.
+    for (const v of p.verses) {
+      v.t = v.t
+        .split("\n")
+        .map((x) => x.replace(/(?:\.\s+){2,}\.?/g, "… ").replace(/(…\s*)+/g, "… ").replace(/\s+$/, "").replace(/…\s+(?=[”’])/g, "…"))
+        .filter((x, j, a) => !(j > 0 && /^[“”‘’\s]*…$/.test(x) && /^[“”‘’\s]*…$/.test(a[j - 1])))
+        .join("\n");
+    }
+    await writeChapter("edda", "bellows", "poetic-edda", k + 1, p.verses, undefined, title);
+    total += p.verses.length;
+  }
+  report("edda", kept.length, total);
+}
+
+/**
+ * The Prose Edda — Snorri Sturluson, tr. Rasmus B. Anderson (The Younger Edda, 1880), Gutenberg #18947.
+ * Four books: Snorri's Foreword (the Prologue), the Fooling of Gylfe (Gylfaginning, 17 chapters and its
+ * Afterword), Brage's Talk (Bragaraedur, 4 and its Afterword) and the stories from the Poetical Diction
+ * (Skaldskaparmal, 9). Verse = paragraph, with the skaldic verses it quotes kept as lines. Anderson's
+ * introduction, footnotes, notes, vocabulary and index are left out.
+ */
+async function proseEdda() {
+  const txt = gutenbergBody(await cached("edda", "pg18947.txt", GUT(18947)));
+  const lines = txt.split("\n");
+  // The text proper starts at Snorri's Foreword (after Anderson's contents and introduction).
+  const firstGylfe = lines.findIndex((l) => l.trim() === "THE FOOLING OF GYLFE.");
+  const foreword = lines.findIndex((l, i) => i > firstGylfe && l.trim() === "FOREWORD.");
+  const notesAt = lines.findIndex((l, i) => i > foreword && l.trim() === "NOTES.");
+  const body = lines.slice(foreword, notesAt);
+  type Ch = { book: string; title: string; paras: string[] };
+  const chapters: Ch[] = [];
+  let book = "prologue";
+  let cur: Ch | null = null;
+  let block: string[] = [];
+  const flush = () => {
+    if (!cur || !block.length) return (block = []);
+    // Prose lines are unwrapped; indented verse lines stay lines.
+    const out: string[] = [];
+    for (const l of block) {
+      if (/^\s{2,}\S/.test(l)) out.push(`\n${l.trim()}`);
+      else out.push(out.length && !out[out.length - 1].startsWith("\n") ? ` ${l.trim()}` : (out.length ? `\n${l.trim()}` : l.trim()));
+    }
+    const t = out
+      .join("")
+      .replace(/\[\d+\]/g, "")
+      .replace(/^\d+\.\s+/, "")
+      .replace(/_/g, "") // italics marks
+      .replace(/[ \t]+/g, " ")
+      .replace(/ ?\n ?/g, "\n")
+      .trim();
+    block = [];
+    if (t && !/^\[Footnote/.test(t)) cur.paras.push(t);
+  };
+  const caps = (l: string) => /^[A-ZÆØÖ][A-ZÆØÖ .,'’()-]{3,}$/.test(l);
+  for (let i = 0; i < body.length; i++) {
+    const raw = body[i].replace(/\r$/, "").replace(/\[\d+\]/g, "");
+    const l = raw.trim();
+    // Footnotes are indented "[Footnote n: …]" blocks, possibly several lines long.
+    if (/^\[Footnote/.test(l)) {
+      flush();
+      while (i < body.length && !body[i].includes("]")) i++;
+      continue;
+    }
+    if (!l) {
+      flush();
+      continue;
+    }
+    if (l === "FOREWORD.") {
+      cur = { book, title: "Foreword", paras: [] };
+      chapters.push(cur);
+      continue;
+    }
+    if (l === "THE FOOLING OF GYLFE.") {
+      flush();
+      (book = "gylfaginning"), (cur = null);
+      continue;
+    }
+    // Snorri's afterword to a part ("AFTERWORD" / "TO THE FOOLING OF GYLFE."): the last chapter of that part.
+    if (l === "AFTERWORD") {
+      flush();
+      cur = { book, title: "Afterword", paras: [] };
+      chapters.push(cur);
+      while (i + 1 < body.length && !/^TO /.test(body[i + 1].trim()) && !body[i + 1].trim()) i++;
+      if (/^TO /.test(body[i + 1]?.trim() ?? "")) i++;
+      continue;
+    }
+    if (l === "BRAGE’S TALK.") {
+      flush();
+      (book = "bragaraedur"), (cur = null);
+      continue;
+    }
+    if (l === "EXTRACTS FROM") {
+      flush();
+      (book = "skaldskaparmal"), (cur = null);
+      i += 2; // "THE POETICAL DICTION."
+      continue;
+    }
+    if (/^CHAPTER [IVXL]+\.$/.test(l)) {
+      flush();
+      // The chapter's own title follows on the next non-empty line.
+      let j = i + 1;
+      while (j < body.length && !body[j].trim()) j++;
+      const head = body[j].trim().replace(/\[\d+\]/g, "");
+      const title = caps(head) ? head.replace(/\.$/, "") : "";
+      cur = { book, title, paras: [] };
+      chapters.push(cur);
+      if (title) i = j;
+      continue;
+    }
+    if (book === "skaldskaparmal" && caps(l)) {
+      flush();
+      cur = { book, title: l.replace(/\.$/, ""), paras: [] };
+      chapters.push(cur);
+      continue;
+    }
+    if (caps(l) && cur && !cur.paras.length && !block.length) {
+      // A second title line (a chapter with two headings, e.g. "THE FIRST WORKS OF THE ASAS. THE GOLDEN AGE.").
+      cur.title = cur.title ? `${cur.title}. ${l.replace(/\.$/, "")}` : l.replace(/\.$/, "");
+      continue;
+    }
+    block.push(raw);
+  }
+  flush();
+  await resetVersion("prose-edda", "anderson");
+  let total = 0;
+  const n: Record<string, number> = {};
+  for (const c of chapters) {
+    if (!c.paras.length) continue;
+    n[c.book] = (n[c.book] ?? 0) + 1;
+    const verses = c.paras.map((t, k) => ({ v: String(k + 1), t }));
+    // "THE CREATION--(CONTINUED.)" → "The Creation (continued)"; "…ASAS. THE GOLDEN AGE" keeps its capital.
+    const cont = /--\(CONTINUED\.?\)/.test(c.title);
+    const title = c.title
+      ? titleCase(c.title.replace(/--\(CONTINUED\.?\)/, "")).replace(/\. ([a-z])/g, (_, x: string) => `. ${x.toUpperCase()}`) + (cont ? " (continued)" : "")
+      : undefined;
+    await writeChapter("prose-edda", "anderson", c.book, n[c.book], verses, undefined, title);
+    total += verses.length;
+  }
+  report("prose-edda", chapters.length, total);
+  console.log(n);
+}
+
+/**
+ * The Kalevala — W. F. Kirby (1907), Gutenberg #25953 (Runos I–XXV) and #33089 (XXVI–L). One chapter
+ * per runo; verse = stanza (a block between blank lines), labelled with Kirby's own line numbers
+ * ("11–36") so his notes and other citations still find it. His "Argument" (a summary with line
+ * numbers) becomes the chapter note; his notes at the end of each volume are left out.
+ */
+async function kalevala() {
+  const runos: { n: number; title: string; argument: string; stanzas: { from: number; to: number; t: string }[] }[] = [];
+  for (const id of [25953, 33089]) {
+    let txt = gutenbergBody(await cached("kalevala", `pg${id}.txt`, GUT(id)));
+    // Volume 1's transcription dropped Kirby's umlauts; volume 2 keeps them. Restore the names that differ,
+    // so both halves spell (and search) the same: Vainamoinen 281×, Vainola, Vaino, Paivatar, Syojatar.
+    if (id === 25953) {
+      const fix: Record<string, string> = { Vainamoinen: "Väinämöinen", Vainola: "Väinölä", Vaino: "Väinö", Paivatar: "Päivätär", Syojatar: "Syöjätär" };
+      txt = txt.replace(/\b(Vainamoinen|Vainola|Vaino|Paivatar|Syojatar)\b/g, (w) => fix[w]);
+    }
+    const lines = txt.split("\n");
+    let cur: (typeof runos)[number] | null = null;
+    let lineNo = 0;
+    let block: string[] = [];
+    let blockFrom = 0;
+    let inArg = false;
+    let arg: string[] = [];
+    const flush = () => {
+      if (cur && block.length) cur.stanzas.push({ from: blockFrom, to: lineNo, t: block.join("\n") });
+      block = [];
+    };
+    for (const raw of lines) {
+      const head = /^RUNO ([IVXL]+)\.--(.+)$/.exec(raw.trim());
+      if (head) {
+        flush();
+        cur = { n: roman(head[1]), title: head[2].trim(), argument: "", stanzas: [] };
+        runos.push(cur);
+        lineNo = 0;
+        inArg = false;
+        arg = [];
+        continue;
+      }
+      // The notes at the back start with a bare "RUNO I" heading (no title); stop there.
+      if (/^RUNO [IVXL]+$/.test(raw.trim()) || /^\s*NOTES\s*$/.test(raw)) {
+        flush();
+        if (cur && /^RUNO [IVXL]+$/.test(raw.trim())) cur = null;
+        if (cur) cur = null;
+        continue;
+      }
+      if (!cur) continue;
+      if (raw.trim() === "_Argument_") {
+        inArg = true;
+        continue;
+      }
+      if (inArg) {
+        // The argument is unindented prose; the poem starts with an indented line.
+        if (/^\s{2,}\S/.test(raw)) {
+          inArg = false;
+          cur.argument = unwrap(arg.join(" "));
+        } else {
+          if (raw.trim()) arg.push(raw.trim());
+          continue;
+        }
+      }
+      if (!raw.trim()) {
+        flush();
+        continue;
+      }
+      if (!/^\s{2,}\S/.test(raw)) continue; // stray unindented lines (end-of-volume matter)
+      if (/^[\s*]+$/.test(raw)) {
+        flush(); // a row of asterisks: a divider, not a line of the poem
+        continue;
+      }
+      lineNo++;
+      // Kirby prints every tenth line number at the right margin. His numbers follow the Finnish lines, which
+      // his English does not always match one for one, so his number wins wherever he prints one.
+      const mark = /\s{3,}(\d+)\s*$/.exec(raw);
+      if (mark) lineNo = Number(mark[1]);
+      if (!block.length) blockFrom = lineNo;
+      block.push(raw.replace(/\s{3,}\d+\s*$/, "").trim());
+    }
+    flush();
+  }
+  await resetVersion("kalevala", "kirby");
+  let total = 0;
+  for (const r of runos) {
+    const verses = r.stanzas.map((s, k) => ({ v: String(k + 1), t: s.t, n: s.from === s.to ? String(s.from) : `${s.from}–${s.to}` }));
+    // Volume 1's headings lost their umlauts as lower-case letters ("VaINaMoINEN"); volume 2 has them.
+    const title = titleCase(r.title.replace(/(?<=[A-Z])[ao]|[ao](?=[A-Z])/g, (m) => (m === "a" ? "Ä" : "Ö")));
+    await writeChapter("kalevala", "kirby", "kalevala", r.n, verses, r.argument ? `Kirby's summary: ${r.argument}` : undefined, title);
+    total += verses.length;
+  }
+  report("kalevala", runos.length, total);
+}
+
+/**
+ * The Egyptian Book of the Dead — P. Le Page Renouf, completed by É. Naville (1904), Gutenberg #69566.
+ * Chapters keep Naville's numbers (the ones everyone cites: chapter 125 is the Judgment). Verse =
+ * paragraph; Renouf's note marks "(5.)", the plates and his NOTES after each chapter are left out.
+ * Variant chapters (53A and 53B) share their chapter, the second starting with its own label; joint
+ * headings ("Chapters 141 to 143") go under the first number.
+ */
+async function bookOfTheDead() {
+  const txt = gutenbergBody(await cached("book-of-the-dead", "pg69566.txt", GUT(69566)));
+  const lines = txt.split("\n");
+  const first = lines.findIndex((l) => /^\s{10,}CHAPTER I\.\s*$/.test(l));
+  const chapters = new Map<number, { title: string; verses: string[] }>();
+  type Ch = { n: number; label: string; paras: string[]; heading: string };
+  let cur: Ch | null = null;
+  let para: string[] = [];
+  // "text": the translation; "skip": Renouf's notes; "plate": a plate inside a chapter, after which the text resumes.
+  let mode: "text" | "skip" | "plate" = "skip";
+  let beforePlate: "text" | "skip" = "skip";
+  let illus = false;
+  const done: Ch[] = [];
+  const clean = (s: string) =>
+    s
+      .replace(/\s*\(\d+\.\)\s*/g, " ")
+      .replace(/\[\d+\]/g, "")
+      .replace(/_/g, "")
+      .replace(/=([^=\n]+)=/g, "$1") // Gutenberg's bold marks
+      .replace(/\[\s*\]/g, "") // an empty bracket left by a removed hieroglyph
+      .replace(/\s+\]/g, "]")
+      .replace(/\s+([,.;:])/g, "$1")
+      .trim();
+  const flush = () => {
+    const lines = para;
+    para = [];
+    if (!cur || mode !== "text" || !lines.length) return;
+    // A list (the names in chapters 141–143) keeps its lines; prose is unwrapped.
+    const list = lines.length >= 6 && lines.filter((x) => /,\s*$/.test(x.trim().replace(/\(\d+\.\)$/, ""))).length >= lines.length * 0.7;
+    const t = list ? lines.map((x) => clean(x)).join("\n") : clean(unwrap(lines.join(" ")));
+    if (!t || /^[-=─\s]+$/.test(t)) return; // a ---- divider is not text
+    // The italic line right under the heading is the chapter's own title ("Chapter whereby …").
+    if (!cur.paras.length && /^_/.test(lines[0].trim()) && !cur.heading) cur.heading = t;
+    cur.paras.push(t);
+  };
+  for (let i = first; i < lines.length; i++) {
+    const raw = lines[i];
+    const l = raw.trim();
+    if (illus) {
+      if (l === "]" || l.endsWith("]")) illus = false;
+      continue;
+    }
+    if (l.startsWith("[Illustration")) {
+      flush();
+      illus = !l.endsWith("]");
+      continue;
+    }
+    // A plate sits between two full-width rules (captions, "BOOK OF THE DEAD. CHAPTER XVII.", illustrations):
+    // skip to the closing rule, and the chapter's text (or its notes) simply goes on after it.
+    if (/^-{60,}$/.test(raw)) {
+      flush();
+      const close = lines.findIndex((x, j) => j > i && /^-{60,}$/.test(x));
+      if (close > 0 && close - i < 45 && lines.slice(i + 1, close).some((x) => /^PLATE [IVXLC]+\W*$/.test(x.trim()) || x.trim().startsWith("[Illustration"))) i = close - 1; // the closing rule may open the next plate
+      continue;
+    }
+    if (/^PLATE [IVXLC]+\W*$/.test(l)) {
+      flush();
+      if (mode !== "plate") beforePlate = mode;
+      mode = "plate";
+      continue;
+    }
+    const head = /^\s{10,}CHAPTERS? ([IVXLC]+)([AB])?(?: _bis_)?\.?(.*)$/.exec(raw);
+    // A plate's caption repeats a chapter heading just under "PLATE IV." / "BOOK OF THE DEAD.".
+    if (head && lines.slice(Math.max(0, i - 7), i).some((x) => /^\s*PLATE [IVXLC]+\W*$/.test(x))) continue;
+    if (head && !/Note/.test(head[3])) {
+      flush();
+      if (cur) done.push(cur);
+      cur = { n: roman(head[1]), label: `${head[1]}${head[2] ?? ""}${/_bis_/.test(raw) ? " bis" : ""}${head[3].replace(/\.$/, "")}`.trim(), paras: [], heading: "" };
+      mode = "text";
+      continue;
+    }
+    // "NOTES.", "NOTE.", "NOTE.," and "NOTES TO CHAPTERS LXIX AND LXX." (that one with a stray "ce " before it).
+    // Naville's introduction to the chapters he translated (after 139) is his, not the text.
+    if (/^\s*(\S{1,3}\s+)?NOTES?( TO CHAPTERS? [IVXLC ,AND]+)?[.,]*\s*$/.test(raw) || /^Footnote \d+:$/.test(l) || /^(BY EDOUARD NAVILLE|INTRODUCTORY NOTE\.)/.test(l)) {
+      flush();
+      mode = "skip";
+      continue;
+    }
+    if (/^BOOK OF THE DEAD\.?$/.test(l) || /^-{6,}$/.test(l)) {
+      flush();
+      continue;
+    }
+    if (!l) {
+      flush();
+      continue;
+    }
+    // After a plate, the chapter's text (or its notes) goes on.
+    if (mode === "plate") mode = beforePlate;
+    if (mode === "text") para.push(raw);
+  }
+  flush();
+  if (cur) done.push(cur);
+  // Renouf's one-line cross-references ("is identical with Chapter IX.") become the same kind of note as the others.
+  const xref: Record<number, string> = {};
+  for (const c of done) {
+    const only = c.paras.filter((p) => !/^This completes Sir P\. Le Page Renouf/.test(p));
+    const m = only.length === 1 ? /^(?:is |are )?(?:only )?(identical with|a repetition of)\s+chapters?\s+([IVXLC]+)\.?$/i.exec(only[0]) : null;
+    if (m) xref[c.n] = `Chapter ${c.n} is ${m[1].toLowerCase()} chapter ${roman(m[2])} (Renouf): see chapter ${roman(m[2])}.`;
+  }
+  for (const c of done) {
+    // Naville's note where Renouf's own translation stops (after chapter 139) is not part of the text.
+    c.paras = c.paras.filter((p) => !/^This completes Sir P\. Le Page Renouf/.test(p));
+    if (!c.paras.length || xref[c.n]) continue; // a plate caption, a heading over notes only, or a cross-reference
+    const ch = chapters.get(c.n);
+    // The chapter's own italic heading names it; else a rubric that does ("The Chapter of …").
+    const rubric = c.heading || c.paras.find((p) => /^(The )?Chapter\b|^(The )?Beginning\b|^Said on arriving\b/i.test(p)) || "";
+    // Its first sentence, or its first clause when that is still long ("The Beginning of the Chapters of Coming forth by Day").
+    let title = rubric.split(/\. /)[0].replace(/[[\]]/g, "").replace(/\s+/g, " ").trim().replace(/[.:—-]+$/, "");
+    if (title.length > 80) title = title.split(/, /)[0];
+    if (!ch) chapters.set(c.n, { title, verses: [...c.paras] });
+    else ch.verses.push(`[Chapter ${c.label.replace(/^[IVXLC]+/, String(c.n))}]`, ...c.paras); // "[Chapter 53B]"
+  }
+  const nums = [...chapters.keys()].sort((a, b) => a - b);
+  const max = nums[nums.length - 1];
+  // Numbers with no text of their own, as Renouf and Naville explain them, so the numbering stays standard.
+  const stub: Record<number, string> = {
+    16: "Chapter 16 is the picture (vignette) of chapter 15, the rising and the setting Sun (Renouf): see chapter 15.",
+    48: "Chapter 48 is identical with chapter 10 (Renouf): see chapter 10.",
+    49: "Chapter 49 is identical with chapter 11 (Renouf): see chapter 11.",
+    120: "Chapter 120 is a repetition of chapter 12 (Renouf): see chapter 12.",
+    121: "Chapter 121 is a repetition of chapter 13 (Renouf): see chapter 13.",
+    122: "Chapter 122 is a repetition of chapter 58 (Renouf): see chapter 58.",
+    142: "Chapters 141 to 143 are one chapter in this translation: see chapter 141.",
+    143: "Chapters 141 to 143 are one chapter in this translation: see chapter 141.",
+    146: "Chapters 145 and 146 are one chapter in this translation: see chapter 145.",
+    150: "Chapter 150 is not a separate chapter: it is the pictures (vignettes) that go with chapter 149 (Naville).",
+    168: "Chapter 168 is not translated in this edition. Naville explains that it belongs to another book, like those on the walls of the royal tombs: a list of the gods of the Netherworld, each granting the dead a blessing, which survives only in fragments.",
+  };
+  // Naville describes chapter 168 rather than translating it.
+  chapters.delete(168);
+  chapters.delete(48);
+  Object.assign(stub, xref);
+  const missing = Array.from({ length: max }, (_, k) => k + 1).filter((k) => !chapters.has(k) && !stub[k]);
+  if (missing.length) throw new Error(`book of the dead: no text and no note for chapters ${missing.join(", ")}`);
+  await resetVersion("book-of-the-dead", "renouf");
+  let total = 0;
+  for (let n = 1; n <= max; n++) {
+    const ch = chapters.get(n);
+    const verses = (ch ? ch.verses : [stub[n]]).map((t, k) => ({ v: String(k + 1), t }));
+    await writeChapter("book-of-the-dead", "renouf", "book-of-the-dead", n, verses, undefined, ch?.title || undefined);
+    total += verses.length;
+  }
+  report("book-dead", max, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  edda,
+  proseEdda,
+  kalevala,
+  bookOfTheDead,
   quranSpanish,
   popolVuh,
   gathas,

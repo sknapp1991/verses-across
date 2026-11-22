@@ -281,6 +281,37 @@ sacred-texts has no zipped file for SBE 4/23/31), the Great Learning and Doctrin
 Nihongi (only rough scans of Aston's 1896 translation), and English tafsir (permission asked of the
 Royal Aal al-Bayt Institute by email on 2026-11-06).
 
+## European mythology: the Eddas and the Kalevala (added Nov 22 2026, `scripts/import-world.ts`)
+
+All public domain, from Project Gutenberg (read from its official mirror, gutenberg.pglaf.org, while
+gutenberg.org was down).
+
+- **The Poetic Edda** — Henry Adams Bellows (1923, #73533). One chapter per poem, verse = Bellows' stanza
+  number; the manuscript's prose passages are kept, numbered after the stanza they follow ("12a"), and
+  speaker lines ("Groa spake:") open the stanza (or part of it) they introduce; a row of dots marking lines
+  lost from the manuscript is shown as "…". Bellows' introductions, notes and section dividers left out.
+- **The Prose Edda** — Snorri Sturluson, tr. Rasmus B. Anderson as The Younger Edda (1880, #18947): Snorri's
+  Foreword, the Fooling of Gylfe and Brage's Talk (each ending with Snorri's Afterword) and the stories from
+  the Poetical Diction. Verse = paragraph, with the skaldic verses it quotes kept as lines. Anderson's
+  introduction, footnotes, notes, vocabulary, index and the appended Historical Odin are left out.
+- **The Kalevala** — W. F. Kirby, Kalevala, the Land of Heroes (1907, #25953 and #33089). One chapter per
+  runo; verse = stanza, labelled with Kirby's line numbers; his "Argument" is the chapter note. His notes
+  left out. Volume 1's transcription dropped Kirby's umlauts: they are restored in the names volume 2 spells
+  with them (Väinämöinen, Väinölä, Väinö, Päivätär, Syöjätär).
+
+## The Egyptian Book of the Dead (added Nov 22 2026, `scripts/import-world.ts bookOfTheDead`)
+
+P. Le Page Renouf's translation, completed by Édouard Naville (1904, public domain), Project Gutenberg
+#69566 (read from its mirror). Chapters keep Naville's standard numbers (1–186; chapter 125 is the Judgment).
+Verse = paragraph; variant chapters (53A and 53B) share their number, the second marked "[Chapter 53B]".
+Numbers with no text of their own get a one-line note saying where to look, following Renouf and Naville:
+16 and 150 (the pictures of chapters 15 and 149), 142, 143 and 146 (translated with a neighbour), the
+repeats 48, 49, 73, 111, 120–122, 129 and 139 (of 10, 11, 9, 108, 12, 13, 58, 100 and 123), and 168
+(described by Naville, not translated). A few chapters exist only as the editors' short description
+(20, 107, 184), which is kept. Renouf's own square brackets (rubrics, words supplied) are kept. Left out:
+Renouf's and Naville's introductions and notes, the plates, the note marks and the hieroglyphs quoted in
+the notes.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
