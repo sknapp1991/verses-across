@@ -2090,7 +2090,307 @@ async function ptahhotep() {
   report("ptahhotep", heads.length, total);
 }
 
+/**
+ * The Diamond Sutra — William Gemmell, from Kumarajiva's Chinese (London, 1912), Gutenberg #64623. One chapter
+ * per chapter of the sutra (32; Gemmell gives 3 and 4 together, so 4 is a note pointing to 3); verse =
+ * paragraph, the Gatha keeping its lines. His footnotes (indented "[1] …" blocks after each paragraph, with
+ * the verse they quote), introduction and preface are left out.
+ */
+async function diamondSutra() {
+  const txt = gutenbergBody(await cached("diamond-sutra", "pg64623.txt", GUT(64623)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "THE DIAMOND SUTRA" && /^\s{10,}/.test(l));
+  const end = lines.findIndex((l, i) => i > start && /^TRANSCRIBER.S NOTES\.$/.test(l.trim()));
+  const chapters = new Map<number, string[]>();
+  let cur: string[] | null = null;
+  let block: string[] = [];
+  let inNotes = false; // a footnote block has begun since the last paragraph of text
+  let inBlock = false;
+  const flush = () => {
+    if (cur && block.length) {
+      const indented = block.every((x) => /^\s{2,}\S/.test(x));
+      const t = indented
+        ? block.map((x) => x.trim()).join("\n")
+        : unwrap(block.join(" "));
+      cur.push(t.replace(/\[\d+\]/g, "").replace(/_/g, "").replace(/\s+([,.;:])/g, "$1").trim());
+    }
+    block = [];
+  };
+  for (let i = start + 1; i < end; i++) {
+    const raw = lines[i];
+    const l = raw.trim();
+    const ch = /^\[Chapters? (\d+)(?: and (\d+))?\]$/.exec(l);
+    if (ch) {
+      flush();
+      cur = [];
+      chapters.set(Number(ch[1]), cur);
+      inNotes = false;
+      inBlock = true;
+      continue;
+    }
+    if (!l) {
+      flush();
+      inBlock = false;
+      continue;
+    }
+    const indented = /^\s{2,}\S/.test(raw);
+    if (!inBlock) {
+      // a new block (after a blank line): text unless it is, or follows, a footnote. A footnote's own lines
+      // may run on unindented (note 1 of chapter 15), so this is decided only where a block begins.
+      inBlock = true;
+      if (indented && /^\[\d+\]/.test(l)) inNotes = true;
+      else if (!indented) inNotes = false;
+    }
+    if (inNotes) continue;
+    block.push(raw);
+  }
+  flush();
+  await resetVersion("diamond-sutra", "gemmell");
+  let total = 0;
+  for (let n = 1; n <= 32; n++) {
+    const paras = chapters.get(n) ?? (n === 4 ? ["Gemmell gives chapters 3 and 4 together, under chapter 3: chapter 4 begins there at “Moreover, Subhuti, an enlightened disciple ought to act spontaneously…” (3:2)."] : null);
+    if (!paras) throw new Error(`diamond sutra: chapter ${n} missing`);
+    await writeChapter("diamond-sutra", "gemmell", "diamond-sutra", n, paras.map((t, k) => ({ v: String(k + 1), t })));
+    total += paras.length;
+  }
+  report("diamond", 32, total);
+}
+
+/**
+ * The Art of War — Sun Tzŭ, tr. Lionel Giles (1910), Gutenberg #132. Thirteen chapters; verse = Giles' section
+ * number ("5, 6." covers two). The commentary he gives in square brackets after the text, his introduction and
+ * footnotes are left out.
+ */
+async function artOfWar() {
+  const txt = gutenbergBody(await cached("art-of-war", "pg132.txt", GUT(132)));
+  const lines = txt.split("\n");
+  const firstCh = lines.findIndex((l) => /^Chapter I\. LAYING PLANS/.test(l.trim()));
+  const chapters: { title: string; verses: Verse[] }[] = [];
+  // Paragraphs first (blank-line separated), then each is text or commentary.
+  const paras: { ch?: string; t: string }[] = [];
+  let para: string[] = [];
+  for (let i = firstCh; i < lines.length; i++) {
+    const l = lines[i].trim();
+    if (/^\*\*\* END/.test(l)) break;
+    const ch = /^Chapter ([IVX]+)\. (.+)$/.exec(l);
+    if (ch) {
+      if (para.length) paras.push({ t: para.join(" ") });
+      para = [];
+      paras.push({ ch: ch[2], t: "" });
+      continue;
+    }
+    if (/^\]$/.test(l)) continue; // stray closing brackets on lines of their own (XII.9)
+    // a section number always starts a paragraph, even with no blank line before it (XII.10)
+    if (!l || (/^\d+(?:, \d+)?\.\s/.test(l) && para.length)) {
+      if (para.length) paras.push({ t: para.join(" ") });
+      para = l ? [l] : [];
+    } else para.push(l);
+  }
+  if (para.length) paras.push({ t: para.join(" ") });
+  // Giles' commentary and his footnotes ("[1] See …") are in square brackets, sometimes over several paragraphs and
+  // with brackets inside: a commentary runs until its brackets balance. Each chapter starts fresh.
+  let depth = 0;
+  let lastNote = "";
+  for (const p of paras) {
+    if (p.ch) {
+      chapters.push({ title: titleCase(p.ch), verses: [] });
+      depth = 0;
+      continue;
+    }
+    const t = unwrap(p.t);
+    const opens = (t.match(/\[/g) ?? []).length - (t.match(/\]/g) ?? []).length;
+    if (t.startsWith("[")) {
+      depth = Math.max(0, opens);
+      lastNote = t;
+      continue;
+    }
+    if (depth > 0) {
+      // Giles often leaves a commentary unclosed. It goes on only where this paragraph closes it, opens with a
+      // quotation, or carries on a sentence the last one broke off; otherwise Sun Tzŭ's text has resumed.
+      const goesOn = opens < 0 || /^["“'‘(]/.test(t) || !/[.!?:;"”’)]$/.test(lastNote);
+      if (goesOn && !/^\d+(?:, \d+)?\.?\s/.test(t)) {
+        depth = Math.max(0, depth + opens);
+        lastNote = t;
+        continue;
+      }
+      depth = 0;
+    }
+    // a commentary whose opening bracket the printer dropped ("This need not be taken … opinion."]", VIII.12)
+    if ((t.match(/\]/g) ?? []).length > (t.match(/\[/g) ?? []).length && /\]$/.test(t)) continue;
+    const cur = chapters[chapters.length - 1];
+    if (!cur) continue;
+    const clean = (x: string) => x.replace(/_/g, "").replace(/\[\d+\]/g, "").replace(/\s+([,.;:])/g, "$1").trim();
+    // "5, 6. The Moral Law …", and once "9 There are …" with no full stop
+    const m = /^(\d+)(?:, (\d+))?\.?\s+(\S.*)$/.exec(t);
+    if (m && Number(m[1]) === (cur.verses.length ? Number(cur.verses[cur.verses.length - 1].to ?? cur.verses[cur.verses.length - 1].v) + 1 : 1))
+      cur.verses.push({ v: m[1], t: clean(m[3]), ...(m[2] ? { to: m[2] } : {}) });
+    else if (cur.verses.length) cur.verses[cur.verses.length - 1].t += ` ${clean(t)}`; // a section running on
+  }
+  // every chapter numbered 1..N, no brackets left
+  for (const [k, c] of chapters.entries()) {
+    c.verses.forEach((v, j) => {
+      const prev = j ? Number(c.verses[j - 1].to ?? c.verses[j - 1].v) : 0;
+      if (Number(v.v) !== prev + 1) throw new Error(`art of war: chapter ${k + 1} goes from ${prev} to ${v.v}`);
+      if (/[[\]]/.test(v.t)) throw new Error(`art of war: bracket left in ${k + 1}:${v.v}: ${v.t.slice(0, 300)}`);
+    });
+  }
+  await resetVersion("art-of-war", "giles-aow");
+  let total = 0;
+  for (const [k, c] of chapters.entries()) {
+    await writeChapter("art-of-war", "giles-aow", "art-of-war", k + 1, c.verses, undefined, c.title);
+    total += c.verses.length;
+  }
+  report("art-of-war", chapters.length, total);
+}
+
+/**
+ * The Golden Verses of Pythagoras — Fabre d'Olivet's French verse rendering, in Nayán Louise Redfield's English
+ * (New York, 1917), Gutenberg #69174: the poem only, from the full English text printed in his notes 229–231.
+ * Three chapters (Preparation, Purification, Perfection); verse = Fabre d'Olivet's own section number, the
+ * "(2)" … "(36)" that close each segment and key his commentary (the closing lines, unnumbered, are 37). His
+ * long commentary, the Greek and French texts and the Discourse on poetry are left out.
+ */
+async function goldenVerses() {
+  const txt = gutenbergBody(await cached("golden-verses", "pg69174.txt", GUT(69174)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l) => /^\s*\[229\] GOLDEN VERSES OF THE PYTHAGOREANS/.test(l));
+  const end = lines.findIndex((l, i) => i > start && /^\s*\[232\]/.test(l));
+  const parts: { title: string; verses: Verse[] }[] = [];
+  let buf: string[] = [];
+  for (const raw of lines.slice(start + 1, end)) {
+    const l = raw.trim();
+    const head = /^(?:\[\d+\]\s*)?(PREPARATION|PURIFICATION|PERFECTION)$/.exec(l);
+    if (head) {
+      parts.push({ title: titleCase(head[1]), verses: [] });
+      buf = [];
+      continue;
+    }
+    if (!l || !parts.length) continue;
+    // a wrapped line ("…good" / "father (4)") is indented deeper: join it to the line before
+    if (/^\s{9,}\S/.test(raw) && buf.length) buf[buf.length - 1] += ` ${l}`;
+    else buf.push(l);
+    const all = buf.join("\n");
+    // a segment ends at "(n)"; text after it on the same line ("Guard then thy faith (2): Revere…") starts the next
+    const m = /^([\s\S]*?)\s*\((\d+)\)([:.;,]?)\s*([\s\S]*)$/.exec(all);
+    if (m) {
+      // keep the mark after "(n)" unless the line already ends in its own ("what done? (22).")
+      parts[parts.length - 1].verses.push({ v: m[2], t: (/[?!]$/.test(m[1].trim()) ? m[1] : m[1] + m[3]).trim() });
+      buf = m[4].trim() ? [m[4].trim().replace(/^[:.;,]\s*/, "")] : [];
+    }
+  }
+  if (buf.length) parts[parts.length - 1].verses.push({ v: "37", t: buf.join("\n") }); // the last lines, unnumbered
+  await resetVersion("golden-verses", "redfield");
+  let total = 0;
+  for (const [k, p] of parts.entries()) {
+    await writeChapter("golden-verses", "redfield", "golden-verses", k + 1, p.verses, undefined, p.title);
+    total += p.verses.length;
+  }
+  report("golden-verses", parts.length, total);
+}
+
+/**
+ * The Rubáiyát of Omar Khayyám — Edward FitzGerald's First Edition (1859, 75 quatrains) and Fifth Edition (1889,
+ * 101), Gutenberg #246. Two books, one chapter each; verse = quatrain under FitzGerald's own number, lines kept.
+ * The First Edition's closing "TAMAM SHUD." stays as its last verse. His preface and notes are left out.
+ */
+async function rubaiyat() {
+  const txt = gutenbergBody(await cached("rubaiyat", "pg246.txt", GUT(246)));
+  const lines = txt.split("\n");
+  const first = lines.findIndex((l) => l.trim() === "First Edition");
+  const fifth = lines.findIndex((l, i) => i > first && l.trim() === "Fifth Edition");
+  const notes = lines.findIndex((l, i) => i > fifth && /^Notes:?$/.test(l.trim()));
+  const edition = (from: number, to: number) => {
+    const verses: Verse[] = [];
+    let cur: { n: number; lines: string[] } | null = null;
+    let heading = "";
+    const push = () => {
+      if (cur && cur.lines.length) verses.push({ v: String(cur.n), t: cur.lines.join("\n").replace(/--/g, "—").replace(/(\w)-$/gm, "$1—") }); // "Fears-", "Yes-" are dashes
+      cur = null;
+    };
+    for (const raw of lines.slice(from + 1, to)) {
+      const l = raw.trim();
+      const num = /^([IVXLC]+)\.$/.exec(l);
+      if (num) {
+        push();
+        // the quatrains run in order; the First Edition misprints 49 as "XLVIX"
+        const n = verses.filter((v) => /^\d+$/.test(v.v)).length + 1;
+        if (roman(num[1]) !== n && num[1] !== "XLVIX") console.warn(`rubaiyat: ${num[1]} where ${n} was expected`);
+        cur = { n, lines: [] };
+        continue;
+      }
+      if (/^TAMAM( SHUD)?\.?$/.test(l)) {
+        push();
+        verses.push({ v: `${verses.length}a`, t: l }); // the closing "It is finished"
+        continue;
+      }
+      if (/^\*+$/.test(l)) continue; // a divider
+      if (/^KUZA/.test(l)) {
+        // the heading of the pottery sequence ("KUZA—NAMA ('Book of Pots')") opens the quatrain after it
+        push();
+        heading = l.replace(/--/g, "—");
+        continue;
+      }
+      if (cur && l) {
+        const c = cur as { lines: string[] };
+        if (heading && !c.lines.length) c.lines.push(heading), (heading = "");
+        c.lines.push(l);
+      }
+    }
+    push();
+    return verses;
+  };
+  await resetVersion("rubaiyat", "fitzgerald");
+  const a = edition(first, fifth);
+  const b = edition(fifth, notes);
+  await writeChapter("rubaiyat", "fitzgerald", "first-edition", 1, a, undefined, "First Edition (1859)");
+  await writeChapter("rubaiyat", "fitzgerald", "fifth-edition", 1, b, undefined, "Fifth Edition (1889)");
+  report("rubaiyat", 2, a.length + b.length);
+}
+
+/**
+ * Hafiz — Poems from the Divan of Hafiz, tr. Gertrude Lowthian Bell (London, 1897), Gutenberg #74883. One chapter
+ * per poem (43, under Bell's numbers); verse = stanza, lines kept. Her introduction and notes are left out.
+ */
+async function hafiz() {
+  const txt = gutenbergBody(await cached("hafiz", "pg74883.txt", GUT(74883)));
+  const lines = txt.split("\n");
+  const start = lines.findIndex((l, i) => i > 1200 && l.trim() === "DIVAN OF HAFIZ");
+  const end = lines.findIndex((l, i) => i > start && l.trim() === "NOTES");
+  const poems: Verse[][] = [];
+  let stanza: string[] = [];
+  const flush = () => {
+    if (stanza.length && poems.length) poems[poems.length - 1].push({ v: String(poems[poems.length - 1].length + 1), t: stanza.join("\n").replace(/_/g, "") });
+    stanza = [];
+  };
+  for (const raw of lines.slice(start + 1, end)) {
+    const l = raw.trim();
+    if (/^[IVXL]+$/.test(l) && /^\s{20,}/.test(raw)) {
+      flush();
+      poems.push([]);
+      continue;
+    }
+    if (!l) {
+      flush();
+      continue;
+    }
+    stanza.push(l);
+  }
+  flush();
+  await resetVersion("hafiz", "bell");
+  let total = 0;
+  for (const [k, p] of poems.entries()) {
+    await writeChapter("hafiz", "bell", "hafiz", k + 1, p);
+    total += p.length;
+  }
+  report("hafiz", poems.length, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  hafiz,
+  rubaiyat,
+  goldenVerses,
+  artOfWar,
+  diamondSutra,
   ptahhotep,
   hammurabi,
   enumaElish,

@@ -382,6 +382,26 @@ All public domain, from Project Gutenberg (read from its mirror).
   are the chapter notes. His introduction, footnotes, page
   numbers and bibliography are left out.
 
+## Diamond Sutra, Art of War, Golden Verses, Rubaiyat and Hafiz (added Nov 22 2026, `scripts/import-world.ts`)
+
+All public domain, from Project Gutenberg (read from its mirror).
+
+- **The Diamond Sutra** — William Gemmell, from Kumarajiva's Chinese (London, 1912, #64623). One chapter per
+  chapter of the sutra; Gemmell gives 3 and 4 together, so 4 is a note pointing to 3. Verse = paragraph, the
+  Gatha keeping its lines. His introduction and footnotes are left out.
+- **The Art of War** — Sun Tzŭ, tr. Lionel Giles (1910, #132). Verse = Giles' section number ("5, 6" covers two).
+  The commentary he gives in brackets after the text, his introduction and footnotes are left out.
+- **The Golden Verses of Pythagoras** — Fabre d'Olivet's French verse rendering in Nayán Louise Redfield's
+  English (New York, 1917, #69174): the poem only, as printed whole in his notes 229–231. Verse = his section
+  number (2–37), which keys his commentary. The commentary, the Greek and French texts and his Discourse on
+  poetry are left out.
+- **The Rubáiyát of Omar Khayyám** — Edward FitzGerald (#246): his First Edition (1859, 75 quatrains) and Fifth
+  Edition (1889, 101) as two books, verse = quatrain in order (the First Edition misprints 49 as "XLVIX"), each
+  ending with its "Tamám" line; the "Kuza-Nama" heading opens the quatrain it introduces. His preface and notes
+  are left out.
+- **Hafiz** — Poems from the Divan of Hafiz, tr. Gertrude Lowthian Bell (London, 1897, #74883). One chapter per
+  poem (43), verse = stanza. Her introduction and notes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

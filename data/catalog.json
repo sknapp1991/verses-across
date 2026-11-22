@@ -58,6 +58,11 @@
     { "id": "lotus", "name": "The Lotus Sutra", "versification": "lotus" },
     { "id": "jataka", "name": "The Jataka Tales", "versification": "jataka" },
     { "id": "masnavi", "name": "The Masnavi of Rumi", "versification": "masnavi" },
+    { "id": "diamond-sutra", "name": "The Diamond Sutra", "versification": "diamond-sutra" },
+    { "id": "art-of-war", "name": "The Art of War", "versification": "art-of-war" },
+    { "id": "golden-verses", "name": "The Golden Verses of Pythagoras", "versification": "golden-verses" },
+    { "id": "rubaiyat", "name": "The Rubaiyat of Omar Khayyam", "versification": "rubaiyat" },
+    { "id": "hafiz", "name": "Poems from the Divan of Hafiz", "versification": "hafiz" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -1969,6 +1974,91 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/30508",
       "licensed": false,
       "versification": "ptahhotep"
+    },
+    {
+      "id": "gemmell",
+      "work": "diamond-sutra",
+      "abbr": "Gemmell",
+      "name": "The Diamond Sutra (William Gemmell)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1912,
+      "translator": "William Gemmell",
+      "license": "Public Domain",
+      "licenseNote": "From Kumarajiva's Chinese. Verse = paragraph; Gemmell gives chapters 3 and 4 together, so 4 points to 3. His introduction and footnotes are left out.",
+      "attribution": "The Diamond Sutra (Chin-Kang-Ching) or Prajna-Paramita, translated by William Gemmell (London, 1912), public domain; Project Gutenberg #64623.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/64623",
+      "licensed": false,
+      "versification": "diamond-sutra"
+    },
+    {
+      "id": "giles-aow",
+      "work": "art-of-war",
+      "abbr": "Giles",
+      "name": "The Art of War (Lionel Giles)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1910,
+      "translator": "Lionel Giles",
+      "license": "Public Domain",
+      "licenseNote": "Verse = Giles' section number; the commentary he gives in brackets after the text, his introduction and footnotes are left out.",
+      "attribution": "Sun Tzŭ on the Art of War, translated by Lionel Giles (1910), public domain; Project Gutenberg #132.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/132",
+      "licensed": false,
+      "versification": "art-of-war"
+    },
+    {
+      "id": "redfield",
+      "work": "golden-verses",
+      "abbr": "Redfield",
+      "name": "The Golden Verses of Pythagoras (Fabre d'Olivet, tr. Redfield)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1917,
+      "translator": "Nayán Louise Redfield, from Fabre d'Olivet's French",
+      "license": "Public Domain",
+      "licenseNote": "The poem only, in Fabre d'Olivet's verse rendering: verse = his section number (2–37), which keys his commentary. The commentary itself, the Greek and French texts and his Discourse on poetry are left out.",
+      "attribution": "The Golden Verses of Pythagoras, by Fabre d'Olivet, translated by Nayán Louise Redfield (New York, 1917), public domain; Project Gutenberg #69174.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/69174",
+      "licensed": false,
+      "versification": "golden-verses"
+    },
+    {
+      "id": "fitzgerald",
+      "work": "rubaiyat",
+      "abbr": "FitzGerald",
+      "name": "The Rubáiyát of Omar Khayyám (Edward FitzGerald)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1859,
+      "translator": "Edward FitzGerald",
+      "license": "Public Domain",
+      "licenseNote": "Two books: his First Edition (1859, 75 quatrains) and Fifth Edition (1889, 101), each with its closing 'Tamám'. Verse = quatrain under his own number. His preface and notes are left out.",
+      "attribution": "Rubáiyát of Omar Khayyám, translated by Edward FitzGerald (First Edition 1859, Fifth Edition 1889), public domain; Project Gutenberg #246.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/246",
+      "licensed": false,
+      "versification": "rubaiyat"
+    },
+    {
+      "id": "bell",
+      "work": "hafiz",
+      "abbr": "Bell",
+      "name": "Poems from the Divan of Hafiz (Gertrude Bell)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1897,
+      "translator": "Gertrude Lowthian Bell",
+      "license": "Public Domain",
+      "licenseNote": "Forty-three poems under her numbers; verse = stanza. Her introduction and notes are left out.",
+      "attribution": "Poems from the Divan of Hafiz, translated by Gertrude Lowthian Bell (London, 1897), public domain; Project Gutenberg #74883.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/74883",
+      "licensed": false,
+      "versification": "hafiz"
     }
   ],
   "religions": [
@@ -2286,7 +2376,10 @@
           "id": "sufi",
           "name": "Sufi Poetry",
           "items": [
-            { "id": "masnavi-1", "name": "Rumi's Masnavi, Book I", "work": "masnavi", "chapters": 18, "chapterName": "Masnavi I" }
+            { "id": "masnavi-1", "name": "Rumi's Masnavi, Book I", "work": "masnavi", "chapters": 18, "chapterName": "Masnavi I" },
+            { "id": "first-edition", "name": "The Rubaiyat of Omar Khayyam (FitzGerald, 1st edition)", "work": "rubaiyat", "chapters": 1, "chapterName": "Rubaiyat" },
+            { "id": "fifth-edition", "name": "The Rubaiyat of Omar Khayyam (FitzGerald, 5th edition)", "work": "rubaiyat", "chapters": 1, "chapterName": "Rubaiyat" },
+            { "id": "hafiz", "name": "Hafiz: Poems from the Divan", "work": "hafiz", "chapters": 43, "chapterName": "Poem" }
           ]
         }
       ]
@@ -2505,7 +2598,8 @@
           "id": "mahayana",
           "name": "Mahayana Sutras",
           "items": [
-            { "id": "lotus", "name": "The Lotus Sutra (Soothill, abridged)", "work": "lotus", "chapters": 28, "chapterName": "Lotus Sutra" }
+            { "id": "lotus", "name": "The Lotus Sutra (Soothill, abridged)", "work": "lotus", "chapters": 28, "chapterName": "Lotus Sutra" },
+            { "id": "diamond-sutra", "name": "The Diamond Sutra", "work": "diamond-sutra", "chapters": 32, "chapterName": "Diamond Sutra" }
           ]
         },
         {
@@ -2661,7 +2755,8 @@
           "id": "other-classics",
           "name": "Other Classics",
           "items": [
-            { "id": "hsiao-king", "name": "Classic of Filial Piety (Hsiao King)", "work": "hsiao-king", "chapters": 18, "chapterName": "Hsiao King" }
+            { "id": "hsiao-king", "name": "Classic of Filial Piety (Hsiao King)", "work": "hsiao-king", "chapters": 18, "chapterName": "Hsiao King" },
+            { "id": "art-of-war", "name": "The Art of War (Sun Tzu)", "work": "art-of-war", "chapters": 13, "chapterName": "Art of War" }
           ]
         }
       ]
@@ -2732,7 +2827,8 @@
           "items": [
             { "id": "dnr", "name": "Lucretius, On the Nature of Things", "work": "lucretius", "chapters": 6, "chapterName": "On the Nature of Things, Book" },
             { "id": "med", "name": "Marcus Aurelius, Meditations", "work": "meditations", "chapters": 12, "chapterName": "Meditations, Book" },
-            { "id": "ench", "name": "Epictetus, The Enchiridion", "work": "enchiridion", "chapters": 1, "chapterName": "Enchiridion" }
+            { "id": "ench", "name": "Epictetus, The Enchiridion", "work": "enchiridion", "chapters": 1, "chapterName": "Enchiridion" },
+            { "id": "golden-verses", "name": "The Golden Verses of Pythagoras", "work": "golden-verses", "chapters": 3, "chapterName": "Golden Verses" }
           ]
         },
         {
