@@ -13,6 +13,7 @@ export const useDockPanel = () => useContext(DockPanelContext);
 
 export function PanelHeader({
   icon,
+  iconAction,
   title,
   extra,
   onClose,
@@ -20,6 +21,9 @@ export function PanelHeader({
   className = "",
 }: {
   icon: React.ReactNode;
+  /** An icon you can press (Progress: choose its icon), shown instead of `icon` when the bar isn't the slim fold-up
+   * one (there the whole name is a button, and a button can't sit inside another). */
+  iconAction?: React.ReactNode;
   title: React.ReactNode;
   /** Small text after the name (e.g. the verse cross references are for). */
   extra?: React.ReactNode;
@@ -31,9 +35,13 @@ export function PanelHeader({
   const slim = !!d?.split;
   const name = (
     <>
-      <span className="shrink-0 text-accent" aria-hidden>
-        {icon}
-      </span>
+      {iconAction && !slim ? (
+        <span className="shrink-0 text-accent">{iconAction}</span>
+      ) : (
+        <span className="shrink-0 text-accent" aria-hidden>
+          {icon}
+        </span>
+      )}
       <span className="min-w-0 truncate">
         {title}
         {extra && <span className="font-sans text-sm font-normal text-muted"> · {extra}</span>}

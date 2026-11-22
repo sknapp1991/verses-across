@@ -4,6 +4,7 @@
  * groups and badges. Goals live with the reading plans (Plans & Goals, plans-panel.tsx).
  * All counted on this device (src/lib/activity.ts); nothing is sent anywhere.
  */
+import { ProgressGlyph, ProgressIconPicker } from "./trophy-icon";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
 import { addGoalMet, BADGES, computeStats, deviceCounts, deviceCountsKey, parseCounts, subscribeDeviceCounts, type DeviceCounts, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
@@ -14,7 +15,7 @@ import { StreakIcon } from "./streak-icon";
 import { getItem, useStudy } from "@/lib/study";
 import type { StudyItem } from "@/lib/storage";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
-import { TrashIcon, TrophyIcon } from "./icons";
+import { TrashIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
 import { startSync } from "@/lib/sync";
 import { startGroups } from "@/lib/groups";
@@ -79,7 +80,7 @@ export function ProgressPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <PanelHeader icon={<TrophyIcon width={18} height={18} />} title="Progress" onClose={() => closePanel("progress")} closeLabel="Close Progress" />
+      <PanelHeader icon={<ProgressGlyph size={18} />} iconAction={<ProgressIconPicker />} title="Progress" onClose={() => closePanel("progress")} closeLabel="Close Progress" />
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-3">
         <LevelCard stats={stats} />

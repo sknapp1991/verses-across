@@ -3,9 +3,9 @@
  * Top-bar Progress button (desktop; phones have a tile in the More sheet): a trophy, with a ring around it showing today's goal when one is set, and
  * the reader's level (1–60) in the corner.
  */
+import { ProgressGlyph } from "./trophy-icon";
 import { isShowing, togglePanel, useUi } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
-import { TrophyIcon } from "./icons";
 import { useGoalRing, useLevel } from "./progress-panel";
 
 export function ProgressButton() {
@@ -27,7 +27,7 @@ export function ProgressButton() {
         on ? "bg-accent-soft text-accent" : "text-muted desk:bg-raised"
       }`}
     >
-      <TrophyIcon />
+      <ProgressGlyph size={20} />
       {ring != null && ring > 0 && (
         <svg viewBox="0 0 44 44" aria-hidden className="pointer-events-none absolute inset-0 -rotate-90">
           <circle cx="22" cy="22" r="19" fill="none" stroke="var(--line)" strokeWidth="2" />

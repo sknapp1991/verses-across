@@ -1,4 +1,5 @@
 "use client";
+import { ProgressGlyph } from "./trophy-icon";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SITE_NAME } from "@/lib/site";
 import { BackupNudge } from "./backup-nudge";
@@ -23,7 +24,7 @@ import { closeXref, XrefDockPanel } from "./xref-panel";
 import { InterlinearPanel } from "./interlinear-panel";
 import { PlansPanel } from "./plans-panel";
 import { DockPanelContext } from "./panel-header";
-import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, TrophyIcon, UsersIcon } from "./icons";
+import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, UsersIcon } from "./icons";
 import { SideTip } from "./side-switch";
 
 /** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"). */
@@ -160,7 +161,7 @@ const TAB_LABEL: Record<DockId, string> = { search: "Search", study: "My Study",
 const PANEL_ICON: Record<DockId, React.ReactNode> = {
   search: <SearchIcon width={16} height={16} />,
   study: <LibraryIcon width={16} height={16} />,
-  progress: <TrophyIcon width={16} height={16} />,
+  progress: <ProgressGlyph size={16} />,
   plans: <CalendarIcon width={16} height={16} />,
   groups: <UsersIcon width={16} height={16} />,
   interlinear: <span className="w-4 text-center font-serif leading-none" aria-hidden>א</span>,

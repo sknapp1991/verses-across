@@ -106,7 +106,7 @@ const STEPS: Step[] = [
     icon: <TrophyIcon />,
     title: "Levels, plans and sync",
     body: "Earn badges and climb from level 1 to 60 as you read, keep a streak, follow a reading plan or set a daily goal, and read with family in a study group. Sync keeps your notes the same on your phone and computer, encrypted, with no account.",
-    where: "The trophy at the top (level and badges) and the calendar (Plans & Goals). Sync is in My Study.",
+    where: "The trophy at the top (level and badges; tap the trophy in Progress to give it another icon) and the calendar (Plans & Goals). Sync is in My Study.",
     tryIt: { label: "Set up sync", go: openSyncDialog },
   },
   {

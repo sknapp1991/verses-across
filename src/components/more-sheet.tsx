@@ -8,6 +8,7 @@
  * openSheet("text") / openSheet("versions") open it scrolled to that section (the Aa button and the
  * versions chip under the chapter name).
  */
+import { ProgressGlyph } from "./trophy-icon";
 import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,7 +23,6 @@ import {
   StarIcon,
   ShareIcon,
   SparkIcon,
-  TrophyIcon,
   UsersIcon,
 } from "./icons";
 import {
@@ -349,7 +349,7 @@ function ProgressTile() {
         className="relative flex h-8 w-8 items-center justify-center text-accent"
         aria-hidden
       >
-        <TrophyIcon />
+        <ProgressGlyph size={17} />
         {ring != null && ring > 0 && (
           <svg
             viewBox="0 0 34 34"
