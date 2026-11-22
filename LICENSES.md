@@ -434,6 +434,17 @@ From Project Gutenberg (read from its mirror).
   US, #60471. A prose rendering: the Prologue and the ten chapters, verse = paragraph, each story's or
   discourse's title labelling the paragraph it opens. His introduction and notes are left out.
 
+## Josephus (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **Josephus** — The Antiquities of the Jews and The Wars of the Jews, translated by William Whiston (1737); public
+  domain, Project Gutenberg #2848 and #2850 (read from its mirror). Each work's Preface, then its books
+  (Antiquities I–XX, Wars I–VII); chapter = Whiston's chapter with his title, verse = his numbered section, each
+  book's summary as the note of its chapter 1. Whiston's footnotes are left out, and so are their marks, found in
+  order through each book (a mark the printer left out is never matched to a later number). Three faults in the
+  Gutenberg file are corrected: HTML links left in two Wars titles, a doubled phrase in Wars III.7.27, and a
+  footnote spliced into Antiquities XX.11.3 (Whiston: "I will briefly run over this war again"). Antiquities II.6
+  has no section 9 in the file, so its numbers go from 8 to 10.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

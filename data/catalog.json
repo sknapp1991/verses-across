@@ -67,6 +67,7 @@
     { "id": "guide-perplexed", "name": "The Guide for the Perplexed", "versification": "guide-perplexed" },
     { "id": "mabinogion", "name": "The Mabinogion", "versification": "mabinogion" },
     { "id": "bustan", "name": "The Bustan of Sadi", "versification": "bustan" },
+    { "id": "josephus", "name": "Josephus: Antiquities and Wars of the Jews", "versification": "josephus" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2131,6 +2132,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/60471",
       "licensed": false,
       "versification": "bustan"
+    },
+    {
+      "id": "whiston",
+      "work": "josephus",
+      "abbr": "Whiston",
+      "name": "Josephus (William Whiston)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1737,
+      "translator": "William Whiston",
+      "license": "Public Domain",
+      "licenseNote": "The Antiquities of the Jews (Preface and Books I–XX) and The Wars of the Jews (Preface and Books I–VII). Chapter = Whiston's chapter, with his title; verse = his numbered section; each book's summary is the note of its chapter 1. Whiston's footnotes and their marks are left out; three faults in the Gutenberg file are corrected (HTML left in two Wars titles, a doubled phrase in Wars III.7.27, a footnote spliced into Antiquities XX.11.3). Antiquities II.6 has no section 9 in the file, so its numbers go from 8 to 10.",
+      "attribution": "The Antiquities of the Jews and The Wars of the Jews, by Flavius Josephus, translated by William Whiston (1737), public domain; Project Gutenberg #2848 and #2850.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/2848",
+      "licensed": false,
+      "versification": "josephus"
     }
   ],
   "religions": [
@@ -2457,6 +2475,41 @@
             { "id": "part-2", "name": "Guide for the Perplexed: Part II", "work": "guide-perplexed", "chapters": 48, "chapterName": "Chapter" },
             { "id": "part-3-introduction", "name": "Guide for the Perplexed: Introduction to Part III", "work": "guide-perplexed", "chapters": 1, "chapterName": "Introduction" },
             { "id": "part-3", "name": "Guide for the Perplexed: Part III", "work": "guide-perplexed", "chapters": 54, "chapterName": "Chapter" }
+          ]
+        },
+        {
+          "id": "josephus",
+          "name": "Josephus",
+          "items": [
+            { "id": "antiquities-preface", "name": "Antiquities of the Jews: Preface", "work": "josephus", "chapters": 1, "chapterName": "Chapter" },
+            { "id": "antiquities-1", "name": "Antiquities of the Jews, Book I", "work": "josephus", "chapters": 22, "chapterName": "Chapter" },
+            { "id": "antiquities-2", "name": "Antiquities of the Jews, Book II", "work": "josephus", "chapters": 16, "chapterName": "Chapter" },
+            { "id": "antiquities-3", "name": "Antiquities of the Jews, Book III", "work": "josephus", "chapters": 15, "chapterName": "Chapter" },
+            { "id": "antiquities-4", "name": "Antiquities of the Jews, Book IV", "work": "josephus", "chapters": 8, "chapterName": "Chapter" },
+            { "id": "antiquities-5", "name": "Antiquities of the Jews, Book V", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "antiquities-6", "name": "Antiquities of the Jews, Book VI", "work": "josephus", "chapters": 14, "chapterName": "Chapter" },
+            { "id": "antiquities-7", "name": "Antiquities of the Jews, Book VII", "work": "josephus", "chapters": 15, "chapterName": "Chapter" },
+            { "id": "antiquities-8", "name": "Antiquities of the Jews, Book VIII", "work": "josephus", "chapters": 15, "chapterName": "Chapter" },
+            { "id": "antiquities-9", "name": "Antiquities of the Jews, Book IX", "work": "josephus", "chapters": 14, "chapterName": "Chapter" },
+            { "id": "antiquities-10", "name": "Antiquities of the Jews, Book X", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "antiquities-11", "name": "Antiquities of the Jews, Book XI", "work": "josephus", "chapters": 8, "chapterName": "Chapter" },
+            { "id": "antiquities-12", "name": "Antiquities of the Jews, Book XII", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "antiquities-13", "name": "Antiquities of the Jews, Book XIII", "work": "josephus", "chapters": 16, "chapterName": "Chapter" },
+            { "id": "antiquities-14", "name": "Antiquities of the Jews, Book XIV", "work": "josephus", "chapters": 16, "chapterName": "Chapter" },
+            { "id": "antiquities-15", "name": "Antiquities of the Jews, Book XV", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "antiquities-16", "name": "Antiquities of the Jews, Book XVI", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "antiquities-17", "name": "Antiquities of the Jews, Book XVII", "work": "josephus", "chapters": 13, "chapterName": "Chapter" },
+            { "id": "antiquities-18", "name": "Antiquities of the Jews, Book XVIII", "work": "josephus", "chapters": 9, "chapterName": "Chapter" },
+            { "id": "antiquities-19", "name": "Antiquities of the Jews, Book XIX", "work": "josephus", "chapters": 9, "chapterName": "Chapter" },
+            { "id": "antiquities-20", "name": "Antiquities of the Jews, Book XX", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "wars-preface", "name": "The Wars of the Jews: Preface", "work": "josephus", "chapters": 1, "chapterName": "Chapter" },
+            { "id": "wars-1", "name": "The Wars of the Jews, Book I", "work": "josephus", "chapters": 33, "chapterName": "Chapter" },
+            { "id": "wars-2", "name": "The Wars of the Jews, Book II", "work": "josephus", "chapters": 22, "chapterName": "Chapter" },
+            { "id": "wars-3", "name": "The Wars of the Jews, Book III", "work": "josephus", "chapters": 10, "chapterName": "Chapter" },
+            { "id": "wars-4", "name": "The Wars of the Jews, Book IV", "work": "josephus", "chapters": 11, "chapterName": "Chapter" },
+            { "id": "wars-5", "name": "The Wars of the Jews, Book V", "work": "josephus", "chapters": 13, "chapterName": "Chapter" },
+            { "id": "wars-6", "name": "The Wars of the Jews, Book VI", "work": "josephus", "chapters": 10, "chapterName": "Chapter" },
+            { "id": "wars-7", "name": "The Wars of the Jews, Book VII", "work": "josephus", "chapters": 11, "chapterName": "Chapter" }
           ]
         }
       ]

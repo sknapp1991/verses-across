@@ -137,6 +137,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   "guide-perplexed": ["friedlander"],
   mabinogion: ["guest"],
   bustan: ["edwards"],
+  josephus: ["whiston"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

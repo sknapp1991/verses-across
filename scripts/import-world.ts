@@ -2719,7 +2719,214 @@ async function bustan() {
   report("bustan", 11, total);
 }
 
+/**
+ * Josephus — tr. William Whiston (1737), Gutenberg #2848 (The Antiquities of the Jews) and #2850 (The Wars of the
+ * Jews). Books: each work's Preface, then its books (Antiquities I–XX, Wars I–VII); chapter = Whiston's chapter
+ * (his title kept); verse = his numbered section. Each book's summary line ("Containing the interval of …") is the
+ * note of its chapter 1. Whiston's footnotes and their marks are left out: the marks ("over1", "soul.2", "; 4 a")
+ * are found in order, 1, 2, 3 … through each book, and their number checked against the footnotes it has.
+ */
+export const JOSEPHUS_BOOKS: { id: string; name: string; chapters: number }[] = [];
+async function josephus() {
+  const works: [string, string, number][] = [
+    ["antiquities", "Antiquities of the Jews", 2848],
+    ["wars", "The Wars of the Jews", 2850],
+  ];
+  type Ch = { title: string; verses: Verse[]; note?: string };
+  type Bk = { id: string; name: string; chapters: Ch[]; notes: number[] };
+  const all: Bk[] = [];
+  for (const [w, wname, gid] of works) {
+    const txt = gutenbergBody(await cached("josephus", `pg${gid}.txt`, GUT(gid)))
+      // faults in the Gutenberg file: HTML links left in two Wars titles (their number is a note mark, removed below),
+      // a doubled phrase (Wars III.7.27), and a footnote spliced into Antiquities XX.11.3 (Whiston: "I will briefly
+      // run over this war again, with what befell us therein to this very day")
+      .replace(/<a\b[^>]*>(\d+)<\/a>/g, "$1")
+      .replace("trumpetersAnd now the trumpeters", "trumpeters")
+      .replace(
+        /this war 29, and\s+to add what befell them further to that very day, the 13th of Domitian,\s+or A\.D\. 03, is not, that I have observed, taken distinct notice of by\s+any one; nor do we ever again,/,
+        "this war 29 again,",
+      );
+    const lines = txt.split("\n");
+    // the text starts at the Preface after the contents
+    const start = lines.findIndex((l, k) => /^PREFACE\.?\d*$/.test(l) && /^1\. /.test(lines.slice(k + 1).find((x) => x.trim()) ?? ""));
+    if (start < 0) throw new Error(`josephus: no preface in ${w}`);
+    const books: Bk[] = [{ id: `${w}-preface`, name: `${wname}: Preface`, chapters: [{ title: "Preface", verses: [] }], notes: [] }];
+    let inNotes = false;
+    let para: string[] = [];
+    let pendingNote = "";
+    // Whiston's titles capitalise nearly every word ("Also Concerning Antiochus Grypus, … And Others")
+    const titleCased = (t: string) => {
+      const w = t.split(/\s+/).filter((x) => /^[\p{L}]/u.test(x));
+      return w.length > 1 && w.filter((x) => /^\p{Lu}/u.test(x)).length / w.length > 0.7;
+    };
+    const flush = () => {
+      if (!para.length) return;
+      const ch = books[books.length - 1].chapters[books[books.length - 1].chapters.length - 1];
+      // a section can begin on a line of its own with no blank line before it (and once as "43,"): split there,
+      // but only at the number that comes next
+      // the number that comes next, or one after it where the printer skipped one (Antiquities II.6 has no 9)
+      const lastNum = () => (ch && ch.verses.length ? Number(ch.verses[ch.verses.length - 1].v) : 0);
+      const fits = (n: number, after: number) => n === after + 1 || n === after + 2;
+      // "4.24 "Had I": a section number with a note mark glued on
+      const SEC = /^(\d+)(?:\.\d{1,3}|[.,])\s/;
+      const parts: string[][] = [[]];
+      let next = lastNum();
+      for (const l of para) {
+        const m = SEC.exec(l);
+        if (m && fits(Number(m[1]), next) && parts[parts.length - 1].length) parts.push([]);
+        if (m && fits(Number(m[1]), next)) next = Number(m[1]);
+        parts[parts.length - 1].push(l);
+      }
+      para = [];
+      if (!ch) return;
+      // and a section can begin in the middle of a line ("ran away. 3. But Herod"): split at the number that comes
+      // next, after the end of a sentence, never after "sect." or "ch."
+      const split: string[] = [];
+      let want = lastNum() + 1;
+      for (const p of parts) {
+        let t = unwrap(p.join(" ")).replace(/_/g, "").replace(/^(\d+)\.\d{1,3}\s/, "$1. ");
+        const lead = /^(\d+)[.,]\s/.exec(t);
+        if (lead && fits(Number(lead[1]), want - 1)) want = Number(lead[1]) + 1;
+        for (;;) {
+          const re = new RegExp(`(?<=[.!?;:"”’)\\]] ?)(?<!\\b(?:sect|ch|chap|ver|vol|B|Antiq|p|pp|No)\\. ?)${want}\\.(?:\\d{1,3})?\\s+(?=["“‘'(\\[]?\\p{Lu})`, "u");
+          const m = re.exec(t);
+          if (!m) break;
+          split.push(t.slice(0, m.index).trim());
+          t = `${want}. ${t.slice(m.index + m[0].length)}`;
+          want++;
+        }
+        split.push(t);
+      }
+      for (const t of split) {
+        const m = /^(\d+)[.,]\s+([\s\S]*)$/.exec(t);
+        if (m && fits(Number(m[1]), lastNum())) ch.verses.push({ v: m[1], t: m[2] });
+        else if (ch.verses.length) ch.verses[ch.verses.length - 1].t += `\n${t}`; // a section running on to a new paragraph
+        else if (t.length < 300 && titleCased(t)) ch.title += ` ${t.replace(/\.$/, "")}`; // the rest of the title, after a gap
+        else ch.verses.push({ v: "1", t }); // a chapter whose first section has no number
+      }
+    };
+    for (let k = start + 1; k < lines.length; k++) {
+      const raw = lines[k];
+      const l = raw.trim();
+      const bk = /^BOOK ([IVXL]+)\.(.*)$/.exec(raw);
+      if (bk) {
+        flush();
+        inNotes = false;
+        // the summary: the rest of this line and the lines after it, up to the first chapter
+        const sum: string[] = [bk[2].trim()];
+        let j = k + 1;
+        for (; j < lines.length && !/^CHAPTER \d+\./.test(lines[j]); j++) sum.push(lines[j].trim());
+        pendingNote = unwrap(sum.filter(Boolean).join(" ")).replace(/\s*—\s*/g, "—").replace(/\s+/g, " ").trim();
+        // Antiquities VIII's list of contents is printed again just before the book: the second heading replaces it
+        if (books[books.length - 1].id === `${w}-${roman(bk[1])}`) books.pop();
+        books.push({ id: `${w}-${roman(bk[1])}`, name: `${wname}, Book ${bk[1]}`, chapters: [], notes: [] });
+        k = j - 1;
+        continue;
+      }
+      const ch = /^CHAPTER (\d+|[IVXL]+)\.?(.*)$/.exec(raw); // two are numbered "V." in the Wars
+      if (ch) {
+        if (!/^\d/.test(ch[1])) ch[1] = String(roman(ch[1]));
+        flush();
+        inNotes = false;
+        // the title: the rest of the line and its run-on lines; or, when the line has only the number (the Wars,
+        // and Antiquities XVI.3), the block of lines after the gap
+        const tl: string[] = [ch[2].trim()];
+        let j = k + 1;
+        if (!ch[2].trim()) while (j < lines.length && !lines[j].trim()) j++;
+        for (; j < lines.length && lines[j].trim() && !/^\d+\.\s/.test(lines[j]); j++) tl.push(lines[j].trim());
+        // a title broken off before its last word, printed after a gap ("… Their Burial At" / "Alexandrium.", XVI.11)
+        {
+          let g = j;
+          while (g < lines.length && !lines[g].trim()) g++;
+          const one = lines[g]?.trim() ?? "";
+          if (/\b(At|Of|And|The|In|To|By|With|From|Upon)$/.test(tl.join(" ").trim()) && one && one.length < 40 && !lines[g + 1]?.trim()) {
+            tl.push(one);
+            j = g + 1;
+          }
+        }
+        const b = books[books.length - 1];
+        if (Number(ch[1]) !== b.chapters.length + 1) throw new Error(`josephus: ${b.id} chapter ${ch[1]} after ${b.chapters.length}`);
+        b.chapters.push({ title: unwrap(tl.filter(Boolean).join(" ")).replace(/\s+/g, " ").replace(/\.$/, ""), verses: [], ...(b.chapters.length ? {} : { note: pendingNote }) });
+        k = j - 1;
+        continue;
+      }
+      // the footnotes heading; in Wars VII the first note runs on from it on the same line
+      if (/FOOTNOTES:?(\s|$)/.test(l)) {
+        flush();
+        inNotes = true;
+      }
+      if (inNotes) {
+        // the numbers of the notes it has (some are skipped: Wars IV has no 15)
+        for (const m of l.matchAll(/(?:^|\s)(\d+) \(return\)/g)) books[books.length - 1].notes.push(Number(m[1]));
+        continue;
+      }
+      if (!l) flush();
+      else para.push(l);
+    }
+    flush();
+    all.push(...books);
+  }
+  // note marks, in order through each book
+  let missing = 0;
+  for (const b of all) {
+    // the marks run through the chapter titles too ("How Caius 1 Was Slain"): search titles and sections in order
+    const titles = b.chapters.map((c) => ({ v: "title", t: c.title }));
+    const vs = b.chapters.flatMap((c, k) => [titles[k], ...c.verses]);
+    let vi = 0;
+    let off = 0;
+    // where mark n next occurs from the current place: [verse, index, length] or null
+    const find = (n: number): [number, number, number] | null => {
+      const re = new RegExp(`(?:^|(?<=[\\p{L}.,;:!?)\\]’”'"]))( ?)${n}(?=[\\s,.;:!?)\\]’”"]|$)`, "gu");
+      for (let i = vi; i < vs.length; i++) {
+        re.lastIndex = i === vi ? off : 0;
+        const m = re.exec(vs[i].t);
+        if (m) return [i, m.index, m[0].length];
+      }
+      return null;
+    };
+    const before = (a: [number, number, number], c: [number, number, number] | null) => !c || a[0] < c[0] || (a[0] === c[0] && a[1] < c[1]);
+    const nums = [...new Set(b.notes)].sort((x, y) => x - y);
+    for (const [j, n] of nums.entries()) {
+      const at = find(n);
+      // a mark the printer left out: do not take a later number for it (it must come before the next mark)
+      if (!at || (j + 1 < nums.length && !before(at, find(nums[j + 1])))) {
+        missing++;
+        console.warn(`josephus: ${b.id} note ${n} not found`);
+        continue;
+      }
+      const [i, idx, len] = at;
+      vs[i].t = vs[i].t.slice(0, idx) + vs[i].t.slice(idx + len);
+      vi = i;
+      off = idx;
+    }
+    for (const v of vs) v.t = v.t.replace(/\s+([,.;:])/g, "$1").replace(/ {2,}/g, " ").trim();
+    b.chapters.forEach((c, k) => (c.title = titles[k].t.replace(/\.$/, "")));
+    // no section number may be left inside a section
+    for (const [k, c] of b.chapters.entries())
+      for (const v of c.verses) {
+        const n = Number(v.v) + 1;
+        if (new RegExp(`(?:^|[.!?;:"”’)\\]] ?|\\n)${n}\\. \\p{Lu}`, "u").test(v.t)) console.warn(`josephus: ${b.id} ${k + 1}:${v.v} still holds section ${n}`);
+      }
+  }
+  await resetVersion("josephus", "whiston");
+  JOSEPHUS_BOOKS.length = 0;
+  let total = 0;
+  let chapters = 0;
+  for (const b of all) {
+    for (const [k, c] of b.chapters.entries()) {
+      if (!c.verses.length) throw new Error(`josephus: ${b.id} ${k + 1} empty`);
+      await writeChapter("josephus", "whiston", b.id, k + 1, c.verses, c.note || undefined, c.title);
+      total += c.verses.length;
+    }
+    chapters += b.chapters.length;
+    JOSEPHUS_BOOKS.push({ id: b.id, name: b.name, chapters: b.chapters.length });
+  }
+  console.log(JOSEPHUS_BOOKS.map((b) => `${b.id} ${b.chapters}`).join(" | "), `| marks not found: ${missing}`);
+  report("josephus", chapters, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  josephus,
   bustan,
   mabinogion,
   guide,
