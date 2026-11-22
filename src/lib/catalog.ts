@@ -128,6 +128,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   lotus: ["soothill"],
   jataka: ["rhys-davids"],
   masnavi: ["redhouse"],
+  gilgamesh: ["thompson"],
   aeneid: ["dryden"],
   metamorphoses: ["riley"],
   republic: ["jowett-rep"],

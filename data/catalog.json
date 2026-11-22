@@ -48,6 +48,7 @@
     { "id": "prose-edda", "name": "Prose Edda", "versification": "prose-edda" },
     { "id": "kalevala", "name": "Kalevala", "versification": "kalevala" },
     { "id": "book-of-the-dead", "name": "The Egyptian Book of the Dead", "versification": "book-of-the-dead" },
+    { "id": "gilgamesh", "name": "The Epic of Gilgamesh", "versification": "gilgamesh" },
     { "id": "lotus", "name": "The Lotus Sutra", "versification": "lotus" },
     { "id": "jataka", "name": "The Jataka Tales", "versification": "jataka" },
     { "id": "masnavi", "name": "The Masnavi of Rumi", "versification": "masnavi" },
@@ -1843,6 +1844,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/61724",
       "licensed": false,
       "versification": "masnavi"
+    },
+    {
+      "id": "thompson",
+      "work": "gilgamesh",
+      "abbr": "Thompson",
+      "name": "The Epic of Gilgamish (R. Campbell Thompson)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1928,
+      "translator": "R. Campbell Thompson",
+      "license": "Public Domain",
+      "licenseNote": "Thompson's line-for-line hexameters, with his square brackets for restored words and his notes on the gaps in the tablets; one chapter per tablet. His footnotes are left out. From the Internet Sacred Text Archive's transcription.",
+      "attribution": "The Epic of Gilgamish, translated by R. Campbell Thompson (London: Luzac, 1928), public domain in the US; transcription from the Internet Sacred Text Archive (archive.sacred-texts.com/ane/eog).",
+      "sourceUrl": "https://archive.sacred-texts.com/ane/eog/index.htm",
+      "licensed": false,
+      "versification": "gilgamesh"
     }
   ],
   "religions": [
@@ -2720,6 +2738,13 @@
           "name": "Egypt",
           "items": [
             { "id": "book-of-the-dead", "name": "The Book of the Dead", "work": "book-of-the-dead", "chapters": 186, "chapterName": "Chapter" }
+          ]
+        },
+        {
+          "id": "mesopotamia",
+          "name": "Mesopotamia",
+          "items": [
+            { "id": "gilgamesh", "name": "The Epic of Gilgamesh", "work": "gilgamesh", "chapters": 12, "chapterName": "Tablet" }
           ]
         }
       ]

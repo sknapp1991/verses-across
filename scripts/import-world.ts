@@ -1687,7 +1687,91 @@ async function masnavi() {
   if (warn) console.warn(`masnavi: ${warn} number marks out of step`);
 }
 
+/**
+ * The Epic of Gilgamish — R. Campbell Thompson (London: Luzac, 1928; public domain in the US), from the Internet
+ * Sacred Text Archive's transcription (archive.sacred-texts.com/ane/eog/, pages eog03–eog14 saved in
+ * data/raw/gilgamesh). One chapter per tablet (12); verse = paragraph, Thompson's lines kept, with his square
+ * brackets for restored words and his notes on gaps ("About thirty lines wanting"); the first verse of each
+ * column is labelled with it ("col. II"). His footnotes, the margin line numbers and the note marks are left out.
+ */
+async function gilgamesh() {
+  const { readFile } = await import("node:fs/promises");
+  await resetVersion("gilgamesh", "thompson");
+  let total = 0;
+  for (let n = 1; n <= 12; n++) {
+    const page = await readFile(path.join(ROOT, "data", "raw", "gilgamesh", `eog${String(n + 2).padStart(2, "0")}.htm`), "utf8");
+    const head = [...page.matchAll(/<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/g)].map((m) => decodeEntities(m[1].replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim());
+    // ["THE EPIC OF GILGAMISH.", "THE FIRST TABLET", "OF THE TYRANNY OF GILGAMISH, …", "Footnotes"]
+    const ti = head.findIndex((h) => /TABLET\.?$/.test(h));
+    const title = titleCase(head[ti + 1] ?? "").replace(/\.$/, "");
+    const start = page.indexOf("</h", page.indexOf(head[ti + 1] ? "TABLET" : "<body"));
+    const notes = page.search(/<h[1-4][^>]*>\s*Footnotes/);
+    const body = page.slice(start, notes > 0 ? notes : undefined);
+    const verses: Verse[] = [];
+    let col = "";
+    let sub = ""; // a centred sub-heading ("(The Cause of the Flood).") opens the next verse
+    let afterBreak = false; // a page marker came between this paragraph and the last
+    for (const m of body.matchAll(/<p([^>]*)>([\s\S]*?)<\/p>/g)) {
+      const inner = m[2]
+        .replace(/<a name="page_\d+">[\s\S]*?<\/a>/g, "\u0000") // page markers ("p. 10")
+        .replace(/<span class="margnote">[\s\S]*?<\/span>/g, "") // margin line numbers
+        .replace(/<a name="fr_\d+"><\/a><a href="#fn_\d+"><font size="1">\d+<\/font><\/a>/g, "") // note marks
+        .replace(/<a [^>]*>[\s\S]*?<\/a>/g, (x) => x.replace(/<[^>]+>/g, ""));
+      const pageOnly = /^[\s\u0000]*$/.test(inner.replace(/<[^>]+>/g, "").replace(/&nbsp;| /g, ""));
+      if (pageOnly) {
+        afterBreak = true;
+        continue;
+      }
+      const lines = inner
+        .replace(/\u0000/g, "")
+        .split(/<br\s*\/?>/)
+        .map((x) =>
+          decodeEntities(x.replace(/<[^>]+>/g, ""))
+            .replace(/ /g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .replace(/^\d{1,3}\.?\s+(?=\S)/, "") // a margin number typed as text ("30. [Anu]")
+            // a space left where a note mark was ("Erech ."), but never inside Thompson's ". . . ." gaps
+            .replace(/(?<=[\w\])’'])\s+([,;:!?)]|\.(?!\s*\.))/g, "$1")
+            .replace(/^0 (?=that\b)/, "O ") // "0 that" (a typo in the transcription)
+            .replace(/^\[paragraph continues\]\s*/, ""), // Sacred Texts' mark for a paragraph split by a page
+        )
+        .filter((x) => x && !/^\d{1,3}\.?$/.test(x) && !/^_+$/.test(x));
+      if (!lines.length) continue;
+      const all = lines.join(" ");
+      const c = /^Column ([IVX]+)\s*\.?$/.exec(all);
+      if (c) {
+        col = c[1];
+        continue;
+      }
+      if (/^\(?The Argument\)?\.?$/.test(all.replace(/[()]/g, ""))) continue;
+      if (/^THE END OF THE EPIC|^SHARP AND SONS/.test(all)) continue; // the last page and the printer's imprint
+      // A short bracketed heading ("(The Fight with Humbaba).") opens the next verse; a note on a gap ("(About
+      // seventeen lines missing).") stays a verse of its own.
+      if (/^\(.*\)\.?$/.test(all) && all.length < 80 && !/lines|gap|wanting|missing|mutilated|broken|lost|Column/i.test(all)) {
+        sub = sub ? `${sub}\n${all}` : all;
+        continue;
+      }
+      const prev = verses[verses.length - 1];
+      // a sentence cut by a page turn goes on in the next paragraph
+      if (afterBreak && prev && !sub && !col && !/[.!?)\]”’"]$/.test(prev.t) && /^[a-z]/.test(lines[0])) {
+        prev.t += `\n${lines.join("\n")}`;
+        afterBreak = false;
+        continue;
+      }
+      afterBreak = false;
+      verses.push({ v: String(verses.length + 1), t: [sub, ...lines].filter(Boolean).join("\n"), ...(col ? { n: `col. ${col}` } : {}) });
+      col = "";
+      sub = "";
+    }
+    await writeChapter("gilgamesh", "thompson", "gilgamesh", n, verses, undefined, title);
+    total += verses.length;
+  }
+  report("gilgamesh", 12, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  gilgamesh,
   masnavi,
   jataka,
   lotus,

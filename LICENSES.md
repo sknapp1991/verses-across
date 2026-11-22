@@ -341,6 +341,16 @@ prints every fifth couplet number, and in two tales (III and XI) his printed num
 our numbers can differ from his by one or two there. Left out: his preface, the anecdotes from the Acts of the
 Adepts that come before the poem, and his footnotes.
 
+## The Epic of Gilgamesh (Ancient Near East, added Nov 22 2026, `scripts/import-world.ts gilgamesh`)
+
+R. Campbell Thompson, The Epic of Gilgamish (London: Luzac, 1928; public domain in the US as published before
+1931, and Thompson died in 1941), from the Internet Sacred Text Archive's transcription
+(archive.sacred-texts.com/ane/eog/; its 15 pages read at a gentle pace, as its robots.txt allows; Skylar OK'd
+Sacred Texts as a source on Nov 22). One chapter per tablet; verse = paragraph, Thompson's lines kept, with his
+square brackets for restored words and his notes on the gaps; the first verse of each column is labelled with
+it ("col. II"), and his small centred sub-headings open the passage they head. Left out: his preface,
+addenda, footnotes, the page and margin line numbers, the note marks and the printer's imprint.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
