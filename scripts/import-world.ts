@@ -2385,7 +2385,202 @@ async function hafiz() {
   report("hafiz", poems.length, total);
 }
 
+/**
+ * The Legends of the Jews — Louis Ginzberg, volumes I–IV (1909–1913; tr. Henrietta Szold and Paul Radin),
+ * Gutenberg #1493, #1494, #2881, #2882: the narrative from the Creation to Esther. Book = Ginzberg's chapter
+ * ("The Creation of the World" … "Esther", 23 across the four volumes); chapter = his titled section; verse =
+ * paragraph. His note marks ("[12]", "(12)") are left out: the notes themselves are in volumes V–VI, which are not
+ * on Gutenberg. The prefaces are left out.
+ */
+export const LEGENDS_BOOKS: { id: string; name: string; vol: number; sections: number }[] = [];
+async function legends() {
+  const vols: [number, number][] = [
+    [1, 1493],
+    [2, 1494],
+    [3, 2881],
+    [4, 2882],
+  ];
+  const books: { name: string; vol: number; sections: { title: string; paras: string[] }[] }[] = [];
+  const isHead = (l: string) => /^[A-Z][A-Z0-9 ,.;:'’"“”!?()&—-]*[A-Z.)'’]$/.test(l) && l.length < 90 && /[A-Z]{3}/.test(l);
+  for (const [vol, id] of vols) {
+    const txt = gutenbergBody(await cached("legends-jews", `pg${id}.txt`, GUT(id)));
+    const lines = txt.split("\n");
+    // the narrative starts at the first chapter heading after the preface and contents: a Roman numeral line
+    // followed by the chapter title (I–II, IV), or in III, which is one chapter, the title on its own
+    let i = lines.findIndex((l, k) => /^[IVX]+\.?$/.test(l.trim()) && l === l.trim() && isHead(lines[k + 1]?.trim() ?? ""));
+    if (vol === 3) i = lines.findIndex((l, k) => l === "MOSES IN THE WILDERNESS" && lines[k + 5]?.trim() === "THE LONG ROUTE") - 1;
+    if (i < 0) throw new Error(`legends: no start in volume ${vol}`);
+    let para: string[] = [];
+    const flush = () => {
+      const b = books[books.length - 1];
+      const s = b?.sections[b.sections.length - 1];
+      if (para.length && s) {
+        const t = unwrap(para.join(" "))
+          .replace(/\s*\[\s*\d+\s*\]|\s+\d{1,3}\](?=\s|$)/g, "") // note marks, some broken over a line ("[ 33]", "1]")
+          .replace(/\s*\(\d{1,3}\)(?=[\s.,;:!?"”’)]|$)/g, "")
+          .replace(/\s+([,.;:!?])/g, "$1")
+          .replace(/_/g, "")
+          .replace(/unto thee\.\[\]/, `unto thee.'"`) // a lost closing quote (II, Moses in Egypt)
+          .trim()
+          .replace(/(\w)$/, "$1."); // a full stop lost with the note mark after it ("great, indeed[6]")
+        if (t) s.paras.push(t);
+      }
+      para = [];
+    };
+    for (let k = i; k < lines.length; k++) {
+      const raw = lines[k];
+      const l = raw.trim();
+      if (/^\*\*\* END/.test(l)) break;
+      const prevBlank = !lines[k - 1]?.trim();
+      const nextBlank = !lines[k + 1]?.trim();
+      // a chapter: "I" / "I." then its title on the next line (or volume III's single title)
+      if (/^[IVX]+\.?$/.test(l) && raw === l && isHead(lines[k + 1]?.trim() ?? "")) {
+        flush();
+        books.push({ name: lines[k + 1].trim(), vol, sections: [] });
+        k++;
+        continue;
+      }
+      if (vol === 3 && k === i + 1) {
+        books.push({ name: l, vol, sections: [] });
+        continue;
+      }
+      // a section: an upper-case line on its own, at the margin (in III some are indented by a space)
+      if (/^ ?\S/.test(raw) && isHead(l) && prevBlank && nextBlank) {
+        flush();
+        books[books.length - 1].sections.push({ title: l.replace(/\.$/, ""), paras: [] });
+        continue;
+      }
+      if (!l) flush();
+      else para.push(l);
+    }
+    flush();
+  }
+  await resetVersion("legends-jews", "ginzberg");
+  LEGENDS_BOOKS.length = 0;
+  // section titles: "The 'Akedah"; small words lower-case throughout; "Vasthi" is a slip for Vashti (IV's contents)
+  const title = (x: string) =>
+    titleCase(x.replace(/^VASTHI/, "VASHTI"))
+      .replace(/(\s')(\p{Ll})/gu, (_, a: string, b: string) => a + b.toUpperCase())
+      .replace(/(?<=\S\s)(Into|Unto|Against|Toward|Before|Between|Over|Under|Through|After|Among|Without|Within)\b/g, (w) => w.toLowerCase());
+  let total = 0;
+  for (const b of books) {
+    const id = slug(titleCase(b.name));
+    for (const [k, s] of b.sections.entries()) {
+      if (!s.paras.length) throw new Error(`legends: empty section ${b.name} / ${s.title}`);
+      await writeChapter("legends-jews", "ginzberg", id, k + 1, s.paras.map((t, j) => ({ v: String(j + 1), t })), undefined, title(s.title));
+      total += s.paras.length;
+    }
+    LEGENDS_BOOKS.push({ id, name: titleCase(b.name), vol: b.vol, sections: b.sections.length });
+  }
+  console.log(LEGENDS_BOOKS.map((b) => `${b.vol} ${b.id} ${b.sections}`).join("\n"));
+  report("legends-jews", books.reduce((a, b) => a + b.sections.length, 0), total);
+}
+
+/**
+ * The Guide for the Perplexed — Moses Maimonides, tr. M. Friedländer (2nd ed., 1904), Gutenberg #73584.
+ * Books: Maimonides' Introduction (his letter to his pupil, prefatory remarks, directions for study, introductory
+ * remarks on method), Part I (76 chapters), the Introduction to Part II (the propositions), Part II (48), the
+ * Introduction to Part III, Part III (54). Verse = paragraph; epigraphs keep their lines. Friedländer's own
+ * introduction (his life of Maimonides and analysis of the Guide) and his notes are left out.
+ */
+async function guide() {
+  const txt = gutenbergBody(await cached("guide-perplexed", "pg73584.txt", GUT(73584)));
+  const lines = txt.split("\n");
+  const at = (re: RegExp, from = 0) => {
+    const i = lines.findIndex((l, k) => k >= from && re.test(l));
+    if (i < 0) throw new Error(`guide: ${re} not found`);
+    return i;
+  };
+  const intro = at(/^INTRODUCTION$/, at(/^PART III\.$/));
+  const p1 = at(/^PART I$/, intro);
+  const p2 = at(/^PART II$/, p1);
+  const p3 = at(/^PART III$/, p2);
+  const end = at(/^NOTES$/, p3);
+  // paragraphs of a stretch of lines; an indented block (an epigraph) keeps its lines
+  const paras = (from: number, to: number) => {
+    const out: string[] = [];
+    let buf: string[] = [];
+    let verse = false;
+    const flush = () => {
+      if (buf.length) {
+        // an epigraph: the quotation unwrapped, its reference ("(Psalm cxliii. 8.)") on a line of its own
+        const t = verse
+          ? unwrap(buf.map((x) => x.trim()).join(" "))
+              .replace(/\s+/g, " ")
+              .replace(/\s*—?\s*(\([^()]+\.\))$/, "\n$1")
+          : unwrap(buf.map((x) => x.trim()).join(" "));
+        out.push(t.replace(/\s*\[\d+\]/g, "").replace(/_/g, ""));
+      }
+      buf = [];
+    };
+    for (const raw of lines.slice(from, to)) {
+      if (!raw.trim()) {
+        flush();
+        continue;
+      }
+      const ind = /^\s{8,}\S/.test(raw);
+      if (buf.length && ind !== verse) flush();
+      verse = ind;
+      buf.push(raw);
+    }
+    flush();
+    return out.filter(Boolean);
+  };
+  // a heading ("Proposition IV.", "First Proposition.", "Third Argument.") opens the paragraph after it
+  const isSub = (t: string) => /^(?:Proposition [IVXL]+|(?:The )?\w+ (?:Proposition|Argument|Method))\.$/.test(t);
+  const toVerses = (ps: string[]) =>
+    ps
+      .reduce<string[]>((a, t) => (a.length && isSub(a[a.length - 1]) ? [...a.slice(0, -1), `${a[a.length - 1]}\n${t}`] : [...a, t]), [])
+      .map((t, k) => ({ v: String(k + 1), t }));
+  await resetVersion("guide-perplexed", "friedlander");
+  let total = 0;
+  const write = async (book: string, n: number, ps: string[], title?: string) => {
+    if (!ps.length) throw new Error(`guide: empty ${book} ${n}`);
+    await writeChapter("guide-perplexed", "friedlander", book, n, toVerses(ps), undefined, title);
+    total += ps.length;
+  };
+  // Maimonides' Introduction, in four parts
+  const heads: [RegExp, string][] = [
+    [/^\[Letter of the Author to his Pupil/, "Letter to his Pupil, R. Joseph Ibn Aknin"],
+    [/^\[PREFATORY REMARKS\.\]$/, "Prefatory Remarks"],
+    [/^DIRECTIONS FOR THE STUDY OF THIS WORK\.$/, "Directions for the Study of This Work"],
+    [/^INTRODUCTORY REMARKS\.$/, "Introductory Remarks: On Method"],
+  ];
+  const hs = heads.map(([re]) => at(re, intro));
+  for (const [k, h] of hs.entries()) {
+    let ps = paras(h + 1, hs[k + 1] ?? p1);
+    if (k === 3) ps = ps.filter((p) => p !== "[On Method.]");
+    await write("introduction", k + 1, ps, heads[k][1]);
+  }
+  // the Parts: "CHAPTER I" … ; what comes before chapter I is the Part's epigraph (I) or introduction (II, III)
+  const parts: [string, number, number, number][] = [
+    ["part-1", p1, p2, 76],
+    ["part-2", p2, p3, 48],
+    ["part-3", p3, end, 54],
+  ];
+  for (const [book, from, to, n] of parts) {
+    const chs: number[] = [];
+    for (let k = from; k < to; k++) if (/^CHAPTER [IVXL]+\.?$/.test(lines[k].trim())) chs.push(k);
+    if (chs.length !== n) throw new Error(`guide: ${book} has ${chs.length} chapters, expected ${n}`);
+    chs.forEach((c, j) => {
+      if (roman(lines[c].trim().replace(/^CHAPTER |\.$/g, "")) !== j + 1) throw new Error(`guide: ${book} chapter ${j + 1} is ${lines[c]}`);
+    });
+    const pre = paras(from + 1, chs[0]).filter((p) => p !== "INTRODUCTION");
+    if (book === "part-1") {
+      // the Part's epigraph opens chapter 1
+      await write(book, 1, [...pre, ...paras(chs[0] + 1, chs[1])]);
+      for (let j = 1; j < chs.length; j++) await write(book, j + 1, paras(chs[j] + 1, chs[j + 1] ?? to));
+    } else {
+      await write(`${book}-introduction`, 1, pre, book === "part-2" ? "Introduction: The Propositions" : "Introduction");
+      for (let j = 0; j < chs.length; j++) await write(book, j + 1, paras(chs[j] + 1, chs[j + 1] ?? to));
+    }
+  }
+  report("guide-perplexed", 4 + 2 + 178, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  guide,
+  legends,
   hafiz,
   rubaiyat,
   goldenVerses,

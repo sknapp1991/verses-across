@@ -133,6 +133,8 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   "golden-verses": ["redfield"],
   rubaiyat: ["fitzgerald"],
   hafiz: ["bell"],
+  "legends-jews": ["ginzberg"],
+  "guide-perplexed": ["friedlander"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

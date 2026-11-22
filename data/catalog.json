@@ -63,6 +63,8 @@
     { "id": "golden-verses", "name": "The Golden Verses of Pythagoras", "versification": "golden-verses" },
     { "id": "rubaiyat", "name": "The Rubaiyat of Omar Khayyam", "versification": "rubaiyat" },
     { "id": "hafiz", "name": "Poems from the Divan of Hafiz", "versification": "hafiz" },
+    { "id": "legends-jews", "name": "The Legends of the Jews", "versification": "legends-jews" },
+    { "id": "guide-perplexed", "name": "The Guide for the Perplexed", "versification": "guide-perplexed" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2059,6 +2061,40 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/74883",
       "licensed": false,
       "versification": "hafiz"
+    },
+    {
+      "id": "ginzberg",
+      "work": "legends-jews",
+      "abbr": "Ginzberg",
+      "name": "The Legends of the Jews (Louis Ginzberg), volumes I–IV",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1909,
+      "translator": "Henrietta Szold (I–II, IV) and Paul Radin (III), from Ginzberg's German manuscript",
+      "license": "Public Domain (US)",
+      "licenseNote": "The narrative, from the Creation to Esther (volumes I–IV, 1909–1913): book = Ginzberg's chapter, chapter = his titled section, verse = paragraph. His note marks are left out; the notes themselves fill volumes V–VI, which are not on Gutenberg. The prefaces are left out.",
+      "attribution": "The Legends of the Jews, by Louis Ginzberg, volumes I–IV (Philadelphia: Jewish Publication Society, 1909–1913), translated by Henrietta Szold and Paul Radin, public domain; Project Gutenberg #1493, #1494, #2881, #2882.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1493",
+      "licensed": false,
+      "versification": "legends-jews"
+    },
+    {
+      "id": "friedlander",
+      "work": "guide-perplexed",
+      "abbr": "Friedländer",
+      "name": "The Guide for the Perplexed (Maimonides, tr. M. Friedländer)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1904,
+      "translator": "M. Friedländer, from the Arabic",
+      "license": "Public Domain",
+      "licenseNote": "Maimonides' Introduction (his letter to his pupil, prefatory remarks, directions for study, remarks on method), the three Parts (76, 48 and 54 chapters) and the introductions to Parts II and III. Verse = paragraph; a heading inside a chapter (\"Proposition IV.\", \"The First Argument.\") opens the paragraph it heads, and epigraphs keep their reference on its own line. Friedländer's own introduction (his life of Maimonides and analysis of the Guide) is left out; this edition has no notes to the text.",
+      "attribution": "The Guide for the Perplexed, by Moses Maimonides, translated from the original Arabic text by M. Friedländer (second edition, revised, 1904; London: George Routledge & Sons, 1910 printing), public domain; Project Gutenberg #73584.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/73584",
+      "licensed": false,
+      "versification": "guide-perplexed"
     }
   ],
   "religions": [
@@ -2345,7 +2381,48 @@
         ] },
         { "id": "talmud-tahorot", "name": "Talmud · Tahorot (Purities)", "items": [
           {"id": "niddah", "name": "Niddah", "work": "talmud", "chapters": 73, "chapterName": "Niddah"}
-        ] }
+        ] },
+        {
+          "id": "legends-of-the-jews",
+          "name": "Legends of the Jews (Ginzberg)",
+          "items": [
+            { "id": "the-creation-of-the-world", "name": "The Creation of the World", "work": "legends-jews", "chapters": 9, "chapterName": "Section" },
+            { "id": "adam", "name": "Adam", "work": "legends-jews", "chapters": 17, "chapterName": "Section" },
+            { "id": "the-ten-generations", "name": "The Ten Generations", "work": "legends-jews", "chapters": 13, "chapterName": "Section" },
+            { "id": "noah", "name": "Noah", "work": "legends-jews", "chapters": 12, "chapterName": "Section" },
+            { "id": "abraham", "name": "Abraham", "work": "legends-jews", "chapters": 35, "chapterName": "Section" },
+            { "id": "jacob", "name": "Jacob", "work": "legends-jews", "chapters": 25, "chapterName": "Section" },
+            { "id": "joseph", "name": "Joseph", "work": "legends-jews", "chapters": 38, "chapterName": "Section" },
+            { "id": "the-sons-of-jacob", "name": "The Sons of Jacob", "work": "legends-jews", "chapters": 12, "chapterName": "Section" },
+            { "id": "job", "name": "Job", "work": "legends-jews", "chapters": 6, "chapterName": "Section" },
+            { "id": "moses-in-egypt", "name": "Moses in Egypt", "work": "legends-jews", "chapters": 32, "chapterName": "Section" },
+            { "id": "moses-in-the-wilderness", "name": "Moses in the Wilderness", "work": "legends-jews", "chapters": 131, "chapterName": "Section" },
+            { "id": "joshua", "name": "Joshua", "work": "legends-jews", "chapters": 6, "chapterName": "Section" },
+            { "id": "the-judges", "name": "The Judges", "work": "legends-jews", "chapters": 9, "chapterName": "Section" },
+            { "id": "samuel-and-saul", "name": "Samuel and Saul", "work": "legends-jews", "chapters": 6, "chapterName": "Section" },
+            { "id": "david", "name": "David", "work": "legends-jews", "chapters": 15, "chapterName": "Section" },
+            { "id": "solomon", "name": "Solomon", "work": "legends-jews", "chapters": 12, "chapterName": "Section" },
+            { "id": "judah-and-israel", "name": "Judah and Israel", "work": "legends-jews", "chapters": 7, "chapterName": "Section" },
+            { "id": "elijah", "name": "Elijah", "work": "legends-jews", "chapters": 8, "chapterName": "Section" },
+            { "id": "elisha-and-jonah", "name": "Elisha and Jonah", "work": "legends-jews", "chapters": 6, "chapterName": "Section" },
+            { "id": "the-later-kings-of-judah", "name": "The Later Kings of Judah", "work": "legends-jews", "chapters": 7, "chapterName": "Section" },
+            { "id": "the-exile", "name": "The Exile", "work": "legends-jews", "chapters": 19, "chapterName": "Section" },
+            { "id": "the-return-of-the-captivity", "name": "The Return of the Captivity", "work": "legends-jews", "chapters": 6, "chapterName": "Section" },
+            { "id": "esther", "name": "Esther", "work": "legends-jews", "chapters": 20, "chapterName": "Section" }
+          ]
+        },
+        {
+          "id": "jewish-philosophy",
+          "name": "Jewish Philosophy",
+          "items": [
+            { "id": "introduction", "name": "Guide for the Perplexed: Introduction", "work": "guide-perplexed", "chapters": 4, "chapterName": "Section" },
+            { "id": "part-1", "name": "Guide for the Perplexed: Part I", "work": "guide-perplexed", "chapters": 76, "chapterName": "Chapter" },
+            { "id": "part-2-introduction", "name": "Guide for the Perplexed: Introduction to Part II", "work": "guide-perplexed", "chapters": 1, "chapterName": "Introduction" },
+            { "id": "part-2", "name": "Guide for the Perplexed: Part II", "work": "guide-perplexed", "chapters": 48, "chapterName": "Chapter" },
+            { "id": "part-3-introduction", "name": "Guide for the Perplexed: Introduction to Part III", "work": "guide-perplexed", "chapters": 1, "chapterName": "Introduction" },
+            { "id": "part-3", "name": "Guide for the Perplexed: Part III", "work": "guide-perplexed", "chapters": 54, "chapterName": "Chapter" }
+          ]
+        }
       ]
     },
     {

@@ -402,6 +402,26 @@ All public domain, from Project Gutenberg (read from its mirror).
 - **Hafiz** — Poems from the Divan of Hafiz, tr. Gertrude Lowthian Bell (London, 1897, #74883). One chapter per
   poem (43), verse = stanza. Her introduction and notes are left out.
 
+## The Legends of the Jews (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Legends of the Jews** — Louis Ginzberg, volumes I–IV (Jewish Publication Society, 1909–1913), translated
+  by Henrietta Szold (I–II, IV) and Paul Radin (III) from his German manuscript; public domain in the US
+  (published before 1930), Project Gutenberg #1493, #1494, #2881, #2882 (read from its mirror). The narrative from
+  the Creation to Esther: book = Ginzberg's chapter (23), chapter = his titled section, verse = paragraph. His note
+  marks are left out (the notes fill volumes V–VI, not on Gutenberg), and so are the prefaces. Two full stops and
+  a closing quotation mark lost with the note marks are restored, and the section title "Vasthi's Banquet" is
+  corrected to Vashti, as in the volume's own contents.
+
+## The Guide for the Perplexed (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Guide for the Perplexed** — Moses Maimonides, translated from the Arabic by M. Friedländer (second
+  edition, revised, 1904; London: George Routledge & Sons, 1910 printing); public domain, Project Gutenberg
+  #73584 (read from its mirror). Books: Maimonides' Introduction (letter to his pupil, prefatory remarks,
+  directions for study, remarks on method), Parts I–III (76, 48 and 54 chapters) and the introductions to Parts
+  II and III. Verse = paragraph; a heading inside a chapter ("Proposition IV.", "The First Argument.") opens the
+  paragraph it heads, and epigraphs keep their reference on its own line. Friedländer's own introduction (his
+  life of Maimonides and analysis of the Guide) is left out; this edition has no notes to the text.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
