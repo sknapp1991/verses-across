@@ -68,6 +68,8 @@
     { "id": "mabinogion", "name": "The Mabinogion", "versification": "mabinogion" },
     { "id": "bustan", "name": "The Bustan of Sadi", "versification": "bustan" },
     { "id": "josephus", "name": "Josephus: Antiquities and Wars of the Jews", "versification": "josephus" },
+    { "id": "aesop", "name": "Aesop's Fables", "versification": "aesop" },
+    { "id": "ghazali", "name": "The Confessions of al-Ghazali", "versification": "ghazali" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2149,6 +2151,40 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/2848",
       "licensed": false,
       "versification": "josephus"
+    },
+    {
+      "id": "townsend",
+      "work": "aesop",
+      "abbr": "Townsend",
+      "name": "Three Hundred Aesop's Fables (George Fyler Townsend)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1867,
+      "translator": "George Fyler Townsend, from the Greek",
+      "license": "Public Domain",
+      "licenseNote": "His 313 fables in his order and under his titles; verse = paragraph. The opening words he set in capitals are in normal case, his characters keeping their capitals. One misprint is corrected (\"Tee Kites\", fable 181); fable 2 begins \"Wolf, meeting…\" without its article, as in the source. His preface, Life of Aesop and index are left out.",
+      "attribution": "Three Hundred Æsop's Fables, literally translated from the Greek by George Fyler Townsend (London: George Routledge and Sons, 1867), public domain; Project Gutenberg #21.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/21",
+      "licensed": false,
+      "versification": "aesop"
+    },
+    {
+      "id": "field",
+      "work": "ghazali",
+      "abbr": "Field",
+      "name": "The Confessions of Al Ghazzali (Claud Field)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1909,
+      "translator": "Claud Field",
+      "license": "Public Domain",
+      "licenseNote": "Al-Munqidh min al-Dalal (Deliverance from Error), in Field's eight sections; verse = paragraph, verse quotations keep their lines. His introduction and footnotes are left out.",
+      "attribution": "The Confessions of Al Ghazzali, translated for the first time into English by Claud Field (Wisdom of the East; London: John Murray, 1909), public domain; Project Gutenberg #58977.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/58977",
+      "licensed": false,
+      "versification": "ghazali"
     }
   ],
   "religions": [
@@ -2548,6 +2584,13 @@
             { "id": "hafiz", "name": "Hafiz: Poems from the Divan", "work": "hafiz", "chapters": 43, "chapterName": "Poem" },
             { "id": "prologue", "name": "Sadi, The Bustan: Prologue", "work": "bustan", "chapters": 1, "chapterName": "Prologue" },
             { "id": "bustan", "name": "Sadi, The Bustan (The Orchard)", "work": "bustan", "chapters": 10, "chapterName": "Chapter" }
+          ]
+        },
+        {
+          "id": "islamic-thought",
+          "name": "Islamic Thought",
+          "items": [
+            { "id": "confessions", "name": "Al-Ghazali, The Confessions (Deliverance from Error)", "work": "ghazali", "chapters": 8, "chapterName": "Section" }
           ]
         }
       ]
@@ -3082,6 +3125,13 @@
           "items": [
             { "id": "metamorphoses", "name": "Metamorphoses (Books I–VII)", "work": "metamorphoses", "chapters": 7, "chapterName": "Metamorphoses" },
             { "id": "metamorphoses-2", "name": "Metamorphoses (Books VIII–XV)", "work": "metamorphoses", "chapters": 8, "chapterName": "Metamorphoses II" }
+          ]
+        },
+        {
+          "id": "aesop",
+          "name": "Aesop",
+          "items": [
+            { "id": "aesop", "name": "Aesop's Fables", "work": "aesop", "chapters": 313, "chapterName": "Fable" }
           ]
         }
       ]

@@ -445,6 +445,20 @@ From Project Gutenberg (read from its mirror).
   footnote spliced into Antiquities XX.11.3 (Whiston: "I will briefly run over this war again"). Antiquities II.6
   has no section 9 in the file, so its numbers go from 8 to 10.
 
+## Aesop's Fables (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **Aesop's Fables** — Three Hundred Æsop's Fables, literally translated from the Greek by George Fyler Townsend
+  (London: Routledge, 1867); public domain, Project Gutenberg #21 (read from its mirror). His 313 fables in his
+  order and under his titles, verse = paragraph; the opening words he set in capitals are in normal case, his
+  characters keeping their capitals. One misprint is corrected ("Tee Kites", fable 181); fable 2 begins "Wolf,
+  meeting…" without its article, as in the source. His preface, Life of Aesop and index are left out.
+
+## The Confessions of al-Ghazali (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Confessions of Al Ghazzali** (al-Munqidh min al-Dalal) — translated by Claud Field (Wisdom of the East,
+  London: John Murray, 1909; Field died in 1941); public domain, Project Gutenberg #58977 (read from its mirror). His eight
+  sections, verse = paragraph, verse quotations keeping their lines. His introduction and footnotes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

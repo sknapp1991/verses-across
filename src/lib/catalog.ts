@@ -138,6 +138,8 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   mabinogion: ["guest"],
   bustan: ["edwards"],
   josephus: ["whiston"],
+  aesop: ["townsend"],
+  ghazali: ["field"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

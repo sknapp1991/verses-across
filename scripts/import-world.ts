@@ -2925,7 +2925,141 @@ async function josephus() {
   report("josephus", chapters, total);
 }
 
+/**
+ * Aesop's Fables — Three Hundred Aesop's Fables, literally translated from the Greek by George Fyler Townsend
+ * (London: Routledge, 1867), Gutenberg #21. One chapter per fable, in his order and under his titles (found one by
+ * one from his contents list); verse = paragraph. The opening words he sets in capitals ("A LION was…") are in
+ * normal case. His preface, Life of Aesop and index are left out.
+ */
+async function aesop() {
+  const txt = gutenbergBody(await cached("aesop", "pg21.txt", GUT(21)));
+  const lines = txt.split("\n");
+  const toc0 = lines.findIndex((l) => l.trim() === "AESOP’S FABLES" && l.startsWith(" "));
+  const tocEnd = lines.findIndex((l, k) => k > toc0 && l.trim() === "INDEX");
+  // (the contents end with his footnotes, which belong to the preface)
+  const titles = lines.slice(toc0 + 1, tocEnd).map((l) => l.trim()).filter((t) => t && t !== "FOOTNOTES");
+  const body = lines.findIndex((l, k) => k > tocEnd && l.trim() === "AESOP’S FABLES");
+  const end = lines.findIndex((l, k) => k > body && (l.trim() === "INDEX" || l.trim() === "FOOTNOTES"));
+  // each title as it stands in the text: on its own line, with blank lines around it
+  const at: number[] = [];
+  let from = body;
+  for (const t of titles) {
+    const i = lines.findIndex((l, k) => k > from && k < end && l.trim().toLowerCase() === t.toLowerCase() && !lines[k - 1].trim() && !lines[k + 1]?.trim());
+    if (i < 0) throw new Error(`aesop: "${t}" not found after line ${from}`);
+    at.push((from = i));
+  }
+  await resetVersion("aesop", "townsend");
+  let total = 0;
+  const small = /^(A|An|And|The|Of|In|On|At|To|By|For|With|From)$/;
+  const smallWord = /^(a|an|and|the|of|in|on|at|to|by|for|with|from|upon|time|once|when|who|which|that|some|one|two|his|her|their|its|was|were|had|having|being|should|would|could|shall|will|there|this|it|is|you|i|we|they|he|she|do|not)$/;
+  for (const [k, i] of at.entries()) {
+    const ps: string[] = [];
+    let buf: string[] = [];
+    for (const l of [...lines.slice(i + 1, at[k + 1] ?? end), ""]) {
+      if (l.trim()) buf.push(l.trim());
+      else if (buf.length) {
+        ps.push(unwrap(buf.join(" ")).replace(/_/g, ""));
+        buf = [];
+      }
+    }
+    if (!ps.length) throw new Error(`aesop: "${titles[k]}" is empty`);
+    ps[0] = ps[0].replace(/^TEE KITES\b/, "THE KITES"); // a misprint (fable 181)
+    // "A LION was awakened…", "THE FROGS, grieved…": the capitals of the opening words in normal case
+    // the first word capitalised, the others only where the fable capitalises them elsewhere (its characters:
+    // "A Lion", "The Frogs", but "Why should")
+    const rest = `${ps.join(" ").replace(/^\S+/, "")} ${titles[k]}`;
+    ps[0] = ps[0].replace(/^(“?(?:[A-Z’'-]+[,;]? )*[A-Z’'-]{2,}[,;]?)(?= |$)/, (m) =>
+      m
+        .toLowerCase()
+        .split(" ")
+        .map((w, j) => {
+          const cap = w.replace(/(^“?)(\p{Ll})/u, (_, a: string, b: string) => a + b.toUpperCase());
+          if (j === 0) return cap;
+          const bare = w.replace(/^“|[,;]$/g, "");
+          if (smallWord.test(bare)) return w;
+          // the word as the fable or its title writes it, singular or plural ("Charcoal-Burner", "Monkeys")
+          const stem = bare.replace(/s$/, "").replace(/[-’']/g, (c) => `\\${c}`);
+          const seen = new RegExp(`\\b(${stem}s?)\\b`, "gi");
+          const form = [...rest.matchAll(seen)].map((m) => m[1]).find((x) => /^\p{Lu}/u.test(x));
+          if (!form) return w;
+          // keep this word's own ending, with the fable's capitals
+          const parts = bare.split("-");
+          const fparts = form.split("-");
+          const out = parts.map((p, n) => (fparts[n] && /^\p{Lu}/u.test(fparts[n]) ? p[0].toUpperCase() + p.slice(1) : p)).join("-");
+          return w.replace(bare, out);
+        })
+        .join(" "),
+    );
+    // Townsend's titles: small words lower-case
+    const title = titles[k]
+      .split(" ")
+      .map((w, j) => (j && small.test(w) ? w.toLowerCase() : w))
+      .join(" ");
+    await writeChapter("aesop", "townsend", "aesop", k + 1, ps.map((t, j) => ({ v: String(j + 1), t })), undefined, title);
+    total += ps.length;
+  }
+  report("aesop", at.length, total);
+}
+
+/**
+ * The Confessions of Al Ghazzali (al-Munqidh min al-Dalal) — tr. Claud Field (Wisdom of the East, London: John
+ * Murray, 1909), Gutenberg #58977. One chapter per section (8, under Field's headings); verse = paragraph, verse
+ * quotations keep their lines. His introduction, footnotes and the dividers are left out.
+ */
+async function ghazali() {
+  const txt = gutenbergBody(await cached("ghazali", "pg58977.txt", GUT(58977)));
+  const lines = txt.split("\n");
+  const heads: [RegExp, string][] = [
+    [/^GHAZZALI’S SEARCH FOR TRUTH$/, "Ghazzali’s Search for Truth"],
+    [/^THE SUBTERFUGES OF THE SOPHISTS$/, "The Subterfuges of the Sophists"],
+    [/^THE DIFFERENT KINDS OF SEEKERS AFTER TRUTH$/, "The Different Kinds of Seekers after Truth"],
+    [/^THE AIM OF SCHOLASTIC THEOLOGY AND ITS RESULTS$/, "The Aim of Scholastic Theology and Its Results"],
+    [/^CONCERNING THE PHILOSOPHICAL SECTS AND THE STIGMA OF INFIDELITY WHICH$/, "Concerning the Philosophical Sects and the Stigma of Infidelity Which Attaches to Them All"],
+    [/^DIVISIONS OF THE PHILOSOPHIC SCIENCES$/, "Divisions of the Philosophic Sciences"],
+    [/^SUFISM$/, "Sufism"],
+    [/^THE REALITY OF INSPIRATION: ITS IMPORTANCE FOR THE HUMAN RACE$/, "The Reality of Inspiration: Its Importance for the Human Race"],
+  ];
+  const body = lines.findIndex((l) => l.trim() === "THE CONFESSIONS OF AL GHAZZALI" && !l.startsWith(" "));
+  const end = lines.findIndex((l, k) => k > body && l.trim() === "FOOTNOTES");
+  let from = body;
+  const at = heads.map(([re]) => {
+    const i = lines.findIndex((l, k) => k > from && k < end && re.test(l.trim()));
+    if (i < 0) throw new Error(`ghazali: ${re} not found`);
+    return (from = i);
+  });
+  await resetVersion("ghazali", "field");
+  let total = 0;
+  for (const [k, i] of at.entries()) {
+    // chapter 5's heading runs over two lines
+    const s = k === 4 ? i + 2 : i + 1;
+    const ps: string[] = [];
+    let buf: string[] = [];
+    let poem = false;
+    const flush = () => {
+      if (buf.length) ps.push((poem ? buf.join("\n") : unwrap(buf.join(" "))).replace(/\[\d+\]/g, "").replace(/_/g, ""));
+      buf = [];
+    };
+    for (const raw of lines.slice(s, at[k + 1] ?? end)) {
+      const l = raw.trim();
+      if (!l || /^(\*\s*)+$/.test(l)) {
+        flush();
+        continue;
+      }
+      const ind = /^ {2,}\S/.test(raw);
+      if (buf.length && ind !== poem) flush();
+      poem = ind;
+      buf.push(l);
+    }
+    flush();
+    await writeChapter("ghazali", "field", "confessions", k + 1, ps.map((t, j) => ({ v: String(j + 1), t })), undefined, heads[k][1]);
+    total += ps.length;
+  }
+  report("ghazali", at.length, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  ghazali,
+  aesop,
   josephus,
   bustan,
   mabinogion,
