@@ -92,8 +92,8 @@ __pycache__/
 .cache-audio-removed/
 
 # Articles: raw drafts from the team stay private (only the edited depths are public)
-/data/articles/*-raw.md
-/data/articles/*/_source-draft.md
+/data/articles/*-raw.*
+/data/articles/*/_source*
 
 # Roadmap page build (published as an Artifact)
 /.cache-roadmap/

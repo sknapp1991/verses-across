@@ -1,5 +1,43 @@
 [
  {
+  "slug": "blind-sculptor",
+  "title": "The Blind Sculptor and the Primordial Name",
+  "subtitle": "On outside-in imitation, inside-out creation, and the gap between a machine's likeness and the image of God.",
+  "volume": 1,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Islam",
+   "Philosophy"
+  ],
+  "themes": [
+   "artificial intelligence",
+   "imago dei",
+   "knowledge",
+   "names",
+   "the soul",
+   "creation"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "A sculptor in a dark room carves a perfect horse without ever having seen one: the way machines learn. Adam looks at the animals and names them: the way the scriptures describe human knowing. What the difference means in an age of AI.",
+  "aiNote": "From the Verses Across team's own essay, arranged into three lengths with AI and checked by the team. Scripture is quoted from the public-domain translations on this site (King James Version, Pickthall's Qur'an).",
+  "depths": {
+   "short": {
+    "words": 314,
+    "minutes": 2
+   },
+   "medium": {
+    "words": 881,
+    "minutes": 4
+   },
+   "long": {
+    "words": 2395,
+    "minutes": 12
+   }
+  }
+ },
+ {
   "slug": "if-i-were-the-devil",
   "title": "If I Were the Devil",
   "subtitle": "A warning for our time. Inspired by Paul Harvey's 1965 radio broadcast \"If I Were the Devil\": a new piece written for today, not his words.",
