@@ -199,6 +199,35 @@
   }
  },
  {
+  "slug": "sanctity-of-rhythm",
+  "title": "The Sanctity of Rhythm",
+  "subtitle": "Enoch's astronomy, the numbers 3, 7 and 12, and reclaiming a living sense of time.",
+  "volume": 1,
+  "traditions": [
+   "Judaism",
+   "Christianity",
+   "Philosophy"
+  ],
+  "themes": [
+   "time",
+   "Sabbath",
+   "astronomy",
+   "numbers",
+   "music",
+   "rest"
+  ],
+  "status": "review",
+  "date": "2026-11-22",
+  "summary": "We treat time as a commodity on a clock. The Astronomical Book of Enoch, the old base-12 and base-60 numbers, the patterns of 3, 7 and 12, music, and the evening-first day of Genesis all point to time as something living, and to ways of getting that rhythm back.",
+  "aiNote": "Rough draft for review: the Verses Across team's own essay, edited and fact-checked with AI. 1 Enoch is quoted from R. H. Charles's public-domain translation on this site, and the Bible from the King James Version. The number symbolism is the essay's own reflection, not a scientific claim.",
+  "depths": {
+   "medium": {
+    "words": 2574,
+    "minutes": 13
+   }
+  }
+ },
+ {
   "slug": "eden-what-if",
   "title": "What If? The Untrodden Paths of Eden",
   "subtitle": "Three other ways the story of the two trees could have gone, and what each one shows about freedom, suffering and eternal life.",
