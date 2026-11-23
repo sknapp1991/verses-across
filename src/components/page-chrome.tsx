@@ -6,7 +6,7 @@
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { NAV_STEPS } from "./nav-steps";
+import { LAST_READING, NAV_STEPS, PREV_PATH } from "./nav-steps";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 export const FROM_HOME = "va-from-home"; // sessionStorage: the path a home-page tile opened
@@ -166,6 +166,7 @@ export function PageChrome({ fallback, top = true }: { fallback: string; top?: b
   return (
     <>
       <span ref={anchor} hidden />
+      <BackToReading />
       {top && shown && (
         <button
           type="button"
@@ -176,6 +177,49 @@ export function PageChrome({ fallback, top = true }: { fallback: string; top?: b
         </button>
       )}
     </>
+  );
+}
+
+/**
+ * "← Luke 23": a bubble at the bottom left of the info pages and articles, back to the chapter being read in this tab
+ * (my brother's ticket 25de3898: after a "Not in every Bible" link there was no easy way back). One step back when
+ * that chapter was the page just before (the very spot), else straight to it. Hidden when nothing was read yet.
+ */
+function BackToReading() {
+  const router = useRouter();
+  const [to, setTo] = useState<{ url: string; path: string; title: string } | null>(null);
+  useEffect(() => {
+    try {
+      const v = JSON.parse(sessionStorage.getItem(LAST_READING) ?? "null");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- this tab's trail is only readable after hydration
+      if (v?.url && v?.title) setTo(v);
+    } catch {
+      /* nothing to go back to */
+    }
+  }, []);
+  if (!to) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        let prev = "";
+        try {
+          prev = sessionStorage.getItem(PREV_PATH) ?? "";
+        } catch {}
+        if (prev === to.path && window.history.length > 1) router.back();
+        else router.push(to.url);
+      }}
+      title={`Back to ${to.title}, where you were reading`}
+      className="fixed bottom-5 left-4 z-30 mb-[env(safe-area-inset-bottom)] flex max-w-[60vw] animate-[chip-in_200ms_ease-out] items-center gap-1.5 rounded-full border border-accent/50 bg-panel/90 py-2 pl-3 pr-4 text-sm font-medium text-ink shadow-lg backdrop-blur-md hover:bg-raised print:hidden"
+    >
+      <span aria-hidden className="text-accent">
+        ←
+      </span>
+      <span className="truncate">
+        <span className="sr-only">Back to </span>
+        {to.title}
+      </span>
+    </button>
   );
 }
 
