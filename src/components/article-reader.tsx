@@ -16,6 +16,17 @@ import { Bookcase } from "@/components/article-bookcase";
 
 const PREF = "va-article-depth:v1"; // localStorage: the depth a reader last chose
 const EMPTY_STUDY: StudyRef[] = [];
+const GUIDE = "va-article-guide:v1"; // "closed" when the reader folded the Study guide away
+
+/** The title bar over the Contents and the Study guide (one look for both: my brother's ticket 7873673b). */
+function PanelTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="mb-2 flex min-h-9 items-center justify-between gap-2 rounded-md bg-raised px-2.5 py-1">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{children}</p>
+      {action}
+    </div>
+  );
+}
 const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/q/<question words>": answer } (this device only)
 const READ = "va-article-read:v1"; // localStorage: { slug: { depth: "YYYY-MM-DD" } }
 
@@ -235,6 +246,24 @@ export function ArticleReader({ article, library = [] }: { article: Article; lib
   const [progress, setProgress] = useState(0);
   const [read, setRead] = useState<Partial<Record<Depth, string>>>({});
   const scroller = useRef<HTMLElement>(null);
+  const [guideOpen, setGuideOpen] = useState(true);
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's choice is only readable after hydration
+      if (localStorage.getItem(GUIDE) === "closed") setGuideOpen(false);
+    } catch {
+      /* fine without */
+    }
+  }, []);
+  const setGuide = (open: boolean) => {
+    setGuideOpen(open);
+    try {
+      if (open) localStorage.removeItem(GUIDE);
+      else localStorage.setItem(GUIDE, "closed");
+    } catch {
+      /* fine without */
+    }
+  };
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's record is only readable after hydration
     setRead(load<Record<string, Partial<Record<Depth, string>>>>(READ, {})[article.slug] ?? {});
@@ -322,15 +351,16 @@ export function ArticleReader({ article, library = [] }: { article: Article; lib
         <PageChrome fallback="/articles" />
       </div>
       {/* bookcase · contents · the article · Study guide (the widest screens show all four) */}
-      <div className="mx-auto flex max-w-[112rem] justify-center gap-8 px-4 md:px-8">
+      {/* (on the widest screens the bookcase fills the whole left margin, top to bottom: my brother's ticket 7873673b) */}
+      <div className="flex justify-center gap-8 px-4 md:px-8 min-[1760px]:pl-0">
       {library.length > 1 && (
-        <aside className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-64 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 min-[1760px]:block print:hidden">
+        <aside className="sticky top-0 hidden h-[var(--app-h,100dvh)] min-w-64 max-w-xl flex-[2] self-start overflow-y-auto overscroll-contain min-[1760px]:block print:hidden">
           <Bookcase articles={library} current={article.slug} />
         </aside>
       )}
       {toc && (
-        <nav aria-label="Contents" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-56 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 text-sm xl:block print:hidden">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">Contents</p>
+        <nav aria-label="Contents" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-56 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pr-3 pt-24 text-sm [scrollbar-gutter:stable] xl:block print:hidden">
+          <PanelTitle>Contents</PanelTitle>
           <ol className="space-y-1 border-l border-line">
             {toc.map((t) => (
               <li key={t.id}>
@@ -448,9 +478,37 @@ export function ArticleReader({ article, library = [] }: { article: Article; lib
           </p>
         </footer>
       </article>
-      <aside aria-label="Study guide" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-72 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 xl:block print:hidden">
-        <StudyGuide article={article} depth={depth} verses={verses} />
+      <aside
+        aria-label="Study guide"
+        className={`sticky top-0 hidden max-h-[var(--app-h,100dvh)] shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 xl:block print:hidden ${
+          guideOpen ? "w-72 pr-3 [scrollbar-gutter:stable]" : "w-11"
+        }`}
+      >
+        {/* the whole panel folds to its button (remembered on this device) */}
+        {(() => {
+          const fold = (
+            <button
+              type="button"
+              onClick={() => setGuide(!guideOpen)}
+              aria-expanded={guideOpen}
+              aria-controls="study-guide-body"
+              aria-label="Study guide"
+              title={guideOpen ? "Fold the Study guide away" : "Open the Study guide"}
+              className={`flex shrink-0 items-center justify-center rounded text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent ${
+                guideOpen ? "h-7 w-7 hover:bg-panel" : "h-11 w-11 bg-raised hover:bg-accent-soft"
+              }`}
+            >
+              <span aria-hidden className="text-base leading-none">{guideOpen ? "–" : "+"}</span>
+            </button>
+          );
+          return guideOpen ? <PanelTitle action={fold}>Study guide</PanelTitle> : fold;
+        })()}
+        <div id="study-guide-body" hidden={!guideOpen}>
+          {guideOpen && <StudyGuide article={article} depth={depth} verses={verses} />}
+        </div>
       </aside>
+      {/* (the right margin's share of the widest screens, so the article stays near the middle) */}
+      {library.length > 1 && <div aria-hidden className="hidden flex-1 min-[1760px]:block" />}
       </div>
     </main>
   );

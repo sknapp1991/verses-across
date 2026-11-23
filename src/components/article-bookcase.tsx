@@ -16,6 +16,8 @@ const PREF = "va-bookcase:v1";
 /** Leather bindings: one per theme (by the theme's name, so a theme keeps its colour). */
 const LEATHER = ["#6b2a26", "#2f4a3a", "#25364f", "#5a3d22", "#7a5a2a", "#4a2f4f", "#3c4a4f", "#5c2f3a", "#2e3f2c", "#6a4a1f"];
 const colourOf = (theme: string) => LEATHER[[...theme].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % LEATHER.length];
+/** The spine's title: the short one the article gives ("Truth Pt 1"), else its title before the colon (hub 7873673b). */
+const spineTitle = (a: ArticleSummary) => a.spine || a.title.split(":")[0];
 const longest = (a: ArticleSummary) => Math.max(...Object.values(a.depths).map((d) => d?.minutes ?? 0), 1);
 
 function Spine({ a, current, read }: { a: ArticleSummary; current: boolean; read: boolean }) {
@@ -36,7 +38,7 @@ function Spine({ a, current, read }: { a: ArticleSummary; current: boolean; read
       }}
     >
       <span className="line-clamp-2 text-center font-serif text-[11px] leading-tight text-[#ecd9a0] [text-orientation:mixed] [writing-mode:vertical-rl]" style={{ maxHeight: `${h - 1.2}rem` }}>
-        {a.title}
+        {spineTitle(a)}
       </span>
       {read && (
         <>
@@ -108,7 +110,7 @@ export function Bookcase({ articles, current }: { articles: ArticleSummary[]; cu
     <div
       aria-label="Bookcase of articles"
       role="navigation"
-      className="rounded-lg p-2 text-[#f3e6c4] shadow-[inset_0_0_0_3px_#3b2414,0_4px_14px_rgba(0,0,0,.4)]"
+      className="min-h-full rounded-lg p-2 text-[#f3e6c4] shadow-[inset_0_0_0_3px_#3b2414,0_4px_14px_rgba(0,0,0,.4)]"
       style={{ background: "repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 3px, transparent 3px 11px), linear-gradient(#4a2e18, #2f1c0e)" }}
     >
       <div className="mb-2 space-y-1.5 rounded-md bg-black/25 p-2">

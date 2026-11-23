@@ -40,6 +40,8 @@ export type RelatedArticle = { slug: string; title: string; volume: number; shar
 export type ArticleSummary = {
   slug: string;
   title: string;
+  /** a short title for the book's spine in the bookcase ("Truth Pt 1"); else the title before its colon */
+  spine?: string;
   subtitle?: string;
   /** 1–10, see VOLUMES */
   volume: number;

@@ -126,8 +126,9 @@ export function RefMention({ r, ctx, italic, text }: { r: StudyRef; ctx: Ctx; it
 function Section({ title, count, children, open }: { title: string; count: number; children: ReactNode; open?: boolean }) {
   if (!count) return null;
   return (
-    <details open={open} className="group border-t border-line py-2 first:border-t-0">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 py-1 text-sm font-semibold text-ink">
+    <details open={open} className="group py-1.5">
+      {/* (a filled bar, my brother's ticket 7873673b) */}
+      <summary className="flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden justify-between gap-2 rounded-md bg-raised px-2.5 py-1.5 text-sm font-semibold text-ink hover:bg-accent-soft">
         <span>
           {title} <span className="font-normal text-faint">{count}</span>
         </span>
@@ -135,7 +136,7 @@ function Section({ title, count, children, open }: { title: string; count: numbe
           ›
         </span>
       </summary>
-      <div className="mt-1 space-y-1">{children}</div>
+      <div className="mt-1.5 space-y-1 px-1">{children}</div>
     </details>
   );
 }
@@ -188,9 +189,7 @@ export function StudyGuide({ article, depth, verses }: { article: Article; depth
   if (!total) return null;
   return (
     <div className="text-muted">
-      {/* (the folded copy under the title already says "Study guide") */}
-      <p className="mb-1 hidden text-xs font-semibold uppercase tracking-wide text-faint xl:block">Study guide</p>
-      <p className="mb-2 text-xs text-faint">Tick anything to save it for study (My Study → Articles).</p>
+      <p className="mb-2 px-1 text-xs text-faint">Tick anything to save it for study (My Study → Articles).</p>
       <Section title="Verses" count={vs.length} open>
         {vs.map((r) => {
           const href = readHref(r.ref, undefined, r.verse && r.to ? `${r.verse}-${r.to}` : r.verse);
