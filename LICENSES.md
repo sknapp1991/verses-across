@@ -479,6 +479,18 @@ From Project Gutenberg (read from its mirror).
   reading (not the play's own divisions). The scene, and in the Four Plays his argument, are the note of the first
   part. His introductions, dedications and footnotes are left out.
 
+## Euripides (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Tragedies of Euripides, volume I** — literally translated or revised into prose by Theodore Alois Buckley (Bohn,
+  1850; New York: Harper, 1892 printing; the first six plays his revisions of earlier Oxford translations); public
+  domain, Project Gutenberg #15081 (read from its mirror). Hecuba, Orestes, The Phoenician
+  Virgins, Medea, Hippolytus, Alcestis, The Bacchae, The Heraclidae and the two Iphigenias (volume II is not on
+  Gutenberg). Verse = a speech, labelled with the speaker, his abbreviations written out (the misprints "AST.",
+  "TRE.", "POLTX." and "BAG." read as Antigone, Tiresias, Polyxena and Bacchus; likewise "Meo." as Medea, "IPH," as Iphigenia and the cast's "Tirecias" as Tiresias; and the closing lines of the Phoenician Virgins, labelled "CRE.", are given to the Chorus, whose closing tag they are); the lines naming who comes on are
+  directions in brackets. Each play is cut into reading parts, at those lines or, where a play has none, at the start of a
+  longer choral passage. His supplied words in brackets are kept; the scene and his argument are the note of the first
+  part. His footnotes and additional notes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

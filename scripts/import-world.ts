@@ -3499,7 +3499,182 @@ async function aeschylus() {
 // names in capitals in a direction ("Exit the KING OF ARGOS.") in normal case
 const titleCaseCaps = (s: string) => s.replace(/\b[A-Z]{2,}(?: (?:OF |[A-Z]{2,}))*\b/g, (m) => titleCase(m));
 
+/**
+ * Euripides — The Tragedies of Euripides, volume I, literally translated into prose by Theodore Alois Buckley
+ * (1850; Bohn's Classical Library), Gutenberg #15081: Hecuba, Orestes, The Phoenician Virgins, Medea, Hippolytus,
+ * Alcestis, The Bacchae, The Heraclidae, Iphigenia in Aulis, Iphigenia in Tauris. One book per play. Verse = a
+ * speech (or a paragraph of one), labelled with the speaker, his abbreviations ("HEC.") written out from the play's
+ * persons; the lines naming who comes on ("HECUBA. CHORUS.") are directions in brackets, and each play is cut into
+ * reading parts at one of them once a part has 12 verses or more. His supplied words in brackets are kept. The scene
+ * and his argument are the note of the first part. His preface, introduction, footnotes and additional notes are
+ * left out.
+ */
+async function euripides() {
+  const txt = gutenbergBody(await cached("euripides", "pg15081.txt", GUT(15081)))
+    // misprinted speakers ("Meo." in Medea, "IPH," in Iphigenia in Tauris) and a name in the Phoenician cast
+    .replace(/^Meo\. /m, "MED. ")
+    .replace(/^IPH, /m, "IPH. ")
+    .replace(/^ {2}TIRECIAS\.$/m, "  TIRESIAS.")
+    // the closing lines of the Phoenician Virgins are the Chorus' (as the note says), not Creon's
+    .replace(/^CRE\. \[O greatly glorious Victory/m, "CHOR. [O greatly glorious Victory");
+  const lines = txt.split("\n");
+  const plays: [string, string][] = [
+    ["HECUBA.", "Hecuba"],
+    ["ORESTES.", "Orestes"],
+    ["THE PHŒNICIAN VIRGINS.", "The Phoenician Virgins"],
+    ["MEDEA.", "Medea"],
+    ["HIPPOLYTUS.", "Hippolytus"],
+    ["ALCESTIS.", "Alcestis"],
+    ["THE BACCHÆ.", "The Bacchae"],
+    ["THE HERACLIDÆ.", "The Heraclidae"],
+    ["IPHIGENIA IN AULIS.", "Iphigenia in Aulis"],
+    ["IPHIGENIA IN TAURIS.", "Iphigenia in Tauris"],
+  ];
+  // (the Bacchae's heading ends with a comma)
+  const casts = lines.flatMap((l, k) => (/^PERSONS REPRESENTED[.,]$/.test(l.trim()) ? [k] : []));
+  if (casts.length !== plays.length) throw new Error(`euripides: ${casts.length} casts`);
+  await resetVersion("euripides", "buckley");
+  const unmapped = new Set<string>();
+  let total = 0;
+  let chapters = 0;
+  const LABEL = /^((?:\p{Lu}{2,}(?:\. ?| ))*?\p{Lu}{2,}|OLD M)\.(?:\s+(\S.*))?$/u;
+  for (const [k, [head, name]] of plays.entries()) {
+    const c0 = casts[k];
+    const next = k + 1 < plays.length ? casts[k + 1] : lines.length;
+    // persons, the scene, the argument; then the title again and the play
+    const persons: string[] = ["CHORUS", "SEMICHORUS", "MESSENGER", "SERVANT", "ATTENDANT", "OLD MAN", "NURSE"];
+    let j = c0 + 1;
+    for (; j < next && !/^THE ARGUMENT\.$/.test(lines[j].trim()); j++) {
+      const t = lines[j].trim();
+      // ("ÆGEUS" without its stop, "COPREUS.*" with Buckley's mark for a supplied name)
+      if (/^\p{Lu}[\p{Lu} ,'’-]+\.?\*?$/u.test(t)) persons.push(t.replace(/\.?\*?$/, "").replace(/^(A|AN|THE) /, "").replace(/ AND HIS .*$/, ""));
+    }
+    const scene = unwrap(
+      lines
+        .slice(c0 + 1, j)
+        .map((l) => l.trim())
+        .filter((l) => l && !/^\p{Lu}[\p{Lu} ,'’-]+\.?\*?$/u.test(l) && !/^\*/.test(l))
+        .join(" "),
+    )
+      .replace(/_/g, "")
+      .replace(/^Note\.--/, "Note: ") // the Heraclidae's note on Copreus and Macaria
+      .replace(/--/g, "—");
+    const argStart = j + 1;
+    // (Alcestis' second title has no full stop)
+    const textAt = lines.findIndex((l, i) => i > argStart && l.trim().replace(/\[\d+\]$/, "").replace(/\.$/, "") === head.replace(/\.$/, ""));
+    if (textAt < 0 || textAt > next) throw new Error(`euripides: ${head} text not found`);
+    const arg: string[] = [];
+    {
+      let buf: string[] = [];
+      for (const l of [...lines.slice(argStart, textAt), ""]) {
+        const t = l.trim();
+        if (t && !/^(\*\s*)+$/.test(t)) buf.push(t);
+        else if (buf.length) arg.push(unwrap(buf.join(" ")).replace(/\[\d+[a-z]?\]/g, "").replace(/_/g, "")), (buf = []);
+      }
+    }
+    // the play ends at its footnotes ("[1] …") or additional notes
+    let end = lines.findIndex((l, i) => i > textAt && (/^\[1\] /.test(l) || /^(ADDITIONAL NOTES\.|NOTES ON .*)$/.test(l.trim())));
+    if (end < 0 || end > next) end = next;
+    const full = (label: string): string => {
+      // misprints: "AST." (Antigone, Phoenician Virgins), "TRE." (Tiresias), "POLTX." (Polyxena, Hecuba)
+      const l = label.replace(/\.$/, "").replace(/^AST$/, "ANT").replace(/^TRE$/, "TIR").replace(/^POLTX$/, "POLYX").replace(/^BAG$/, "BAC");
+      if (/^SEMI/.test(l)) return "Semichorus";
+      if (l === "NURSE OF MEDEA") return "Nurse";
+      if (l === "OLD M") return "Old Man";
+      const toks = l.split(/\.?\s+/).map((x) => x.toLowerCase());
+      for (const p of persons) {
+        const words = p.toLowerCase().split(/\s+/);
+        for (let s = 0; s + toks.length <= words.length; s++)
+          if (toks.every((t, i) => words[s + i].startsWith(t))) return titleCase(p);
+      }
+      unmapped.add(`${name}: ${label}`);
+      return titleCase(l);
+    };
+    const parts: Verse[][] = [[]];
+    let speaker = "";
+    // (labelled: the paragraph began with its speaker, so a speech Buckley prints wholly in brackets stays a speech)
+    const push = (t: string, n?: string, labelled = false) => {
+      const cur = parts[parts.length - 1];
+      // a direction ("[Enter Thoas.]") has no speaker; "Enter A Messenger" → "Enter a Messenger"
+      const direction = !labelled && /^\[[^\]]*\]$/.test(t);
+      t = t.replace(/\b(Enter|Exit|Exeunt) (A|An|The) /g, (m, a: string, b: string) => `${a} ${b.toLowerCase()} `);
+      cur.push({ v: String(cur.length + 1), t, ...(n && !direction ? { n } : {}) });
+    };
+    const clean = (t: string) =>
+      t
+        .replace(/\[\d+[a-z]?\]/g, "")
+        .replace(/_/g, "")
+        .replace(/\s+([,.;:!?])/g, "$1")
+        .replace(/ {2,}/g, " ")
+        // references to his notes, which are left out: "(Note [B].)", "[See Note [A].]", "(See note [H].)"
+        .replace(/\s*\[(?:See )?[Nn]ote \[[A-Z]\]\.?\]|\s*\((?:See )?[Nn]ote \[[A-Z]\]\.?\)/g, "")
+        // a cry of another speaker inside a speech: "(ADM. Oh! Oh!)" → "(Admetus: Oh! Oh!)"
+        .replace(/\((\p{Lu}{2,})\. /gu, (m, a: string) => `(${full(a)}: `)
+        // names in capitals inside a direction ("[Enter Clytæmnestra, IPHIGENIA, …]") in normal case
+        .replace(/\b\p{Lu}{3,}\b/gu, (m) => (/^[IVXL]+$/.test(m) ? m : titleCase(m)))
+        .trim();
+    let para: string[] = [];
+    const flush = () => {
+      if (!para.length) return;
+      const t = unwrap(para.map((x) => x.trim()).join(" ")).replace(/\[\d+[a-z]?\]/g, ""); // ("DEATH,[4] APOLLO.")
+      para = [];
+      if (/^(\*\s*)+$/.test(t)) return;
+      // who comes on: "HECUBA. CHORUS.", "POLYMESTOR, HIS CHILDREN, HECUBA, CHORUS.", "TIRESIAS (_led by his
+      // daughter_), MENŒCEUS, CREON, CHORUS."
+      const bare = t.replace(/ \(_[^)]*_\)/g, "");
+      if (/^\p{Lu}[\p{Lu} ,.'’-]+\.$/u.test(bare) && /\p{Lu}{3,}[.,] \p{Lu}{3,}/u.test(bare)) {
+        if (parts[parts.length - 1].length >= 12) parts.push([]);
+        const paren = /\(_([^)]*)_\)/.exec(t); // kept as printed, after the name it follows
+        const names = titleCase(bare.replace(/\.$/, "")).replace(/\. /g, ", ");
+        push(`[${paren ? names.replace(/^([^,]+)/, `$1 (${paren[1].replace(/_/g, "")})`) : names}]`);
+        return;
+      }
+      const m = LABEL.exec(t);
+      if (m && !/^[IVX]+$/.test(m[1])) {
+        speaker = full(m[1]);
+        if (m[2]) push(clean(m[2]), speaker, true);
+        return;
+      }
+      push(clean(t), speaker || undefined);
+    };
+    for (const raw of lines.slice(textAt + 1, end)) {
+      if (!raw.trim()) flush();
+      else para.push(raw);
+    }
+    flush();
+    // a play with no lines naming who comes on (the last four): a new part where the Chorus takes up, once a part
+    // has 40 verses
+    if (parts.length === 1) {
+      const all = parts[0];
+      parts.length = 0;
+      let cur: Verse[] = [];
+      for (const [i, v] of all.entries()) {
+        // (an ode, not an interjection: a Chorus verse of some length)
+        if (cur.length >= 40 && v.n === "Chorus" && all[i - 1]?.n !== "Chorus" && v.t.length > 400) {
+          parts.push(cur);
+          cur = [];
+        }
+        cur.push({ ...v, v: String(cur.length + 1) });
+      }
+      parts.push(cur);
+    }
+    const book = slug(name);
+    const note = [scene, ...arg].filter(Boolean).join("\n\n");
+    let n = 0;
+    for (const p of parts) {
+      if (!p.length) continue;
+      await writeChapter("euripides", "buckley", book, ++n, p, n === 1 ? note || undefined : undefined, `Part ${n}`);
+      total += p.length;
+    }
+    chapters += n;
+    console.log(`${book}: ${n} parts, ${parts.reduce((a, p) => a + p.length, 0)} verses`);
+  }
+  if (unmapped.size) console.warn("euripides: unmapped speakers", [...unmapped].join(" | "));
+  report("euripides", chapters, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  euripides,
   aeschylus,
   sophocles,
   ghazali,

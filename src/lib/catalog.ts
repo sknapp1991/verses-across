@@ -142,6 +142,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   ghazali: ["field"],
   sophocles: ["campbell"],
   aeschylus: ["morshead"],
+  euripides: ["buckley"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

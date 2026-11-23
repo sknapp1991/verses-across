@@ -72,6 +72,7 @@
     { "id": "ghazali", "name": "The Confessions of al-Ghazali", "versification": "ghazali" },
     { "id": "sophocles", "name": "Sophocles: The Seven Plays", "versification": "sophocles" },
     { "id": "aeschylus", "name": "Aeschylus: The Seven Plays", "versification": "aeschylus" },
+    { "id": "euripides", "name": "Euripides: Ten Plays", "versification": "euripides" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2221,6 +2222,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/8604",
       "licensed": false,
       "versification": "aeschylus"
+    },
+    {
+      "id": "buckley",
+      "work": "euripides",
+      "abbr": "Buckley",
+      "name": "The Tragedies of Euripides, vol. I (T. A. Buckley, prose)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1850,
+      "translator": "Theodore Alois Buckley",
+      "license": "Public Domain",
+      "licenseNote": "Volume I of Buckley's literal prose translation: Hecuba, Orestes, The Phoenician Virgins, Medea, Hippolytus, Alcestis, The Bacchae, The Heraclidae and the two Iphigenias (volume II is not on Gutenberg). Verse = a speech, labelled with the speaker (his abbreviations written out; the misprints \"AST.\", \"TRE.\", \"POLTX.\" and \"BAG.\" read as Antigone, Tiresias, Polyxena and Bacchus; likewise \"Meo.\" as Medea, \"IPH,\" as Iphigenia and the cast's \"Tirecias\" as Tiresias; and the closing lines of the Phoenician Virgins, labelled \"CRE.\", are given to the Chorus, whose closing tag they are); the lines naming who comes on are directions in brackets. Each play is cut into reading parts, at those lines or, where a play has none, at the start of a longer choral passage. His supplied words in brackets are kept. The scene and his argument are the note of the first part. His footnotes and additional notes are left out.",
+      "attribution": "The Tragedies of Euripides, volume I, literally translated or revised by Theodore Alois Buckley (Bohn's Classical Library, 1850; New York: Harper, 1892 printing), public domain; Project Gutenberg #15081.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/15081",
+      "licensed": false,
+      "versification": "euripides"
     }
   ],
   "religions": [
@@ -3187,7 +3205,17 @@
             { "id": "the-suppliant-maidens", "name": "Aeschylus, The Suppliant Maidens", "work": "aeschylus", "chapters": 4, "chapterName": "Part" },
             { "id": "the-persians", "name": "Aeschylus, The Persians", "work": "aeschylus", "chapters": 3, "chapterName": "Part" },
             { "id": "the-seven-against-thebes", "name": "Aeschylus, The Seven against Thebes", "work": "aeschylus", "chapters": 4, "chapterName": "Part" },
-            { "id": "prometheus-bound", "name": "Aeschylus, Prometheus Bound", "work": "aeschylus", "chapters": 4, "chapterName": "Part" }
+            { "id": "prometheus-bound", "name": "Aeschylus, Prometheus Bound", "work": "aeschylus", "chapters": 4, "chapterName": "Part" },
+            { "id": "hecuba", "name": "Euripides, Hecuba", "work": "euripides", "chapters": 8, "chapterName": "Part" },
+            { "id": "orestes", "name": "Euripides, Orestes", "work": "euripides", "chapters": 12, "chapterName": "Part" },
+            { "id": "the-phoenician-virgins", "name": "Euripides, The Phoenician Virgins (Phoenissae)", "work": "euripides", "chapters": 11, "chapterName": "Part" },
+            { "id": "medea", "name": "Euripides, Medea", "work": "euripides", "chapters": 9, "chapterName": "Part" },
+            { "id": "hippolytus", "name": "Euripides, Hippolytus", "work": "euripides", "chapters": 9, "chapterName": "Part" },
+            { "id": "alcestis", "name": "Euripides, Alcestis", "work": "euripides", "chapters": 9, "chapterName": "Part" },
+            { "id": "the-bacchae", "name": "Euripides, The Bacchae", "work": "euripides", "chapters": 4, "chapterName": "Part" },
+            { "id": "the-heraclidae", "name": "Euripides, The Heraclidae", "work": "euripides", "chapters": 3, "chapterName": "Part" },
+            { "id": "iphigenia-in-aulis", "name": "Euripides, Iphigenia in Aulis", "work": "euripides", "chapters": 5, "chapterName": "Part" },
+            { "id": "iphigenia-in-tauris", "name": "Euripides, Iphigenia in Tauris", "work": "euripides", "chapters": 3, "chapterName": "Part" }
           ]
         }
       ]
