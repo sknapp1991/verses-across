@@ -469,6 +469,16 @@ From Project Gutenberg (read from its mirror).
   lines Campbell supplies in brackets too; the scene and his argument as the note of each
   play's first part. His margin numbers for the strophes, note marks, preface and notes are left out.
 
+## Aeschylus (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **Aeschylus, the seven plays** — E. D. A. Morshead: The House of Atreus (Agamemnon, The Libation-Bearers, The
+  Furies; 1881) and Four Plays of Aeschylus (The Suppliant Maidens, The Persians, The Seven against Thebes,
+  Prometheus Bound; 1908); public domain, Project Gutenberg #8604 and #8714 (read from its mirror). Verse = a speech
+  or a stanza, labelled with the speaker (three misprinted names corrected: Kilissa, Clytemnestra, Orestes);
+  stage directions in brackets. Each play is cut into parts at an exit, for
+  reading (not the play's own divisions). The scene, and in the Four Plays his argument, are the note of the first
+  part. His introductions, dedications and footnotes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

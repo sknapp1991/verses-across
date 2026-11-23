@@ -3299,7 +3299,208 @@ async function sophocles() {
   report("sophocles", chapters, total);
 }
 
+/**
+ * Aeschylus — the seven plays in E. D. A. Morshead's verse: The House of Atreus (Agamemnon, The Libation-Bearers,
+ * The Furies; Gutenberg #8604) and Four Plays (The Suppliant Maidens, The Persians, The Seven against Thebes,
+ * Prometheus Bound; #8714). One book per play, in that order. The speaker stands on a line of its own (in capitals,
+ * or in italics: "_A Watchman_"); verse = a speech or a stanza, labelled with the speaker. Stage directions are
+ * their own verses in brackets. Each play is cut into parts at an exit once a part has 15 verses or more. The scene
+ * (and in Four Plays his argument) is the note of the first part. His introductions, dedications and footnotes are
+ * left out.
+ */
+async function aeschylus() {
+  const files: [number, [string, string][]][] = [
+    [8604, [["AGAMEMNON", "Agamemnon"], ["THE LIBATION-BEARERS", "The Libation-Bearers"], ["THE FURIES", "The Furies"]]],
+    [
+      8714,
+      [
+        ["THE SUPPLIANT MAIDENS", "The Suppliant Maidens"],
+        ["THE PERSIANS", "The Persians"],
+        ["THE SEVEN AGAINST THEBES", "The Seven against Thebes"],
+        ["PROMETHEUS BOUND", "Prometheus Bound"],
+      ],
+    ],
+  ];
+  await resetVersion("aeschylus", "morshead");
+  const unknown = new Set<string>();
+  let total = 0;
+  let chapters = 0;
+  const books: string[] = [];
+  for (const [gid, plays] of files) {
+    const txt = gutenbergBody(await cached("aeschylus", `pg${gid}.txt`, GUT(gid)))
+      // misprinted speakers in The Libation-Bearers and The Furies
+      .replace(/^KlLISSA$/m, "KILISSA")
+      .replace(/^CLYTEMNESTSA$/m, "CLYTEMNESTRA")
+      .replace(/^OSESTES$/m, "ORESTES")
+      // two drop capitals set apart from their words
+      .replace(/^L ord of the shades/m, "Lord of the shades")
+      .replace(/^F irst, in this prayer/m, "First, in this prayer");
+    const lines = txt.split("\n");
+    const end = lines.length; // (gutenbergBody has already cut the licence)
+    // each play has one list of persons, in order: the play's text follows the k-th DRAMATIS PERSONAE
+    const dps = lines.flatMap((l, k) => (l.trim() === "DRAMATIS PERSONAE" ? [k] : []));
+    if (dps.length !== plays.length) throw new Error(`aeschylus: ${dps.length} casts in #${gid}`);
+    // where a play's front matter begins: its first title line before the cast (Four Plays: before its dedication)
+    const frontAt = (t: string, before: number, after: number) => {
+      let f = before;
+      for (let k = before - 1; k > after; k--) if (lines[k].trim() === t) f = k;
+      return f;
+    };
+    const fronts = plays.map(([t], k) => frontAt(t, dps[k], k ? dps[k - 1] : 0));
+    for (const [k, [head, name]] of plays.entries()) {
+      const at = dps[k] - 1;
+      const stop = k + 1 < plays.length ? fronts[k + 1] : end;
+      // the argument (Four Plays), between ARGUMENT and the cast
+      const front = fronts[k];
+      const argAt = lines.findIndex((l, j) => j > front && j < at && l.trim() === "ARGUMENT");
+      const arg: string[] = [];
+      if (argAt > 0) {
+        let buf: string[] = [];
+        for (const l of [...lines.slice(argAt + 1, at), ""]) {
+          if (l.trim()) buf.push(l.trim());
+          else if (buf.length) {
+            if (buf.join(" ") !== head) arg.push(unwrap(buf.join(" ")).replace(/_/g, "")); // (not the title again)
+            buf = [];
+          }
+        }
+      }
+      // persons: the lines after DRAMATIS PERSONAE up to the scene
+      const persons: string[] = ["CHORUS", "SEMI-CHORUS", "ANOTHER"];
+      // the block of lines right after DRAMATIS PERSONAE
+      let j = dps[k] + 1;
+      while (!lines[j].trim()) j++;
+      for (; j < stop && lines[j].trim(); j++) {
+        const t = lines[j].trim();
+        // "ATOSSA, WIDOW OF DARIUS AND MOTHER OF XERXES.", "THE GHOST OF CLYTEMNESTRA", "CHORUS OF FURIES"
+        if (/^[A-Z][A-Z ,.'’-]+$/.test(t)) persons.push(t.replace(/\.$/, "").replace(/,.*$/, "").replace(/^(A|AN|THE) /, ""));
+      }
+      // then, before the first speech: italic lines (the Chorus, attendants) and the scene
+      let scene = "";
+      for (;;) {
+        while (j < stop && !lines[j].trim()) j++;
+        const t = lines[j]?.trim() ?? "";
+        if (!/^_/.test(t) || (/^_[A-Z][\w’' ]+_\.?$/.test(t) && !/^_(The )?Scene/i.test(t))) break; // a speaker in italics ("_A Watchman_") starts the play
+        const sc: string[] = [];
+        for (; j < stop && lines[j].trim(); j++) sc.push(lines[j].trim());
+        if (/^_(The )?Scene/i.test(t)) scene = unwrap(sc.join(" ")).replace(/_/g, "").trim();
+      }
+      j--;
+      const isPerson = (x: string) => {
+        const u = x.replace(/^_|_?\.?_?$/g, "").replace(/\.$/, "").toUpperCase().replace(/^(A|AN|THE) /, "");
+        // ("STRENGTH" is one of "STRENGTH AND FORCE")
+        return persons.includes(u) || persons.some((p) => p.endsWith(` ${u}`) || p.startsWith(`${u} `) || u.endsWith(` ${p}`)) || /^(VOICE|GHOST) OF /.test(u);
+      };
+      type Part = { verses: Verse[] };
+      const parts: Part[] = [{ verses: [] }];
+      let speaker = "";
+      const push = (t: string, n?: string) => {
+        const cur = parts[parts.length - 1];
+        // "[Enter THE SPY.]" → "[Enter the Spy.]"
+        t = t.replace(/\b(Enter|Exit|Exeunt|other|side) The (?=\p{Lu})/gu, "$1 the ");
+        cur.verses.push({ v: String(cur.verses.length + 1), t, ...(n ? { n } : {}) });
+      };
+      const clean = (l: string) =>
+        l
+          .replace(/\[\d+\]/g, "")
+          .replace(/_/g, "")
+          .replace(/--/g, "—")
+          .trim();
+      const body = lines.slice(j + 1, stop);
+      let para: string[] = [];
+      let inNotes = false;
+      const flush = () => {
+        if (!para.length) return;
+        const ls = para;
+        para = [];
+        const first = ls[0].trim();
+        if (/^\[\d+\]/.test(first)) return void (inNotes = true); // the play's footnotes
+        if (inNotes) return;
+        // a direction: "[_Exit Clytemnestra._", "_Enter_ HERALD", "_The Temple at Delphi_"; in the Four Plays
+        // " Enter ATOSSA." and " ANTIGONE and ISMENE approach…" (a space in, names in capitals, then lower case)
+        if (
+          /^\[_/.test(first) ||
+          /^_?(Re-)?[Ee]nter(?![a-z])|^_?Exit(?![a-z])|^_?Exeunt(?![a-z])|^_The (Scene|scene|Temple)/.test(first) ||
+          /^ (?!\s)(?:The )?[A-Z]{3,}(?:,? (?:and )?[A-Z]{3,})* [a-z]/.test(ls[0])
+        ) {
+          const t = ls.map(clean).join(" ").replace(/^\[|\]$/g, "").replace(/\s+/g, " ").trim();
+          push(`[${titleCaseCaps(t).replace(/(Enter|Exit|Exeunt|of|to|and|on the other) The/g, "$1 the")}]`);
+          if (/^\[?_?(Exit|Exeunt)/.test(first) && parts[parts.length - 1].verses.length >= 15) parts.push({ verses: [] });
+          return;
+        }
+        // a speaker on a line of its own, then the speech (or the speech after a blank line: "_A Watchman_"):
+        // "STRENGTH (_To_ PROMETHEUS).", "IO.", "ANTIGONE, ISMENE, _and_ CHORUS" with "(_Processional Chant_)" below;
+        // any line in capitals counts (Kilissa, the Slave and the First Fury are not in the list of persons)
+        const lab = /^(_[A-Z][\w’' ]+_\.?|[A-Z][A-Z’' -]*[A-Z](?:(?:,? _and_|,) [A-Z][A-Z’' -]*[A-Z])*)( \(_?[^)]*\))?\.?$/.exec(first);
+        const capsLabel = lab && !/^_/.test(lab[1]) && lab[1].split(/\s+/).length <= 6 && ls.length > 1;
+        const label = lab && (isPerson(lab[1]) || capsLabel);
+        let lines2 = ls;
+        if (label && lab) {
+          if (!isPerson(lab[1]) && !/,|_and_/.test(lab[1])) unknown.add(`${name}: ${lab[1]}`);
+          let sub = "";
+          if (/^\(_[^)]*_\)$/.test(ls[1]?.trim() ?? "")) {
+            sub = ` ${ls[1].trim().replace(/_/g, "")}`;
+            ls.splice(1, 1);
+          }
+          speaker =
+            titleCase(lab[1].replace(/ _and_ /g, " and ").replace(/_/g, "").replace(/\.$/, "")).replace(/ And /g, " and ") +
+            (lab[2] ? ` ${titleCaseCaps(lab[2].replace(/_/g, "").trim())}` : "") +
+            sub;
+          lines2 = ls.slice(1);
+          if (!lines2.length) return;
+        }
+        // directions inside a speech ("[_Exit._]", "_Enter_ HERMES.") on lines of their own, in brackets; names in
+        // capitals ("(To PROMETHEUS)") in normal case
+        // a line Gutenberg wrapped ("…the frenzy and wrath of the" / "king!") is joined to the one before
+        const joined: string[] = [];
+        for (const x of lines2.map((y) => (/^\s*_?(Re-enter|Enter|Exit|Exeunt)(?![a-z])/.test(y) ? `[${clean(y)}]` : clean(y)))) {
+          const prev = joined[joined.length - 1];
+          if (prev && prev.length > 62 && /^[a-z]/.test(x) && x.split(" ").length <= 3) joined[joined.length - 1] = `${prev} ${x}`;
+          else joined.push(x);
+        }
+        push(
+          joined
+            .join("\n")
+            .replace(/\[([^\]]*)\]?$/gm, (m, a: string) => `[${a}]`)
+            .replace(/\b[A-Z]{2,}(?: (?:OF |[A-Z]{2,}))*\b/g, (m) => (/^(I|II|III|IV|V)$/.test(m) ? m : titleCase(m))),
+          speaker || undefined,
+        );
+        speaker = speaker.replace(/ \(.*\)$/, ""); // the direction goes with the first verse only
+      };
+      for (const raw of body) {
+        if (!raw.trim()) flush();
+        else para.push(raw);
+      }
+      flush();
+      // a direction left at the end of a verse ("(To Prometheus)") belongs to the next speech
+      for (const p of parts)
+        for (let q = 0; q + 1 < p.verses.length; q++) {
+          const m = /\n(\([^()\n]+\))$/.exec(p.verses[q].t);
+          if (m && p.verses[q + 1].n) {
+            p.verses[q].t = p.verses[q].t.slice(0, m.index);
+            p.verses[q + 1].n = `${p.verses[q + 1].n} ${m[1]}`;
+          }
+        }
+      const book = slug(name);
+      books.push(book);
+      const note = [scene, ...arg].filter(Boolean).join("\n\n");
+      let n = 0;
+      for (const p of parts) {
+        if (!p.verses.length) continue;
+        await writeChapter("aeschylus", "morshead", book, ++n, p.verses, n === 1 ? note || undefined : undefined, `Part ${n}`);
+        total += p.verses.length;
+      }
+      chapters += n;
+      console.log(`${book}: ${n} parts, ${parts.reduce((a, p) => a + p.verses.length, 0)} verses, persons ${persons.slice(3).join("/")}`);
+    }
+  }
+  if (unknown.size) console.warn("aeschylus: speakers not in the lists of persons:", [...unknown].join(" | "));
+  report("aeschylus", chapters, total);
+}
+// names in capitals in a direction ("Exit the KING OF ARGOS.") in normal case
+const titleCaseCaps = (s: string) => s.replace(/\b[A-Z]{2,}(?: (?:OF |[A-Z]{2,}))*\b/g, (m) => titleCase(m));
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  aeschylus,
   sophocles,
   ghazali,
   aesop,

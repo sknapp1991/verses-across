@@ -71,6 +71,7 @@
     { "id": "aesop", "name": "Aesop's Fables", "versification": "aesop" },
     { "id": "ghazali", "name": "The Confessions of al-Ghazali", "versification": "ghazali" },
     { "id": "sophocles", "name": "Sophocles: The Seven Plays", "versification": "sophocles" },
+    { "id": "aeschylus", "name": "Aeschylus: The Seven Plays", "versification": "aeschylus" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2203,6 +2204,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/14484",
       "licensed": false,
       "versification": "sophocles"
+    },
+    {
+      "id": "morshead",
+      "work": "aeschylus",
+      "abbr": "Morshead",
+      "name": "Aeschylus, The Seven Plays (E. D. A. Morshead)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1881,
+      "translator": "E. D. A. Morshead",
+      "license": "Public Domain",
+      "licenseNote": "All seven plays: The House of Atreus (Agamemnon, The Libation-Bearers, The Furies) and his Four Plays (The Suppliant Maidens, The Persians, The Seven against Thebes, Prometheus Bound). Verse = a speech or a stanza, labelled with the speaker (three misprinted names corrected: Kilissa, Clytemnestra, Orestes); stage directions in brackets. Each play is cut into parts at an exit (so the parts are for reading, not the play's own divisions). The scene, and in the Four Plays his argument, are the note of the first part. His introductions, dedications and footnotes are left out.",
+      "attribution": "The House of Atreus (1881) and Four Plays of Aeschylus (1908), translated by E. D. A. Morshead, public domain; Project Gutenberg #8604 and #8714.",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/8604",
+      "licensed": false,
+      "versification": "aeschylus"
     }
   ],
   "religions": [
@@ -3162,7 +3180,14 @@
             { "id": "electra", "name": "Sophocles, Electra", "work": "sophocles", "chapters": 7, "chapterName": "Part" },
             { "id": "the-trachinian-maidens", "name": "Sophocles, The Trachinian Maidens", "work": "sophocles", "chapters": 13, "chapterName": "Part" },
             { "id": "philoctetes", "name": "Sophocles, Philoctetes", "work": "sophocles", "chapters": 7, "chapterName": "Part" },
-            { "id": "oedipus-at-colonos", "name": "Sophocles, Oedipus at Colonos", "work": "sophocles", "chapters": 13, "chapterName": "Part" }
+            { "id": "oedipus-at-colonos", "name": "Sophocles, Oedipus at Colonos", "work": "sophocles", "chapters": 13, "chapterName": "Part" },
+            { "id": "agamemnon", "name": "Aeschylus, Agamemnon", "work": "aeschylus", "chapters": 6, "chapterName": "Part" },
+            { "id": "the-libation-bearers", "name": "Aeschylus, The Libation-Bearers", "work": "aeschylus", "chapters": 6, "chapterName": "Part" },
+            { "id": "the-furies", "name": "Aeschylus, The Furies (Eumenides)", "work": "aeschylus", "chapters": 4, "chapterName": "Part" },
+            { "id": "the-suppliant-maidens", "name": "Aeschylus, The Suppliant Maidens", "work": "aeschylus", "chapters": 4, "chapterName": "Part" },
+            { "id": "the-persians", "name": "Aeschylus, The Persians", "work": "aeschylus", "chapters": 3, "chapterName": "Part" },
+            { "id": "the-seven-against-thebes", "name": "Aeschylus, The Seven against Thebes", "work": "aeschylus", "chapters": 4, "chapterName": "Part" },
+            { "id": "prometheus-bound", "name": "Aeschylus, Prometheus Bound", "work": "aeschylus", "chapters": 4, "chapterName": "Part" }
           ]
         }
       ]
