@@ -3870,7 +3870,57 @@ async function cloud() {
   report("cloud", 78, total);
 }
 
+/**
+ * Sepher Yetzirah, the Book of Formation — tr. W. Wynn Westcott (2nd ed., 1893), from Wikisource's transcription
+ * (the rendered page in data/raw/sepher-yetzirah/page.json, blocks in blocks.json). Six chapters; verse = his
+ * numbered section, a section's further paragraphs kept with it as lines. The supplements he prints after
+ * chapters IV and V follow on in those chapters as further verses, labelled "Supplement" (with his own section
+ * number where he gives one). His notes ("Note.—…"), preface, introduction, the Thirty-Two Paths and his notes to
+ * both are left out.
+ */
+async function sepherYetzirah() {
+  type Block = { kind: string; text: string };
+  const blocks = JSON.parse(await readFile(path.join(ROOT, "data", "raw", "sepher-yetzirah", "blocks.json"), "utf8")) as Block[];
+  const chapters: Verse[][] = [];
+  let supplement = false;
+  for (const b of blocks) {
+    // two slips in the transcription: "otherss", and a space left where a note mark was ("Sepharim —")
+    const t = b.text.trim().replace(/otherss/, "others").replace(/(\p{L}) —/gu, "$1—");
+    if (b.kind === "heading") {
+      if (/^CHAPTER [IVX]+\.$/.test(t)) {
+        chapters.push([]);
+        supplement = false;
+      } else if (/^Supplement to Chapter/.test(t)) supplement = true;
+      continue;
+    }
+    if (!chapters.length || /^Note\.—/.test(t)) continue;
+    const cur = chapters[chapters.length - 1];
+    const m = /^(?:Section )?(\d+)\.\s+([\s\S]*)$/.exec(t);
+    if (supplement) {
+      // Westcott's own caveat (his note): "a modern illustration … not found in the ancient copies"
+      const first = !cur.some((v) => v.n?.startsWith("Supplement"));
+      const label = (m ? `Supplement §${m[1]}` : "Supplement") + (first ? " (a modern illustration, not in the ancient copies)" : "");
+      cur.push({ v: String(cur.length + 1), t: m ? m[2] : t, n: label });
+      continue;
+    }
+    if (m) {
+      if (Number(m[1]) !== cur.length + 1) throw new Error(`sepher yetzirah: chapter ${chapters.length} section ${m[1]} after ${cur.length}`);
+      cur.push({ v: m[1], t: m[2] });
+    } else if (cur.length) cur[cur.length - 1].t += `\n${t}`; // a section's further paragraphs ("Fifth; He looked above…")
+    else throw new Error(`sepher yetzirah: text before section 1 in chapter ${chapters.length}`);
+  }
+  if (chapters.length !== 6) throw new Error(`sepher yetzirah: ${chapters.length} chapters`);
+  await resetVersion("sepher-yetzirah", "westcott");
+  let total = 0;
+  for (const [k, c] of chapters.entries()) {
+    await writeChapter("sepher-yetzirah", "westcott", "sepher-yetzirah", k + 1, c);
+    total += c.length;
+  }
+  report("sepher-yetzirah", 6, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  sepherYetzirah,
   cloud,
   epictetus,
   euripides,

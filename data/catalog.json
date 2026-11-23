@@ -75,6 +75,7 @@
     { "id": "euripides", "name": "Euripides: Ten Plays", "versification": "euripides" },
     { "id": "epictetus", "name": "Epictetus: The Discourses", "versification": "epictetus" },
     { "id": "cloud-of-unknowing", "name": "The Cloud of Unknowing", "versification": "cloud-of-unknowing" },
+    { "id": "sepher-yetzirah", "name": "Sepher Yetzirah (The Book of Formation)", "versification": "sepher-yetzirah" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2275,6 +2276,23 @@
       "sourceUrl": "https://en.wikisource.org/wiki/The_Cloud_of_Unknowing",
       "licensed": false,
       "versification": "cloud-of-unknowing"
+    },
+    {
+      "id": "westcott",
+      "work": "sepher-yetzirah",
+      "abbr": "Westcott",
+      "name": "Sepher Yetzirah (W. Wynn Westcott)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1893,
+      "translator": "W. Wynn Westcott",
+      "license": "Public Domain",
+      "licenseNote": "The six chapters, verse = his numbered section (a section's further paragraphs kept with it). The supplements he prints after chapters IV and V follow on in those chapters, labelled 'Supplement' (Westcott's own note calls them a modern illustration, not found in the ancient copies). From Wikisource's transcription; his notes, preface, introduction and the Thirty-Two Paths of Wisdom are left out.",
+      "attribution": "Sepher Yetzirah, the Book of Formation, translated by W. Wynn Westcott (second edition, London: Theosophical Publishing Society, 1893), public domain; text from Wikisource.",
+      "sourceUrl": "https://en.wikisource.org/wiki/Sepher_Yetzirah",
+      "licensed": false,
+      "versification": "sepher-yetzirah"
     }
   ],
   "religions": [
@@ -2638,6 +2656,13 @@
             { "id": "wars-5", "name": "The Wars of the Jews, Book V", "work": "josephus", "chapters": 13, "chapterName": "Chapter" },
             { "id": "wars-6", "name": "The Wars of the Jews, Book VI", "work": "josephus", "chapters": 10, "chapterName": "Chapter" },
             { "id": "wars-7", "name": "The Wars of the Jews, Book VII", "work": "josephus", "chapters": 11, "chapterName": "Chapter" }
+          ]
+        },
+        {
+          "id": "kabbalah",
+          "name": "Kabbalah",
+          "items": [
+            { "id": "sepher-yetzirah", "name": "Sepher Yetzirah (The Book of Formation)", "work": "sepher-yetzirah", "chapters": 6, "chapterName": "Chapter" }
           ]
         }
       ]

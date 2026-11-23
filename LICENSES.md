@@ -510,6 +510,15 @@ From Project Gutenberg (read from its mirror).
   left out and the opening words (set in capitals) are in normal case. Underhill's introduction, the table of
   chapters and the glossary are left out.
 
+## Sepher Yetzirah (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **Sepher Yetzirah, the Book of Formation** — translated by W. Wynn Westcott (second edition, London: Theosophical
+  Publishing Society, 1893); public domain, text from Wikisource's transcription. The six chapters, verse = his
+  numbered section (a section's further paragraphs kept with it); the supplements he prints after chapters IV and V
+  follow on in those chapters, labelled "Supplement" (his own note calls them a modern illustration, not
+  found in the ancient copies). His notes, preface, introduction and the Thirty-Two Paths of
+  Wisdom are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
