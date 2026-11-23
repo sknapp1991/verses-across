@@ -73,6 +73,7 @@
     { "id": "sophocles", "name": "Sophocles: The Seven Plays", "versification": "sophocles" },
     { "id": "aeschylus", "name": "Aeschylus: The Seven Plays", "versification": "aeschylus" },
     { "id": "euripides", "name": "Euripides: Ten Plays", "versification": "euripides" },
+    { "id": "epictetus", "name": "Epictetus: The Discourses", "versification": "epictetus" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2239,6 +2240,23 @@
       "sourceUrl": "https://www.gutenberg.org/ebooks/15081",
       "licensed": false,
       "versification": "euripides"
+    },
+    {
+      "id": "long-epictetus",
+      "work": "epictetus",
+      "abbr": "Long",
+      "name": "The Discourses of Epictetus (George Long)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1877,
+      "translator": "George Long",
+      "license": "Public Domain",
+      "licenseNote": "The four books of the Discourses as reported by Arrian (30, 26, 26 and 13 discourses, under Long's titles), from Wikisource's transcription. Verse = paragraph; a verse he quotes is its own verse. His footnotes are left out; his Encheiridion is not added (the library has the Enchiridion), nor the Fragments. His references for the verses he quotes (\"Il. vi. 490.\") are kept as printed.",
+      "attribution": "The Discourses of Epictetus; with the Encheiridion and Fragments, translated by George Long (London: George Bell, 1877), public domain; text from Wikisource's transcription.",
+      "sourceUrl": "https://en.wikisource.org/wiki/The_Discourses_of_Epictetus;_with_the_Encheiridion_and_Fragments",
+      "licensed": false,
+      "versification": "epictetus"
     }
   ],
   "religions": [
@@ -3093,6 +3111,10 @@
             { "id": "dnr", "name": "Lucretius, On the Nature of Things", "work": "lucretius", "chapters": 6, "chapterName": "On the Nature of Things, Book" },
             { "id": "med", "name": "Marcus Aurelius, Meditations", "work": "meditations", "chapters": 12, "chapterName": "Meditations, Book" },
             { "id": "ench", "name": "Epictetus, The Enchiridion", "work": "enchiridion", "chapters": 1, "chapterName": "Enchiridion" },
+            { "id": "discourses-1", "name": "Epictetus, Discourses, Book I", "work": "epictetus", "chapters": 30, "chapterName": "Discourse" },
+            { "id": "discourses-2", "name": "Epictetus, Discourses, Book II", "work": "epictetus", "chapters": 26, "chapterName": "Discourse" },
+            { "id": "discourses-3", "name": "Epictetus, Discourses, Book III", "work": "epictetus", "chapters": 26, "chapterName": "Discourse" },
+            { "id": "discourses-4", "name": "Epictetus, Discourses, Book IV", "work": "epictetus", "chapters": 13, "chapterName": "Discourse" },
             { "id": "golden-verses", "name": "The Golden Verses of Pythagoras", "work": "golden-verses", "chapters": 3, "chapterName": "Golden Verses" }
           ]
         },

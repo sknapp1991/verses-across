@@ -491,6 +491,13 @@ From Project Gutenberg (read from its mirror).
   longer choral passage. His supplied words in brackets are kept; the scene and his argument are the note of the first
   part. His footnotes and additional notes are left out.
 
+## Epictetus, the Discourses (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Discourses of Epictetus** — translated by George Long (London: George Bell, 1877); public domain, text from
+  Wikisource's transcription (pages read through its API, gently). The four books as reported by Arrian (30, 26, 26
+  and 13 discourses, under Long's titles); verse = paragraph; each verse he quotes is a verse of its own, with his reference ("Il. vi. 490.") as printed. His footnotes are
+  left out; his Encheiridion is not added (the library already has the Enchiridion), nor the Fragments.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

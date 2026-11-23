@@ -85,12 +85,15 @@ class Blocks(HTMLParser):
             return
         # a space left where a note mark was ("blows ;"), never inside ". . ." gaps
         lines = [re.sub(r"(?<=[\w)\]’'”])\s+([,;:!?]|\.(?!\s*\.))", r"\1", x) for x in lines]
-        text = "\n".join(lines) if kind == "poem" else " ".join(lines)
+        # (a note keeps its line breaks too: Long's Epictetus sets the verse he quotes in small type)
+        text = "\n".join(lines) if kind in ("poem", "note") else " ".join(lines)
         self.blocks.append({"kind": kind, "text": text})
 
 
 def convert(path):
     t = json.load(open(path, encoding="utf-8"))["parse"]["text"]
+    if isinstance(t, dict):  # the API's older format: {"*": html}
+        t = t["*"]
     p = Blocks()
     p.feed(t)
     p.flush()

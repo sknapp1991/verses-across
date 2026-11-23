@@ -12,7 +12,7 @@
  *   hidden      The Hidden Words — Bahá'u'lláh (Bahá'í Reference Library text), Gutenberg #16941
  *   aqdas       The Kitáb-i-Aqdas — Bahá'u'lláh (Bahá'í Reference Library text), Gutenberg #16523
  */
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { cached, decodeEntities, gutenbergBody, numbered, resetVersion, ROOT, roman, sacredTextsGz, writeChapter, type Verse } from "./lib/world";
 
@@ -3673,7 +3673,80 @@ async function euripides() {
   report("euripides", chapters, total);
 }
 
+/**
+ * Epictetus — The Discourses of Epictetus, with the Encheiridion, tr. George Long (1877), from Wikisource's
+ * transcription (pages rendered by its API, saved in data/raw/epictetus-html, turned into blocks by
+ * scripts/wikisource-blocks.py into data/raw/epictetus-blocks). Books: the Discourses I–IV (30, 26, 26 and 13
+ * chapters, under Long's titles). Verse = paragraph; a verse he quotes (set centred) is its own verse. His
+ * footnotes are left out; so is his Encheiridion (the library already has the Enchiridion) and the Fragments
+ * (their page mixes his notes on the sources and the Latin and Greek with the fragments).
+ */
+async function epictetus() {
+  const dir = path.join(ROOT, "data", "raw", "epictetus-blocks");
+  type Block = { kind: string; text: string };
+  const read = async (f: string): Promise<Block[]> => JSON.parse(await readFile(path.join(dir, `${f}.json`), "utf8"));
+  // titles are in small capitals on Wikisource, so names come through in lower case
+  const names: Record<string, string> = { rome: "Rome", epicurus: "Epicurus", god: "God", gods: "Gods", naso: "Naso", epicureans: "Epicureans", epicurean: "Epicurean", academics: "Academics", zeus: "Zeus", socrates: "Socrates", cynics: "Cynics" };
+  const cap = (t: string) =>
+    t
+      .replace(/\b(\p{Ll}+)\b/gu, (w) => names[w] ?? w)
+      .replace(/^\p{Ll}/u, (c) => c.toUpperCase())
+      .replace(/\.$/, "");
+  await resetVersion("epictetus", "long-epictetus");
+  let total = 0;
+  let chapters = 0;
+  for (const [b, n] of [
+    [1, 30],
+    [2, 26],
+    [3, 26],
+    [4, 13],
+  ] as const) {
+    for (let c = 1; c <= n; c++) {
+      const blocks = await read(`Book-${b}_Chapter-${c}`);
+      let title = "";
+      const verses: Verse[] = [];
+      let quote: string[] = [];
+      let lastProse = false;
+      const flushQuote = () => {
+        if (quote.length) verses.push({ v: String(verses.length + 1), t: quote.join("\n") });
+        quote = [];
+      };
+      for (const x of blocks) {
+        const t = x.text.trim();
+        if (/^Layout \d/.test(t) || /^BOOK [IV]+\.?$/.test(t) || /^CHAPTER [IVXL]+\.?$/.test(t)) continue; // ("CHAPTER V" has no stop)
+        if (x.kind === "heading" && t === "Footnotes") break;
+        if (x.kind === "heading" && !title) {
+          title = cap(t);
+          continue;
+        }
+        // a centred line after the title is a verse he quotes (consecutive ones are one quotation)
+        if (x.kind === "heading" || x.kind === "poem" || x.kind === "note") {
+          quote.push(t);
+          lastProse = false;
+          continue;
+        }
+        flushQuote();
+        // a paragraph cut by a page break ("…for they" / "cannot be genuine Cynics") goes on in the next block
+        const prev = verses[verses.length - 1];
+        if (prev && lastProse && /^\p{Ll}/u.test(t) && !/[.!?:;"”’)\]]$/.test(prev.t)) {
+          prev.t += ` ${t}`;
+          continue;
+        }
+        verses.push({ v: String(verses.length + 1), t });
+        lastProse = true;
+      }
+      flushQuote();
+      if (!title || !verses.length) throw new Error(`epictetus: book ${b} chapter ${c}: ${title ? "no text" : "no title"}`);
+      await writeChapter("epictetus", "long-epictetus", `discourses-${b}`, c, verses, undefined, title);
+      total += verses.length;
+      chapters++;
+    }
+  }
+  report("epictetus", chapters, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  epictetus,
   euripides,
   aeschylus,
   sophocles,
