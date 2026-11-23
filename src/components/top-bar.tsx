@@ -1,9 +1,9 @@
 "use client";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SITE_SIDE } from "@/lib/site";
 import Link from "next/link";
 import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
-import { CalendarIcon, LanguagesIcon, LibraryIcon, HomeIcon, MenuIcon, MoreIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
+import { ArticlesIcon, CalendarIcon, LanguagesIcon, LibraryIcon, HomeIcon, MenuIcon, MoreIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
 import { ReadTogether } from "./read-together";
 import { isShowing, openSheet, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
@@ -80,6 +80,18 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
       <Group label="Search and study panels">
         <PanelButton id="search" label="Search the text" title="Search (/)" icon={<SearchIcon />} onOpen={() => openSearch()} />
         <PanelButton id="study" label="My Study" title="My Study: favorites, notes, highlights" icon={<LibraryIcon />} />
+        {/* Articles (my brother, hub 0ce4b4a3, Nov 23): a page of its own, so a link; on a phone it is in the More sheet.
+            Verses Across only: on Library Across /articles leaves the site. */}
+        {SITE_SIDE === "scriptures" && (
+          <Link
+            href="/articles"
+            title="Articles: essays across the traditions, in up to three depths"
+            className="hidden h-11 items-center gap-2 rounded-lg border border-line bg-raised px-3 text-sm text-muted hover:text-ink desk:flex"
+          >
+            <ArticlesIcon width={18} height={18} />
+            <span className="sr-only xl:not-sr-only">Articles</span>
+          </Link>
+        )}
       </Group>
       <Divider />
       <Group label="Progress, plans, goals and reading together">

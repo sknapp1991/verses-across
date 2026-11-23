@@ -53,6 +53,10 @@ export const LanguagesIcon = (p: P) => (
 export const BookIcon = (p: P) => (
   <svg {...base(p)}><path d="M4 5.5A2.5 2.5 0 016.5 3H20v16H6.5A2.5 2.5 0 004 21.5z" /><path d="M4 5.5v16" /></svg>
 );
+/** Articles: a page of text (lines), apart from the book (reading) and the library (My Study). */
+export const ArticlesIcon = (p: P) => (
+  <svg {...base(p)}><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v4h4" /><path d="M9 11h7M9 14.5h7M9 18h4" /></svg>
+);
 export const CheckIcon = (p: P) => (
   <svg {...base(p)}><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
 );

@@ -11,6 +11,8 @@
 import { ProgressGlyph } from "./trophy-icon";
 import { useEffect } from "react";
 import Link from "next/link";
+import { SITE_SIDE } from "@/lib/site";
+import { ArticlesIcon } from "./icons";
 import { useRouter } from "next/navigation";
 import { closeSheet, openPanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
@@ -287,6 +289,18 @@ function Tiles() {
           router.push("/themes");
         }}
       />
+      {/* Articles (my brother, hub 0ce4b4a3): Verses Across only (on Library Across /articles leaves the site) */}
+      {SITE_SIDE === "scriptures" && (
+        <Tile
+          icon={<ArticlesIcon />}
+          label="Articles"
+          title="Articles: essays across the traditions, in up to three depths"
+          onClick={() => {
+            closeSheet();
+            router.push("/articles");
+          }}
+        />
+      )}
       <Tile
         icon={<BookIcon />}
         label="Home"
