@@ -120,9 +120,10 @@ function Body({ section }: { section: string }) {
               </h4>
               <ViewToggle full />
             </div>
+            {/* the width right under the layout, as in the Aa panel (hub 814f3560) */}
+            <WidthControl />
             <TypographyControls />
             <AlignControl />
-            <WidthControl />
             <LevelMarksControl />
             <LanguageColors />
           </Section>

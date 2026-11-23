@@ -989,12 +989,13 @@ export function TextSettingsButton() {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Layout</h3>
         <ViewToggle full />
       </div>
+      {/* the width right under the layout (columns or stacked): like things together (hub 814f3560) */}
+      <WidthControl />
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text size</h3>
         <FontSizeControl />
       </div>
       <TypographyControls />
-      <WidthControl />
       <AlignControl />
       <LevelMarksControl />
       <LanguageColors />
