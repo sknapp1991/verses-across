@@ -3745,7 +3745,133 @@ async function epictetus() {
   report("epictetus", chapters, total);
 }
 
+/**
+ * The Cloud of Unknowing — edited from the British Museum MS. Harl. 674 by Evelyn Underhill (second edition, 1922;
+ * the Middle English in modern spelling). Two sources, checked word by word against each other:
+ * - Wikisource's proofread transcription (pages rendered by its API in data/raw/cloud-html, blocks in
+ *   data/raw/cloud-blocks) for the Prayer, the Prologue and the chapters. Its "Chapter 20" page pulls in the wrong
+ *   scanned pages, so chapter 20 is rendered from scan pages 138–142 instead (saved over that page's file).
+ * - The Christian Classics Ethereal Library's plain text (data/raw/cloud/cloud.txt), which has more scanning errors
+ *   ("word" for "work", "mistily" for "listily"), only for chapters 71 and 72 (Wikisource's pages for those repeat
+ *   one another) and for the short prayer after the table of chapters, which Wikisource leaves out.
+ * Books: the Prayer on the Prologue, the Prologue and that prayer; then the 75 chapters, each titled with the
+ * author's own summary; verse = paragraph. The "Here beginneth …" headings are left out (the closing "Here endeth"
+ * is kept); the opening words, set in capitals, are in normal case. Underhill's introduction, the table of
+ * chapters and the glossary are left out.
+ */
+async function cloud() {
+  type Block = { kind: string; text: string };
+  const read = async (f: string): Promise<string[]> => {
+    const out: string[] = [];
+    for (const b of JSON.parse(await readFile(path.join(ROOT, "data", "raw", "cloud-blocks", `${f}.json`), "utf8")) as Block[]) {
+      // words broken over a line ("them¬ selves", "knew- est"); curly apostrophes as the rest of the text has them
+      const t = b.text
+        .replace(/¬ ?/g, "")
+        .replace(/(\p{Ll})- (\p{Ll})/gu, "$1$2")
+        .replace(/’/g, "'")
+        .trim();
+      if (!t) continue;
+      // a paragraph cut by a page break ("…but if he feel verily" / "that he be stirred…") goes on
+      const prev = out[out.length - 1];
+      if (prev && /^\p{Ll}/u.test(t) && !/[.!?:;"'”’)]$/.test(prev)) out[out.length - 1] = `${prev} ${t}`;
+      else out.push(t);
+    }
+    return out;
+  };
+  // "GHOSTLY friend" → "Ghostly friend"; "I SAY not" → "I say not"; "GHOSTLY FRIEND IN GOD, I" → "Ghostly friend in God, I"
+  const opening = (t: string) =>
+    t.replace(/^((?:[A-Z]+[,;!]? )*[A-Z]{2,}[,;!]?)(?= |$)/, (m) =>
+      m
+        .toLowerCase()
+        .replace(/^\w/, (c) => c.toUpperCase())
+        .replace(/\bgod\b/g, "God")
+        .replace(/\bi\b/g, "I"),
+    );
+  // the CCEL text: paragraphs between two line numbers ("?" inside a word is a lost hyphen; "--" a dash)
+  const raw = (await readFile(path.join(ROOT, "data", "raw", "cloud", "cloud.txt"), "latin1")).replace(/\r\n/g, "\n").split("\n");
+  const ccel = (from: number, to: number) => {
+    const out: string[] = [];
+    let buf: string[] = [];
+    for (const l of [...raw.slice(from, to), ""]) {
+      const t = l.trim();
+      if (t && !/^_{10,}$/.test(t)) buf.push(t);
+      else if (buf.length) {
+        out.push(
+          unwrap(buf.join(" "))
+            .replace(/\?(?=--)/g, "")
+            .replace(/(\p{L})\?(\p{L})/gu, "$1-$2")
+            .replace(/--/g, "—")
+            .replace(/\s+/g, " ")
+            .trim(),
+        );
+        buf = [];
+      }
+    }
+    return out;
+  };
+  const at = (re: RegExp, from = 0) => {
+    const i = raw.findIndex((l, k) => k >= from && re.test(l.trim()));
+    if (i < 0) throw new Error(`cloud: ${re} not found`);
+    return i;
+  };
+  await resetVersion("cloud-of-unknowing", "underhill");
+  let total = 0;
+  const write = async (book: string, n: number, ps: string[], title?: string) => {
+    if (!ps.length) throw new Error(`cloud: ${book} ${n} has no text`);
+    await writeChapter("cloud-of-unknowing", "underhill", book, n, ps.map((t, j) => ({ v: String(j + 1), t })), undefined, title);
+    total += ps.length;
+  };
+  // the Prayer on the Prologue (with the book's opening words) and the Prologue, from Wikisource
+  const prayer = (await read("Prayer-on-the-Prologue")).filter((t) => !/^Here Beginneth the Prayer on the Prologue$/i.test(t));
+  await write("prologue", 1, prayer.map((t) => (/^Here beginneth a book/.test(t) ? t : opening(t))), "The Prayer on the Prologue");
+  const prologue = (await read("Prologue")).filter((t) => !/^Here Beginneth the Prologue$/i.test(t));
+  await write("prologue", 2, prologue.map((t, j) => (j === 0 ? opening(t) : t)), "The Prologue");
+  // the prayer after the table of chapters, from CCEL
+  const tableEnd = at(/^AND HERE ENDETH THE TABLE OF THE CHAPTERS$/);
+  const first = at(/^HERE BEGINNETH THE FIRST CHAPTER$/, tableEnd);
+  await write("prologue", 3, ccel(tableEnd + 1, first).map(opening), "A Prayer after the Table of the Chapters");
+  // the chapters
+  const split: number[] = [];
+  for (let c = 1; c <= 75; c++) {
+    let ps: string[];
+    if (c === 71 || c === 72) {
+      const h = at(new RegExp(`^HERE BEGINNETH THE ${c === 71 ? "ONE" : "TWO"} AND SEVENTIETH CHAPTER$`));
+      const next = at(/^HERE BEGINNETH THE .*CHAPTER$/, h + 1);
+      ps = ccel(h + 1, next);
+    } else {
+      ps = await read(`Chapter-${c}`);
+      if (!/^HERE BEGINNETH THE .*CHAPTER\.?$/i.test(ps[0] ?? "")) throw new Error(`cloud: chapter ${c} starts "${ps[0]}"`);
+      ps = ps.slice(1).map((t) => t.replace(/\s*HERE BEGINNETH THE [A-Z ]+ CHAPTER\.?$/, "")); // (chapter 20's last paragraph)
+      // Wikisource joins a paragraph that starts at the top of a scanned page to the one before (chapters 3, 35, 37,
+      // 41, 42, 54): split it again where CCEL begins a paragraph, found by its first words after a sentence's end
+      const h = at(new RegExp(`^HERE BEGINNETH THE .*CHAPTER$`), 0);
+      const heads = raw.flatMap((l, k) => (k >= h && /^HERE BEGINNETH THE .*CHAPTER$/.test(l.trim()) ? [k] : []));
+      const mine = ccel(heads[c - 1] + 1, heads[c] ?? at(/^HERE ENDETH THE CLOUD OF UNKNOWING\.?$/));
+      for (const cp of mine.slice(2)) {
+        // (ten words: "And therefore for God's love" opens two sentences in chapter 41)
+        const words = cp.match(/\p{L}+/gu)?.slice(0, 10);
+        if (!words || words.length < 8) continue;
+        const re = new RegExp(`(?<=[.!?:"'”])\\s+(?=${words.map((w) => w).join("\\W+")})`, "u");
+        for (let i = 1; i < ps.length; i++) {
+          const m = re.exec(ps[i]);
+          if (m && m.index > 0) {
+            ps.splice(i, 1, ps[i].slice(0, m.index), ps[i].slice(m.index + m[0].length));
+            split.push(c);
+            break;
+          }
+        }
+      }
+    }
+    const title = ps[0].replace(/\.$/, "");
+    const body = ps.slice(1).map((t, j) => (j === 0 ? opening(t) : t)).map((t) => (/^HERE ENDETH THE CLOUD OF UNKNOWING\.?$/.test(t) ? "Here endeth the Cloud of Unknowing." : t));
+    await write("cloud", c, body, title);
+  }
+  if (split.length) console.log(`cloud: paragraphs split again (as in CCEL) in chapters ${split.join(", ")}`);
+  report("cloud", 78, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  cloud,
   epictetus,
   euripides,
   aeschylus,

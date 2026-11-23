@@ -144,6 +144,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   aeschylus: ["morshead"],
   euripides: ["buckley"],
   epictetus: ["long-epictetus"],
+  "cloud-of-unknowing": ["underhill"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

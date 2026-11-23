@@ -498,6 +498,18 @@ From Project Gutenberg (read from its mirror).
   and 13 discourses, under Long's titles); verse = paragraph; each verse he quotes is a verse of its own, with his reference ("Il. vi. 490.") as printed. His footnotes are
   left out; his Encheiridion is not added (the library already has the Enchiridion), nor the Fragments.
 
+## The Cloud of Unknowing (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Cloud of Unknowing** — the anonymous 14th-century English text, edited from the British Museum MS. Harl.
+  674 by Evelyn Underhill (London: John M. Watkins, 1912; second edition 1922), in modern spelling; public domain. Text
+  from Wikisource's proofread transcription, checked word by word against the Christian Classics Ethereal Library's
+  plain text: Wikisource's chapter 20 page pulls in the wrong scanned pages, so that chapter is rendered from the
+  right ones; its pages for chapters 71 and 72 repeat each other, so those two come from CCEL, as does the short
+  prayer after the table of chapters, which Wikisource leaves out. The Prayer on the Prologue, the Prologue, that
+  prayer and the 75 chapters under the author's own summaries; verse = paragraph. The "Here beginneth" headings are
+  left out and the opening words (set in capitals) are in normal case. Underhill's introduction, the table of
+  chapters and the glossary are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

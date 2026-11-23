@@ -74,6 +74,7 @@
     { "id": "aeschylus", "name": "Aeschylus: The Seven Plays", "versification": "aeschylus" },
     { "id": "euripides", "name": "Euripides: Ten Plays", "versification": "euripides" },
     { "id": "epictetus", "name": "Epictetus: The Discourses", "versification": "epictetus" },
+    { "id": "cloud-of-unknowing", "name": "The Cloud of Unknowing", "versification": "cloud-of-unknowing" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2257,6 +2258,23 @@
       "sourceUrl": "https://en.wikisource.org/wiki/The_Discourses_of_Epictetus;_with_the_Encheiridion_and_Fragments",
       "licensed": false,
       "versification": "epictetus"
+    },
+    {
+      "id": "underhill",
+      "work": "cloud-of-unknowing",
+      "abbr": "Underhill",
+      "name": "The Cloud of Unknowing (ed. Evelyn Underhill)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1922,
+      "translator": "Evelyn Underhill (edited from the British Museum MS., in modern spelling)",
+      "license": "Public Domain",
+      "licenseNote": "The anonymous 14th-century English text, edited by Underhill in modern spelling: the Prayer on the Prologue, the Prologue, the short prayer after the table of chapters, and the 75 chapters under the author's own summaries. Verse = paragraph. Text from Wikisource's proofread transcription, checked word by word against the Christian Classics Ethereal Library's; chapters 71 and 72 and the prayer after the table come from CCEL, where Wikisource's pages are wrong or leave it out. The 'Here beginneth' headings are left out and the opening words (set in capitals) are in normal case. Underhill's introduction, the table of chapters and the glossary are left out.",
+      "attribution": "A Book of Contemplation the which is called The Cloud of Unknowing, edited from the British Museum MS. Harl. 674 by Evelyn Underhill (London: John M. Watkins, 1912; second edition 1922), public domain; text from Wikisource and the Christian Classics Ethereal Library.",
+      "sourceUrl": "https://en.wikisource.org/wiki/The_Cloud_of_Unknowing",
+      "licensed": false,
+      "versification": "cloud-of-unknowing"
     }
   ],
   "religions": [
@@ -2367,7 +2385,9 @@
           { "id": "imitation-1", "name": "The Imitation of Christ, Book I", "work": "imitation", "chapters": 25, "chapterName": "Imitation of Christ I" },
           { "id": "imitation-2", "name": "The Imitation of Christ, Book II", "work": "imitation", "chapters": 12, "chapterName": "Imitation of Christ II" },
           { "id": "imitation-3", "name": "The Imitation of Christ, Book III", "work": "imitation", "chapters": 59, "chapterName": "Imitation of Christ III" },
-          { "id": "imitation-4", "name": "The Imitation of Christ, Book IV", "work": "imitation", "chapters": 18, "chapterName": "Imitation of Christ IV" }
+          { "id": "imitation-4", "name": "The Imitation of Christ, Book IV", "work": "imitation", "chapters": 18, "chapterName": "Imitation of Christ IV" },
+          { "id": "prologue", "name": "The Cloud of Unknowing: Prologue and Prayers", "work": "cloud-of-unknowing", "chapters": 3, "chapterName": "Part" },
+          { "id": "cloud", "name": "The Cloud of Unknowing", "work": "cloud-of-unknowing", "chapters": 75, "chapterName": "Chapter" }
         ] }
       ]
     },
