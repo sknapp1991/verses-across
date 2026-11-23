@@ -480,9 +480,8 @@ export function ArticleReader({ article, library = [] }: { article: Article; lib
       </article>
       <aside
         aria-label="Study guide"
-        className={`sticky top-0 hidden max-h-[var(--app-h,100dvh)] shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 xl:block print:hidden ${
-          guideOpen ? "w-72 pr-3 [scrollbar-gutter:stable]" : "w-11"
-        }`}
+        // (the same width folded or open, so folding it never moves the article: my brother's ticket 7873673b)
+        className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-72 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pr-3 pt-24 [scrollbar-gutter:stable] xl:block print:hidden"
       >
         {/* the whole panel folds to its button (remembered on this device) */}
         {(() => {
