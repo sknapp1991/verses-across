@@ -31,14 +31,16 @@ type UiState = {
   exclude: string[];
   /** On a Library book: search every book in the Library (by chapter) instead of this one. */
   allBooks: boolean;
+  /** On the scriptures: search every text at once (one version of each, English where there is one). Hub 27f7e4e6. */
+  everywhere: boolean;
 };
-let ui: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [], allBooks: false };
+let ui: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [], allBooks: false, everywhere: false };
 const subs = new Set<() => void>();
 const setUi = (patch: Partial<UiState>) => {
   ui = { ...ui, ...patch };
   subs.forEach((l) => l());
 };
-const SERVER_UI: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [], allBooks: false };
+const SERVER_UI: UiState = { query: "", versions: null, nonce: 0, crossLanguage: true, allVersions: true, exclude: [], allBooks: false, everywhere: false };
 
 export function useSearchUi() {
   return useSyncExternalStore(
@@ -57,12 +59,56 @@ export function openSearch(query?: string, versions?: string[]) {
     ...(query !== undefined ? { query } : {}),
     ...(versions ? { versions } : {}),
     // a word double-clicked (or sent from Word study) is searched in this book
-    ...(query !== undefined || versions ? { allBooks: false } : {}),
+    ...(query !== undefined || versions ? { allBooks: false, everywhere: false } : {}),
     nonce: ui.nonce + 1,
   });
   openPanel("search");
 }
 export const closeSearch = () => closePanel("search");
+
+/* ---------- every religion at once (hub 27f7e4e6) ---------- */
+
+/** One version of each scripture: its first English default (else its first default). */
+const EVERYWHERE: string[] = [
+  ...new Set(catalog.religions.flatMap((r) => r.collections.flatMap((c) => c.items.map((it) => it.work)))),
+]
+  .filter((w): w is string => !!w && sideOfWork(w) !== "library")
+  .map((w) => {
+    const d = DEFAULT_VERSIONS[w] ?? catalog.versions.filter((v) => v.work === w).map((v) => v.id);
+    return d.find((v) => getVersion(v)?.language === "en") ?? d[0];
+  })
+  .filter((v): v is string => !!v && !!getVersion(v));
+
+/**
+ * Search each text separately (book ids repeat across them) and put the hits together, each with its work. Ten at a
+ * time, and it stops early when a newer search has replaced this one (stale() turns true).
+ */
+async function searchEverywhere(query: string, opts: Parameters<typeof search>[2], stale: () => boolean): Promise<SearchResult> {
+  const parts: ({ r: SearchResult; work: string } | null)[] = [];
+  let next = 0;
+  const worker = async () => {
+    while (next < EVERYWHERE.length && !stale()) {
+      const v = EVERYWHERE[next++];
+      parts.push(
+        await search(query, [v], opts)
+          .then((r) => ({ r, work: getVersion(v)!.work }))
+          .catch(() => null), // (one text's index failing leaves the others)
+      );
+    }
+  };
+  await Promise.all(Array.from({ length: 10 }, worker));
+  const ok = parts.filter((p): p is { r: SearchResult; work: string } => !!p);
+  if (!ok.length && !stale()) throw new Error("Search is unavailable right now (are you offline?).");
+  const first = ok[0]?.r;
+  return {
+    terms: first?.terms ?? [],
+    termsByVersion: Object.assign({}, ...ok.map((p) => p.r.termsByVersion)),
+    equivalents: Object.assign({}, ...ok.map((p) => p.r.equivalents)),
+    hits: ok.flatMap((p) => p.r.hits.map((h) => ({ ...h, work: p.work }))),
+    perVersion: Object.assign({}, ...ok.map((p) => p.r.perVersion)),
+    forms: [...new Set(ok.flatMap((p) => p.r.forms))],
+  };
+}
 
 /* ---------- panel ---------- */
 
@@ -71,7 +117,12 @@ const PAGE = 40;
 export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
   const state = useSearchUi();
   const { versions: readerVersions, ref } = useReaderState();
-  const selected = state.versions ?? readerVersions;
+  // Versions picked here belong to the text they were picked on: when the reader moves to another religion's text,
+  // the search follows it (hub 27f7e4e6: KJV + WEB stayed selected on the Qur'an).
+  const picked = state.versions && getVersion(state.versions[0])?.work === ref.work ? state.versions : null;
+  const onLibrary = sideOfWork(ref.work) === "library";
+  const everywhere = !onLibrary && state.everywhere;
+  const selected = everywhere ? EVERYWHERE : (picked ?? readerVersions);
   const [input, setInput] = useState(state.query);
   // Results are stored with the query they belong to, so stale ones are simply ignored.
   const [found, setFound] = useState<{ key: string; result?: SearchResult; error?: string } | null>(null);
@@ -96,19 +147,19 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
   }, [input]);
 
   // Debounced search.
-  const onLibrary = sideOfWork(ref.work) === "library";
   const libMode = onLibrary && state.allBooks;
   const excludeKey = state.exclude.join(",");
-  const searchKey = query && !libMode ? `${query}|${versionKey}|${state.crossLanguage}|${excludeKey}` : "";
+  const searchKey = query && !libMode ? `${query}|${everywhere ? "*" : versionKey}|${state.crossLanguage}|${excludeKey}` : "";
   useEffect(() => {
     if (!searchKey) return;
     let live = true;
     const t = setTimeout(() => {
-      search(query, versionKey.split(","), {
+      const opts = {
         crossLanguage: state.crossLanguage,
-        languageOf: (v) => getVersion(v)?.language ?? "en",
+        languageOf: (v: string) => getVersion(v)?.language ?? "en",
         exclude: new Set(excludeKey ? excludeKey.split(",") : []),
-      })
+      };
+      (everywhere ? searchEverywhere(query, opts, () => !live) : search(query, versionKey.split(","), opts))
         .then((result) => live && setFound({ key: searchKey, result }))
         .catch((e: Error) => live && setFound({ key: searchKey, error: e.message }));
     }, 250);
@@ -116,7 +167,7 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
       live = false;
       clearTimeout(t);
     };
-  }, [searchKey, query, versionKey, state.crossLanguage, excludeKey]);
+  }, [searchKey, query, versionKey, state.crossLanguage, excludeKey, everywhere]);
   const current = found?.key === searchKey ? found : null;
   // Keep showing the previous results while the next search runs (less flicker while typing).
   const result = current?.result ?? (searchKey ? found?.result ?? null : null);
@@ -155,8 +206,8 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
     inputRef.current?.focus();
   };
 
-  const work = getVersion(selected[0])?.work ?? ref.work;
-  const tree = useMemo(() => (result ? groupHits(work, result.hits) : []), [result, work]);
+  const work = everywhere ? ref.work : (getVersion(selected[0])?.work ?? ref.work);
+  const tree = useMemo(() => (result ? groupHits(everywhere ? null : work, result.hits) : []), [result, work, everywhere]);
   const total = result?.hits.length ?? 0;
   const showSuggestions = suggestions.length > 0 && !(suggestions.length === 1 && suggestions[0].word === lastWord.toLowerCase());
 
@@ -182,6 +233,23 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             />
           </label>
         </div>
+        {!onLibrary && (
+          <div role="radiogroup" aria-label="Search in" className="flex rounded-lg border border-line bg-raised p-0.5 text-sm">
+            {([false, true] as const).map((all) => (
+              <button
+                key={String(all)}
+                type="button"
+                role="radio"
+                aria-checked={everywhere === all}
+                onClick={() => setUi({ everywhere: all })}
+                title={all ? "Every religion's texts and the philosophy shelves at once, in one version of each (English where there is one)" : "The text you are reading, in the versions below"}
+                className={`min-h-9 flex-1 rounded-md px-2 ${everywhere === all ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-ink"}`}
+              >
+                {all ? "All texts" : "This text"}
+              </button>
+            ))}
+          </div>
+        )}
         {onLibrary && (
           <div role="radiogroup" aria-label="Search in" className="flex rounded-lg border border-line bg-raised p-0.5 text-sm">
             {([false, true] as const).map((all) => (
@@ -198,7 +266,11 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             ))}
           </div>
         )}
-        {!libMode && <VersionFilter work={work} selected={selected} perVersion={result?.perVersion} />}
+        {everywhere ? (
+          <p className="px-1 text-xs text-faint">In: every text, one version of each (English where there is one), grouped by religion.</p>
+        ) : (
+          !libMode && <VersionFilter work={work} selected={selected} perVersion={result?.perVersion} />
+        )}
       </div>
 
       {/* Everything under the "In:" line scrolls with the results, so the options and word suggestions
@@ -210,9 +282,11 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
           <Toggle on={state.crossLanguage} onChange={(v) => setUi({ crossLanguage: v })} title="Find the same word in the other languages (e.g. sacrifice → sacrificio)">
             🌐 Same word in other languages
           </Toggle>
-          <Toggle on={state.allVersions} onChange={(v) => setUi({ allVersions: v })} title="Show every chosen version's text in the results">
-            Show all versions
-          </Toggle>
+          {!everywhere && (
+            <Toggle on={state.allVersions} onChange={(v) => setUi({ allVersions: v })} title="Show every chosen version's text in the results">
+              Show all versions
+            </Toggle>
+          )}
         </div>
         {showSuggestions && (
           <div className="flex flex-wrap gap-1" aria-label="Word suggestions">
@@ -242,7 +316,17 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             <p className="px-2 pb-2 text-sm text-muted">
               {busy ? "Searching… " : ""}
               <span className="font-semibold text-ink tabular-nums">{total.toLocaleString()}</span>{" "}
-              {isLiteratureWork(work) ? (total === 1 ? "passage in this book" : "passages in this book") : total === 1 ? "verse" : "verses"}
+              {everywhere
+                ? total === 1
+                  ? "verse across all texts"
+                  : "verses across all texts"
+                : isLiteratureWork(work)
+                  ? total === 1
+                    ? "passage in this book"
+                    : "passages in this book"
+                  : total === 1
+                    ? "verse"
+                    : "verses"}
               {result.terms.some((t) => t.prefix) && result.forms.length > 0 && (
                 <span className="block text-xs text-faint">
                   Matching: {result.forms.slice(0, 12).join(", ")}
@@ -278,14 +362,14 @@ export function SearchPanel({ onNavigate }: { onNavigate?: () => void }) {
             )}
             {total === 0 && (
               <p className="px-3 py-6 text-center text-sm text-faint">
-                No {isLiteratureWork(work) ? "passages" : "verses"} contain {result.terms.length > 1 ? "all of these words" : "this word"} in the chosen versions. Try a
-                trailing * (e.g. <em>{result.terms[0]?.word}*</em>) or another version.
+                No {isLiteratureWork(work) ? "passages" : "verses"} contain {result.terms.length > 1 ? "all of these words" : "this word"} {everywhere ? "in any text" : "in the chosen versions"}. Try a
+                trailing * (e.g. <em>{result.terms[0]?.word}*</em>){everywhere ? "." : " or another version."}
               </p>
             )}
             <ResultTree
               tree={tree}
               result={result}
-              shown={state.allVersions ? selected : null}
+              shown={state.allVersions && !everywhere ? selected : null}
               total={total}
               readerVersions={readerVersions}
               onNavigate={onNavigate}
@@ -519,18 +603,22 @@ type RelGroup = { id: string; name: string; collections: CollGroup[]; count: num
 
 const verseNum = (v: string) => parseInt(v, 10);
 
-function groupHits(work: string, hits: VerseHit[]): RelGroup[] {
+/** Hits under religion > collection > book: of one work, or (work = null) of every work, by each hit's own work. */
+function groupHits(work: string | null, hits: VerseHit[]): RelGroup[] {
   const byBook = new Map<string, VerseHit[]>();
-  for (const h of hits) (byBook.get(h.book) ?? byBook.set(h.book, []).get(h.book)!).push(h);
+  for (const h of hits) {
+    const k = `${h.work ?? work}/${h.book}`;
+    (byBook.get(k) ?? byBook.set(k, []).get(k)!).push(h);
+  }
   const rels: RelGroup[] = [];
   for (const r of catalog.religions) {
     const rel: RelGroup = { id: r.id, name: r.name, collections: [], count: 0 };
     for (const c of r.collections) {
       const coll: CollGroup = { id: `${r.id}/${c.id}`, name: c.name, books: [], count: 0 };
       for (const it of c.items) {
-        if (it.work !== work) continue;
-        const list = byBook.get(it.id);
-        const entry = findBook(work, it.id);
+        if (work && it.work !== work) continue;
+        const list = byBook.get(`${it.work}/${it.id}`);
+        const entry = list && findBook(it.work!, it.id);
         if (!list || !entry) continue;
         list.sort((a, b) => a.chapter - b.chapter || verseNum(a.v) - verseNum(b.v) || a.v.localeCompare(b.v));
         coll.books.push({ entry, hits: list });
@@ -590,10 +678,10 @@ function ResultTree({
                   {isOpen(`c:${c.id}`, true) && (
                     <ul className="space-y-0.5 pl-3">
                       {c.books.map((b) => {
-                        const id = `b:${b.entry.id}`;
+                        const id = `b:${b.entry.work}/${b.entry.id}`;
                         const open = isOpen(id, openBooks);
                         return (
-                          <li key={b.entry.id}>
+                          <li key={`${b.entry.work}/${b.entry.id}`}>
                             <GroupButton open={open} onClick={() => toggle(id, openBooks)} count={b.hits.length} level={2}>
                               {b.entry.name}
                             </GroupButton>
@@ -675,7 +763,8 @@ function BookHits({
   }, [needed, entry.work, entry.id]);
 
   // Link with the versions being read, plus any matched version not among them.
-  const linkVersions = (h: VerseHit) => [...readerVersions, ...h.versions.filter((v) => !readerVersions.includes(v))];
+  const own = readerVersions.filter((v) => getVersion(v)?.work === entry.work);
+  const linkVersions = (h: VerseHit) => [...own, ...h.versions.filter((v) => !own.includes(v))];
 
   return (
     <div className="pb-2 pl-6 pr-1">

@@ -13,7 +13,8 @@ export type Term = { word: string; prefix: boolean; maxExtra?: number };
 const termMatches = (t: Term, w: string) =>
   t.prefix ? w.startsWith(t.word) && (t.maxExtra === undefined || [...w].length - [...t.word].length <= t.maxExtra) : w === t.word;
 /** One matching verse: canonical reference + the versions it matched in. */
-export type VerseHit = { book: string; chapter: number; v: string; versions: string[] };
+/** (work: set when one search covers several texts, see searchEverywhere in the search panel) */
+export type VerseHit = { book: string; chapter: number; v: string; versions: string[]; work?: string };
 
 const metas = new Map<string, Promise<SearchMeta>>();
 const shards = new Map<string, Promise<SearchShard>>();
