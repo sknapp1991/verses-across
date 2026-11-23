@@ -100,3 +100,9 @@ CREATE TABLE IF NOT EXISTS health (
   ms INTEGER NOT NULL,            -- slowest page, milliseconds
   detail TEXT NOT NULL DEFAULT '' -- which page failed and how
 );
+
+-- Test & chat (hub 94dcc186, Nov 23). The Worker also makes these itself the first time (ensureUat).
+-- Tests the team or Claude add; Live tickets are listed beside them. One answer per person per test.
+CREATE TABLE IF NOT EXISTS uat (id TEXT PRIMARY KEY, created TEXT NOT NULL, created_by TEXT NOT NULL, title TEXT NOT NULL, steps TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', closed TEXT);
+CREATE TABLE IF NOT EXISTS uat_results (target TEXT NOT NULL, author TEXT NOT NULL, result TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', at TEXT NOT NULL, PRIMARY KEY (target, author));
+-- The team chat is the comments thread "chat:team". A tester's tickets start as status Pending (approved: New).

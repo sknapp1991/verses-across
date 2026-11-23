@@ -225,6 +225,59 @@ if (process.argv[2] === "serve") {
   r = await J(await call(TEAMMATE, "/api/health"));
   check("health answers", r.status === 200 && Array.isArray(r.body.checks) && Array.isArray(r.body.weeks));
 
+  // Testers, approval of their tickets, Test & chat (hub 94dcc186). Run wrangler dev with --var TESTER_EMAILS:tester@example.com
+  const TESTER = "tester@example.com";
+  r = await J(await call(TESTER, "/api/me"));
+  check("tester signs in as a tester", r.status === 200 && r.body.role === "tester" && r.body.owner === false);
+  check("tester can't see approvals", (await call(TESTER, "/api/approvals")).status === 403);
+  check("tester can't see the roadmap", (await call(TESTER, "/api/roadmap")).status === 403);
+  check("tester can't see feedback, audit or shipped", (await call(TESTER, "/api/feedback")).status === 403 && (await call(TESTER, "/api/audit")).status === 403 && (await call(TESTER, "/api/shipped")).status === 403);
+  check("tester can't open someone else's ticket", (await call(TESTER, `/api/reports/${rid}`)).status === 404);
+  check("tester can't read someone else's thread", (await call(TESTER, `/api/comments?thread=report:${rid}`)).status === 404);
+  r = await J(await call(TESTER, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "Search jumps on my phone" }) }));
+  const tid = r.body?.id;
+  r = await J(await call(TESTER, "/api/reports"));
+  check("tester's ticket waits as Pending, and they see only their own", r.body.length === 1 && r.body[0].id === tid && r.body[0].status === "Pending");
+  check("tester can't set a status", (await call(TESTER, `/api/reports/${tid}`, { method: "PATCH", body: JSON.stringify({ status: "New" }) })).status === 403);
+  check("Claude can't move a Pending ticket", (await call(jwt(null, { service: "test-claude.access" }), `/api/reports/${tid}`, { method: "PATCH", body: JSON.stringify({ status: "Working" }) })).status !== 200);
+  check("tester can't approve", (await call(TESTER, `/api/reports/${tid}/approve`, { method: "POST", body: JSON.stringify({ decision: "go" }) })).status === 403);
+  check("teammate approves it", (await call(TEAMMATE, `/api/reports/${tid}/approve`, { method: "POST", body: JSON.stringify({ decision: "go", note: "good one" }) })).status === 200);
+  r = await J(await call(OWNER, `/api/reports/${tid}`));
+  check("approved ticket is New", r.body.status === "New");
+  check("approving twice is refused", (await call(OWNER, `/api/reports/${tid}/approve`, { method: "POST", body: JSON.stringify({ decision: "no" }) })).status === 400);
+  check("tester reads their own thread", (await call(TESTER, `/api/comments?thread=report:${tid}`)).status === 200);
+  // chat
+  check("tester posts in the chat", (await call(TESTER, "/api/comments", { method: "POST", body: JSON.stringify({ thread: "chat:team", body: "hi team" }) })).status === 200);
+  r = await J(await call(OWNER, "/api/comments?thread=chat:team"));
+  check("the team reads the chat", r.body.some((c) => c.body === "hi team" && c.author === TESTER));
+  check("tester can't post as Claude", ((await J(await call(TESTER, "/api/comments?thread=chat:team"))).body.every((c) => c.author !== "claude")));
+  // tests
+  check("tester can't add a test", (await call(TESTER, "/api/uat", { method: "POST", body: JSON.stringify({ title: "x" }) })).status === 403);
+  r = await J(await call(TEAMMATE, "/api/uat", { method: "POST", body: JSON.stringify({ title: "Try All texts", steps: "Search mercy", url: "https://versesacross.com/read" }) }));
+  const uatId = r.body?.id;
+  check("teammate adds a test", /^[a-f0-9]{16}$/.test(uatId || ""));
+  check("a fail needs a note", (await call(TESTER, "/api/uat/result", { method: "POST", body: JSON.stringify({ target: `uat:${uatId}`, result: "fail" }) })).status === 400);
+  check("tester answers Works", (await call(TESTER, "/api/uat/result", { method: "POST", body: JSON.stringify({ target: `uat:${uatId}`, result: "pass" }) })).status === 200);
+  r = await J(await call(TESTER, "/api/uat"));
+  check("tests list the answer", r.status === 200 && r.body.items.some((i) => i.target === `uat:${uatId}`) && r.body.results[`uat:${uatId}`]?.[0]?.result === "pass");
+
+  // the review's holes (Fable): no reopening a declined ticket, no rewriting after approval, results only on open tests
+  check("tester can't rewrite an approved ticket", (await call(TESTER, `/api/reports/${tid}`, { method: "PATCH", body: JSON.stringify({ body: "now build something else" }) })).status === 403);
+  r = await J(await call(TESTER, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Idea", body: "declined one" }) }));
+  const did = r.body?.id;
+  check("approve needs go or no", (await call(OWNER, `/api/reports/${did}/approve`, { method: "POST", body: JSON.stringify({ decision: "maybe" }) })).status === 400);
+  await call(OWNER, `/api/reports/${did}/approve`, { method: "POST", body: JSON.stringify({ decision: "no" }) });
+  check("tester can't reopen a declined ticket", (await call(TESTER, `/api/reports/${did}/reopen`, { method: "POST", body: JSON.stringify({ note: "please" }) })).status === 403);
+  check("no result on a ticket that isn't Live", (await call(TESTER, "/api/uat/result", { method: "POST", body: JSON.stringify({ target: `report:${rid}`, result: "fail", note: "x" }) })).status === 404);
+  check("tester can't post as Claude", (await call(TESTER, "/api/comments", { method: "POST", body: JSON.stringify({ thread: "chat:team", body: "as claude?", asClaude: true }) })).status === 200
+    && (await J(await call(OWNER, "/api/comments?thread=chat:team"))).body.every((c) => c.author !== "claude"));
+  r = await J(await call(TEAMMATE, "/api/comments", { method: "POST", body: JSON.stringify({ thread: "chat:team", body: "hello tester" }) }));
+  r = await J(await call(TESTER, "/api/comments?thread=chat:team"));
+  check("tester sees the team as Team, never their emails", r.body.some((c) => c.author === "Team") && r.body.every((c) => c.author !== TEAMMATE && c.author !== OWNER));
+  r = await J(await call(TESTER, "/api/uat"));
+  check("tester's tests don't show team emails", JSON.stringify(r.body).indexOf(TEAMMATE) === -1);
+  check("tester can't read the testers list", (await call(TESTER, "/api/testers")).status === 404);
+
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

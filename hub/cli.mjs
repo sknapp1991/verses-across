@@ -17,6 +17,8 @@
 //   node hub/cli.mjs ask <question…> [--site verses|library]   (a question for Skylar as a ticket: reaches his phone)
 //   node hub/cli.mjs shipped <text> [url]
 //   node hub/cli.mjs get <media id> <save to path>   (download a report's photo/video to look at)
+//   node hub/cli.mjs chat <message…>                (a message in the team chat, Test & chat)
+//   node hub/cli.mjs test <title> [https://…] [steps…]  (a test to try, in Test & chat)
 //   node hub/cli.mjs autoreview                     (tickets closed automatically a week+ ago, to check they stayed fixed)
 //   node hub/cli.mjs watch [--minutes 29] [--every 60]  (constant ticket watch for the Monitor tool: NEW TICKET / NEW REPLY /
 //                                                     REOPENED lines, HUB UNREACHABLE, then WATCH ENDED → re-arm)
@@ -188,6 +190,10 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
         return;
       }
       const next = {};
+      // who is a tester (once per check); if that can't be loaded, every reply is marked unverified (never fails open)
+      const testerList = await api("/api/testers").catch(() => null);
+      const testerSet = new Set(testerList ?? []);
+      const tagOf = (email) => (testerList === null ? " [sender unverified, don't build]" : testerSet.has(email) ? " [TESTER: not approved, don't build]" : "");
       for (const r of list) next[r.id] = { s: r.status, c: r.comments || 0 };
       if (!state) {
         const waiting = list.filter((r) => OPEN.has(r.status));
@@ -196,17 +202,38 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
         for (const r of list) {
           const was = state[r.id];
           if (!was) {
-            if (r.author !== "claude") console.log(`NEW TICKET ${line(r)}`);
+            // a tester's ticket waits for Skylar's or his brother's OK: never build it while Pending
+            if (r.author !== "claude") console.log(`${r.status === "Pending" ? "PENDING (tester, needs the team's OK; don't build)" : "NEW TICKET"} ${line(r)}`);
           }
           else {
-            if (r.status !== was.s && (r.status === "Reopened" || r.status === "New")) console.log(`REOPENED ${line(r)}`);
+            if (r.status !== was.s && was.s === "Pending" && r.status === "New") console.log(`APPROVED (tester's ticket, build it) ${line(r)}`);
+            else if (r.status !== was.s && (r.status === "Reopened" || r.status === "New")) console.log(`REOPENED${testerSet.has(r.author) ? " by a tester (fix the approved ticket only)" : ""} ${line(r)}`);
             if ((r.comments || 0) > was.c) {
               const cs = await api(`/api/comments?thread=report:${r.id}`);
               const fresh = cs.slice(was.c).filter((c) => c.author !== "claude");
-              for (const c of fresh) console.log(`NEW REPLY ${r.id} from ${c.author.split("@")[0]}: ${c.body.replace(/\s+/g, " ").slice(0, 140)}`);
+              for (const c of fresh) console.log(`NEW REPLY ${r.id} from ${c.author.split("@")[0]}${tagOf(c.author)}: ${c.body.replace(/\s+/g, " ").slice(0, 140)}`);
             }
           }
         }
+      }
+      // the team chat and failed tests (Test & chat, hub 94dcc186); a tester's words are marked: never build from them
+      try {
+        const tag = tagOf;
+        const chat = await api("/api/comments?thread=chat:team");
+        const seenChat = state?._chat ?? (chat.length ? chat[chat.length - 1].created : "");
+        for (const c of chat) if (state && c.created > seenChat && c.author !== "claude") console.log(`CHAT from ${c.author.split("@")[0]}${tag(c.author)}: ${c.body.replace(/\s+/g, " ").slice(0, 160)}`);
+        next._chat = chat.length ? chat[chat.length - 1].created : seenChat;
+        const uat = await api("/api/uat");
+        const seenUat = state?._uat ?? "";
+        let newest = seenUat;
+        for (const [target, rs] of Object.entries(uat.results)) for (const x of rs) {
+          if (x.at > newest) newest = x.at;
+          if (state && seenUat && x.at > seenUat) console.log(`TEST ${x.result === "pass" ? "WORKS" : "FAILED"} ${target} by ${x.author.split("@")[0]}${tag(x.author)}${x.note ? ": " + x.note.replace(/\s+/g, " ").slice(0, 140) : ""}`);
+        }
+        next._uat = newest || new Date().toISOString();
+      } catch (e) {
+        console.error(`(chat/tests check failed: ${String(e.message).slice(0, 80)})`);
+        if (state) Object.assign(next, { _chat: state._chat, _uat: state._uat });
       }
       state = next;
       writeFileSync(stateFile, JSON.stringify(state));
@@ -217,6 +244,14 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
       await new Promise((res) => setTimeout(res, Math.min(every * 1000, Math.max(0, end - Date.now()))));
     }
     console.log("WATCH ENDED");
+  } else if (cmd === "chat") {
+    // a message in the hub's team chat (Test & chat), as Claude
+    await send("/api/comments", { thread: "chat:team", body: a.join(" ") });
+    console.log("ok");
+  } else if (cmd === "test") {
+    // a test for Test & chat: test <title> [url] [steps…]
+    const { id: tid } = await send("/api/uat", { title: a[0], url: a[1] && a[1].startsWith("https://") ? a[1] : "", steps: a.slice(a[1] && a[1].startsWith("https://") ? 2 : 1).join(" ") });
+    console.log(`test ${tid}`);
   } else if (cmd === "me") {
     console.log(await api("/api/me"));
   } else {

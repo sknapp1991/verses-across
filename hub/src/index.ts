@@ -5,7 +5,8 @@
  *
  * Security: Cloudflare Access sits in front (only the team's emails, email one-time code). This Worker
  * does not trust that alone: every request must carry a valid Access token (Cf-Access-Jwt-Assertion,
- * RS256, signed by the team's keys, for this app's AUD, not expired) whose email is on TEAM_EMAILS.
+ * RS256, signed by the team's keys, for this app's AUD, not expired) whose email is on TEAM_EMAILS (or TESTER_EMAILS:
+ * testers, who reach only their own tickets and Test & chat, see testerRoutes).
  * Approving is only for OWNER_EMAIL. Everything people type is stored and shown as text (never HTML).
  */
 import { PAGE } from "./page";
@@ -29,11 +30,14 @@ type R2 = {
  * its secret stays on Skylar's PC). A request carrying that token is "claude": it may set statuses, notes and
  * test links, answer as Claude, add clips for approval and "what shipped" lines. It can never approve or decide.
  * CERTS_URL: local tests only (`wrangler dev --var CERTS_URL:…`, hub/test.mjs); never set in production. */
-type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string };
+/** TESTER_EMAILS (secret, comma-separated): testers (hub 94dcc186). They see only their own tickets, Test & chat; what
+ * they send waits as Pending until a team member approves it, and Claude builds nothing Pending. */
+type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; TESTER_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string };
 
 const TYPES = new Set(["Bug", "Idea", "Content", "Question"]);
-/** Open: New, Seen, Working, Question, Reopened. History: Live (shipped), Done (closed), Roadmap (later). */
-const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap", "Done", "Reopened"]);
+/** Open: New, Seen, Working, Question, Reopened. History: Live (shipped), Done (closed), Roadmap (later).
+ * Pending: a tester's ticket waiting for a team member's OK (hub 94dcc186); nothing Pending is built. */
+const STATUSES = new Set(["New", "Seen", "Working", "Live", "Question", "Roadmap", "Done", "Reopened", "Pending"]);
 /** Sorting (HB1): how soon, which part of the site, and which device it happened on. */
 const PRIORITIES = new Set(["urgent", "normal", "someday"]);
 const AREAS = new Set(["reader", "library", "search", "audio", "study", "phone", "hub", "other"]);
@@ -86,6 +90,8 @@ const b64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(
 /** Why a sign-in was refused, in the Worker's log (never the token itself). */
 const deny = (why: string): null => (console.warn(`access denied: ${why}`), null);
 
+const emails = (v?: string) => (v ?? "").toLowerCase().split(",").map((x) => x.trim()).filter(Boolean);
+
 /** The signed-in email, "claude" for Claude's service token, or null. Checks signature, issuer, audience and expiry. */
 async function whoIs(req: Request, env: Env): Promise<string | null> {
   const token = req.headers.get("cf-access-jwt-assertion");
@@ -112,8 +118,7 @@ async function whoIs(req: Request, env: Env): Promise<string | null> {
     // Claude's service token: no email, its Client ID as common_name.
     if (!claims.email && claims.common_name) return env.CLAUDE_TOKEN_ID && claims.common_name === env.CLAUDE_TOKEN_ID ? "claude" : deny("unknown service token");
     const email = (claims.email ?? "").toLowerCase();
-    const team = (env.TEAM_EMAILS ?? "").toLowerCase().split(",").map((x) => x.trim()).filter(Boolean);
-    return team.includes(email) ? email : deny("not on the team list");
+    return emails(env.TEAM_EMAILS).includes(email) || emails(env.TESTER_EMAILS).includes(email) ? email : deny("not on the team list");
   } catch (e) {
     return deny(`check failed: ${(e as Error).message}`);
   }
@@ -168,6 +173,9 @@ export default {
     const owner = me !== "claude" && me === (env.OWNER_EMAIL ?? "").toLowerCase().trim();
     // Claude (its service token, or the owner's own session) does the inbox work: statuses, notes, clips to approve.
     const worker = owner || me === "claude";
+    // a tester (on TESTER_EMAILS and not on the team list): their own tickets, Test & chat, nothing else
+    const tester = me !== "claude" && !emails(env.TEAM_EMAILS).includes(me);
+    const role = me === "claude" ? "claude" : tester ? "tester" : owner ? "owner" : "team";
     const path = url.pathname;
     const m = req.method;
 
@@ -189,7 +197,16 @@ export default {
             "referrer-policy": "no-referrer",
           },
         });
-      if (path === "/api/me") return json({ email: me, owner, worker, name: me === "claude" ? "Claude" : me.split("@")[0] });
+      if (path === "/api/me") return json({ email: me, owner, worker, role, name: me === "claude" ? "Claude" : me.split("@")[0] });
+
+      // Test & chat (hub 94dcc186): everyone signed in
+      if (path === "/api/uat" && m === "GET" && !tester) return listUat(env);
+      if (path === "/api/testers" && m === "GET") return tester ? bad("Not found", 404) : json(emails(env.TESTER_EMAILS));
+      if (path === "/api/uat" && m === "POST") return tester ? bad("Only the team or Claude add tests", 403) : addUat(env, me, await req.json());
+      let u = /^\/api\/uat\/([a-f0-9]{16})$/.exec(path);
+      if (u && m === "PATCH") return tester ? bad("Only the team or Claude", 403) : closeUat(env, me, u[1], await req.json());
+      if (path === "/api/uat/result" && m === "POST") return me === "claude" ? bad("Tests are tried by people", 403) : uatResult(env, me, await req.json(), tester);
+      if (tester) return testerRoutes(req, env, me, path, m, url);
 
       // Reports
       if (path === "/api/reports" && m === "GET") return listReports(env, url);
@@ -199,6 +216,8 @@ export default {
       if (r && m === "PATCH") return patchReport(env, me, worker, r[1], await req.json());
       r = /^\/api\/reports\/([a-f0-9]{16})\/reopen$/.exec(path);
       if (r && m === "POST") return me === "claude" ? bad("Only people reopen", 403) : reopenReport(env, me, r[1], await req.json());
+      r = /^\/api\/reports\/([a-f0-9]{16})\/approve$/.exec(path);
+      if (r && m === "POST") return me === "claude" ? bad("Only Skylar or his brother approve a tester's ticket", 403) : approveReport(env, me, r[1], await req.json());
       r = /^\/api\/reports\/([a-f0-9]{16})\/resolve$/.exec(path);
       if (r && m === "POST") return me === "claude" ? bad("Only people close their tickets (Claude sets Done)", 403) : resolveReport(env, me, r[1], await req.json().catch(() => ({})));
 
@@ -247,9 +266,11 @@ export default {
 
 /* ---------------- Reports ---------------- */
 
-async function listReports(env: Env, url: URL) {
+async function listReports(env: Env, url: URL, author?: string) {
   const status = url.searchParams.get("status");
-  const q = status && STATUSES.has(status)
+  const q = author
+    ? env.DB.prepare("SELECT * FROM reports WHERE author = ? ORDER BY created DESC LIMIT 500").bind(author)
+    : status && STATUSES.has(status)
     ? env.DB.prepare("SELECT * FROM reports WHERE status = ? ORDER BY created DESC LIMIT 500").bind(status)
     : env.DB.prepare("SELECT * FROM reports ORDER BY created DESC LIMIT 500");
   const { results } = await q.all();
@@ -260,7 +281,7 @@ async function listReports(env: Env, url: URL) {
   return json(results.map((x) => ({ ...x, comments: c.get(x.id as string) ?? 0, media: md.get(x.id as string) ?? 0 })));
 }
 
-async function createReport(env: Env, me: string, b: Row) {
+async function createReport(env: Env, me: string, b: Row, status = "New") {
   const type = clip(b.type, 20);
   const body = clip(b.body, 50000);
   if (!TYPES.has(type)) return bad("Pick a type");
@@ -271,8 +292,8 @@ async function createReport(env: Env, me: string, b: Row) {
   const area = AREAS.has(String(b.area)) ? String(b.area) : "";
   const device = DEVICES.has(String(b.device)) ? String(b.device) : "";
   const site = SITES.has(String(b.site)) ? String(b.site) : "verses";
-  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device, site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device, site)
+  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device, site, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device, site, status)
     .run();
   return json({ id });
 }
@@ -293,6 +314,8 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   const extra: D1Stmt[] = [];
   // Sorting: the reporter or the owner's session (Claude) may set these.
   const mine = me !== "claude" && report.author === me;
+  // a tester's ticket waits for a person's OK (approveReport): Claude can't move it on
+  if (report.status === "Pending" && b.status !== undefined && b.status !== "Pending") return bad("Waiting for Skylar's or his brother's OK first", 403);
   for (const [k, allowed] of [["priority", PRIORITIES], ["area", AREAS], ["device", DEVICES], ["site", SITES]] as const) {
     if (b[k] === undefined) continue;
     if (!owner && !mine) return bad("Not your report", 403);
@@ -386,11 +409,14 @@ async function resolveReport(env: Env, me: string, id: string, b: Row) {
 
 /* ---------------- Comments ---------------- */
 
-const THREAD = /^(report|approval):[a-f0-9]{16}$|^roadmap:[A-Za-z0-9-]{1,12}$/;
+const THREAD = /^(report|approval|uat):[a-f0-9]{16}$|^roadmap:[A-Za-z0-9-]{1,12}$|^chat:team$/;
 
 async function listComments(env: Env, thread: string) {
   if (!THREAD.test(thread)) return bad("Bad thread");
-  const { results } = await env.DB.prepare("SELECT id, author, body, created FROM comments WHERE thread = ? ORDER BY created").bind(thread).all();
+  // the team chat: its newest 300
+  const { results } = thread === "chat:team"
+    ? await env.DB.prepare("SELECT * FROM (SELECT id, author, body, created FROM comments WHERE thread = ? ORDER BY created DESC LIMIT 300) ORDER BY created").bind(thread).all()
+    : await env.DB.prepare("SELECT id, author, body, created FROM comments WHERE thread = ? ORDER BY created").bind(thread).all();
   return json(results);
 }
 
@@ -403,6 +429,157 @@ async function addComment(env: Env, me: string, owner: boolean, b: Row) {
   const author = me === "claude" || (owner && b.asClaude === true) ? "claude" : me;
   await env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), thread, author, body, now()).run();
   if (thread.startsWith("report:")) await env.DB.prepare("UPDATE reports SET updated = ? WHERE id = ?").bind(now(), thread.slice(7)).run();
+  return json({ ok: true });
+}
+
+/* ---------------- Testers, approval of their tickets, Test & chat (hub 94dcc186) ---------------- */
+
+/** What a tester may do: send tickets (Pending until approved), see and talk on their own, add files to them, see
+ * those files, and the team chat. Everything else is refused here, before the team's routes. */
+async function testerRoutes(req: Request, env: Env, me: string, path: string, m: string, url: URL): Promise<Response> {
+  const own = async (id: string) => (await env.DB.prepare("SELECT author FROM reports WHERE id = ?").bind(id).first<{ author: string }>())?.author === me;
+  if (path === "/api/reports" && m === "GET") return listReports(env, url, me);
+  if (path === "/api/reports" && m === "POST") return createReport(env, me, await req.json(), "Pending");
+  let r = /^\/api\/reports\/([a-f0-9]{16})$/.exec(path);
+  if (r && m === "GET") return (await own(r[1])) ? getReport(env, r[1]) : bad("Not found", 404);
+  if (r && m === "PATCH") {
+    if (!(await own(r[1]))) return bad("Not found", 404);
+    const b = (await req.json()) as Row;
+    if (b.status !== undefined || b.notes !== undefined || b.live_url !== undefined || b.dup_of !== undefined) return bad("Only the team changes that", 403);
+    if (b.body !== undefined) {
+      const st = await env.DB.prepare("SELECT status FROM reports WHERE id = ?").bind(r[1]).first<{ status: string }>();
+      if (st?.status !== "Pending") return bad("Once approved, add to it in the conversation instead", 403);
+    }
+    return patchReport(env, me, false, r[1], b);
+  }
+  // their own Live ticket: "Fixed, close it" or "Not fixed? Reopen it"
+  r = /^\/api\/reports\/([a-f0-9]{16})\/(reopen|resolve)$/.exec(path);
+  if (r && m === "POST") {
+    const t = await env.DB.prepare("SELECT author, status FROM reports WHERE id = ?").bind(r[1]).first<{ author: string; status: string }>();
+    if (!t || t.author !== me) return bad("Not found", 404);
+    if (t.status !== "Live") return bad("Only a shipped (Live) ticket can be closed or reopened", 403);
+    const b = (await req.json().catch(() => ({}))) as Row;
+    return r[2] === "reopen" ? reopenReport(env, me, r[1], b) : resolveReport(env, me, r[1], b);
+  }
+  if (path === "/api/uat" && m === "GET") return listUat(env, me);
+  if ((path === "/api/comments" && m === "GET") || (path === "/api/comments" && m === "POST")) {
+    const b = m === "POST" ? ((await req.json()) as Row) : null;
+    const thread = m === "GET" ? url.searchParams.get("thread") ?? "" : clip(b?.thread, 40);
+    const ok = thread === "chat:team" || /^uat:[a-f0-9]{16}$/.test(thread) || (/^report:[a-f0-9]{16}$/.test(thread) && (await own(thread.slice(7))));
+    if (!ok) return bad("Not found", 404);
+    if (m === "POST") return addComment(env, me, false, { ...b, asClaude: false });
+    const list = (await (await listComments(env, thread)).json()) as Row[];
+    return json(list.map((c) => ({ ...c, author: shown(env, me, String(c.author)) })));
+  }
+  if (path === "/api/uploads" && m === "POST") return startUpload(env, me, false, await req.json());
+  r = /^\/api\/uploads\/([a-f0-9]{16})\/part\/(\d{1,5})$/.exec(path);
+  if (r && m === "PUT") return uploadPart(env, req, me, r[1], Number(r[2]));
+  r = /^\/api\/uploads\/([a-f0-9]{16})\/complete$/.exec(path);
+  if (r && m === "POST") return completeUpload(env, me, r[1], await req.json());
+  r = /^\/api\/media\/([a-f0-9]{16})$/.exec(path);
+  if (r && (m === "GET" || m === "HEAD")) {
+    const f = await env.DB.prepare("SELECT owner_kind, owner_id FROM media WHERE id = ?").bind(r[1]).first<{ owner_kind: string; owner_id: string }>();
+    return f && f.owner_kind === "report" && (await own(f.owner_id)) ? serveMedia(env, req, r[1]) : bad("Not found", 404);
+  }
+  return bad("Testers see their own tickets and Test & chat", 403);
+}
+
+/** How a tester sees a name: themselves, "claude", or "Team" for everyone else (never another person's email). */
+const shown = (env: Env, me: string, email: string) => (email === me || email === "claude" ? email : emails(env.TEAM_EMAILS).includes(email) ? "Team" : "Another tester");
+
+/** A tester's ticket: a team member says Go (it becomes New, for Claude) or No (closed, with the reason). */
+async function approveReport(env: Env, me: string, id: string, b: Row) {
+  const report = await env.DB.prepare("SELECT status FROM reports WHERE id = ?").bind(id).first<{ status: string }>();
+  if (!report) return bad("Not found", 404);
+  if (report.status !== "Pending") return bad("This ticket isn't waiting for an OK");
+  if (b.decision !== "go" && b.decision !== "no") return bad("Approve (go) or decline (no)");
+  const go = b.decision === "go";
+  const note = clip(b.note, 500);
+  const t = now();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE reports SET status = ?, updated = ? WHERE id = ? AND status = 'Pending'").bind(go ? "New" : "Done", t, id),
+    env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(
+      uid(), `report:${id}`, me, go ? `Approved for building.${note ? " " + note : ""}` : `Not this time.${note ? " " + note : ""}`, t),
+    logged(env, `report:${id}`, go ? "Go" : "No", note, me, t),
+  ]);
+  return json({ ok: true, updated: t });
+}
+
+/** The Test & chat tables, made the first time they're needed (a Worker making its own tables; schema.sql has them). */
+let uatReady: Promise<unknown> | null = null;
+const ensureUat = (env: Env) =>
+  (uatReady ??= env.DB.batch([
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS uat (id TEXT PRIMARY KEY, created TEXT NOT NULL, created_by TEXT NOT NULL, title TEXT NOT NULL, steps TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', closed TEXT)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS uat_results (target TEXT NOT NULL, author TEXT NOT NULL, result TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', at TEXT NOT NULL, PRIMARY KEY (target, author))"),
+  ]).catch((e) => ((uatReady = null), Promise.reject(e))));
+
+/** What to test: the open tests, and every Live ticket (title, Claude's note, its test link; never its files). */
+async function listUat(env: Env, tester?: string) {
+  await ensureUat(env);
+  const tests = await env.DB.prepare("SELECT id, created, created_by, title, steps, url FROM uat WHERE closed IS NULL ORDER BY created DESC LIMIT 100").all<Row>();
+  const live = await env.DB.prepare("SELECT id, body, notes, live_url, site, updated FROM reports WHERE status = 'Live' ORDER BY updated DESC LIMIT 100").all<Row>();
+  const results = await env.DB.prepare("SELECT target, author, result, note, at FROM uat_results ORDER BY at DESC LIMIT 2000").all<Row>();
+  const items = [
+    ...tests.results.map((x) => ({ target: `uat:${x.id}`, kind: "test", id: x.id, title: x.title, steps: x.steps, url: x.url, at: x.created, by: x.created_by })),
+    ...live.results.map((x) => ({
+      target: `report:${x.id}`,
+      kind: "ticket",
+      id: x.id,
+      title: String(x.body).split("\n")[0].slice(0, 160),
+      steps: tester ? "" : x.notes, // (Claude's notes are for the team)
+      url: x.live_url,
+      at: x.updated,
+      site: x.site,
+    })),
+  ].sort((a, z) => String(z.at).localeCompare(String(a.at)));
+  const targets = new Set(items.map((i) => i.target));
+  const by: Record<string, Row[]> = {};
+  for (const x of results.results.reverse()) if (targets.has(String(x.target))) (by[String(x.target)] ??= []).push(tester ? { ...x, author: shown(env, tester, String(x.author)) } : x);
+  return json({ items: tester ? items.map((i) => ("by" in i ? { ...i, by: shown(env, tester, String(i.by)) } : i)) : items, results: by });
+}
+
+async function addUat(env: Env, me: string, b: Row) {
+  await ensureUat(env);
+  const title = clip(b.title, 200);
+  const url = clip(b.url, 500);
+  if (!title) return bad("Say what to test");
+  if (url && !/^https:\/\//.test(url)) return bad("The link starts with https://");
+  const id = uid();
+  await env.DB.prepare("INSERT INTO uat (id, created, created_by, title, steps, url) VALUES (?, ?, ?, ?, ?, ?)").bind(id, now(), me, title, clip(b.steps, 5000), url).run();
+  return json({ id });
+}
+
+async function closeUat(env: Env, me: string, id: string, b: Row) {
+  await ensureUat(env);
+  await env.DB.batch([
+    env.DB.prepare("UPDATE uat SET closed = ? WHERE id = ?").bind(b.closed === false ? null : now(), id),
+    logged(env, `uat:${id}`, b.closed === false ? "Reopened" : "Closed", "", me),
+  ]);
+  return json({ ok: true });
+}
+
+/** Works / doesn't work, one answer per person (a new one replaces theirs). "Doesn't work" on a Live ticket also goes
+ * on that ticket's conversation, so Claude sees it. */
+async function uatResult(env: Env, me: string, b: Row, tester = false) {
+  await ensureUat(env);
+  const target = clip(b.target, 40);
+  const result = b.result === "pass" ? "pass" : b.result === "fail" ? "fail" : "";
+  const note = clip(b.note, 2000);
+  if (!/^(uat|report):[a-f0-9]{16}$/.test(target) || !result) return bad("Bad test");
+  if (result === "fail" && !note) return bad("Say what went wrong");
+  const open = target.startsWith("report:")
+    ? await env.DB.prepare("SELECT id FROM reports WHERE id = ? AND status = 'Live'").bind(target.slice(7)).first()
+    : await env.DB.prepare("SELECT id FROM uat WHERE id = ? AND closed IS NULL").bind(target.slice(4)).first();
+  if (!open) return bad("That test isn't open", 404);
+  const t = now();
+  const stmts = [
+    env.DB.prepare("INSERT INTO uat_results (target, author, result, note, at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (target, author) DO UPDATE SET result = excluded.result, note = excluded.note, at = excluded.at").bind(target, me, result, note, t),
+  ];
+  if (result === "fail") {
+    stmts.push(env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), target, me, `${tester ? "Tester's test" : "Test"}: doesn't work. ${note}`, t));
+    if (target.startsWith("report:")) stmts.push(env.DB.prepare("UPDATE reports SET updated = ? WHERE id = ?").bind(t, target.slice(7)));
+  }
+  await env.DB.batch(stmts);
   return json({ ok: true });
 }
 
@@ -683,7 +860,8 @@ async function audit(env: Env) {
  * JSON file in the hub's private storage (backups/…). The newest 12 are kept. */
 async function backup(env: Env) {
   const tables: Record<string, unknown[]> = {};
-  for (const t of ["reports", "comments", "media", "approvals", "decisions", "votes", "shipped", "health"])
+  await ensureUat(env); // (so the Test & chat tables are in the backup too)
+  for (const t of ["reports", "comments", "media", "approvals", "decisions", "votes", "shipped", "health", "uat", "uat_results"])
     tables[t] = (await env.DB.prepare(`SELECT * FROM ${t}`).all()).results;
   for (const t of ["feedback_queue", "daily"])
     tables[`site.${t}`] = (await env.SITE_DB.prepare(`SELECT * FROM ${t}`).all().catch(() => ({ results: [] }))).results;

@@ -11,6 +11,19 @@ clips and website feedback, see the roadmap and what shipped.
   lines. It can't approve, decide website feedback, vote, or act as a person.
 - **Only the owner approves.** Every decision is logged with who and when.
 
+## Testers (Test & chat, Nov 23)
+
+A tester (someone outside the team) sees only Report, their own tickets and **Test & chat**: tests to try with
+Works / Doesn't work, and the team chat. What a tester sends waits as **Pending** until Skylar or his brother
+approves it; Claude builds nothing Pending (the watch marks tester lines "not approved, don't build"). Testers
+see the team as "Team", never their emails. To add one (Skylar does both):
+
+1. Zero Trust → Access → Applications → the hub → its Allow policy: add the tester's email.
+2. `npx wrangler secret put TESTER_EMAILS --config hub/wrangler.jsonc` (every tester's email, comma-separated).
+
+They sign in at https://hub.versesacross.com with their email and the one-time code it sends. Remove a tester
+the same two ways.
+
 ## Files
 
 - `src/index.ts`: the Worker (API, Access token check, uploads to R2, media with Range).

@@ -20,7 +20,7 @@ header { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:
 header h1 { font:600 18px Georgia, serif; margin:0; flex:1; }
 header .who { font-size:12px; color:var(--faint); }
 main { max-width:720px; margin:0 auto; padding:12px 16px; }
-nav.tabs { position:fixed; bottom:0; left:0; right:0; z-index:5; display:grid; grid-template-columns:repeat(5,1fr); background:var(--panel); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
+nav.tabs { position:fixed; bottom:0; left:0; right:0; z-index:5; display:grid; grid-template-columns:repeat(var(--tabs, 6),1fr); background:var(--panel); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
 nav.tabs button { background:none; border:0; color:var(--muted); font-size:11px; padding:8px 2px 10px; display:flex; flex-direction:column; align-items:center; gap:2px; min-height:56px; position:relative; }
 nav.tabs button .i { font-size:20px; line-height:1; }
 nav.tabs button[aria-current="page"] { color:var(--accent); font-weight:600; }
@@ -63,6 +63,32 @@ button:disabled { opacity:.5; }
 .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; }
 a { color:var(--accent); }
 .hidden { display:none !important; }
+.s-Pending { color:var(--warn); }
+/* Test & chat (hub 94dcc186) */
+.seg { display:grid; grid-template-columns:1fr 1fr; background:var(--raised); border:1px solid var(--line); border-radius:12px; padding:3px; margin:0 0 14px; }
+.seg button { background:none; border:0; border-radius:9px; color:var(--muted); font:inherit; font-size:15px; min-height:40px; cursor:pointer; }
+.seg button[aria-pressed="true"] { background:var(--panel); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.25); }
+.test-head { display:flex; gap:10px; align-items:flex-start; }
+.test-kind { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); }
+.verdicts { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.verdict { font-size:12px; border-radius:999px; padding:3px 9px; border:1px solid var(--line); color:var(--muted); }
+.verdict.pass { color:var(--good); border-color:color-mix(in srgb, var(--good) 50%, transparent); }
+.verdict.fail { color:var(--bad); border-color:color-mix(in srgb, var(--bad) 50%, transparent); }
+.try { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.try .btn.on-pass { background:color-mix(in srgb, var(--good) 22%, var(--raised)); border-color:var(--good); }
+.try .btn.on-fail { background:color-mix(in srgb, var(--bad) 22%, var(--raised)); border-color:var(--bad); }
+.chat { display:flex; flex-direction:column; gap:6px; padding-bottom:8px; }
+.chat .day { align-self:center; font-size:11px; color:var(--faint); margin:10px 0 2px; }
+.msg { max-width:84%; align-self:flex-start; }
+.msg .bub { background:var(--panel); border:1px solid var(--line); border-radius:16px 16px 16px 5px; padding:8px 12px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.msg.me { align-self:flex-end; }
+.msg.me .bub { background:color-mix(in srgb, var(--accent) 20%, var(--panel)); border-color:color-mix(in srgb, var(--accent) 45%, transparent); border-radius:16px 16px 5px 16px; }
+.msg.claude .bub { border-color:color-mix(in srgb, var(--accent) 60%, transparent); }
+.msg .who { font-size:11px; color:var(--faint); margin:0 6px 2px; }
+.msg.me .who { text-align:right; }
+.composer { position:sticky; bottom:calc(64px + env(safe-area-inset-bottom)); background:var(--bg); padding:8px 0 4px; display:flex; gap:8px; align-items:flex-end; }
+.composer textarea { min-height:44px; max-height:140px; flex:1; }
+.wait-ok { border-color:var(--warn); }
 .tag { display:inline-block; border:1px solid var(--line); color:var(--muted); border-radius:6px; padding:1px 7px; font-size:12px; }
 .fresh { color:var(--blue); font-size:12px; font-weight:600; }
 .ticks { display:flex; gap:2px; align-items:flex-end; height:22px; margin:8px 0 4px; }
@@ -80,6 +106,7 @@ a { color:var(--accent); }
 <nav class="tabs" aria-label="Sections">
   <button data-tab="report"><span class="i" aria-hidden="true">✚</span>Report</button>
   <button data-tab="inbox"><span class="i" aria-hidden="true">☰</span>Tickets<span class="badge hidden" id="tkBadge"></span></button>
+  <button data-tab="test"><span class="i" aria-hidden="true">◎</span>Test &amp; chat<span class="badge hidden" id="chBadge"></span></button>
   <button data-tab="approvals"><span class="i" aria-hidden="true">✓</span>Approvals<span class="badge hidden" id="apBadge"></span></button>
   <button data-tab="roadmap"><span class="i" aria-hidden="true">➜</span>Roadmap</button>
   <button data-tab="shipped"><span class="i" aria-hidden="true">★</span>Shipped</button>
@@ -90,7 +117,11 @@ const $ = (s, el = document) => el.querySelector(s);
 const view = $("#view");
 /** Put things in the main area (skipping the empty ones: null / false). */
 const show = (...kids) => view.replaceChildren(...kids.flat().filter((k) => k != null && k !== false));
-let ME = { email: "", owner: false, name: "" };
+let ME = { email: "", owner: false, name: "", role: "team" };
+/** A tester (hub 94dcc186): their own tickets, Test & chat; what they send waits for the team's OK. */
+const isTester = () => ME.role === "tester";
+/** Skylar or his brother: they approve a tester's ticket. */
+const isTeam = () => ME.role === "owner" || ME.role === "team";
 
 /* ---------- tiny DOM helper: h("div.card", {onclick}, "text", child) — text is always text ---------- */
 function h(tag, props, ...kids) {
@@ -116,8 +147,9 @@ async function api(path, opts = {}) {
 const post = (p, b, m = "POST") => api(p, { method: m, body: JSON.stringify(b) });
 const when = (iso) => { const d = new Date(iso); const s = (Date.now() - d) / 1000; return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : d.toLocaleDateString(); };
 const who = (email) => email === "claude" ? "Claude" : email === ME.email ? "You" : (email || "").split("@")[0];
+/* (a tester's view gets "Team" / "Another tester" from the hub in place of other people's emails) */
 // Done shows as "Resolved"; Live means shipped and waiting for the reporter to check it.
-const status = (s) => h("span.status.s-" + s, {}, s === "sheet" ? "Waiting" : s === "go" ? "Go" : s === "no" ? "No" : s === "Done" ? "Resolved" : s === "Live" ? "Live · check it" : s);
+const status = (s) => h("span.status.s-" + s, {}, s === "sheet" ? "Waiting" : s === "go" ? "Go" : s === "no" ? "No" : s === "Done" ? "Resolved" : s === "Live" ? "Live · check it" : s === "Pending" ? "Waiting for OK" : s);
 
 /* ---------- uploads: 10 MB parts straight into the hub's private storage, with progress ---------- */
 /** A file's type, from its name when the browser gives none (Markdown and some Word files come without one). */
@@ -199,7 +231,7 @@ function mediaEl(f) {
 }
 
 /* ---------- tabs ---------- */
-const TABS = { report: showReport, inbox: showInbox, approvals: showApprovals, roadmap: showRoadmap, shipped: showShipped };
+const TABS = { report: showReport, inbox: showInbox, test: showTest, approvals: showApprovals, roadmap: showRoadmap, shipped: showShipped };
 // Back from a ticket to Tickets: return to that ticket (or where the list was), not to the top.
 let here = { tab: "", arg: "" };
 let listY = 0;
@@ -322,7 +354,7 @@ async function showReport() {
         bar.classList.remove("hidden");
         await uploadFiles(files, "report", id, (p) => { bar.firstChild.style.width = Math.round(p * 100) + "%"; send.textContent = "Uploading " + Math.round(p * 100) + "%"; });
       }
-      toast("Sent. Claude will pick it up.");
+      toast(isTester() ? "Sent. The team will look at it." : "Sent. Claude will pick it up.");
       picker.clear(); // (lets go of the previews)
       go("inbox", id);
     } catch (err) { toast(err.message); send.disabled = false; send.textContent = "Send"; }
@@ -333,7 +365,9 @@ async function showReport() {
     h("label", {}, "Where? (optional)"), place,
     prio.el, area.el, device.el,
     h("label", {}, "Photos or a screen recording (optional)"), picker.el, bar, send);
-  show(h("h2", {}, "Report a bug or idea"), h("p.muted", {}, "Claude checks this about every hour, builds it, and you can follow it in Tickets."), form);
+  show(h("h2", {}, "Report a bug or idea"), h("p.muted", {}, isTester()
+    ? "Thanks for testing! The team reads every report and decides what gets built. Follow yours in Tickets."
+    : "Claude checks this about every hour, builds it, and you can follow it in Tickets."), form);
 }
 
 /* ---------- Tickets (the "inbox" tab; Cases Closed below the open ones) ---------- */
@@ -401,7 +435,7 @@ function renderTickets(list, target) {
     const shown = list.filter(keep);
     // Open tickets on top (urgent first, then newest); finished ones (closed, or put on the roadmap) in Cases Closed.
     // Live stays in Tickets until the reporter closes it ("Fixed, close it") or confirms it works.
-    const open = shown.filter((r) => !DONE.has(r.status)).sort((a, z) => (rank[a.priority] ?? 1) - (rank[z.priority] ?? 1) || z.created.localeCompare(a.created));
+    const open = shown.filter((r) => !DONE.has(r.status)).sort((a, z) => (z.status === "Pending") - (a.status === "Pending") || (rank[a.priority] ?? 1) - (rank[z.priority] ?? 1) || z.created.localeCompare(a.created));
     const past = shown.filter((r) => DONE.has(r.status)).sort(sorts[closedSort] || sorts.date);
     const wasOpen = closedOpen || !!document.querySelector("details.closed-cases[open]");
     return [
@@ -444,7 +478,10 @@ function renderTickets(list, target) {
       pick("Any type", [["Bug", "Bug"], ["Idea", "Idea"], ["Content", "Content"], ["Question", "Question"]], "type"),
       clear));
   sortSel.addEventListener("change", () => { closedSort = sortSel.value; closedOpen = true; redraw(); });
-  show(h("h2", {}, "Tickets"), list.length ? bar : null, box);
+  const waiting = isTeam() ? list.filter((r) => r.status === "Pending").length : 0;
+  show(h("h2", {}, isTester() ? "Your tickets" : "Tickets"),
+    waiting ? h("div.card.wait-ok", {}, h("b", {}, waiting + (waiting === 1 ? " tester's ticket waits" : " testers' tickets wait") + " for your OK"), h("div.faint", {}, "They're at the top. Open one to approve it for building or decline it.")) : null,
+    list.length ? bar : null, box);
 }
 /** The ticket just closed, in view and outlined for a moment (again a moment later, in case the browser moved the page). */
 function placeTicket(id) {
@@ -466,7 +503,7 @@ function placeTicket(id) {
 /** A ticket's text, with Edit for the person who sent it (or the owner): change it after sending. */
 function bodyBox(r, id) {
   const text = h("div.pre", { style: "margin-top:8px" }, r.body);
-  const mine = ME.email !== "claude" && (r.author === ME.email || ME.owner);
+  const mine = ME.email !== "claude" && (r.author === ME.email || ME.owner) && (!isTester() || r.status === "Pending");
   if (!mine) return text;
   const box = h("div", {}, text);
   const edit = h("button.linkish", { type: "button", onclick: () => {
@@ -557,7 +594,7 @@ async function showOne(id) {
   }
   // A finished report that isn't really fixed: either of you sends it back with a note.
   let reopen = null;
-  if (r.status === "Live" || r.status === "Done") {
+  if (r.status === "Live" || (r.status === "Done" && !isTester())) {
     const why = h("textarea", { placeholder: "What's still wrong? e.g. fix not verified, still jumps on Psalm 24", style: "min-height:70px" });
     reopen = h("details.card", {}, h("summary", { class: "faint" }, "Not fixed? Reopen it"), why,
       h("button.btn", { type: "button", style: "margin-top:8px", onclick: async () => {
@@ -565,8 +602,24 @@ async function showOne(id) {
         try { await post("/api/reports/" + id + "/reopen", { note: why.value }); toast("Reopened. Claude will pick it up."); go("inbox", id); } catch (e) { toast(e.message); }
       } }, "Reopen"));
   }
+  // A tester's ticket: Skylar or his brother approves it for building (or declines it); the tester sees that it waits.
+  let okCard = null;
+  if (r.status === "Pending" && isTeam()) {
+    const note = h("input", { type: "text", placeholder: "A note for the tester (optional)" });
+    const decide = (decision) => async (e) => {
+      e.currentTarget.disabled = true;
+      try { await post("/api/reports/" + id + "/approve", { decision, note: note.value }); toast(decision === "go" ? "Approved. Claude will pick it up." : "Declined"); go("inbox", id); }
+      catch (err) { toast(err.message); e.currentTarget.disabled = false; }
+    };
+    okCard = h("div.card.wait-ok", {}, h("div", { style: "font-weight:600" }, "From a tester: build it?"),
+      h("div.faint", { style: "margin:2px 0 8px" }, "Nothing a tester sends is built until one of you approves it."), note,
+      h("div.try", {}, h("button.btn.primary", { type: "button", onclick: decide("go") }, "✓ Approve"), h("button.btn", { type: "button", onclick: decide("no") }, "Decline")));
+  } else if (r.status === "Pending") {
+    okCard = h("div.card.wait-ok", {}, h("b", {}, "Waiting for the team's OK"), h("div.faint", {}, "The team reads it and decides whether it gets built. You can still add details or files below."));
+  }
   show(
-    h("button.back", { onclick: () => go("inbox") }, "← Tickets"),
+    h("button.back", { onclick: () => go("inbox") }, "← " + (isTester() ? "Your tickets" : "Tickets")),
+    okCard,
     h("div.card", {},
       h("div.row", {}, status(r.status), siteOf(r) === "library" ? h("span.tag", { style: "color:var(--accent);border-color:var(--accent)" }, "Library Across") : null,
         r.priority === "urgent" ? h("span.tag", { style: "color:var(--bad);border-color:var(--bad)" }, "Urgent") : null,
@@ -586,6 +639,121 @@ async function showOne(id) {
     h("div.row", { style: "margin-top:8px" }, send),
     h("h3", {}, "Add more photos, video or documents"), picker.el, bar, h("div", { style: "margin-top:8px" }, addFiles));
   await loadThread();
+}
+
+/* ---------- Test & chat (hub 94dcc186): what to try, with works / doesn't work per person, and the team chat ---------- */
+let chatTimer = 0;
+let chatSeen = (() => { try { return localStorage.getItem("hub-chat-seen:v1") || ""; } catch { return ""; } })();
+function markChatSeen(at) { if (at > chatSeen) { chatSeen = at; try { localStorage.setItem("hub-chat-seen:v1", at); } catch {} } updateChatBadge([]); }
+function updateChatBadge(msgs) {
+  const n = msgs.filter((c) => c.created > chatSeen && c.author !== ME.email).length;
+  const b = $("#chBadge");
+  b.textContent = n > 9 ? "9+" : n;
+  b.classList.toggle("hidden", !n);
+}
+async function showTest(part) {
+  clearInterval(chatTimer);
+  const mode = part === "chat" ? "chat" : "tests";
+  const seg = h("div.seg", { role: "tablist", "aria-label": "Test and chat" },
+    h("button", { type: "button", role: "tab", "aria-pressed": mode === "tests" ? "true" : "false", "aria-selected": mode === "tests" ? "true" : "false", onclick: () => go("test") }, "Tests"),
+    h("button", { type: "button", role: "tab", "aria-pressed": mode === "chat" ? "true" : "false", "aria-selected": mode === "chat" ? "true" : "false", onclick: () => go("test", "chat") }, "Chat"));
+  return mode === "chat" ? showChat(seg) : showTests(seg);
+}
+
+async function showTests(seg) {
+  const { items, results } = await api("/api/uat");
+  const mineOf = (t) => (results[t] || []).find((x) => x.author === ME.email);
+  const card = (it) => {
+    const res = results[it.target] || [];
+    const mine = mineOf(it.target);
+    const note = h("textarea", { placeholder: "What went wrong? Which page, which phone…", style: "min-height:70px;margin-top:8px", class: "hidden" });
+    const sendFail = h("button.btn.small.hidden", { type: "button", style: "margin-top:6px" }, "Send");
+    const answer = async (result, text) => {
+      try { await post("/api/uat/result", { target: it.target, result, note: text || "" }); toast(result === "pass" ? "Thanks! Marked as working." : "Thanks. The team will look at it."); go("test"); }
+      catch (e) { toast(e.message); }
+    };
+    sendFail.addEventListener("click", () => { if (!note.value.trim()) return toast("Say what went wrong"); answer("fail", note.value); });
+    const tryRow = ME.role === "claude" ? null : h("div.try", {},
+      h("button.btn" + (mine && mine.result === "pass" ? ".on-pass" : ""), { type: "button", onclick: () => answer("pass") }, "✓ Works"),
+      h("button.btn" + (mine && mine.result === "fail" ? ".on-fail" : ""), { type: "button", onclick: () => { note.classList.toggle("hidden"); sendFail.classList.toggle("hidden"); if (!note.classList.contains("hidden")) note.focus(); } }, "✗ Doesn't work"));
+    const close = it.kind === "test" && !isTester() ? h("button.linkish", { type: "button", onclick: async () => {
+      try { await post("/api/uat/" + it.id, { closed: true }, "PATCH"); toast("Closed"); go("test"); } catch (e) { toast(e.message); }
+    } }, "Close this test") : null;
+    return h("div.card", {},
+      h("div.test-kind", {}, it.kind === "ticket" ? "Just shipped · ticket " + num(it.id) + (it.site === "library" ? " · Library Across" : "") : "Test · added by " + who(it.by) + " · " + when(it.at)),
+      h("div", { style: "font-weight:600;margin-top:2px" }, it.title),
+      it.steps ? h("div.pre.muted", { style: "margin-top:6px;font-size:14px" }, it.steps) : null,
+      it.url ? h("p", { style: "margin:8px 0 0" }, h("a", { href: it.url, target: "_blank", rel: "noopener" }, "Open it on the site ↗")) : null,
+      res.length ? h("div.verdicts", {}, res.map((x) => h("span.verdict." + x.result, { title: x.note || "" }, (x.result === "pass" ? "✓ " : "✗ ") + who(x.author) + (x.note ? ": " + (x.note.length > 60 ? x.note.slice(0, 60) + "…" : x.note) : "")))) : null,
+      tryRow, note, sendFail, close);
+  };
+  // the team (and Claude) add a test: what to try, how, and where
+  let add = null;
+  if (!isTester()) {
+    const title = h("input", { type: "text", placeholder: "What to test, e.g. Search across all texts" });
+    const steps = h("textarea", { placeholder: "Steps (optional): 1. Open Search  2. Pick All texts  3. Search mercy", style: "min-height:80px" });
+    const link = h("input", { type: "url", placeholder: "https://versesacross.com/… (optional)" });
+    add = h("details.card", {}, h("summary", { style: "cursor:pointer;font-weight:600" }, "+ Add a test"),
+      h("label", {}, "What to test"), title, h("label", {}, "How"), steps, h("label", {}, "Where"), link,
+      h("button.btn.primary", { type: "button", style: "margin-top:10px", onclick: async (e) => {
+        if (!title.value.trim()) return toast("Say what to test");
+        e.currentTarget.disabled = true;
+        try { await post("/api/uat", { title: title.value, steps: steps.value, url: link.value }); toast("Added"); go("test"); } catch (err) { toast(err.message); e.currentTarget.disabled = false; }
+      } }, "Add the test"));
+  }
+  const open = items.filter((it) => !mineOf(it.target));
+  const done = items.filter((it) => mineOf(it.target));
+  show(h("h2", {}, "Test & chat"), seg,
+    h("p.muted", { style: "margin-top:0" }, "Try each one on the site, then tap ✓ Works or ✗ Doesn't work. Everyone sees the answers."),
+    add,
+    items.length ? null : h("p.muted", {}, "Nothing to test right now."),
+    open.length ? h("h3", {}, "To try (" + open.length + ")") : null, open.map(card),
+    done.length ? h("details", {}, h("summary", { class: "faint", style: "padding:10px 0;cursor:pointer" }, "You've tried " + done.length), done.map(card)) : null);
+}
+
+async function showChat(seg) {
+  const list = h("div.chat", { "aria-live": "polite" });
+  const box = h("textarea", { placeholder: "Message the team…", rows: 1, "aria-label": "Message" });
+  const sendBtn = h("button.btn.primary", { type: "button" }, "Send");
+  let last = "";
+  const draw = (msgs) => {
+    const key = msgs.length + ":" + (msgs.length ? msgs[msgs.length - 1].id : "");
+    if (key === last) return;
+    const atEnd = window.innerHeight + window.scrollY >= document.body.scrollHeight - 120;
+    last = key;
+    let day = "";
+    list.replaceChildren(...(msgs.length ? msgs.flatMap((c) => {
+      const d = new Date(c.created).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      const mine = c.author === ME.email;
+      const out = [];
+      if (d !== day) { day = d; out.push(h("div.day", {}, d)); }
+      out.push(h("div.msg" + (mine ? ".me" : "") + (c.author === "claude" ? ".claude" : ""), {},
+        h("div.who", {}, (mine ? "You" : who(c.author)) + " · " + new Date(c.created).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })),
+        h("div.bub", {}, c.body)));
+      return out;
+    }) : [h("p.muted", { style: "text-align:center" }, "No messages yet. Say hello!")]));
+    if (msgs.length) markChatSeen(msgs[msgs.length - 1].created);
+    if (atEnd) window.scrollTo(0, document.body.scrollHeight);
+  };
+  const load = async () => { try { draw(await api("/api/comments?thread=chat:team")); } catch {} };
+  const send = async () => {
+    const text = box.value.trim();
+    if (!text) return;
+    sendBtn.disabled = true;
+    try { await post("/api/comments", { thread: "chat:team", body: text }); box.value = ""; box.style.height = ""; await load(); window.scrollTo(0, document.body.scrollHeight); }
+    catch (e) { toast(e.message); }
+    sendBtn.disabled = false;
+    box.focus();
+  };
+  sendBtn.addEventListener("click", send);
+  // Enter sends on a computer; on a phone Enter makes a new line (the Send button sends)
+  box.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !("ontouchstart" in window)) { e.preventDefault(); send(); } });
+  box.addEventListener("input", () => { box.style.height = "auto"; box.style.height = Math.min(140, box.scrollHeight) + "px"; });
+  show(h("h2", {}, "Test & chat"), seg, list, ME.role === "claude" ? null : h("div.composer", {}, box, sendBtn));
+  await load();
+  window.scrollTo(0, document.body.scrollHeight);
+  // new messages every 8 seconds while the chat is open
+  chatTimer = setInterval(() => { if (here.tab === "test" && here.arg === "chat" && !document.hidden) load(); else clearInterval(chatTimer); }, 8000);
 }
 
 /* ---------- Approvals ---------- */
@@ -791,9 +959,15 @@ function auditBox(au) {
 /* ---------- start ---------- */
 (async () => {
   try { ME = await api("/api/me"); } catch { show(h("p", {}, "Not signed in.")); return; }
-  $("#who").textContent = ME.name;
+  $("#who").textContent = ME.name + (isTester() ? " · tester" : "");
+  // a tester's tabs: Report, their tickets, Test & chat
+  if (isTester()) for (const t of ["approvals", "roadmap", "shipped"]) { $('nav.tabs [data-tab="' + t + '"]').remove(); delete TABS[t]; }
+  document.querySelector("nav.tabs").style.setProperty("--tabs", document.querySelectorAll("nav.tabs button").length);
   api("/api/reports").then((list) => { if (!lastList) updateTicketsBadge(list); }).catch(() => {});
-  api("/api/approvals").then((a) => { const n = a.filter((x) => x.status === "Waiting").length; const b = $("#apBadge"); if (n) { b.textContent = n; b.classList.remove("hidden"); } }).catch(() => {});
+  if (!isTester()) api("/api/approvals").then((a) => { const n = a.filter((x) => x.status === "Waiting").length; const b = $("#apBadge"); if (n) { b.textContent = n; b.classList.remove("hidden"); } }).catch(() => {});
+  const chatBadge = () => api("/api/comments?thread=chat:team").then((m) => { if (!(here.tab === "test" && here.arg === "chat")) updateChatBadge(m); }).catch(() => {});
+  chatBadge();
+  setInterval(() => { if (!document.hidden) chatBadge(); }, 60000);
   const [tab, arg] = location.hash.slice(1).split("/");
   go(Object.hasOwn(TABS, tab) ? tab : "report", arg);
 })();
