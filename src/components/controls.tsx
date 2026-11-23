@@ -23,6 +23,7 @@ import {
   type ReaderFont,
   type TextAlign,
   type TextContrast,
+  WIDE_QUERY,
   ZOOM_MAX,
   ZOOM_MIN,
 } from "@/lib/settings";
@@ -668,7 +669,12 @@ export function WidthControl() {
   const view = useViewMode();
   const s = useSettings();
   const landscape = useMediaQuery(PHONE_LANDSCAPE_QUERY, false);
-  const column = view === "column";
+  // One version in Column view on a computer: its one column is a reading width, like Stacked (my brother's ticket
+  // ad620ded: the column slider did nothing there, the single column being at least 44rem wide)
+  const { versions } = useReaderState();
+  const wideScreen = useMediaQuery(WIDE_QUERY, true);
+  const single = view === "column" && versions.length === 1 && wideScreen && !landscape;
+  const column = view === "column" && !single;
   const key = column ? (landscape ? "colWidthLandscape" : "colWidth") : "stackWidth";
   const [min, max, auto] = column ? [COL_MIN, COL_MAX, landscape ? 14 : 17] : [STACK_MIN, STACK_MAX, 48];
   // On "Auto" the slider starts at the columns' real width (they fill the page), so the first move doesn't jump

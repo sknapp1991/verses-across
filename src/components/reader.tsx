@@ -1036,9 +1036,10 @@ function ColumnView({
   // One version with a chosen column width: keep that width (centred) instead of filling the screen, but
   // never narrower than a comfortable reading width (a width set small to fit five columns elsewhere
   // would otherwise squeeze a one-version book into a thin strip).
-  const { colWidth } = useSettings();
+  const { colWidth, stackWidth } = useSettings();
   const wideScreen = useMediaQuery(WIDE_QUERY, true);
-  const fixedSingle = n === 1 && colWidth != null && wideScreen;
+  // (one version: the Reading width slider sets it, exactly, centred; Auto fills the page. Hub ad620ded.)
+  const fixedSingle = n === 1 && stackWidth != null && wideScreen;
   // Several versions with a chosen width (computer): each column is exactly that wide, centred, so the slider can
   // make them narrower than the page as well as wider (ticket 19916b22); "Auto" fills the page as before.
   const fixedMulti = n > 1 && colWidth != null && wideScreen;
@@ -1054,7 +1055,7 @@ function ColumnView({
         // "safe": wider than the screen (3 wide columns), start at the left edge instead of spilling off both sides
         justifyContent: fixedSingle || fixedMulti ? "safe center" : undefined,
         gridTemplateColumns: fixedSingle
-          ? "minmax(0, max(var(--colmin), min(100%, 44rem)))"
+          ? "minmax(0, min(100%, var(--stackw)))"
           : fixedMulti
             ? `repeat(${n}, var(--colmin))`
             : `repeat(${n}, minmax(var(--colmin), 1fr))`,
