@@ -188,7 +188,8 @@ export function StudyGuide({ article, depth, verses }: { article: Article; depth
   if (!total) return null;
   return (
     <div className="text-muted">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-faint">Study guide</p>
+      {/* (the folded copy under the title already says "Study guide") */}
+      <p className="mb-1 hidden text-xs font-semibold uppercase tracking-wide text-faint xl:block">Study guide</p>
       <p className="mb-2 text-xs text-faint">Tick anything to save it for study (My Study → Articles).</p>
       <Section title="Verses" count={vs.length} open>
         {vs.map((r) => {
