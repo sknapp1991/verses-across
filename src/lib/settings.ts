@@ -215,7 +215,7 @@ const DEFAULTS: Settings = {
 const num = (v: unknown, lo: number, hi: number) =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null;
 
-export const ZOOM_MIN = 85; // (below this, buttons get too small to tap back)
+export const ZOOM_MIN = 70; // (my brother asked for 70; the Zoom buttons are px-sized, so they stay tappable)
 export const ZOOM_MAX = 150;
 
 let current: Settings | null = null;
