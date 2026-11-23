@@ -4,6 +4,7 @@
  * article's Study guide (verses, words, names, books, themes, articles), the articles read, and a suggestion
  * bubble from both. All on this device.
  */
+import { StudyGroup } from "./study-group";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { suggestArticles, toggleSaved, useReadArticles, useSavedRefs, type SavedKind, type SavedRef } from "@/lib/article-study";
@@ -112,23 +113,17 @@ export function ArticlesStudyTab({ onNavigate }: { onNavigate?: () => void }) {
         const g = items.filter((s) => s.kind === kind);
         if (!g.length) return null;
         return (
-          <section key={kind}>
-            <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-faint">
-              {label} <span className="font-normal">{g.length}</span>
-            </p>
+          <StudyGroup key={kind} title={label} count={g.length}>
             <ul className="divide-y divide-line/70">
               {g.map((s) => (
                 <Item key={s.id} s={s} onNavigate={onNavigate} />
               ))}
             </ul>
-          </section>
+          </StudyGroup>
         );
       })}
       {readList.length > 0 && (
-        <section>
-          <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-faint">
-            Articles read <span className="font-normal">{readList.length}</span>
-          </p>
+        <StudyGroup title="Articles read" count={readList.length}>
           <ul className="divide-y divide-line/70">
             {readList.map((a) => (
               <li key={a.slug} className="px-4 py-2 text-sm">
@@ -143,7 +138,7 @@ export function ArticlesStudyTab({ onNavigate }: { onNavigate?: () => void }) {
               </li>
             ))}
           </ul>
-        </section>
+        </StudyGroup>
       )}
       {!empty && <p className="px-4 text-xs text-faint">Kept on this device (not in sync or backups yet).</p>}
     </div>

@@ -3,8 +3,9 @@
  * My Study: favorites, study later, highlights, notes and studied chapters (newest first),
  * each a link back to the verse. Backup / restore as a JSON file, since data lives on this device.
  */
+import { StudyGroup } from "./study-group";
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, readHref } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { downloadBackup, lastBackup } from "@/lib/backup";
@@ -209,21 +210,34 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
         ) : !ready ? null : list.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-faint">{inTab.length ? "Nothing matches these filters." : TABS.find((t) => t.kind === tab)!.empty}</p>
         ) : (
-          <ul className="divide-y divide-line/70">
-            {list.map((it, i) => {
-              const head = sort === "book" && (i === 0 || bookKey(list[i - 1]) !== bookKey(it));
-              return (
-                <Fragment key={it.id}>
-                  {head && (
-                    <li className="px-2 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-faint">
-                      {religionOf(it)} · {bookName(it)}
-                    </li>
-                  )}
-                  <Row item={it} onNavigate={onNavigate} />
-                </Fragment>
-              );
-            })}
-          </ul>
+          sort === "book" ? (
+            // in book order, one folding group per book (hub ffc92c94): grouped by book wherever its items sit, and
+            // keyed by tab, so a book folded in one tab stays open in the others
+            <div className="space-y-2">
+              {[
+                ...list.reduce((m, it) => {
+                  // (a Map keeps the books in the order they first appear; not Map.groupBy, too new for older iPhones)
+                  const k = bookKey(it);
+                  m.set(k, [...(m.get(k) ?? []), it]);
+                  return m;
+                }, new Map<string, typeof list>()),
+              ].map(([k, g]) => (
+                <StudyGroup key={`${tab}:${k}`} title={`${religionOf(g[0])} · ${bookName(g[0])}`} count={g.length}>
+                  <ul className="divide-y divide-line/70">
+                    {g.map((it) => (
+                      <Row key={it.id} item={it} onNavigate={onNavigate} />
+                    ))}
+                  </ul>
+                </StudyGroup>
+              ))}
+            </div>
+          ) : (
+            <ul className="divide-y divide-line/70">
+              {list.map((it) => (
+                <Row key={it.id} item={it} onNavigate={onNavigate} />
+              ))}
+            </ul>
+          )
         )}
       </div>
 
