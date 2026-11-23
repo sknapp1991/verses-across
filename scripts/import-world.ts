@@ -3919,7 +3919,63 @@ async function sepherYetzirah() {
   report("sepher-yetzirah", 6, total);
 }
 
+/**
+ * The Kuzari (Kitab al Khazari) — Judah Halevi, translated from the Arabic by Hartwig Hirschfeld (1905), from
+ * Wikisource's transcription (rendered pages in data/raw/kuzari-html, blocks in data/raw/kuzari-blocks). One chapter
+ * per Part (five); verse = his numbered section, a section's further paragraphs kept with it. The opening paragraphs
+ * of Part One (before §1: why the book was written, and the king's dream) are that chapter's note. His supplied words
+ * in brackets are kept.
+ */
+async function kuzari() {
+  type Block = { kind: string; text: string };
+  const parts = ["One", "Two", "Three", "Four", "Five"];
+  await resetVersion("kuzari", "hirschfeld");
+  let total = 0;
+  for (const [k, p] of parts.entries()) {
+    const blocks = JSON.parse(await readFile(path.join(ROOT, "data", "raw", "kuzari-blocks", `Part-${p}.json`), "utf8")) as Block[];
+    const verses: Verse[] = [];
+    const before: string[] = [];
+    for (const b of blocks) {
+      // the opening words in capitals: "I WAS asked", "AL KHAZARI: I must", "THE RABBI: According" → normal case
+      // (also after a section number: "1. AFTER this", "1. AL KHAZARI: I must")
+      const t = b.text
+        .trim()
+        .replace(/^(\[?\d+\.\s+)?((?:[A-Z]+ )*[A-Z]{2,})\b/, (m, num: string | undefined, run: string) =>
+          (num ?? "") +
+          run
+            .toLowerCase()
+            .replace(/^\w/, (c) => c.toUpperCase())
+            .replace(/\b(khazari|rabbi)\b/g, (w) => w[0].toUpperCase() + w.slice(1))
+            .replace(/\bi\b/g, "I"),
+        )
+        .replace(/\n?Next: Part \w+$/, "") // Wikisource's link to the next page
+        .replace(' strengthened and "Can these bones live?" enhanced by', " strengthened and enhanced by") // a running head in the text (III §13)
+        .replace("[CONSONANTS]", "[consonants]") // (the table labels of IV §25)
+        // his numbered axioms and principles in one style: "The FIRST AXIOM", "Fifth axiom" → "The First Axiom", "Fifth Axiom"
+        .replace(/\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth) (axiom|principle)\b/gi, (m) => titleCase(m))
+        .trim();
+      // headings inside a part are text (the table labels in IV §25, "Conclusion of the Book", the colophon); only the
+      // book's and the part's own titles are left out
+      if (!t || (b.kind === "heading" && /^(PART \w+|THE BOOK OF AL KHAZARI)$/.test(b.text.trim()))) continue;
+      // "[55. The Rabbi: …]": a section the translator printed in brackets keeps them around its text
+      const m = /^(\[?)(\d+)\.\s+([\s\S]*)$/.exec(t);
+      if (m) {
+        // Part Three's §1 is printed without its number: its opening paragraph is §1
+        if (Number(m[2]) === 2 && !verses.length && before.length && k > 0) verses.push({ v: "1", t: before.splice(0).join("\n") });
+        if (Number(m[2]) !== verses.length + 1) throw new Error(`kuzari: part ${p} §${m[2]} after §${verses.length}`);
+        verses.push({ v: m[2], t: m[1] + m[3] });
+      } else if (verses.length) verses[verses.length - 1].t += `\n${t}`;
+      else before.push(t);
+    }
+    await writeChapter("kuzari", "hirschfeld", "kuzari", k + 1, verses, before.length ? before.join("\n\n") : undefined, `Part ${p}`);
+    total += verses.length;
+    console.log(`kuzari part ${p}: ${verses.length} sections${before.length ? `, ${before.length} paragraphs before §1` : ""}`);
+  }
+  report("kuzari", 5, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  kuzari,
   sepherYetzirah,
   cloud,
   epictetus,

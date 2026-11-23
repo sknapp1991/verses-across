@@ -146,6 +146,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   epictetus: ["long-epictetus"],
   "cloud-of-unknowing": ["underhill"],
   "sepher-yetzirah": ["westcott"],
+  kuzari: ["hirschfeld"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

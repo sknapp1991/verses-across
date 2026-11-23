@@ -76,6 +76,7 @@
     { "id": "epictetus", "name": "Epictetus: The Discourses", "versification": "epictetus" },
     { "id": "cloud-of-unknowing", "name": "The Cloud of Unknowing", "versification": "cloud-of-unknowing" },
     { "id": "sepher-yetzirah", "name": "Sepher Yetzirah (The Book of Formation)", "versification": "sepher-yetzirah" },
+    { "id": "kuzari", "name": "The Kuzari (Kitab al Khazari)", "versification": "kuzari" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2293,6 +2294,23 @@
       "sourceUrl": "https://en.wikisource.org/wiki/Sepher_Yetzirah",
       "licensed": false,
       "versification": "sepher-yetzirah"
+    },
+    {
+      "id": "hirschfeld",
+      "work": "kuzari",
+      "abbr": "Hirschfeld",
+      "name": "The Kuzari (Hartwig Hirschfeld)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1905,
+      "translator": "Hartwig Hirschfeld, from the Arabic",
+      "license": "Public Domain",
+      "licenseNote": "Judah Halevi's dialogue in its five Parts; verse = Hirschfeld's numbered section (a section's further paragraphs kept with it; Part Three's first section, printed without its number, is §1). The opening paragraphs of Part One, before §1, are that chapter's note. His supplied words in brackets are kept, and so are the headings within the text (the table in IV §25, the conclusion, the closing colophon and the lines that end each Part); the opening words, set in capitals, are in normal case, and a running head printed into III §13 is removed. His footnotes are left out. From Wikisource's transcription.",
+      "attribution": "Kitab al Khazari, by Judah Halevi, translated from the Arabic by Hartwig Hirschfeld (London: George Routledge & Sons; New York: E. P. Dutton, 1905), public domain; text from Wikisource.",
+      "sourceUrl": "https://en.wikisource.org/wiki/Kitab_al_Khazari",
+      "licensed": false,
+      "versification": "kuzari"
     }
   ],
   "religions": [
@@ -2620,7 +2638,8 @@
             { "id": "part-2-introduction", "name": "Guide for the Perplexed: Introduction to Part II", "work": "guide-perplexed", "chapters": 1, "chapterName": "Introduction" },
             { "id": "part-2", "name": "Guide for the Perplexed: Part II", "work": "guide-perplexed", "chapters": 48, "chapterName": "Chapter" },
             { "id": "part-3-introduction", "name": "Guide for the Perplexed: Introduction to Part III", "work": "guide-perplexed", "chapters": 1, "chapterName": "Introduction" },
-            { "id": "part-3", "name": "Guide for the Perplexed: Part III", "work": "guide-perplexed", "chapters": 54, "chapterName": "Chapter" }
+            { "id": "part-3", "name": "Guide for the Perplexed: Part III", "work": "guide-perplexed", "chapters": 54, "chapterName": "Chapter" },
+            { "id": "kuzari", "name": "Judah Halevi, The Kuzari", "work": "kuzari", "chapters": 5, "chapterName": "Part" }
           ]
         },
         {

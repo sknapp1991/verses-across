@@ -519,6 +519,16 @@ From Project Gutenberg (read from its mirror).
   found in the ancient copies). His notes, preface, introduction and the Thirty-Two Paths of
   Wisdom are left out.
 
+## The Kuzari (added Nov 22 2026, `scripts/import-world.ts`)
+
+- **The Kuzari (Kitab al Khazari)** — Judah Halevi, translated from the Arabic by Hartwig Hirschfeld (London:
+  Routledge; New York: Dutton, 1905); public domain, text from Wikisource's transcription. The five Parts; verse =
+  his numbered section (a section's further paragraphs kept with it; Part Three's first section, printed without
+  its number, is §1); the opening paragraphs of Part One are that chapter's note. His supplied words in brackets are
+  kept, and so are the headings within the text (the table in IV §25, the conclusion, the closing colophon, the
+  lines that end each Part); the opening words, set in capitals, are in normal case, and a running head printed
+  into III §13 is removed. His footnotes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
