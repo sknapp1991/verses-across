@@ -54,6 +54,18 @@ const field = "h-10 w-full rounded-lg border border-line bg-raised px-3 text-bas
 const btn = "min-h-10 rounded-lg px-3 text-sm";
 
 /** The Study groups panel (side dock on a wide screen, a sheet on a phone). */
+/**
+ * Open the Study groups panel with one group's card open at its chat (the home page's Study groups tile: my
+ * brother's ticket f3779423, "1 click" to a group's chat). A group of one has no chat yet: its card opens.
+ */
+const FOCUS = "va-group-focus";
+let focusCode: string | null = null;
+export function openGroupChat(code: string) {
+  focusCode = code;
+  openPanel("groups");
+  window.dispatchEvent(new CustomEvent(FOCUS, { detail: code }));
+}
+
 export function GroupsPanel() {
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -289,9 +301,29 @@ function GroupCard({ g }: { g: MyGroup }) {
   const { ref } = useReaderState();
   const [view, setView] = useState<GroupView | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  // (opened at its chat from the home page: a card mounting now, or one already on screen)
+  const [wantChat, setWantChat] = useState(() => {
+    if (focusCode !== g.code) return false;
+    focusCode = null;
+    return true;
+  });
+  const [open, setOpen] = useState(wantChat);
+  useEffect(() => {
+    const on = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== g.code) return;
+      focusCode = null;
+      setOpen(true);
+      setWantChat(true);
+    };
+    window.addEventListener(FOCUS, on);
+    return () => window.removeEventListener(FOCUS, on);
+  }, [g.code]);
   // the card under the buttons: the invite (QR) or the chat, one at a time (hub a3b33a99)
   const [card, setCard] = useState<null | "invite" | "chat">(null);
+  if (wantChat && view) {
+    setWantChat(false);
+    if (view.members.length >= 2) setCard("chat");
+  }
   const [settings, setSettings] = useState(false);
   // whose scorecard is open (one at a time)
   const [shown, setShown] = useState<string | null>(null);

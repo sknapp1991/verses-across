@@ -16,7 +16,9 @@ import { OTHER_NAME, OTHER_ORIGIN, SITE_NAME, SITE_SIDE } from "@/lib/site";
 import { openFeedback } from "@/lib/feedback";
 import { openPanel } from "@/lib/ui-store";
 import { openTour } from "./tour";
-import { BookIcon, CalendarIcon, ColumnsIcon, LibraryIcon, NoteIcon, MailIcon, RocketIcon, SparkIcon, StarIcon } from "./icons";
+import { BookIcon, CalendarIcon, ColumnsIcon, LibraryIcon, NoteIcon, MailIcon, RocketIcon, SparkIcon, StarIcon, UsersIcon } from "./icons";
+import { useGroups } from "@/lib/groups";
+import { openGroupChat } from "./groups-section";
 import { SuggestionsTile } from "./home-suggestions";
 
 const library = SITE_SIDE === "library";
@@ -54,6 +56,43 @@ function Tile({ icon, title, children, href, onClick, newTab }: { icon: ReactNod
     <button type="button" onClick={onClick} className={tileCls}>
       {inner}
     </button>
+  );
+}
+
+/**
+ * Study groups in one click (my brother's ticket f3779423, Nov 23): each of your groups opens straight at its chat;
+ * with none yet, the tile opens the Study groups panel to start or join one.
+ */
+function GroupsTile() {
+  const groups = useGroups();
+  if (!groups.length)
+    return (
+      <Tile icon={<UsersIcon width={18} height={18} />} title="Study groups" onClick={() => openPanel("groups")}>
+        Read with friends or family: see each other&apos;s progress and chat. No accounts.
+      </Tile>
+    );
+  return (
+    <div className={tileCls}>
+      <span className="flex items-center gap-2 font-serif text-lg font-semibold text-ink">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
+          <UsersIcon width={18} height={18} />
+        </span>
+        Study groups
+      </span>
+      <ul className="space-y-1">
+        {groups.slice(0, 4).map((g) => (
+          <li key={g.code}>
+            <button type="button" onClick={() => openGroupChat(g.code)} className="flex min-h-9 w-full items-center gap-2 text-left text-sm font-medium text-accent hover:underline">
+              <span className="min-w-0 truncate">{g.name}</span>
+              <span className="shrink-0">· chat →</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button type="button" onClick={() => openPanel("groups")} className="self-start text-left text-sm text-muted hover:text-ink hover:underline">
+        {groups.length > 4 ? `All ${groups.length} groups, or start a new one →` : "Start or join another group →"}
+      </button>
+    </div>
   );
 }
 
@@ -158,6 +197,7 @@ export function HomePage() {
               </button>
             </div>
           )}
+          <GroupsTile />
           <SuggestionsTile className="sm:col-span-2" />
           <Tile icon={<RocketIcon width={18} height={18} />} title="Take the tour" onClick={() => openTour()}>
             A short walk through what you can do here, one step at a time.
