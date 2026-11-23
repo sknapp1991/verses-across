@@ -49,6 +49,8 @@ export type Setup = {
 };
 
 export type Settings = {
+  /** The whole app's zoom in percent, like a browser's (my brother's ticket c3ae6ef4): 100 = normal. */
+  appZoom: number;
   /** null = automatic (Column on wide screens, Stacked on phones) */
   view: ViewMode | null;
   fontSize: number; // px
@@ -161,6 +163,7 @@ export const DEFAULT_PALETTE: Record<string, string> = {
 };
 
 const DEFAULTS: Settings = {
+  appZoom: 100,
   view: null,
   fontSize: 18,
   theme: "system",
@@ -212,6 +215,9 @@ const DEFAULTS: Settings = {
 const num = (v: unknown, lo: number, hi: number) =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null;
 
+export const ZOOM_MIN = 85; // (below this, buttons get too small to tap back)
+export const ZOOM_MAX = 150;
+
 let current: Settings | null = null;
 const listeners = new Set<() => void>();
 
@@ -221,6 +227,7 @@ function read(): Settings {
     if (!raw) return DEFAULTS;
     const p = JSON.parse(raw) as Partial<Settings>;
     return {
+      appZoom: typeof p.appZoom === "number" ? Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(p.appZoom / 5) * 5)) : 100,
       view: p.view === "column" || p.view === "stacked" ? p.view : null,
       fontSize:
         typeof p.fontSize === "number" ? Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(p.fontSize))) : DEFAULTS.fontSize,

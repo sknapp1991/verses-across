@@ -623,7 +623,7 @@ export function ReaderView() {
         ? `${settings.colWidth}rem`
         : "85cqw";
   const style = {
-    "--reader-size": `${fontSize}px`,
+    "--reader-size": `calc(${fontSize}px * var(--zoom, 1))`, // (the app's Zoom scales the reading text too)
     "--colmin": colMin,
     "--stackw": `${settings.stackWidth ?? 48}rem`,
     "--reader-align": settings.textAlign,

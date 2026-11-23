@@ -23,6 +23,8 @@ import {
   type ReaderFont,
   type TextAlign,
   type TextContrast,
+  ZOOM_MAX,
+  ZOOM_MIN,
 } from "@/lib/settings";
 import type { Version } from "@/lib/schema";
 import { CheckIcon, CloseIcon, ColumnsIcon, GripIcon, MoonIcon, PaletteIcon, PencilIcon, RowsIcon, SunIcon, WidthIcon } from "./icons";
@@ -91,6 +93,46 @@ export function ViewToggle({ full = false, compact = false }: { full?: boolean; 
           <span className={full ? "" : compact ? "hidden 2xl:inline" : "hidden xl:inline"}>{label}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Zoom −/+ for the whole app, 5% a step (my brother's ticket c3ae6ef4): fit more on the screen, or less, like a
+ * browser's zoom. Tap the number to go back to 100%.
+ */
+export function ZoomControl() {
+  const { appZoom } = useSettings();
+  const set = (n: number) => {
+    const z = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, n));
+    updateSettings({ appZoom: z });
+    const root = document.documentElement;
+    if (z === 100) root.style.removeProperty("--zoom");
+    else root.style.setProperty("--zoom", String(z / 100));
+    window.dispatchEvent(new Event("resize")); // (anything that measures the screen measures again)
+  };
+  // (the buttons are sized in px, not rem, so the zoom never makes them too small to tap)
+  const btn = "flex h-[44px] w-[44px] items-center justify-center rounded-md text-[18px] text-muted hover:text-ink disabled:opacity-40";
+  return (
+    <div role="group" aria-label="Zoom" className="flex items-center rounded-lg border border-line bg-raised p-0.5">
+      <span role="status" className="sr-only">
+        Zoom {appZoom}%
+      </span>
+      <button type="button" onClick={() => set(appZoom - 5)} disabled={appZoom <= ZOOM_MIN} aria-label="Zoom out" className={btn}>
+        −
+      </button>
+      <button
+        type="button"
+        onClick={() => set(100)}
+        aria-label={appZoom !== 100 ? `Zoom ${appZoom}%: back to 100%` : "Zoom 100%"}
+        title={appZoom !== 100 ? "Back to 100%" : undefined}
+        className="h-[44px] w-[52px] text-center text-[13px] tabular-nums text-faint hover:text-ink"
+      >
+        {appZoom}%
+      </button>
+      <button type="button" onClick={() => set(appZoom + 5)} disabled={appZoom >= ZOOM_MAX} aria-label="Zoom in" className={btn}>
+        +
+      </button>
     </div>
   );
 }

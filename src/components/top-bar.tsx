@@ -8,7 +8,7 @@ import { ReadTogether } from "./read-together";
 import { isShowing, openSheet, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
 import { openSearch } from "./search-panel";
-import { ChapterSwipeControl, PrivacyControl, SavedSetups, ThemeToggle, VersionChooser } from "./controls";
+import { ChapterSwipeControl, PrivacyControl, SavedSetups, ThemeToggle, VersionChooser, ZoomControl } from "./controls";
 import { useReaderState } from "./use-reader-state";
 import { AiButton } from "./ai-window";
 import { OfflineDownloadsButton } from "./downloads-dialog";
@@ -127,6 +127,11 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
         <Group label="More">
           <ThemeToggle />
           <TopPopover label="Display options" title="Saved setups, words of Jesus in red, swiping, offline and more" icon={<SlidersIcon />}>
+            {/* the whole app's zoom (hub c3ae6ef4) */}
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">Zoom</span>
+              <ZoomControl />
+            </div>
             <SavedSetups />
             <RedLetterToggle />
             <ChapterSwipeControl />

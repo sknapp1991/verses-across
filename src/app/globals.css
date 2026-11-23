@@ -303,6 +303,13 @@ html[data-peek] dialog.sheet .peek-keep {
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
 }
 
+/* The app's zoom (Settings: Zoom, my brother's ticket c3ae6ef4): the base size everything is measured in (rem), so
+   text, spacing, buttons and panels grow or shrink together, like a browser's zoom; the reading text follows it too
+   (--reader-size in reader.tsx). Not CSS zoom: that would misplace popovers placed from screen positions. */
+html {
+  font-size: calc(100% * var(--zoom, 1));
+}
+
 /* The app's full height: the real window height on desktop Safari (--app-h, set in layout.tsx), else 100dvh. */
 @utility h-app {
   height: 100vh;

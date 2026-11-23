@@ -54,7 +54,8 @@ export function TapModesButton() {
         type="button"
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
-          const w = Math.min(288, window.innerWidth - 32); // the card's width (18rem, or the screen less 2rem)
+          const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; // (the app's Zoom)
+          const w = Math.min(18 * rem, window.innerWidth - 32); // the card's width (18rem, or the screen less 2rem)
           // under the button's right edge, but never off either side of the screen
           setAt({ top: r.bottom + 6, right: Math.min(Math.max(16, window.innerWidth - r.right), window.innerWidth - w - 16) });
           setOpen((o) => !o);

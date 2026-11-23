@@ -536,7 +536,8 @@ function VersionFilter({ work, selected, perVersion }: { work: string; selected:
     const d = details.current;
     if (!d?.open) return;
     const box = d.getBoundingClientRect();
-    const width = Math.min(256, window.innerWidth - 16);
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; // (the app's Zoom)
+    const width = Math.min(16 * rem, window.innerWidth - 16);
     setShift(Math.max(8 - box.left, Math.min(0, window.innerWidth - 8 - (box.left + width))));
   };
   const byLang = new Map<string, typeof all>();

@@ -32,6 +32,7 @@ import {
   ChapterSwipeControl,
   PrivacyControl,
   FontSizeControl,
+  ZoomControl,
   LanguageColors,
   SavedSetups,
   ThemeToggle,
@@ -102,6 +103,10 @@ function Body({ section }: { section: string }) {
 
         {only !== "versions" && (
           <Section id="text" title="Text" hideTitle={only === "text"}>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium">Zoom</span>
+              <ZoomControl />
+            </div>
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-medium">Size and theme</span>
               <div className="flex items-center gap-2">

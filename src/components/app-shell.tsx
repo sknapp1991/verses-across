@@ -27,9 +27,14 @@ import { DockPanelContext } from "./panel-header";
 import { CalendarIcon, CloseIcon, LibraryIcon, SearchIcon, UsersIcon } from "./icons";
 import { SideTip } from "./side-switch";
 
-/** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"). */
+/** Keeps the <html> dark class in sync with the saved theme (and the OS when "system"), and the app's Zoom (--zoom). */
 function useThemeSync() {
-  const { theme } = useSettings();
+  const { theme, appZoom } = useSettings();
+  useEffect(() => {
+    const root = document.documentElement;
+    if (appZoom === 100) root.style.removeProperty("--zoom");
+    else root.style.setProperty("--zoom", String(appZoom / 100));
+  }, [appZoom]);
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () =>

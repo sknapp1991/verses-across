@@ -15,4 +15,4 @@ export const THEME_INIT_SCRIPT = `(function(){try{var h=location.hostname;if(${O
   STORAGE_KEY,
 )}))){location.replace(${JSON.stringify(SITE_ORIGIN)}+location.pathname+location.search+location.hash);return;}}catch(e){}try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(
   STORAGE_KEY,
-)})||"{}");var t=s.theme;var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;
+)})||"{}");var t=s.theme;var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);var z=s.appZoom;if(typeof z==="number"&&z!==100&&z>=85&&z<=150)document.documentElement.style.setProperty("--zoom",String(z/100));}catch(e){}})();`;
