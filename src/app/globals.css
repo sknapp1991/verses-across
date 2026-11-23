@@ -93,6 +93,14 @@ html,
 body {
   height: 100%;
 }
+/* printing (an article's Download PDF): the whole page, not one screen of it */
+@media print {
+  html,
+  body {
+    height: auto;
+    overflow: visible;
+  }
+}
 
 body {
   background: var(--paper);

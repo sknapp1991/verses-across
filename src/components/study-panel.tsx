@@ -10,11 +10,12 @@ import { fetchBook } from "@/lib/chapter-store";
 import { downloadBackup, lastBackup } from "@/lib/backup";
 import { formatStamp, highlightBg, HIGHLIGHTS, importJson, removeItem, useStudy, type StudyItem, type StudyKind } from "@/lib/study";
 import { closePanel, toast } from "@/lib/ui-store";
-import { CloseIcon, ClockIcon, LibraryIcon, NoteIcon, StarIcon, MarkerIcon, CheckSquareIcon } from "./icons";
+import { BookIcon, CloseIcon, ClockIcon, LibraryIcon, NoteIcon, StarIcon, MarkerIcon, CheckSquareIcon } from "./icons";
 import { openSyncDialog, syncSummary } from "./sync-dialog";
 import { useSync } from "@/lib/sync";
 import { useReaderState } from "./use-reader-state";
 import { PanelHeader } from "./panel-header";
+import { ArticlesStudyTab } from "./articles-study-tab";
 
 const TABS: { kind: StudyKind; label: string; Icon: typeof StarIcon; empty: string }[] = [
   { kind: "favorite", label: "Favorites", Icon: StarIcon, empty: "Tap a verse number to add it to your favorites." },
@@ -24,7 +25,7 @@ const TABS: { kind: StudyKind; label: string; Icon: typeof StarIcon; empty: stri
   { kind: "studied", label: "Studied", Icon: CheckSquareIcon, empty: "Tick “Mark as studied” at the end of a chapter." },
 ];
 
-let lastTab: StudyKind = "favorite";
+let lastTab: StudyKind | "articles" = "favorite";
 type Sort = "new" | "old" | "book";
 let lastView: { religion: string | null; book: string | null; sort: Sort } = { religion: null, book: null, sort: "new" };
 
@@ -38,7 +39,7 @@ const bookName = (i: StudyItem) => findBook(i.work, i.book)?.name ?? i.book;
 
 export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
   const { items, ready } = useStudy();
-  const [tab, setTab] = useState<StudyKind>(lastTab);
+  const [tab, setTab] = useState<StudyKind | "articles">(lastTab);
   const [color, setColor] = useState<string | null>(null);
   const [religion, setReligion] = useState<string | null>(lastView.religion);
   const [bookF, setBookF] = useState<string | null>(lastView.book);
@@ -122,6 +123,19 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
             {counts[kind] ? <span className="text-xs tabular-nums opacity-75">{counts[kind]}</span> : null}
           </button>
         ))}
+        {/* what was saved from the articles (hub b53fdab9) */}
+        <button
+          role="tab"
+          type="button"
+          aria-selected={tab === "articles"}
+          onClick={() => setTab("articles")}
+          className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-sm ${
+            tab === "articles" ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-raised"
+          }`}
+        >
+          <BookIcon width={16} height={16} />
+          Articles
+        </button>
       </div>
       {tab === "highlight" && (counts.highlight ?? 0) > 0 && (
         <div className="flex items-center gap-1 px-3 pt-2" aria-label="Filter by colour">
@@ -190,7 +204,9 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
       )}
 
       <div className="px-2 py-2">
-        {!ready ? null : list.length === 0 ? (
+        {tab === "articles" ? (
+          <ArticlesStudyTab onNavigate={onNavigate} />
+        ) : !ready ? null : list.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-faint">{inTab.length ? "Nothing matches these filters." : TABS.find((t) => t.kind === tab)!.empty}</p>
         ) : (
           <ul className="divide-y divide-line/70">

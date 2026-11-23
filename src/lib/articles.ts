@@ -17,7 +17,25 @@ export type ArticleStatus = "draft" | "review" | "published";
 
 export type TocEntry = { id: string; text: string; level: 2 | 3 };
 export type TierInfo = { words: number; minutes: number };
-export type Tier = TierInfo & { html: string; toc: TocEntry[] };
+
+/**
+ * A word from another language, a name or a book the article mentions (hub 9c346b55, b53fdab9): listed in the
+ * Study guide, and its first mention in the text opens the same card. `gloss`: how the article itself explains it
+ * (the words in brackets after it). `card`: a short summary from Wikipedia or Wiktionary (CC BY-SA, credited and
+ * linked), fetched ahead of time by scripts/article-refs.mts.
+ */
+export type StudyRef = {
+  key: string;
+  kind: "word" | "name" | "book";
+  label: string;
+  lang?: string;
+  by?: string;
+  gloss?: string;
+  read?: string;
+  card?: { source: "Wikipedia" | "Wiktionary"; title: string; text: string; url: string };
+};
+export type Tier = TierInfo & { html: string; toc: TocEntry[]; study?: StudyRef[] };
+export type RelatedArticle = { slug: string; title: string; volume: number; shared: string[] };
 
 export type ArticleSummary = {
   slug: string;
@@ -36,7 +54,7 @@ export type ArticleSummary = {
   depths: Partial<Record<Depth, TierInfo>>;
 };
 
-export type Article = ArticleSummary & { tiers: Partial<Record<Depth, Tier>> };
+export type Article = ArticleSummary & { tiers: Partial<Record<Depth, Tier>>; related?: RelatedArticle[] };
 
 /** The ten volumes (my brother's canon, Nov 20). */
 export const VOLUMES: { n: number; name: string; scope: string }[] = [

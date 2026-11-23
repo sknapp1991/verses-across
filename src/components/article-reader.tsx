@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { memo, useEffect, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { progressChanged } from "@/lib/achievements";
 import { findRefs } from "@/lib/refs";
 import { RefLink } from "@/components/ref-link";
 import { AiWord, looksForeign } from "@/components/ai-word";
 import { BackLink, PageChrome } from "@/components/page-chrome";
-import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type Depth } from "@/lib/articles";
+import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type ArticleSummary, type Depth, type StudyRef } from "@/lib/articles";
+import type { FoundRef } from "@/lib/refs";
+import { articleStudyChanged } from "@/lib/article-study";
+import { FurtherStudy, RefMention, ShareBar, StudyGuide } from "@/components/article-study";
+import { Bookcase } from "@/components/article-bookcase";
 
 const PREF = "va-article-depth:v1"; // localStorage: the depth a reader last chose
+const EMPTY_STUDY: StudyRef[] = [];
 const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/q/<question words>": answer } (this device only)
 const READ = "va-article-read:v1"; // localStorage: { slug: { depth: "YYYY-MM-DD" } }
 
@@ -104,7 +109,21 @@ function Answer({ id, legacy, question }: { id: string; legacy: string; question
  * shared tab; each reflection question gets an answer box. The HTML comes from build-articles (escaped there).
  * Memo: the page's progress bar re-renders on every scroll, and this must not rebuild the text each time.
  */
-const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: string; slug: string; depth: Depth }) {
+const ArticleBody = memo(function ArticleBody({
+  html,
+  slug,
+  title,
+  depth,
+  study,
+  onFound,
+}: {
+  html: string;
+  slug: string;
+  title: string;
+  depth: Depth;
+  study: StudyRef[];
+  onFound: (verses: FoundRef[], questions: { q: string; key: string }[]) => void;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const [slots, setSlots] = useState<{ el: HTMLElement; node: ReactNode }[]>([]);
   useEffect(() => {
@@ -114,6 +133,18 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
     // each list item's words before the italic words and references become (still empty) slots: the answer boxes' labels
     const said = new Map<Element, string>([...root.querySelectorAll("li")].map((li) => [li, li.textContent ?? ""]));
     const out: { el: HTMLElement; node: ReactNode }[] = [];
+    // A word, name or book the Study guide lists: its first mention opens its card (build-articles marks it).
+    const byKey = new Map(study.map((r) => [r.key, r]));
+    for (const el of [...root.querySelectorAll<HTMLElement>("[data-ref]")]) {
+      const r = byKey.get(el.dataset.ref ?? "");
+      // (a word with no summary and no explanation keeps the dictionary card below, if it has one: *hishtachaveh*)
+      if (!r || (el.tagName === "EM" && !r.card && !r.gloss)) continue;
+      const slot = document.createElement("span");
+      const text = el.textContent ?? r.label;
+      const italic = el.tagName === "EM";
+      el.replaceWith(slot);
+      out.push({ el: slot, node: <RefMention r={r} ctx={{ slug, articleTitle: title }} italic={italic} text={text} /> });
+    }
     // An italic word from another language (*hishtachaveh*, *proskuneo*) gets the same word card as Ask AI.
     for (const em of [...root.querySelectorAll("em")]) {
       const w = em.textContent?.trim() ?? "";
@@ -132,8 +163,10 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
       const t = walk.currentNode as Text;
       if (!t.parentElement?.closest("a, h1, h2, h3")) texts.push(t);
     }
+    const verses: FoundRef[] = [];
     for (const t of texts) {
       const refs = findRefs(t.data);
+      verses.push(...refs);
       if (!refs.length) continue;
       const frag = document.createDocumentFragment();
       let at = 0;
@@ -148,6 +181,7 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
       t.replaceWith(frag);
     }
     // An answer box under each question of the Reflection section (the list right after its heading).
+    const questions: { q: string; key: string }[] = [];
     const head = [...root.querySelectorAll("h2")].find((h) => /^reflection$/i.test(h.textContent?.trim() ?? ""));
     for (let el = head?.nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) {
       if (el.tagName !== "UL" && el.tagName !== "OL") continue;
@@ -158,11 +192,13 @@ const ArticleBody = memo(function ArticleBody({ html, slug, depth }: { html: str
         // the question's words (case, spacing and punctuation aside): the same question in every depth, one answer
         const key = q.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim().slice(0, 200);
         if (!key) return; // (an empty list item: no box)
+        questions.push({ q: q.trim(), key: `${slug}/q/${key}` });
         out.push({ el: slot, node: <Answer id={`${slug}/q/${key}`} legacy={`${slug}/${depth}/${n}`} question={q} /> });
       });
     }
     setSlots(out);
-  }, [html, slug, depth]);
+    onFound(verses, questions);
+  }, [html, slug, title, depth, study, onFound]);
   return (
     <>
       <div ref={box} className={PROSE} dangerouslySetInnerHTML={{ __html: html }} />
@@ -193,7 +229,7 @@ function pickDepth(article: Article): Depth {
  * One article in up to three depths (Short / Medium / Extensive) on one page: a switch under the title, remembered
  * for the next article, shareable with ?depth=; a reading-progress bar; contents for the longer depths.
  */
-export function ArticleReader({ article }: { article: Article }) {
+export function ArticleReader({ article, library = [] }: { article: Article; library?: ArticleSummary[] }) {
   const have = DEPTHS.filter((d) => article.tiers[d]);
   const [depth, setDepth] = useState<Depth>(have.includes("medium") ? "medium" : have[0]);
   const [progress, setProgress] = useState(0);
@@ -213,6 +249,18 @@ export function ArticleReader({ article }: { article: Article }) {
     save(READ, all);
     setRead(mine);
     progressChanged();
+    articleStudyChanged(); // the bookcase greys it, My Study lists it
+  };
+  // what the text holds, found once it is on the page: its verses (the Study guide) and reflection questions (Share)
+  const [verses, setVerses] = useState<FoundRef[]>([]);
+  const [questions, setQuestions] = useState<{ q: string; key: string }[]>([]);
+  const onFound = useCallback((v: FoundRef[], q: { q: string; key: string }[]) => {
+    setVerses(v);
+    setQuestions(q);
+  }, []);
+  const answers = () => {
+    const all = load<Record<string, string>>(ANSWERS, {});
+    return questions.map((q) => all[q.key] ?? "");
   };
 
   // The saved / linked depth, once on the client (the server renders the default).
@@ -265,14 +313,23 @@ export function ArticleReader({ article }: { article: Article }) {
   const date = new Date(`${article.date}T12:00:00`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <main ref={scroller} className="h-app overflow-y-auto bg-paper text-muted">
-      <div className="fixed inset-x-0 top-0 z-30 h-1 bg-transparent" aria-hidden>
+    <main ref={scroller} className="h-app overflow-y-auto bg-paper text-muted print:h-auto print:overflow-visible">
+      {/* (Download PDF prints the whole article: the page's own scroll box is lifted when printing) */}
+      <div className="fixed inset-x-0 top-0 z-30 h-1 bg-transparent print:hidden" aria-hidden>
         <div className="h-full bg-accent transition-[width] duration-150" style={{ width: `${Math.round(progress * 100)}%` }} />
       </div>
-      <PageChrome fallback="/articles" />
-      <div className="mx-auto flex max-w-6xl justify-center gap-10 px-4 md:px-8">
+      <div className="print:hidden">
+        <PageChrome fallback="/articles" />
+      </div>
+      {/* bookcase · contents · the article · Study guide (the widest screens show all four) */}
+      <div className="mx-auto flex max-w-[112rem] justify-center gap-8 px-4 md:px-8">
+      {library.length > 1 && (
+        <aside className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-64 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 min-[1760px]:block print:hidden">
+          <Bookcase articles={library} current={article.slug} />
+        </aside>
+      )}
       {toc && (
-        <nav aria-label="Contents" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-56 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 text-sm xl:block">
+        <nav aria-label="Contents" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-56 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 text-sm xl:block print:hidden">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-faint">Contents</p>
           <ol className="space-y-1 border-l border-line">
             {toc.map((t) => (
@@ -291,15 +348,15 @@ export function ArticleReader({ article }: { article: Article }) {
           </ol>
         </nav>
       )}
-      <article className="w-full min-w-0 max-w-3xl space-y-6 pb-16 pt-8">
+      <article className="w-full min-w-0 max-w-3xl space-y-6 pb-16 pt-8 print:max-w-none print:pt-0">
         {article.status !== "published" && (
-          <p className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-ink">
+          <p className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm text-ink print:hidden">
             <strong>Preview for review — not published.</strong> This page is unlisted and hidden from search engines until it is
             approved.
           </p>
         )}
         <header className="space-y-3">
-          <BackLink fallback="/articles" className={`text-sm ${a}`}>
+          <BackLink fallback="/articles" className={`text-sm print:hidden ${a}`}>
             ← Articles
           </BackLink>
           <p className="text-xs uppercase tracking-wide">
@@ -311,7 +368,7 @@ export function ArticleReader({ article }: { article: Article }) {
             The Verses Across team · {date} · {tier.minutes} min read
           </p>
           {have.length > 1 && (
-            <div role="tablist" aria-label="Reading depth" className="inline-flex rounded-full border border-line bg-panel p-1 text-sm">
+            <div role="tablist" aria-label="Reading depth" className="inline-flex rounded-full border border-line bg-panel p-1 text-sm print:hidden">
               {have.map((d) => (
                 <button
                   key={d}
@@ -331,10 +388,18 @@ export function ArticleReader({ article }: { article: Article }) {
               ))}
             </div>
           )}
+          <ShareBar article={article} depth={depth} questions={questions.map((q) => q.q)} answers={answers} />
         </header>
 
+        <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm xl:hidden print:hidden">
+          <summary className="cursor-pointer font-medium text-ink">Study guide</summary>
+          <div className="mt-2">
+            <StudyGuide article={article} depth={depth} verses={verses} />
+          </div>
+        </details>
+
         {toc && (
-          <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm xl:hidden" open={depth === "long"}>
+          <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm xl:hidden print:hidden" open={depth === "long"}>
             <summary className="cursor-pointer font-medium text-ink">Contents</summary>
             <ol className="mt-2 space-y-1">
               {toc.map((t) => (
@@ -348,9 +413,9 @@ export function ArticleReader({ article }: { article: Article }) {
           </details>
         )}
 
-        <ArticleBody html={tier.html} slug={article.slug} depth={depth} />
+        <ArticleBody html={tier.html} slug={article.slug} title={article.title} depth={depth} study={tier.study ?? EMPTY_STUDY} onFound={onFound} />
 
-        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-ink">
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-ink print:hidden">
           <input type="checkbox" checked={!!read[depth]} onChange={(e) => markRead(depth, e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
           <span>
             I read the {DEPTH_LABEL[depth]} version
@@ -362,6 +427,17 @@ export function ArticleReader({ article }: { article: Article }) {
           </span>
         </label>
 
+        <FurtherStudy article={article} depth={depth} verses={verses} />
+
+        {library.length > 1 && (
+          <details className="rounded-xl border border-line bg-panel px-4 py-3 text-sm min-[1760px]:hidden print:hidden">
+            <summary className="cursor-pointer font-medium text-ink">Bookcase: more articles</summary>
+            <div className="mt-3">
+              <Bookcase articles={library} current={article.slug} />
+            </div>
+          </details>
+        )}
+
         <footer className="space-y-2 border-t border-line pt-6 text-sm">
           {article.aiNote && <p>{article.aiNote}</p>}
           <p>
@@ -372,6 +448,9 @@ export function ArticleReader({ article }: { article: Article }) {
           </p>
         </footer>
       </article>
+      <aside aria-label="Study guide" className="sticky top-0 hidden max-h-[var(--app-h,100dvh)] w-72 shrink-0 self-start overflow-y-auto overscroll-contain pb-8 pt-24 xl:block print:hidden">
+        <StudyGuide article={article} depth={depth} verses={verses} />
+      </aside>
       </div>
     </main>
   );

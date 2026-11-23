@@ -32,5 +32,7 @@ export default async function ArticlePage({ params }: Props) {
   if (!meta) notFound();
   if (SITE_SIDE !== "scriptures") permanentRedirect(`${ORIGINS.scriptures}/articles/${slug}`);
   const article = (await import(`../../../../public/articles/${slug}.json`)).default as Article;
-  return <ArticleReader article={article} />;
+  // the bookcase: published articles (a preview also shows the other previews)
+  const library = ARTICLES.filter((a) => a.status === "published" || (meta.status !== "published" && a.status === "review"));
+  return <ArticleReader article={article} library={library} />;
 }

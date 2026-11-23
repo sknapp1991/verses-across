@@ -20,6 +20,12 @@ export function ArticlesBrowser({ articles: published }: { articles: ArticleSumm
   }, []);
   const articles = useMemo(() => [...review, ...published], [review, published]);
   const [q, setQ] = useState("");
+  // "/articles?theme=duality" (a theme from an article's Study guide): start with that search
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("theme");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address is only readable after hydration
+    if (t) setQ(t);
+  }, []);
   const [vol, setVol] = useState(0);
   const [trad, setTrad] = useState("");
   const [deep, setDeep] = useState(false);

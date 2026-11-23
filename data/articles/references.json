@@ -1,0 +1,551 @@
+{
+ "_about": "Study-guide references for the articles (hub 9c346b55, b53fdab9). Each word, name or book named here gets a card in the article's Study guide and in its text. 'wiki' is an English Wikipedia page, 'wikt' an English Wiktionary entry (with the language section to read); scripts/article-refs.mts fetches their summaries into refs-cache.json (CC BY-SA, credited on the card). 'aka' are other spellings found in the articles. Everyday names (Jesus, Moses, Abraham) are left out on purpose. 'skip' marks italics that are English emphasis, not terms.",
+ "terms": {
+  "abd": {
+   "lang": "Arabic",
+   "show": "ʿabd"
+  },
+  "adhyasa": {
+   "lang": "Sanskrit",
+   "wiki": "Adhyāsa"
+  },
+  "akathartos": {
+   "lang": "Greek",
+   "wikt": "ἀκάθαρτος",
+   "wiktLang": "Ancient Greek"
+  },
+  "al-Ahad": {
+   "lang": "Arabic",
+   "wiki": "Names of God in Islam",
+   "aka": [
+    "Al-Ahad"
+   ]
+  },
+  "al-Haqq": {
+   "lang": "Arabic",
+   "wiki": "Al-Haqq",
+   "aka": [
+    "Al-Haqq"
+   ]
+  },
+  "aletheia": {
+   "lang": "Greek",
+   "wiki": "Aletheia",
+   "aka": [
+    "Aletheia"
+   ]
+  },
+  "anicca": {
+   "lang": "Pali",
+   "wiki": "Impermanence"
+  },
+  "apkallu": {
+   "lang": "Akkadian",
+   "wiki": "Apkallu"
+  },
+  "atma-vichara": {
+   "lang": "Sanskrit",
+   "wiki": "Self-enquiry (Ramana Maharshi)"
+  },
+  "avidya": {
+   "lang": "Sanskrit",
+   "wiki": "Avidyā (Hinduism)"
+  },
+  "avodah": {
+   "lang": "Hebrew",
+   "wiki": "Avodah"
+  },
+  "avyakata": {
+   "lang": "Pali",
+   "wiki": "The unanswerable questions"
+  },
+  "barzakh": {
+   "lang": "Arabic",
+   "wiki": "Barzakh"
+  },
+  "bhakti": {
+   "lang": "Sanskrit",
+   "wiki": "Bhakti",
+   "aka": [
+    "Bhakti"
+   ]
+  },
+  "catuskoti": {
+   "lang": "Sanskrit",
+   "wiki": "Catuṣkoṭi"
+  },
+  "cheng": {
+   "lang": "Chinese",
+   "wiki": "Cheng (Confucianism)",
+   "aka": [
+    "Cheng"
+   ]
+  },
+  "chronos": {
+   "lang": "Greek",
+   "wikt": "χρόνος",
+   "wiktLang": "Ancient Greek"
+  },
+  "dharma": {
+   "lang": "Sanskrit",
+   "wiki": "Dharma"
+  },
+  "dhat": {
+   "lang": "Arabic",
+   "wiki": "Attributes of God in Islam"
+  },
+  "dhikr": {
+   "lang": "Arabic",
+   "wiki": "Dhikr"
+  },
+  "dia-ballein": {
+   "lang": "Greek",
+   "wikt": "διαβάλλω",
+   "wiktLang": "Ancient Greek"
+  },
+  "diabolos": {
+   "lang": "Greek",
+   "wikt": "διάβολος",
+   "wiktLang": "Ancient Greek"
+  },
+  "dubitare": {
+   "lang": "Latin",
+   "wikt": "dubito",
+   "wiktLang": "Latin"
+  },
+  "duo": {
+   "lang": "Latin",
+   "wikt": "duo",
+   "wiktLang": "Latin"
+  },
+  "dyo": {
+   "lang": "Greek",
+   "wikt": "δύο",
+   "wiktLang": "Ancient Greek"
+  },
+  "Ein Sof": {
+   "lang": "Hebrew",
+   "wiki": "Ein Sof"
+  },
+  "emet": {
+   "lang": "Hebrew",
+   "wikt": "אמת",
+   "wiktLang": "Hebrew",
+   "aka": [
+    "Emet"
+   ]
+  },
+  "etz ha-chayyim": {
+   "lang": "Hebrew",
+   "wiki": "Tree of life (Kabbalah)"
+  },
+  "fana": {
+   "lang": "Arabic",
+   "wiki": "Fana (Sufism)"
+  },
+  "hagios": {
+   "lang": "Greek",
+   "wikt": "ἅγιος",
+   "wiktLang": "Ancient Greek"
+  },
+  "hishtachaveh": {
+   "lang": "Hebrew",
+   "wikt": "השתחווה",
+   "wiktLang": "Hebrew"
+  },
+  "ibadah": {
+   "lang": "Arabic",
+   "wiki": "Ibadah"
+  },
+  "imago Dei": {
+   "lang": "Latin",
+   "wiki": "Image of God"
+  },
+  "Ishvara": {
+   "lang": "Sanskrit",
+   "wiki": "Ishvara"
+  },
+  "jam'": {
+   "lang": "Arabic",
+   "wikt": "جمع",
+   "wiktLang": "Arabic",
+   "show": "jamʿ"
+  },
+  "jnana": {
+   "lang": "Sanskrit",
+   "wiki": "Jnana"
+  },
+  "kairos": {
+   "lang": "Greek",
+   "wiki": "Kairos"
+  },
+  "katharos": {
+   "lang": "Greek",
+   "wikt": "καθαρός",
+   "wiktLang": "Ancient Greek"
+  },
+  "khalifah": {
+   "lang": "Arabic"
+  },
+  "kintsugi": {
+   "lang": "Japanese",
+   "wiki": "Kintsugi"
+  },
+  "latreia": {
+   "lang": "Greek",
+   "wiki": "Latria"
+  },
+  "Logos": {
+   "lang": "Greek",
+   "wiki": "Logos (Christianity)"
+  },
+  "Mammon": {
+   "lang": "Aramaic",
+   "wiki": "Mammon"
+  },
+  "maya": {
+   "lang": "Sanskrit",
+   "wiki": "Maya (religion)"
+  },
+  "moksha": {
+   "lang": "Sanskrit",
+   "wiki": "Moksha"
+  },
+  "mufrad": {
+   "lang": "Arabic",
+   "wikt": "مفرد",
+   "wiktLang": "Arabic"
+  },
+  "musica universalis": {
+   "lang": "Latin",
+   "wiki": "Musica universalis"
+  },
+  "muthanna": {
+   "lang": "Arabic",
+   "wiki": "Dual (grammatical number)"
+  },
+  "nirguna": {
+   "lang": "Sanskrit",
+   "wiki": "Nirguna Brahman"
+  },
+  "nirguna Brahman": {
+   "lang": "Sanskrit",
+   "wiki": "Nirguna Brahman"
+  },
+  "nirvana": {
+   "lang": "Sanskrit",
+   "wiki": "Nirvana"
+  },
+  "nishba": {
+   "lang": "Hebrew",
+   "wikt": "נשבע",
+   "wiktLang": "Hebrew"
+  },
+  "nishmat chayyim": {
+   "lang": "Hebrew",
+   "wiki": "Neshama"
+  },
+  "paticca-samuppada": {
+   "lang": "Pali",
+   "wiki": "Pratītyasamutpāda"
+  },
+  "prana": {
+   "lang": "Sanskrit",
+   "wiki": "Prana"
+  },
+  "proskuneo": {
+   "lang": "Greek",
+   "wiki": "Proskynesis"
+  },
+  "Puja": {
+   "lang": "Sanskrit",
+   "wiki": "Puja (Hinduism)"
+  },
+  "qadosh": {
+   "lang": "Hebrew",
+   "wikt": "קדוש",
+   "wiktLang": "Hebrew"
+  },
+  "ruh": {
+   "lang": "Arabic",
+   "wiki": "Rūḥ"
+  },
+  "saguna": {
+   "lang": "Sanskrit",
+   "wiki": "Saguna brahman"
+  },
+  "satan": {
+   "lang": "Hebrew",
+   "wiki": "Satan"
+  },
+  "satya": {
+   "lang": "Sanskrit",
+   "wiki": "Satya",
+   "aka": [
+    "Satya"
+   ]
+  },
+  "satyam eva jayate": {
+   "lang": "Sanskrit",
+   "wiki": "Satyameva Jayate"
+  },
+  "sheva": {
+   "lang": "Hebrew",
+   "wikt": "שבע",
+   "wiktLang": "Hebrew"
+  },
+  "shirk": {
+   "lang": "Arabic",
+   "wiki": "Shirk (Islam)"
+  },
+  "sirat al-mustaqim": {
+   "lang": "Arabic",
+   "wiki": "Sirat al-Mustaqim"
+  },
+  "svabhava": {
+   "lang": "Sanskrit",
+   "wiki": "Svabhava"
+  },
+  "tahor": {
+   "lang": "Hebrew",
+   "wiki": "Tumah and taharah",
+   "aka": [
+    "Tahor"
+   ]
+  },
+  "tajalli": {
+   "lang": "Arabic",
+   "wiki": "Tajalli"
+  },
+  "tame": {
+   "lang": "Hebrew",
+   "wiki": "Tumah and taharah"
+  },
+  "tapas": {
+   "lang": "Sanskrit",
+   "wiki": "Tapas (Indian religions)"
+  },
+  "tawhid": {
+   "lang": "Arabic",
+   "wiki": "Tawhid"
+  },
+  "tohu va-vohu": {
+   "lang": "Hebrew",
+   "wiki": "Tohu wa-bohu"
+  },
+  "weorþscipe": {
+   "lang": "Old English"
+  },
+  "wu wei": {
+   "lang": "Chinese",
+   "wiki": "Wu wei"
+  }
+ },
+ "skip": [
+  "devil",
+  "doubt",
+  "duel",
+  "duplicity",
+  "patterns",
+  "real",
+  "refuge",
+  "survival",
+  "then",
+  "transactional",
+  "two",
+  "what",
+  "whether",
+  "worship"
+ ],
+ "books": {
+  "Republic": {
+   "wiki": "Republic (Plato)",
+   "by": "Plato"
+  },
+  "Metaphysics": {
+   "wiki": "Metaphysics (Aristotle)",
+   "by": "Aristotle"
+  },
+  "Theogony": {
+   "wiki": "Theogony",
+   "by": "Hesiod",
+   "read": "/read/theogony/theogony/1"
+  },
+  "Works and Days": {
+   "wiki": "Works and Days",
+   "by": "Hesiod"
+  },
+  "I and Thou": {
+   "wiki": "I and Thou",
+   "by": "Martin Buber"
+  },
+  "Myths from Mesopotamia": {
+   "by": "Stephanie Dalley"
+  },
+  "Purity and Danger": {
+   "wiki": "Purity and Danger",
+   "by": "Mary Douglas"
+  },
+  "Tattvasangraha": {
+   "by": "Shantarakshita"
+  }
+ },
+ "names": {
+  "Adi Shankara": {
+   "wiki": "Adi Shankara",
+   "aka": [
+    "Shankara"
+   ]
+  },
+  "al-Khidr": {
+   "wiki": "Khidr",
+   "aka": [
+    "Khidr"
+   ]
+  },
+  "Martin Buber": {
+   "wiki": "Martin Buber",
+   "aka": [
+    "Buber"
+   ]
+  },
+  "Ramakrishna": {
+   "wiki": "Ramakrishna"
+  },
+  "Ramprasad": {
+   "wiki": "Ramprasad Sen"
+  },
+  "Meister Eckhart": {
+   "wiki": "Meister Eckhart",
+   "aka": [
+    "Eckhart"
+   ]
+  },
+  "Ramana Maharshi": {
+   "wiki": "Ramana Maharshi"
+  },
+  "Ibn Arabi": {
+   "wiki": "Ibn Arabi"
+  },
+  "Shantarakshita": {
+   "wiki": "Śāntarakṣita"
+  },
+  "Nagarjuna": {
+   "wiki": "Nagarjuna"
+  },
+  "Patanjali": {
+   "wiki": "Patanjali"
+  },
+  "Plato": {
+   "wiki": "Plato"
+  },
+  "Aristotle": {
+   "wiki": "Aristotle"
+  },
+  "Socrates": {
+   "wiki": "Socrates"
+  },
+  "Pythagoras": {
+   "wiki": "Pythagoras"
+  },
+  "Hesiod": {
+   "wiki": "Hesiod"
+  },
+  "Augustine": {
+   "wiki": "Augustine of Hippo"
+  },
+  "Confucius": {
+   "wiki": "Confucius"
+  },
+  "Mencius": {
+   "wiki": "Mencius"
+  },
+  "Martin Luther": {
+   "wiki": "Martin Luther",
+   "aka": [
+    "Luther"
+   ]
+  },
+  "Mahatma Gandhi": {
+   "wiki": "Mahatma Gandhi",
+   "aka": [
+    "Gandhi"
+   ]
+  },
+  "Enoch": {
+   "wiki": "Enoch"
+  },
+  "Mara": {
+   "wiki": "Mara (demon)"
+  },
+  "Kali": {
+   "wiki": "Kali"
+  },
+  "Krishna": {
+   "wiki": "Krishna"
+  },
+  "Arjuna": {
+   "wiki": "Arjuna"
+  },
+  "Prometheus": {
+   "wiki": "Prometheus"
+  },
+  "Pandora": {
+   "wiki": "Pandora"
+  },
+  "Carl Jung": {
+   "wiki": "Carl Jung",
+   "aka": [
+    "Jung"
+   ]
+  },
+  "Viktor Frankl": {
+   "wiki": "Viktor Frankl",
+   "aka": [
+    "Frankl"
+   ]
+  },
+  "Paul Tillich": {
+   "wiki": "Paul Tillich",
+   "aka": [
+    "Tillich"
+   ]
+  },
+  "Karl Jaspers": {
+   "wiki": "Karl Jaspers",
+   "aka": [
+    "Jaspers"
+   ]
+  },
+  "David Hume": {
+   "wiki": "David Hume",
+   "aka": [
+    "Hume"
+   ]
+  },
+  "David Foster Wallace": {
+   "wiki": "David Foster Wallace"
+  },
+  "Mary Douglas": {
+   "wiki": "Mary Douglas"
+  },
+  "Stephanie Dalley": {
+   "wiki": "Stephanie Dalley"
+  },
+  "Angra Mainyu": {
+   "wiki": "Angra Mainyu"
+  },
+  "Johannes Kepler": {
+   "wiki": "Johannes Kepler",
+   "aka": [
+    "Kepler"
+   ]
+  },
+  "Isaac Newton": {
+   "wiki": "Isaac Newton",
+   "aka": [
+    "Newton"
+   ]
+  }
+ }
+}
