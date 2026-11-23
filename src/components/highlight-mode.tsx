@@ -1,9 +1,11 @@
 "use client";
 /**
  * Highlight mode: while on, tapping a verse paints it with the chosen colour (tap again to clear).
- * Toggle from the top bar; the strip under the top bar (ModeBanner) shows the colours and turns it off.
+ * Toggle from the top bar; the strip under the top bar (ModeBanner; on a phone a bubble at the bottom left) shows the
+ * colours and turns it off.
  */
-import { updateSettings, useSettings } from "@/lib/settings";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { HIGHLIGHTS } from "@/lib/study";
 import { CloseIcon, MarkerIcon, WordsIcon } from "./icons";
 
@@ -41,12 +43,14 @@ export function ModeBanner() {
   const { highlightMode, highlightColor, wordMode } = useSettings();
   if (!highlightMode && !wordMode) return null;
   return (
+    <>
+    {/* Phone: a small bubble at the bottom left instead (my brother's ticket d35347dd, Nov 23: the strip took screen) */}
+    <ModeBubbleOnPhone />
     <div
       data-no-swipe
-      className="mode-banner flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 desk:gap-y-1 border-b border-accent/40 bg-accent-soft px-3 py-1.5 text-sm text-ink md:px-4"
+      className="mode-banner hidden shrink-0 desk:flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-accent/40 bg-accent-soft px-3 py-1.5 text-sm text-ink md:px-4"
     >
-      {/* Phone: the sentence on its own line, the colours and Turn off under it (never squeezed into a thin column). */}
-      <span className="flex min-w-0 basis-full items-center gap-2 desk:flex-1 desk:basis-0">
+      <span className="flex min-w-0 flex-1 basis-0 items-center gap-2">
         <span className="text-accent" aria-hidden>
           {wordMode ? <WordsIcon width={18} height={18} /> : <MarkerIcon width={18} height={18} />}
         </span>
@@ -78,6 +82,139 @@ export function ModeBanner() {
       >
         <CloseIcon width={14} height={14} /> Turn off
       </button>
+    </div>
+    </>
+  );
+}
+
+/**
+ * Where the bubble can sit: above the open read-aloud bar (its height, so its slide-in doesn't fool it; the bar's own
+ * padding already holds the safe area), and above the folded read-aloud pill when the two would touch on a narrow
+ * screen. Otherwise 12px over the safe area.
+ */
+function useFreeBottom(bubble: RefObject<HTMLDivElement | null>) {
+  const [bottom, setBottom] = useState<string>("calc(12px + env(safe-area-inset-bottom))");
+  useEffect(() => {
+    let cur: HTMLElement | null = null;
+    let ro: ResizeObserver | null = null;
+    const measure = () => {
+      if (!cur) return setBottom("calc(12px + env(safe-area-inset-bottom))");
+      const bar = cur.matches("section, [role='region']");
+      if (bar) return setBottom(`${cur.offsetHeight + 8}px`);
+      // the folded pill (bottom right): above it only if it reaches the bubble's side
+      const pill = cur.getBoundingClientRect();
+      const mine = bubble.current?.getBoundingClientRect();
+      const touches = !!mine && pill.left < 12 + mine.width + 8;
+      setBottom(touches ? `${window.innerHeight - pill.top + 8}px` : "calc(12px + env(safe-area-inset-bottom))");
+    };
+    const find = () => {
+      const el = document.querySelector<HTMLElement>("[data-audio-dock]");
+      if (el === cur) return;
+      cur = el;
+      ro?.disconnect();
+      ro = null;
+      if (el) {
+        ro = new ResizeObserver(measure);
+        ro.observe(el);
+      }
+      measure();
+    };
+    const mo = new MutationObserver(find);
+    mo.observe(document.body, { childList: true, subtree: true });
+    const t = setTimeout(find, 0);
+    window.addEventListener("resize", measure);
+    return () => {
+      clearTimeout(t);
+      mo.disconnect();
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [bubble]);
+  return bottom;
+}
+
+/** Only on a phone (the strip serves a computer), so nothing watches the page there. */
+function ModeBubbleOnPhone() {
+  const wide = useMediaQuery(WIDE_QUERY, true);
+  return wide ? null : <ModeBubble />;
+}
+
+/**
+ * Phone: Words mode or Highlight mode as a bubble at the bottom left, shaped like the folded read-aloud pill: the
+ * mode's icon and name, the colour (tap it for the others) and x to turn the mode off.
+ */
+function ModeBubble() {
+  const { highlightMode, highlightColor, wordMode } = useSettings();
+  const [colours, setColours] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const bottom = useFreeBottom(box);
+  const colour = HIGHLIGHTS.find((h) => h.id === highlightColor);
+  useEffect(() => {
+    if (!colours) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setColours(false);
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setColours(false);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [colours]);
+  return (
+    <div
+      ref={box}
+      data-no-swipe
+      data-note-avoid
+      style={{ bottom }}
+      className="fixed left-3 z-20 flex animate-[chip-in_200ms_ease-out] flex-col items-start gap-1 desk:hidden print:hidden"
+    >
+      {highlightMode && colours && (
+        <span className="flex items-center gap-0.5 rounded-full border border-line bg-panel/95 p-1 shadow-lg backdrop-blur" role="group" aria-label="Pick a highlight colour">
+          {HIGHLIGHTS.map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              aria-label={h.label}
+              aria-pressed={highlightColor === h.id}
+              onClick={() => {
+                updateSettings({ highlightColor: h.id });
+                setColours(false);
+              }}
+              className={`flex h-11 w-11 items-center justify-center rounded-full border-2 ${highlightColor === h.id ? "border-ink" : "border-transparent"}`}
+            >
+              <span className="h-6 w-6 rounded-full" style={{ background: h.dot }} />
+            </button>
+          ))}
+        </span>
+      )}
+      <div className="flex items-center gap-1 rounded-full border border-accent/50 bg-panel/90 p-1 pr-1 shadow-lg backdrop-blur">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent" aria-hidden>
+          {wordMode ? <WordsIcon width={18} height={18} /> : <MarkerIcon width={18} height={18} />}
+        </span>
+        <span role="status" className="px-1 text-xs font-medium text-ink">
+          {wordMode ? "Words" : "Highlight"}
+          <span className="sr-only">{wordMode ? " mode is on: tap any word to see its original and meaning." : " mode is on: tap verses to highlight them, tap again to clear."}</span>
+        </span>
+        {highlightMode && (
+          <button
+            type="button"
+            onClick={() => setColours(!colours)}
+            aria-expanded={colours}
+            aria-label={`Highlight colour: ${colour?.label ?? ""}. Change it`}
+            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-raised"
+          >
+            <span className="h-6 w-6 rounded-full border-2 border-ink/60" style={{ background: colour?.dot }} />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => updateSettings(wordMode ? { wordMode: false } : { highlightMode: false })}
+          aria-label={wordMode ? "Turn Words mode off" : "Turn Highlight mode off"}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-raised hover:text-ink"
+        >
+          <CloseIcon width={16} height={16} />
+        </button>
+      </div>
     </div>
   );
 }
