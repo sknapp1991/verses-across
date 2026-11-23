@@ -5,6 +5,7 @@ import { SITE_NAME, SITE_ORIGIN, SITE_SIDE, SITE_TAGLINE } from "@/lib/site";
 import { DomainMove } from "@/components/domain-move";
 import { OfflineSupport } from "@/components/offline";
 import { FeedbackHost } from "@/components/feedback-dialog";
+import { NavSteps } from "@/components/nav-steps";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] });
@@ -75,6 +76,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="overflow-hidden">
         <DomainMove />
         <OfflineSupport />
+        <NavSteps />
         {children}
         <FeedbackHost />
       </body>

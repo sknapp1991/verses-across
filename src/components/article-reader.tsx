@@ -7,7 +7,7 @@ import { progressChanged } from "@/lib/achievements";
 import { findRefs } from "@/lib/refs";
 import { RefLink } from "@/components/ref-link";
 import { AiWord, looksForeign } from "@/components/ai-word";
-import { BackLink, PageChrome } from "@/components/page-chrome";
+import { HomeAndBack, PageChrome } from "@/components/page-chrome";
 import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type ArticleSummary, type Depth, type StudyRef } from "@/lib/articles";
 import type { FoundRef } from "@/lib/refs";
 import { articleStudyChanged } from "@/lib/article-study";
@@ -386,9 +386,11 @@ export function ArticleReader({ article, library = [] }: { article: Article; lib
           </p>
         )}
         <header className="space-y-3">
-          <BackLink fallback="/articles" className={`text-sm print:hidden ${a}`}>
-            ← Articles
-          </BackLink>
+          <HomeAndBack fallback="/articles">
+            <Link href="/articles" className={a}>
+              All articles
+            </Link>
+          </HomeAndBack>
           <p className="text-xs uppercase tracking-wide">
             Volume {article.volume} · {volumeName(article.volume)}
           </p>

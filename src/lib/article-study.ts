@@ -117,3 +117,33 @@ export function suggestArticles<T extends { slug: string; themes: string[]; trad
     .slice(0, limit)
     .map((x) => x.a);
 }
+
+/* ---- The Articles page's Library view (my brother's ticket e555be87): the whole page as a bookcase. On this device. ---- */
+const VIEW = "va-articles-view:v1";
+const viewSubs = new Set<() => void>();
+function readView(): boolean {
+  try {
+    return localStorage.getItem(VIEW) === "library";
+  } catch {
+    return false;
+  }
+}
+export function setLibraryView(on: boolean) {
+  try {
+    if (on) localStorage.setItem(VIEW, "library");
+    else localStorage.removeItem(VIEW);
+  } catch {
+    /* fine without */
+  }
+  viewSubs.forEach((l) => l());
+}
+export function useLibraryView(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      viewSubs.add(l);
+      return () => viewSubs.delete(l);
+    },
+    readView,
+    () => false,
+  );
+}

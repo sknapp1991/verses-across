@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { permanentRedirect } from "next/navigation";
 import { ORIGINS, SITE_SIDE } from "@/lib/site";
-import { BackLink, PageChrome } from "@/components/page-chrome";
-import { ArticlesBrowser } from "@/components/articles-browser";
+import { HomeAndBack, PageChrome } from "@/components/page-chrome";
+import { ArticlesBrowser, LibraryViewToggle } from "@/components/articles-browser";
 import index from "../../../public/articles/index.json";
 import type { ArticleSummary } from "@/lib/articles";
 
@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   ...(PUBLISHED.length ? {} : { robots: { index: false, follow: true } }), // indexed once the first article is up
 };
 
-const a = "underline underline-offset-2 hover:text-ink";
 
 /**
  * Articles (ROADMAP AR, my brother's design, hub 5e5cf67c): published articles with search and filters, and the ten
@@ -30,10 +29,11 @@ export default function ArticlesPage() {
       <PageChrome fallback="/read" />
       <div className="mx-auto max-w-4xl space-y-8 px-4 pb-16 pt-8 leading-relaxed md:px-8">
         <header className="space-y-3">
-          <BackLink fallback="/read" className={`text-sm ${a}`}>
-            ← Home
-          </BackLink>
-          <h1 className="font-serif text-3xl font-semibold text-ink">Articles</h1>
+          <HomeAndBack fallback="/read" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="font-serif text-3xl font-semibold text-ink">Articles</h1>
+            <LibraryViewToggle />
+          </div>
           <p>
             Articles on the world&rsquo;s scriptures, symbols and ideas: what the traditions say, where they meet and where they
             differ. Each comes in up to three depths: a short read, a medium one and an extensive study. Switch at the top of an article.

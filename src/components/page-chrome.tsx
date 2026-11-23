@@ -4,7 +4,9 @@
  * Back from a page opened on the home page goes back to the home page, scrolled where it was (home-page.tsx keeps
  * its scroll and notes which page a tile opened). Opened any other way, Back goes to `fallback` as before.
  */
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { NAV_STEPS } from "./nav-steps";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 export const FROM_HOME = "va-from-home"; // sessionStorage: the path a home-page tile opened
@@ -49,6 +51,47 @@ export function BackLink({ fallback, className, children }: { fallback: string; 
     >
       {home ? "← Home" : children}
     </a>
+  );
+}
+
+/**
+ * Home (in orange) and "← Previous page" (in grey) side by side: back to whatever you were doing, not only to the
+ * home page (my brother's ticket e555be87, Nov 23). With nothing to go back to (a link opened in a new tab), Previous
+ * page goes to `fallback`.
+ */
+export function HomeAndBack({ fallback, children }: { fallback: string; children?: ReactNode }) {
+  const router = useRouter();
+  return (
+    <nav aria-label="Go back" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm print:hidden">
+      <Link
+        href="/read"
+        onClick={() => {
+          // (opened from the home page: back there scrolled where it was)
+          try {
+            if (fromHome()) sessionStorage.setItem(HOME_RETURN, "1");
+          } catch {}
+        }}
+        className="font-medium text-accent underline-offset-2 hover:underline"
+      >
+        ⌂ Home
+      </Link>
+      <button
+        type="button"
+        onClick={() => {
+          // one step back only when the page before is one of ours (nav-steps.tsx), else this page's fallback
+          let steps = 0;
+          try {
+            steps = Number(sessionStorage.getItem(NAV_STEPS) ?? "0");
+          } catch {}
+          if (steps > 1 && window.history.length > 1) router.back();
+          else router.push(fallback);
+        }}
+        className="text-muted underline-offset-2 hover:text-ink hover:underline"
+      >
+        ← Previous page
+      </button>
+      {children}
+    </nav>
   );
 }
 

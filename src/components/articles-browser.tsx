@@ -3,6 +3,24 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { depthBadges, VOLUMES, volumeName, type ArticleSummary } from "@/lib/articles";
+import { setLibraryView, useLibraryView } from "@/lib/article-study";
+import { Bookcase } from "./article-bookcase";
+
+/** The Library view switch, top right of the Articles page (my brother's ticket e555be87). */
+export function LibraryViewToggle() {
+  const on = useLibraryView();
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => setLibraryView(!on)}
+      title={on ? "Back to the list" : "See the articles as books on shelves"}
+      className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition ${on ? "border-accent bg-accent-soft text-accent" : "border-line bg-panel text-ink hover:border-faint"}`}
+    >
+      <span aria-hidden>📚 </span>Library view
+    </button>
+  );
+}
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
@@ -30,7 +48,7 @@ export function ArticlesBrowser({ articles: published }: { articles: ArticleSumm
   const [trad, setTrad] = useState("");
   const [deep, setDeep] = useState(false);
   const traditions = useMemo(() => [...new Set(articles.flatMap((a) => a.traditions))].sort(), [articles]);
-  const shown = articles.filter((a) => {
+  const shown = useMemo(() => articles.filter((a) => {
     if (vol && a.volume !== vol) return false;
     if (trad && !a.traditions.includes(trad)) return false;
     if (deep && !a.depths.long) return false;
@@ -39,8 +57,9 @@ export function ArticlesBrowser({ articles: published }: { articles: ArticleSumm
     return norm(q)
       .split(/\s+/)
       .every((w) => hay.includes(w));
-  });
+  }), [articles, vol, trad, deep, q]);
   const count = (n: number) => articles.filter((a) => a.volume === n).length;
+  const library = useLibraryView();
   const field = "rounded-lg border border-line bg-panel px-3 py-2 text-sm text-ink";
 
   return (
@@ -77,7 +96,10 @@ export function ArticlesBrowser({ articles: published }: { articles: ArticleSumm
         </div>
       )}
 
-      {articles.length === 0 ? (
+      {articles.length > 0 && shown.length > 0 && library ? (
+        // the whole page as a bookcase: a shelf per volume, the search above still narrowing it
+        <Bookcase articles={shown} current="" wide volumeCounts={Object.fromEntries(VOLUMES.map((v) => [v.n, count(v.n)]))} />
+      ) : articles.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-line bg-panel px-5 py-8 text-center">
           <p className="font-serif text-xl text-ink">The first articles are on their way.</p>
           <p className="mt-2 text-sm">Each will come in up to three depths: a short read, a medium one, and an extensive study.</p>
@@ -109,6 +131,7 @@ export function ArticlesBrowser({ articles: published }: { articles: ArticleSumm
         </ul>
       )}
 
+      {!library && (
       <section className="space-y-3">
         <h2 className="font-serif text-xl font-semibold text-ink">The ten volumes</h2>
         <ol className="grid gap-2 sm:grid-cols-2">
@@ -125,6 +148,7 @@ export function ArticlesBrowser({ articles: published }: { articles: ArticleSumm
           ))}
         </ol>
       </section>
+      )}
     </div>
   );
 }

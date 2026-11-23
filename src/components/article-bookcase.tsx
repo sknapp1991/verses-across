@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
 import { suggestArticles, useReadArticles, useSavedRefs } from "@/lib/article-study";
-import { volumeName, type ArticleSummary } from "@/lib/articles";
+import { VOLUMES, volumeName, type ArticleSummary } from "@/lib/articles";
 
 type Sort = "theme" | "volume" | "new";
 const PREF = "va-bookcase:v1";
@@ -20,15 +20,15 @@ const colourOf = (theme: string) => LEATHER[[...theme].reduce((h, c) => (h * 31 
 const spineTitle = (a: ArticleSummary) => a.spine || a.title.split(":")[0];
 const longest = (a: ArticleSummary) => Math.max(...Object.values(a.depths).map((d) => d?.minutes ?? 0), 1);
 
-function Spine({ a, current, read }: { a: ArticleSummary; current: boolean; read: boolean }) {
+function Spine({ a, current, read, wide }: { a: ArticleSummary; current: boolean; read: boolean; wide?: boolean }) {
   const theme = a.themes[0] ?? "other";
-  const h = Math.min(11, 6.5 + longest(a) / 5); // rem: longer articles stand taller
+  const h = (wide ? 1.45 : 1) * Math.min(11, 6.5 + longest(a) / 5); // rem: longer articles stand taller
   return (
     <Link
       href={`/articles/${a.slug}`}
       title={`${a.title}${read ? " (read)" : ""} · ${theme}`}
       aria-current={current ? "page" : undefined}
-      className={`group relative flex w-8 shrink-0 items-center justify-center overflow-hidden rounded-t-[3px] rounded-b-[2px] px-0.5 py-2 transition hover:-translate-y-1 focus-visible:-translate-y-1 ${
+      className={`group relative flex ${wide ? "w-11" : "w-8"} shrink-0 items-center justify-center overflow-hidden rounded-t-[3px] rounded-b-[2px] px-0.5 py-2 transition hover:-translate-y-1 focus-visible:-translate-y-1 ${
         current ? "-translate-y-1.5 ring-2 ring-amber-300/80" : ""
       } ${read ? "opacity-55 grayscale" : ""}`}
       style={{
@@ -37,7 +37,7 @@ function Spine({ a, current, read }: { a: ArticleSummary; current: boolean; read
         boxShadow: "inset 0 7px 0 -5px #c9a85a, inset 0 -7px 0 -5px #c9a85a, 1px 0 2px rgba(0,0,0,.5)",
       }}
     >
-      <span className="line-clamp-2 text-center font-serif text-[11px] leading-tight text-[#ecd9a0] [text-orientation:mixed] [writing-mode:vertical-rl]" style={{ maxHeight: `${h - 1.2}rem` }}>
+      <span className={`line-clamp-2 text-center font-serif ${wide ? "text-[13px]" : "text-[11px]"} leading-tight text-[#ecd9a0] [text-orientation:mixed] [writing-mode:vertical-rl]`} style={{ maxHeight: `${h - 1.2}rem` }}>
         {spineTitle(a)}
       </span>
       {read && (
@@ -52,40 +52,46 @@ function Spine({ a, current, read }: { a: ArticleSummary; current: boolean; read
   );
 }
 
-function Shelf({ label, books, current, read }: { label: string; books: ArticleSummary[]; current: string; read: Record<string, unknown> }) {
-  if (!books.length) return null;
+function Shelf({ label, books, current, read, wide, empty }: { label: string; books: ArticleSummary[]; current: string; read: Record<string, unknown>; wide?: boolean; empty?: string }) {
+  if (!books.length && !empty) return null;
   // unread first (newest first), read ones at the end of the shelf
   const sorted = [...books].sort((x, y) => Number(!!read[x.slug]) - Number(!!read[y.slug]) || y.date.localeCompare(x.date));
   return (
     <div className="mb-3">
-      <p className="mb-1 truncate px-1 text-[11px] font-semibold uppercase tracking-wide text-[#e9d7a6]/80">{label}</p>
-      <div className="flex flex-wrap items-end gap-[3px] px-1.5 pt-2">
+      <p className={`mb-1 truncate px-1 font-semibold uppercase tracking-wide text-[#e9d7a6]/80 ${wide ? "text-xs" : "text-[11px]"}`}>{label}</p>
+      <div className={`flex flex-wrap items-end px-1.5 pt-2 ${wide ? "min-h-24 gap-1" : "gap-[3px]"}`}>
         {sorted.map((a) => (
-          <Spine key={a.slug} a={a} current={a.slug === current} read={!!read[a.slug]} />
+          <Spine key={a.slug} a={a} current={a.slug === current} read={!!read[a.slug]} wide={wide} />
         ))}
+        {!books.length && empty && <span className="self-end pb-1 pl-1 font-serif text-sm italic text-[#e9d7a6]/45">{empty}</span>}
       </div>
       <div aria-hidden className="h-2.5 rounded-sm shadow-[0_3px_4px_rgba(0,0,0,.55)]" style={{ background: "linear-gradient(#8a5a33, #5e3a1f)" }} />
     </div>
   );
 }
 
-export function Bookcase({ articles, current }: { articles: ArticleSummary[]; current: string }) {
+/**
+ * `wide`: the whole Articles page as a bookcase (Library view, my brother's ticket e555be87): bigger books, a shelf for
+ * every volume (the empty ones "Coming"), arranged by volume to start.
+ */
+export function Bookcase({ articles, current, wide = false, volumeCounts }: { articles: ArticleSummary[]; current: string; wide?: boolean; volumeCounts?: Record<number, number> }) {
   const read = useReadArticles();
   const saved = useSavedRefs();
-  const [sort, setSortState] = useState<Sort>("theme");
+  const pref = wide ? `${PREF}:wide` : PREF;
+  const [sort, setSortState] = useState<Sort>(wide ? "volume" : "theme");
   useEffect(() => {
     try {
-      const s = localStorage.getItem(PREF) as Sort | null;
+      const s = localStorage.getItem(pref) as Sort | null;
       // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's choice is only readable after hydration
       if (s === "theme" || s === "volume" || s === "new") setSortState(s);
     } catch {
       /* fine without */
     }
-  }, []);
+  }, [pref]);
   const setSort = (s: Sort) => {
     setSortState(s);
     try {
-      localStorage.setItem(PREF, s);
+      localStorage.setItem(pref, s);
     } catch {
       /* fine without */
     }
@@ -98,12 +104,15 @@ export function Bookcase({ articles, current }: { articles: ArticleSummary[]; cu
   const shelves = useMemo((): [string, ArticleSummary[]][] => {
     if (sort === "new") return [["Newest", [...list].sort((a, b) => b.date.localeCompare(a.date))]];
     const m = new Map<string, ArticleSummary[]>();
+    // the wide case shows every volume's shelf, the empty ones too
+    // (only volumes with no article at all: one whose books a search hides isn't "coming")
+    if (wide && sort === "volume") for (const v of VOLUMES) if (!volumeCounts?.[v.n]) m.set(`Vol. ${v.n} · ${v.name}`, []);
     for (const a of list) {
       const k = sort === "volume" ? `Vol. ${a.volume} · ${volumeName(a.volume)}` : (a.themes[0] ?? "other");
       m.set(k, [...(m.get(k) ?? []), a]);
     }
     return [...m].sort((x, y) => (sort === "volume" ? x[0].localeCompare(y[0], undefined, { numeric: true }) : y[1].length - x[1].length || x[0].localeCompare(y[0])));
-  }, [list, sort]);
+  }, [list, sort, wide, volumeCounts]);
   const nRead = articles.filter((a) => read[a.slug]).length;
 
   return (
@@ -117,7 +126,8 @@ export function Bookcase({ articles, current }: { articles: ArticleSummary[]; cu
         <p className="font-serif text-sm font-semibold">
           Bookcase{" "}
           <span className="font-sans text-xs font-normal text-[#e9d7a6]/70">
-            {articles.length} articles{nRead ? ` · ${nRead} read` : ""}
+            {articles.length} {articles.length === 1 ? "article" : "articles"}
+            {nRead ? ` · ${nRead} read` : ""}
           </span>
         </p>
         <div className="flex gap-1.5">
@@ -134,6 +144,9 @@ export function Bookcase({ articles, current }: { articles: ArticleSummary[]; cu
             <option value="volume">By volume</option>
             <option value="new">Newest</option>
           </select>
+          {/* (the whole-page case has the page's own Tradition filter above it) */}
+          {!wide && (
+            <>
           <label className="sr-only" htmlFor={`${uid}-trad`}>
             Tradition
           </label>
@@ -150,12 +163,17 @@ export function Bookcase({ articles, current }: { articles: ArticleSummary[]; cu
               </option>
             ))}
           </select>
+            </>
+          )}
         </div>
       </div>
-      {suggested.length > 0 && <Shelf label="Suggested for you" books={suggested} current={current} read={read} />}
-      {shelves.map(([label, books]) => (
-        <Shelf key={label} label={label} books={books} current={current} read={read} />
-      ))}
+      {suggested.length > 0 && <Shelf label="Suggested for you" books={suggested} current={current} read={read} wide={wide} />}
+      {/* (wide: two bookcases side by side on a big screen) */}
+      <div className={wide ? "grid gap-x-4 lg:grid-cols-2" : ""}>
+        {shelves.map(([label, books]) => (
+          <Shelf key={label} label={label} books={books} current={current} read={read} wide={wide} empty={wide && sort === "volume" ? "Coming" : undefined} />
+        ))}
+      </div>
       <p className="px-1 text-[10px] leading-snug text-[#e9d7a6]/60">Colour = theme · greyed = read on this device</p>
     </div>
   );
