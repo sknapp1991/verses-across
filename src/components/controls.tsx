@@ -975,6 +975,11 @@ export function TypographyControls() {
 export function TextMenuButton() {
   return (
     <ToolPopover label="Text: size, font, spacing, contrast, alignment, reading levels and colours" title="Text: size, font, spacing, contrast, alignment, reading levels and colours" text="Text" wide icon={<span aria-hidden className="font-serif text-base font-semibold leading-none">Aa</span>}>
+      {/* the whole app's zoom here too, above Text size (hub ba7299ae: a wide window shows this panel, not the Aa one) */}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Zoom</h3>
+        <ZoomControl />
+      </div>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text size</h3>
         <FontSizeControl />
