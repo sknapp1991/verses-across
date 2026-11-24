@@ -36,6 +36,8 @@ export type Card = {
   book?: { done: number; total: number; of?: { work: string; book: string } } | null;
   /** Chapters of the group's book listened to all the way through (hub 65b00b23). */
   heard?: { done: number; total: number } | null;
+  /** The same for every book on the group's readings, by "work/book" (hub a92da77c: each person views any of them). */
+  books?: Record<string, { studied: number; heard: number; total: number }>;
   /** The scorecard others see when they tap this member's name (only with progress shared). */
   profile?: Profile;
   reading?: { work: string; book: string; chapter: number } | null;
@@ -56,8 +58,11 @@ export type Profile = {
   traditions: number;
   booksDone: number;
 };
-export type Member = Card & { id: string; mine: boolean };
-export type GroupView = { meta: GroupMeta | null; metaEtag: string | null; members: Member[] };
+/** `seen`: when this member's app last wrote their card (opened the group), from the server. */
+export type Member = Card & { id: string; mine: boolean; seen: number };
+/** Who runs the group, by member id (server: src/app/api/group/[gid]/roles/route.ts). Null: no owner yet. */
+export type Roles = { owner: string; mods: Record<string, number>; joined: Record<string, number>; at: number };
+export type GroupView = { meta: GroupMeta | null; metaEtag: string | null; members: Member[]; roles: Roles | null; me: string };
 
 const KEY = "va-groups:v1";
 let groups: MyGroup[] | null = null;
@@ -134,6 +139,17 @@ async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
       for (const k of totals(a).heard.keys()) if (k.startsWith(prefix)) done++;
       card.heard = { done: Math.min(done, total), total };
     } else card.heard = null;
+    // every book on the group's readings (the focus, up next and finished), at most 20
+    const heardKeys = [...totals(a).heard.keys()];
+    const readings = [...(meta?.book ? [meta.book] : []), ...(Array.isArray(meta?.list) ? meta!.list : [])].slice(0, 51);
+    card.books = {};
+    for (const b of readings) {
+      if (!b || typeof b.work !== "string" || typeof b.book !== "string") continue;
+      const p = bookProgress(map, b.work, b.book);
+      const total = p?.total ?? findBook(b.work, b.book)?.chapters ?? 0;
+      const prefix = `${b.work}/${b.book}/`;
+      card.books[`${b.work}/${b.book}`] = { studied: p?.done ?? 0, heard: Math.min(total, heardKeys.filter((k) => k.startsWith(prefix)).length), total };
+    }
     const s = statsNow(a, map);
     const lv = levelOf(xpOf(s));
     card.profile = {
@@ -173,7 +189,7 @@ export async function loadGroup(g: MyGroup, opts: { publishFirst?: boolean } = {
     const res = await fetch(`/api/group/${k.id}`, { cache: "no-store" });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn’t load the group.");
-    return (await res.json()) as { meta: { etag: string; data: string } | null; members: { id: string; data: string }[] };
+    return (await res.json()) as { meta: { etag: string; data: string } | null; members: { id: string; data: string; at?: string }[]; roles?: Roles | null };
   };
   let raw = await get();
   let meta: GroupMeta | null = null;
@@ -188,10 +204,10 @@ export async function loadGroup(g: MyGroup, opts: { publishFirst?: boolean } = {
   const members: Member[] = [];
   for (const m of raw.members) {
     const c = await open<Card>(k.key, fromBase64(m.data)).catch(() => null);
-    if (c) members.push({ ...c, id: m.id, mine: m.id === mine });
+    if (c) members.push({ ...c, id: m.id, mine: m.id === mine, seen: m.at ? Date.parse(m.at) : 0 });
   }
   members.sort((a, b) => (b.weekMins ?? -1) - (a.weekMins ?? -1) || a.name.localeCompare(b.name));
-  return { meta, metaEtag: raw.meta?.etag ?? null, members };
+  return { meta, metaEtag: raw.meta?.etag ?? null, members, roles: raw.roles ?? null, me: mine };
 }
 
 /** Change the group's name or shared book. */
@@ -199,13 +215,45 @@ export async function updateMeta(g: MyGroup, meta: GroupMeta, etag: string | nul
   const k = await keysFor(g.code);
   const res = await fetch(`/api/group/${k.id}`, {
     method: "PUT",
-    headers: { "content-type": "application/octet-stream", ...(etag ? { "if-match": etag } : { "if-none-match": "*" }) },
+    headers: { "content-type": "application/octet-stream", "x-member-key": g.secret, ...(etag ? { "if-match": etag } : { "if-none-match": "*" }) },
     body: (await seal(k.key, meta)) as BodyInit,
   });
   if (res.status === 412) throw new Error("Someone else just changed the group. Try again.");
-  if (!res.ok) throw new Error("Couldn’t save.");
+  if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn’t save.");
   if (meta.name !== g.name) saveGroups(getGroups().map((x) => (x.code === g.code ? { ...x, name: meta.name } : x)));
 }
+
+/** A roles action (claim, mod, unmod, owner, takeover): see the server route. Throws the server's message. */
+export async function groupRole(g: MyGroup, action: "claim" | "mod" | "unmod" | "owner" | "takeover", target?: string): Promise<Roles> {
+  const k = await keysFor(g.code);
+  const res = await fetch(`/api/group/${k.id}/roles`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-member-key": g.secret },
+    body: JSON.stringify({ action, ...(target ? { target } : {}) }),
+  });
+  const j = (await res.json().catch(() => null)) as { roles?: Roles; error?: string } | null;
+  if (!res.ok || !j?.roles) throw new Error(j?.error ?? "Couldn’t change that.");
+  return j.roles;
+}
+
+/** What I may do in a group: run it (owner, moderator), and whether I'm next in line to take it over (the same rule
+ * as the server's takeover, src/app/api/group/[gid]/roles/route.ts). `ownerLeft`: the owner isn't in the group. */
+export function myRole(view: GroupView) {
+  const r = view.roles;
+  const AWAY = 30 * 86_400_000;
+  const now = Date.now();
+  const active = (id: string) => (view.members.find((m) => m.id === id)?.seen ?? 0) > now - AWAY;
+  const owner = !!r && r.owner === view.me;
+  const mod = !!r && view.me in r.mods;
+  let takeover = false;
+  if (r && !owner && !active(r.owner)) {
+    const mods = Object.entries(r.mods).filter(([id]) => active(id)).sort((x, y) => x[1] - y[1]);
+    const members = view.members.filter((m) => active(m.id) && m.id !== r.owner).sort((x, y) => (r.joined[x.id] ?? now) - (r.joined[y.id] ?? now));
+    takeover = (mods.length ? mods[0][0] : members[0]?.id) === view.me;
+  }
+  return { owner, mod, runs: owner || mod, takeover, unclaimed: !r, ownerLeft: !!r && !view.members.some((m) => m.id === r.owner) };
+}
+export const roleOf = (r: Roles | null, id: string) => (r?.owner === id ? "Owner" : r && id in r.mods ? "Moderator" : null);
 
 const secret = () => hex(crypto.getRandomValues(new Uint8Array(24)).buffer);
 
@@ -214,6 +262,8 @@ export async function createGroup(name: string, me: string, book: GroupMeta["boo
   const meta: GroupMeta = { name: g.name, book: book ?? null, created: Date.now() };
   await updateMeta(g, meta, null);
   await publish(g, meta);
+  // (the maker is the owner; once more after a moment if the first try fails)
+  await groupRole(g, "claim").catch(() => new Promise((r) => setTimeout(r, 1500)).then(() => groupRole(g, "claim")).catch(() => {}));
   saveGroups([...getGroups(), g]);
   return g;
 }

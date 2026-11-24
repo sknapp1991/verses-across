@@ -3,6 +3,7 @@
  * member's device holds (sent as x-member-key), so nobody else in the group can overwrite or remove it.
  */
 import { body, HEX64, json, sha256hex, syncBucket } from "@/lib/sync-server";
+import { readRoles } from "@/lib/group-roles-server";
 
 type Ctx = { params: Promise<{ gid: string; member: string }> };
 
@@ -13,7 +14,7 @@ async function check(request: Request, ctx: Ctx) {
   if (key.length < 32 || (await sha256hex(key)) !== member) return json({ error: "Not allowed" }, 403);
   const bucket = await syncBucket(request);
   if (bucket instanceof Response) return bucket;
-  return { bucket, key: `group/${gid}/${member}`, gid };
+  return { bucket, key: `group/${gid}/${member}`, gid, member };
 }
 
 export async function PUT(request: Request, ctx: Ctx) {
@@ -23,7 +24,14 @@ export async function PUT(request: Request, ctx: Ctx) {
   if (data instanceof Response) return data;
   if (!(await c.bucket.head(c.key))) {
     const { objects } = await c.bucket.list({ prefix: `group/${c.gid}/`, limit: 60 });
-    if (objects.length >= 51) return json({ error: "This group is full (50 people)." }, 409);
+    const people = objects.filter((o) => HEX64.test(o.key.slice(`group/${c.gid}/`.length))).length;
+    if (people >= 50) return json({ error: "This group is full (50 people)." }, 409);
+    // a new member: when they joined, for who takes over a group whose owner is away (roles/route.ts)
+    const r = await readRoles(c.bucket, c.gid);
+    if (r && !(c.member in r.roles.joined)) {
+      const roles = { ...r.roles, joined: { ...r.roles.joined, [c.member]: Date.now() } };
+      await c.bucket.put(`group/${c.gid}/roles`, new TextEncoder().encode(JSON.stringify(roles)).buffer as ArrayBuffer, { onlyIf: { etagMatches: r.etag.replace(/^W\//, "").replace(/"/g, "") } });
+    }
   }
   await c.bucket.put(c.key, data);
   return json({ ok: true });

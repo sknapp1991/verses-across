@@ -5,6 +5,7 @@
  * is opened.
  */
 import { GroupChat } from "./group-chat";
+import { sendChat } from "@/lib/group-chat";
 import { StreakIcon } from "./streak-icon";
 import { SITE_NAME } from "@/lib/site";
 import Link from "next/link";
@@ -26,6 +27,9 @@ import {
   type Member,
   type MyGroup,
   readingList,
+  groupRole,
+  myRole,
+  roleOf,
   withAdded,
   withCurrent,
   withFinished,
@@ -236,8 +240,8 @@ function HowGroupsWork() {
     <div className="rounded-lg border border-line px-3 py-2 text-xs text-muted">
       <p className="mb-1 font-semibold text-ink">How groups work</p>
       <ul className="list-disc space-y-0.5 pl-4">
-        <li>The group reads one book at a time; each person&apos;s bars show their chapters of that book.</li>
-        <li>Add more books to the reading list in Settings; when everyone finishes, start the next one.</li>
+        <li>The group has readings; ★ marks the focus. Tap a book to see everyone&apos;s chapters of it (only on your screen).</li>
+        <li>The owner and the moderators they pick add books and set the focus; when everyone finishes one, it&apos;s marked ✓.</li>
         <li>Once someone joins, tap 💬 Chat to talk with the group; tap a name to see their scorecard.</li>
       </ul>
       <button
@@ -341,6 +345,9 @@ function Scorecard({ id, m, onClose }: { id: string; m: Member; onClose: () => v
   );
 }
 
+/** Which of a group's readings this device shows progress for: { group code: "work/book" } (none: the focus). */
+const VIEWING = "va-group-viewing:v1";
+
 function GroupCard({ g }: { g: MyGroup }) {
   const { ref } = useReaderState();
   const [view, setView] = useState<GroupView | null>(null);
@@ -391,29 +398,85 @@ function GroupCard({ g }: { g: MyGroup }) {
   }, [g.code]);
   // the chat saw someone not in the list (or a whisper key it lacks): load the list again, without republishing
   const onStale = useCallback(() => void refresh(false), [refresh]);
-  const book = view?.meta?.book ?? null;
+  const book = view?.meta?.book ?? null; // the focus
   const here = findBook(ref.work, ref.book);
   const unread = useGroupsUnread()[g.code] ?? 0;
   const list = readingList(view?.meta ?? null);
-  // finished together: at least two people sharing their progress OF THIS BOOK (a card says which book it counts),
-  // and every one of them has studied every chapter
-  const sharing =
-    view?.members.filter((m) => book && m.book && m.book.total > 0 && m.book.of && m.book.of.work === book.work && m.book.of.book === book.book) ?? [];
-  const allDone = !!book && sharing.length >= 2 && sharing.every((m) => m.book!.done >= m.book!.total);
-  // switching the current book asks first (it was too easy to replace it by accident): from Settings, or from the list
-  const [confirmSwitch, setConfirmSwitch] = useState(false);
-  const [askSwitch, setAskSwitch] = useState<string | null>(null); // "work/book" of a listed book asked about
-  const save = async (next: GroupMeta, done: string) => {
+  const role = view ? myRole(view) : null;
+  const key = (b: { work: string; book: string }) => `${b.work}/${b.book}`;
+  // a chip's own key: a finished one carries when (the same book read again is a second chip)
+  const chipKey = (b: { work: string; book: string; done?: number }) => (b.done ? `${key(b)}@${b.done}` : key(b));
+  // the group's readings as chips: the focus ★, up next, then finished ✓
+  const chips = [...(book ? [{ ...book, done: 0 }] : []), ...list.next.map((b) => ({ ...b, done: 0 })), ...list.finished];
+  // which book I'm looking at: my own choice, kept on this device; else the focus (hub a92da77c)
+  const [viewing, setViewingState] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const v = (JSON.parse(localStorage.getItem(VIEWING) ?? "{}") as Record<string, string>)[g.code];
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- this device's choice is only readable after hydration
+      if (v) setViewingState(v);
+    } catch {
+      /* fine without */
+    }
+  }, [g.code]);
+  const setViewing = (k: string | null) => {
+    setViewingState(k);
+    try {
+      const all = JSON.parse(localStorage.getItem(VIEWING) ?? "{}") as Record<string, string>;
+      if (k) all[g.code] = k;
+      else delete all[g.code];
+      localStorage.setItem(VIEWING, JSON.stringify(all));
+    } catch {
+      /* fine without */
+    }
+  };
+  const shownBook = chips.find((c) => chipKey(c) === viewing) ?? (book ? { ...book, done: 0 } : chips[0]) ?? null;
+  const shownKey = shownBook ? key(shownBook) : null;
+  const isFocus = !!book && !!shownBook && !shownBook.done && shownKey === key(book);
+  const finishedShown = !!shownBook && shownBook.done > 0;
+  // each member's progress in the book shown (older apps only report the focus book)
+  const progressOf = (m: Member) => {
+    const b = shownKey ? m.books?.[shownKey] : undefined;
+    // (a card comes from someone else's device: numbers only)
+    if (b && [b.studied, b.heard, b.total].every((n) => typeof n === "number" && Number.isFinite(n)) && b.total > 0) return b;
+    if (isFocus && m.book && m.book.total > 0 && (!m.book.of || key(m.book.of) === shownKey)) return { studied: m.book.done, heard: m.heard?.done ?? 0, total: m.book.total };
+    return null;
+  };
+  // finished together: at least two people sharing their progress of the book shown, every one at every chapter
+  const sharing = view?.members.map(progressOf).filter((x): x is { studied: number; heard: number; total: number } => !!x) ?? [];
+  const allDone = !!shownBook && !finishedShown && sharing.length >= 2 && sharing.every((x) => x.studied >= x.total);
+  // the members and their progress fold away, so the chat is easy to read (hub a92da77c)
+  const [membersOpen, setMembersOpen] = useState(true);
+  const [askOwner, setAskOwner] = useState<string | null>(null);
+  /** A short line in the group chat, so everyone sees what changed. */
+  const note = async (text: string) => {
+    if (!view || view.members.length < 2) return;
+    const me = getGroups().find((x) => x.code === g.code) ?? g;
+    await sendChat(me, view.members, `📌 ${text}`).catch(() => {});
+  };
+  const save = async (next: GroupMeta, done: string, chat?: string) => {
     if (!view?.meta) return;
     try {
       await updateMeta(g, next, view.metaEtag);
       toast(done);
+      if (chat) void note(chat);
       void refresh();
     } catch (e) {
       toast((e as Error).message);
       void refresh(false); // (someone else changed it first: load theirs, so trying again works)
     }
   };
+  const roleDo = async (action: "claim" | "mod" | "unmod" | "owner" | "takeover", target: string | undefined, done: string, chat?: string) => {
+    try {
+      await groupRole(g, action, target);
+      toast(done);
+      if (chat) void note(chat);
+      void refresh(false);
+    } catch (e) {
+      toast((e as Error).message);
+    }
+  };
+  const nameOf = (id: string) => view?.members.find((m) => m.id === id)?.name ?? "someone";
 
   return (
     <div className="rounded-xl border border-line">
@@ -423,7 +486,7 @@ function GroupCard({ g }: { g: MyGroup }) {
             <span className="block truncate font-medium text-ink">{view?.meta?.name ?? g.name}</span>
             <span className="block text-xs text-muted">
               {view ? `${view.members.length} ${view.members.length === 1 ? "person" : "people"}` : err ? err : "Loading…"}
-              {book ? ` · reading ${bookLabel(book)}` : ""}
+              {book ? ` · focus: ${bookLabel(book)}` : ""}
             </span>
           </span>
           <span className="text-faint" aria-hidden>
@@ -453,132 +516,208 @@ function GroupCard({ g }: { g: MyGroup }) {
       {open && (
         <div className="space-y-3 border-t border-line px-3 py-2 text-sm">
           <HowGroupsWork />
-          {view && (
-            <p className="rounded-lg bg-raised px-3 py-2 text-xs text-muted">
-              {book ? (
-                <>
-                  <strong className="font-semibold text-ink">Group goal: read {bookLabel(book)} together.</strong> The bars show each
-                  person&apos;s chapters of {bookLabel(book)} <span className="text-accent">studied</span> and{" "}
-                  <span className="text-heard">heard</span>; other reading counts in your own Progress.
-                </>
-              ) : (
-                <>No book yet: open a book and choose it in Settings, or pick one from Up next below.</>
-              )}
-            </p>
-          )}
-          {allDone && view?.meta && (
-            <div className="rounded-lg border border-accent/50 bg-accent-soft px-3 py-2 text-center">
-              <p className="font-serif text-base font-semibold text-ink">🎉 You finished {bookLabel(book)} together!</p>
-              <p className="text-xs text-muted">Everyone sharing their progress has studied every chapter.</p>
-              <button type="button" onClick={() => void save(withFinished(view.meta!), `${bookLabel(book)} is in Finished`)} className={`${btn} mt-2 w-full bg-accent font-medium text-accent-ink`}>
-                {list.next[0] ? `Mark it finished and start ${bookLabel(list.next[0])}` : "Mark it finished"}
+          {role?.takeover && view?.roles && (
+            <div className="rounded-lg border border-accent/50 bg-accent-soft px-3 py-2 text-xs">
+              <p className="text-ink">
+                {role.ownerLeft ? "The group's owner has left." : `${nameOf(view.roles.owner)}, the owner, hasn't been here in 30 days.`} You&apos;re next in line
+                to keep the group going.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  void roleDo(
+                    "takeover",
+                    undefined,
+                    "You're the group's owner now",
+                    role.ownerLeft
+                      ? `${g.me} is now the group's owner (the last owner left).`
+                      : `${g.me} is now the group's owner (${nameOf(view.roles!.owner)} hasn't been here in 30 days and stays a moderator).`,
+                  )
+                }
+                className={`${btn} mt-1.5 w-full bg-accent font-medium text-accent-ink`}
+              >
+                Take over this group
               </button>
             </div>
           )}
-          {view && (
-            <ul className="divide-y divide-line/70">
-              {view.members.map((m) => (
-                <li key={m.id} className="py-2">
-                  <p className="flex items-baseline justify-between gap-2">
-                    {m.profile && typeof m.profile === "object" ? (
-                      // tap a name for that person's scorecard (hub 65b00b23)
-                      <button
-                        type="button"
-                        id={`name-${m.id}`}
-                        onClick={() => setShown(shown === m.id ? null : m.id)}
-                        aria-expanded={shown === m.id}
-                        aria-controls={`scorecard-${m.id}`}
-                        className="-my-1 min-w-0 truncate py-1 text-left font-medium text-ink underline-offset-2 hover:underline"
-                      >
-                        {m.name}
-                        {m.mine ? " (you)" : ""}
-                        <span className="ml-1 text-[10px] text-faint" aria-hidden>
-                          {shown === m.id ? "▴" : "▾"}
-                        </span>
-                      </button>
-                    ) : (
-                      <span className="truncate font-medium text-ink">
-                        {m.name}
-                        {m.mine ? " (you)" : ""}
-                      </span>
-                    )}
-                    <span className="shrink-0 text-[11px] text-faint">{ago(m.at)}</span>
-                  </p>
-                  {m.weekMins != null ? (
-                    <p className="text-xs text-muted">
-                      <StreakIcon days={m.streak ?? 0} /> {m.streak ?? 0} · {m.weekMins} min this week · {m.weekChapters ?? 0} {m.weekChapters === 1 ? "chapter" : "chapters"}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-faint">Progress not shared</p>
-                  )}
-                  {book && m.book && m.book.total > 0 && <BookBar kind="Studied" done={m.book.done} total={m.book.total} book={bookLabel(book) ?? "the group's book"} />}
-                  {book && m.heard && m.heard.total > 0 && <BookBar kind="Heard" done={m.heard.done} total={m.heard.total} book={bookLabel(book) ?? "the group's book"} />}
-                  {shown === m.id && m.profile && (
-                    <Scorecard
-                      id={`scorecard-${m.id}`}
-                      m={m}
-                      onClose={() => {
-                        setShown(null);
-                        document.getElementById(`name-${m.id}`)?.focus(); // back to the name that opened it
-                      }}
-                    />
-                  )}
-                  {m.reading && !m.mine && (
-                    <Link
-                      href={readHref({ work: m.reading.work, book: m.reading.book, chapter: m.reading.chapter }, DEFAULT_VERSIONS[m.reading.work] ?? [])}
-                      className="mt-0.5 block text-xs text-accent underline-offset-2 hover:underline"
-                    >
-                      Reading {chapterTitle(findBook(m.reading.work, m.reading.book), m.reading.chapter, m.reading.book)}: join them
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
 
-          {view?.meta && (list.next.length > 0 || list.finished.length > 0) && (
-            <div className="space-y-1">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">Reading list</h4>
-              {list.next.map((b, i) => (
-                <p key={`${b.work}/${b.book}`} className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="min-w-0 flex-1 truncate text-ink">
-                    {i === 0 ? "Up next: " : ""}
-                    {bookLabel(b)}
-                  </span>
-                  {askSwitch === `${b.work}/${b.book}` ? (
+          {/* the group's readings: tap one to see everyone's progress in it (your own view; the ★ is the group's focus) */}
+          {view?.meta && chips.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="The group's readings: show progress in">
+                {chips.map((c) => {
+                  const k = chipKey(c);
+                  const on = !!shownBook && k === chipKey(shownBook);
+                  const star = !!book && !c.done && key(c) === key(book);
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setViewing(star ? null : k)}
+                      className={`min-h-8 rounded-full border px-2.5 text-xs ${on ? "border-accent bg-accent-soft font-semibold text-accent" : "border-line text-muted hover:text-ink"}`}
+                    >
+                      {bookLabel(c)}
+                      {star ? " ★" : c.done ? " ✓" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+              {book && (
+                <p className="text-[11px] text-faint">
+                  ★ Focus: {bookLabel(book)}
+                  {!isFocus && (
                     <>
-                      <span className="basis-full text-muted">
-                        Switch the group{book ? ` from ${bookLabel(book)}` : ""} to {bookLabel(b)}?{book ? ` ${bookLabel(book)} stays on the list.` : ""}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAskSwitch(null);
-                          void save(withCurrent(view.meta!, b), `The group is now reading ${bookLabel(b)}`);
-                        }}
-                        className="shrink-0 rounded-full bg-accent px-2.5 py-1 font-medium text-accent-ink"
-                      >
-                        Switch
-                      </button>
-                      <button type="button" onClick={() => setAskSwitch(null)} className="shrink-0 text-muted underline-offset-2 hover:underline">
-                        Cancel
+                      {" "}
+                      ·{" "}
+                      <button type="button" onClick={() => setViewing(null)} className="text-accent underline-offset-2 hover:underline">
+                        view it
                       </button>
                     </>
-                  ) : (
-                    <button type="button" onClick={() => setAskSwitch(`${b.work}/${b.book}`)} className="shrink-0 text-accent underline-offset-2 hover:underline">
-                      Read now
-                    </button>
                   )}
-                  <button type="button" onClick={() => void save(withRemoved(view.meta!, b), `${bookLabel(b)} is off the list`)} aria-label={`Take ${bookLabel(b)} off the list`} className="shrink-0 px-1 text-faint hover:text-ink">
-                    ✕
-                  </button>
                 </p>
-              ))}
-              {list.finished.map((b, i) => (
-                <p key={`${b.work}/${b.book}/${b.done}/${i}`} className="text-xs text-muted">
-                  ✓ {bookLabel(b)} <span className="text-faint">· finished together {new Date(b.done).toLocaleDateString()}</span>
-                </p>
-              ))}
+              )}
+            </div>
+          )}
+          {view && (
+            <p className="rounded-lg bg-raised px-3 py-2 text-xs text-muted">
+              {shownBook ? (
+                <>
+                  <strong className="font-semibold text-ink">
+                    {finishedShown ? `${bookLabel(shownBook)}: finished together ${new Date(shownBook.done).toLocaleDateString()}.` : isFocus ? `Group goal: read ${bookLabel(shownBook)} together.` : `Also on the group's readings: ${bookLabel(shownBook)}.`}
+                  </strong>{" "}
+                  The bars show each person&apos;s chapters of {bookLabel(shownBook)} <span className="text-accent">studied</span> and{" "}
+                  <span className="text-heard">heard</span>; other reading counts in your own Progress.
+                </>
+              ) : role?.runs || role?.unclaimed ? (
+                <>No readings yet: open a book, then add it in Settings.</>
+              ) : (
+                <>No readings yet: the group&apos;s owner adds them.</>
+              )}
+            </p>
+          )}
+          {allDone && view?.meta && shownBook && (
+            <div className="rounded-lg border border-accent/50 bg-accent-soft px-3 py-2 text-center">
+              <p className="font-serif text-base font-semibold text-ink">🎉 You finished {bookLabel(shownBook)} together!</p>
+              <p className="text-xs text-muted">Everyone sharing their progress has studied every chapter.</p>
+              {(role?.runs || role?.unclaimed) && isFocus && (
+                <button
+                  type="button"
+                  onClick={() => void save(withFinished(view.meta!), `${bookLabel(shownBook)} is finished`, `${g.me} marked ${bookLabel(shownBook)} finished together 🎉${list.next[0] ? ` The focus is now ${bookLabel(list.next[0])}.` : ""}`)}
+                  className={`${btn} mt-2 w-full bg-accent font-medium text-accent-ink`}
+                >
+                  {list.next[0] ? `Mark it finished and focus on ${bookLabel(list.next[0])}` : "Mark it finished"}
+                </button>
+              )}
+            </div>
+          )}
+          {/* the owner and moderators: the book shown becomes the focus, or comes off the readings */}
+          {view?.meta && shownBook && !finishedShown && !isFocus && (role?.runs || role?.unclaimed) && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewing(null);
+                  void save(withCurrent(view.meta!, shownBook), `The focus is now ${bookLabel(shownBook)}`, `${g.me} made ${bookLabel(shownBook)} the focus.`);
+                }}
+                className={`${btn} flex-1 border border-line text-ink hover:bg-raised`}
+              >
+                Make it the focus ★
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewing(null);
+                  void save(withRemoved(view.meta!, shownBook), `${bookLabel(shownBook)} is off the readings`, `${g.me} took ${bookLabel(shownBook)} off the readings.`);
+                }}
+                className={`${btn} border border-line text-ink hover:bg-raised`}
+              >
+                Remove
+              </button>
+            </div>
+          )}
+
+          {view && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setMembersOpen(!membersOpen)}
+                aria-expanded={membersOpen}
+                className="flex w-full items-center justify-between rounded-md bg-raised px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted hover:text-ink"
+              >
+                <span>
+                  Members &amp; progress <span className="font-normal text-faint">{view.members.length}</span>
+                </span>
+                <span aria-hidden className={`transition ${membersOpen ? "rotate-90" : ""}`}>
+                  ›
+                </span>
+              </button>
+              {membersOpen && (
+                <ul className="divide-y divide-line/70">
+                  {view.members.map((m) => {
+                    const p = progressOf(m);
+                    const r = roleOf(view.roles, m.id);
+                    return (
+                      <li key={m.id} className="py-2">
+                        <p className="flex items-baseline justify-between gap-2">
+                          {m.profile && typeof m.profile === "object" ? (
+                            // tap a name for that person's scorecard (hub 65b00b23)
+                            <button
+                              type="button"
+                              id={`name-${m.id}`}
+                              onClick={() => setShown(shown === m.id ? null : m.id)}
+                              aria-expanded={shown === m.id}
+                              aria-controls={`scorecard-${m.id}`}
+                              className="-my-1 min-w-0 truncate py-1 text-left font-medium text-ink underline-offset-2 hover:underline"
+                            >
+                              {m.name}
+                              {m.mine ? " (you)" : ""}
+                              <span className="ml-1 text-[10px] text-faint" aria-hidden>
+                                {shown === m.id ? "▴" : "▾"}
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="truncate font-medium text-ink">
+                              {m.name}
+                              {m.mine ? " (you)" : ""}
+                            </span>
+                          )}
+                          {r && <span className="shrink-0 rounded-full bg-accent-soft px-2 text-[10px] font-semibold text-accent">{r}</span>}
+                          <span className="ml-auto shrink-0 text-[11px] text-faint">{ago(m.at)}</span>
+                        </p>
+                        {m.weekMins != null ? (
+                          <p className="text-xs text-muted">
+                            <StreakIcon days={m.streak ?? 0} /> {m.streak ?? 0} · {m.weekMins} min this week · {m.weekChapters ?? 0} {m.weekChapters === 1 ? "chapter" : "chapters"}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-faint">Progress not shared</p>
+                        )}
+                        {shownBook && p && <BookBar kind="Studied" done={p.studied} total={p.total} book={bookLabel(shownBook) ?? "the book"} />}
+                        {shownBook && p && <BookBar kind="Heard" done={p.heard} total={p.total} book={bookLabel(shownBook) ?? "the book"} />}
+                        {shownBook && !p && m.weekMins != null && <p className="mt-1 text-[11px] text-faint">No progress in {bookLabel(shownBook)} shown yet.</p>}
+                        {shown === m.id && m.profile && (
+                          <Scorecard
+                            id={`scorecard-${m.id}`}
+                            m={m}
+                            onClose={() => {
+                              setShown(null);
+                              document.getElementById(`name-${m.id}`)?.focus(); // back to the name that opened it
+                            }}
+                          />
+                        )}
+                        {m.reading && !m.mine && (
+                          <Link
+                            href={readHref({ work: m.reading.work, book: m.reading.book, chapter: m.reading.chapter }, DEFAULT_VERSIONS[m.reading.work] ?? [])}
+                            className="mt-0.5 block text-xs text-accent underline-offset-2 hover:underline"
+                          >
+                            Reading {chapterTitle(findBook(m.reading.work, m.reading.book), m.reading.chapter, m.reading.book)}: join them
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           )}
 
@@ -653,48 +792,89 @@ function GroupCard({ g }: { g: MyGroup }) {
                 />
                 Show which chapter I’m reading (so others can join)
               </label>
-              {view?.meta && here && !(book && book.work === ref.work && book.book === ref.book) && (
-                // the book open now: onto the list, or the group's book now (asking first if it replaces one)
-                <div className="space-y-1.5">
+
+              {/* the readings: the owner and moderators add the book open now (or make it the focus) */}
+              {view?.meta && here && (role?.runs || role?.unclaimed) && !chips.some((c) => !c.done && c.work === ref.work && c.book === ref.book) && (
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => void save(withAdded(view.meta!, { work: ref.work, book: ref.book }), `${here.name} is on the reading list`)}
-                    className={`${btn} w-full border border-line text-ink hover:bg-raised`}
+                    onClick={() => void save(withAdded(view.meta!, { work: ref.work, book: ref.book }), `${here.name} is on the readings`, `${g.me} added ${here.name} to the readings.`)}
+                    className={`${btn} flex-1 border border-line text-ink hover:bg-raised`}
                   >
-                    Add {here.name} to the reading list
+                    Add {here.name} to the readings
                   </button>
-                  {book && !confirmSwitch ? (
-                    <button type="button" onClick={() => setConfirmSwitch(true)} className={`${btn} w-full border border-line text-ink hover:bg-raised`}>
-                      Read {here.name} together now
+                  {!book && (
+                    <button
+                      type="button"
+                      onClick={() => void save(withCurrent(view.meta!, { work: ref.work, book: ref.book }), `The focus is now ${here.name}`, `${g.me} made ${here.name} the focus.`)}
+                      className={`${btn} flex-1 bg-accent font-medium text-accent-ink`}
+                    >
+                      Make {here.name} the focus ★
                     </button>
-                  ) : (
-                    <div className={book ? "rounded-lg border border-accent/50 p-2" : ""}>
-                      {book && (
-                        <p className="mb-1.5 text-xs text-muted">
-                          Switch the group from {bookLabel(book)} to {here.name}? {bookLabel(book)} stays on the list, Up next.
-                        </p>
-                      )}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setConfirmSwitch(false);
-                            void save(withCurrent(view.meta!, { work: ref.work, book: ref.book }), `The group is now reading ${here.name}`);
-                          }}
-                          className={`${btn} flex-1 bg-accent font-medium text-accent-ink`}
-                        >
-                          {book ? "Switch" : `Read ${here.name} together`}
-                        </button>
-                        {book && (
-                          <button type="button" onClick={() => setConfirmSwitch(false)} className={`${btn} border border-line text-ink hover:bg-raised`}>
-                            Cancel
-                          </button>
-                        )}
-                      </div>
-                    </div>
                   )}
                 </div>
               )}
+              {view?.roles && !role?.runs && <p className="text-xs text-faint">The group&apos;s owner and moderators choose its readings and focus.</p>}
+
+              {/* a group made before roles: someone takes it on */}
+              {role?.unclaimed && (
+                <div className="rounded-lg border border-line px-2.5 py-2 text-xs text-muted">
+                  <p>This group has no owner yet. The owner (and the moderators they pick) choose the readings and the focus.</p>
+                  <button type="button" onClick={() => void roleDo("claim", undefined, "You're the group's owner", `${g.me} is now the group's owner.`)} className={`${btn} mt-1.5 w-full border border-line text-ink hover:bg-raised`}>
+                    Become this group&apos;s owner
+                  </button>
+                </div>
+              )}
+
+              {/* the owner: moderators, and handing the group over */}
+              {role?.owner && view && view.members.length > 1 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-faint">People</p>
+                  {view.members
+                    .filter((m) => !m.mine)
+                    .map((m) => {
+                      const mod = !!view.roles && m.id in view.roles.mods;
+                      return (
+                        <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs">
+                          <span className="min-w-0 flex-1 truncate text-ink">
+                            {m.name}
+                            {mod ? " · Moderator" : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void roleDo(mod ? "unmod" : "mod", m.id, mod ? `${m.name} isn't a moderator now` : `${m.name} is a moderator now`, mod ? undefined : `${m.name} is now a moderator: they can add readings and set the focus.`)}
+                            className="text-accent underline-offset-2 hover:underline"
+                          >
+                            {mod ? "Remove moderator" : "Make moderator"}
+                          </button>
+                          {askOwner === m.id ? (
+                            <>
+                              <span className="basis-full text-muted">Hand the group to {m.name}? You&apos;ll stay on as a moderator.</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAskOwner(null);
+                                  void roleDo("owner", m.id, `${m.name} is the owner now`, `${g.me} handed the group to ${m.name}, its new owner.`);
+                                }}
+                                className="rounded-full bg-accent px-2.5 py-1 font-medium text-accent-ink"
+                              >
+                                Hand it over
+                              </button>
+                              <button type="button" onClick={() => setAskOwner(null)} className="text-muted underline-offset-2 hover:underline">
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button type="button" onClick={() => setAskOwner(m.id)} className="text-muted underline-offset-2 hover:underline">
+                              Make owner
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={async () => {
