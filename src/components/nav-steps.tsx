@@ -9,6 +9,7 @@
  */
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { chapterTitle, findBook } from "@/lib/catalog";
 
 export const NAV_STEPS = "va-nav-steps";
 export const LAST_READING = "va-last-reading"; // JSON { url, title }
@@ -26,17 +27,16 @@ export function NavSteps() {
     } catch {
       /* fine without */
     }
-    // a chapter: remember it (its title once the page has set it: "Luke 23 · Holy Bible – KJV…" → "Luke 23")
-    if (!/^\/read\/[^/]+\/[^/]+\/\d+/.test(path)) return;
-    const t = setTimeout(() => {
-      try {
-        const title = document.title.split(" · ")[0].trim();
-        sessionStorage.setItem(LAST_READING, JSON.stringify({ url: location.pathname + location.search, path, title }));
-      } catch {
-        /* fine without */
-      }
-    }, 1500);
-    return () => clearTimeout(t);
+    // a chapter of a book in the catalog: remember it at once, titled from the catalog ("Luke 23", "Dhammapada 1")
+    const m = /^\/read\/([^/]+)\/([^/]+)\/(\d+)/.exec(path);
+    const book = m ? findBook(m[1], m[2]) : undefined;
+    if (!m || !book) return;
+    try {
+      const title = chapterTitle(book, Number(m[3]));
+      if (title) sessionStorage.setItem(LAST_READING, JSON.stringify({ url: location.pathname + location.search, path, title }));
+    } catch {
+      /* fine without */
+    }
   }, [path]);
   return null;
 }

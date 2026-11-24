@@ -188,7 +188,10 @@ export function PageChrome({ fallback, top = true }: { fallback: string; top?: b
 function BackToReading() {
   const router = useRouter();
   const [to, setTo] = useState<{ url: string; path: string; title: string } | null>(null);
+  // (the history's length on arrival: a #part link tapped here adds steps, and then one step back stays on this page)
+  const arrived = useRef(0);
   useEffect(() => {
+    arrived.current = window.history.length;
     try {
       const v = JSON.parse(sessionStorage.getItem(LAST_READING) ?? "null");
       // eslint-disable-next-line react-hooks/set-state-in-effect -- this tab's trail is only readable after hydration
@@ -206,11 +209,11 @@ function BackToReading() {
         try {
           prev = sessionStorage.getItem(PREV_PATH) ?? "";
         } catch {}
-        if (prev === to.path && window.history.length > 1) router.back();
+        if (prev === to.path && window.history.length > 1 && window.history.length === arrived.current) router.back();
         else router.push(to.url);
       }}
       title={`Back to ${to.title}, where you were reading`}
-      className="fixed bottom-5 left-4 z-30 mb-[env(safe-area-inset-bottom)] flex max-w-[60vw] animate-[chip-in_200ms_ease-out] items-center gap-1.5 rounded-full border border-accent/50 bg-panel/90 py-2 pl-3 pr-4 text-sm font-medium text-ink shadow-lg backdrop-blur-md hover:bg-raised print:hidden"
+      className="fixed bottom-5 left-4 z-30 mb-[env(safe-area-inset-bottom)] flex min-h-11 max-w-[38vw] animate-[chip-in_200ms_ease-out] items-center gap-1.5 rounded-full border border-accent/50 bg-panel/90 py-2 pl-3 pr-4 text-sm font-medium sm:max-w-xs text-ink shadow-lg backdrop-blur-md hover:bg-raised print:hidden"
     >
       <span aria-hidden className="text-accent">
         ←
