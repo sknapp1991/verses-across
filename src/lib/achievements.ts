@@ -45,10 +45,12 @@ export type Stats = {
   reflections: number;
   /** Study groups this device is in. */
   groups: number;
+  /** Books a study group of mine finished together while I was in it (hub a92da77c). */
+  groupBooks: number;
 };
 
-export type DeviceCounts = { articlesRead: number; articlesDeep: number; reflections: number; groups: number };
-const NO_COUNTS: DeviceCounts = { articlesRead: 0, articlesDeep: 0, reflections: 0, groups: 0 };
+export type DeviceCounts = { articlesRead: number; articlesDeep: number; reflections: number; groups: number; groupBooks: number };
+const NO_COUNTS: DeviceCounts = { articlesRead: 0, articlesDeep: 0, reflections: 0, groups: 0, groupBooks: 0 };
 /** Sent when an article is ticked, a reflection saved, or a study group joined or left (badges update at once). */
 export const PROGRESS_EVENT = "va-progress";
 export const progressChanged = () => typeof window !== "undefined" && window.dispatchEvent(new Event(PROGRESS_EVENT));
@@ -78,7 +80,9 @@ export function deviceCounts(): DeviceCounts {
   const depths = Object.values(r).map((x) => Object.keys(x ?? {}).length);
   const answers = (read("va-article-answers:v1") ?? {}) as Record<string, string>;
   const groups = read("va-groups:v1");
+  const finished = read("va-group-finished:v1"); // (groups.ts records them as it loads each group)
   return {
+    groupBooks: Array.isArray(finished) ? finished.length : 0,
     articlesRead: depths.reduce((a, b) => a + b, 0),
     articlesDeep: depths.filter((n) => n >= 3).length,
     reflections: Object.values(answers).filter((v) => typeof v === "string" && v.trim()).length,
@@ -287,6 +291,10 @@ export const BADGES: Badge[] = [
   tier("reflection-25", "🧘", "Deep thinker", "Answer 25 reflection questions", (s) => s.reflections, 25),
   // Study groups (hub 76210685): joining, and keeping a streak going while in one
   tier("group-1", "🤝", "Better together", "Join or start a study group", (s) => s.groups, 1),
+  // a group's reading list (hub a92da77c): a book marked finished together while you were in the group
+  tier("group-book-1", "🎉", "Finished together", "Finish a book together with your study group", (s) => s.groupBooks, 1),
+  tier("group-book-3", "📚", "Book club", "Finish 3 books together with your study groups", (s) => s.groupBooks, 3),
+  tier("group-book-10", "🏆", "Fellowship of readers", "Finish 10 books together with your study groups", (s) => s.groupBooks, 10),
   tier("group-streak-7", "👥", "Group week", "Be in a study group with a 7-day streak", (s) => (s.groups ? s.bestStreak : 0), 7),
   tier("group-streak-30", "🏕️", "Group month", "Be in a study group with a 30-day streak", (s) => (s.groups ? s.bestStreak : 0), 30),
 ];

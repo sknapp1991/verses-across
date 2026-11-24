@@ -3,10 +3,11 @@ import { SITE_NAME, SITE_SIDE } from "@/lib/site";
 import Link from "next/link";
 import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
+import { totalUnread, useGroupsUnread } from "@/lib/group-unread";
 import { ArticlesIcon, CalendarIcon, LanguagesIcon, LibraryIcon, HomeIcon, MenuIcon, MoreIcon, SearchIcon, ShareIcon, SlidersIcon, UsersIcon } from "./icons";
 import { ReadTogether } from "./read-together";
 import { isShowing, openSheet, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
-import { useSettings } from "@/lib/settings";
+import { useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
 import { openSearch } from "./search-panel";
 import { ChapterSwipeControl, PrivacyControl, SavedSetups, ThemeToggle, VersionChooser, ZoomControl } from "./controls";
 import { useReaderState } from "./use-reader-state";
@@ -31,6 +32,8 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
     if (!home) noteVisit(`${ref.work}/${ref.book}/${ref.chapter}`);
   }, [ref.work, ref.book, ref.chapter, home]);
   const { sheet } = useUi();
+  // (the Study groups button, and its unread check, only where the bar shows it: a computer)
+  const wideBar = useMediaQuery(WIDE_QUERY, false);
 
   return (
     // Phone: menu, where you are, and four buttons (Search, My Study, Listen, More); the rest is in the More
@@ -99,7 +102,7 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
         <PanelButton id="plans" label="Plans and goals" title="Plans & Goals: reading plans and daily goals" icon={<CalendarIcon />} className="hidden desk:flex" />
         {/* Study groups straight to their panel, and Read together (share this spot) on its own button beside it
             (my brother's ticket 62f7e444, Nov 23; they had been one menu since hub 1e79e2c3) */}
-        <PanelButton id="groups" label="Study groups" title="Study groups: shared progress and a group chat" icon={<UsersIcon />} className="hidden desk:flex" />
+        {wideBar && <GroupsButton />}
         <span className="hidden desk:flex">
           <TopPopover label="Read together: share this page" title="Read together: send a link to this exact spot" icon={<ShareIcon />}>
             <ReadTogether />
@@ -163,6 +166,17 @@ function Group({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 const Divider = () => <span aria-hidden className="hidden h-7 w-px shrink-0 bg-line desk:block" />;
+
+/** Study groups, with a dot when a group's chat has something new (hub a92da77c). */
+function GroupsButton() {
+  const n = totalUnread(useGroupsUnread());
+  return (
+    <span className="relative flex">
+      <PanelButton id="groups" label={n ? `Study groups: ${n} new in the chat` : "Study groups"} title="Study groups: shared progress and a group chat" icon={<UsersIcon />} />
+      {n > 0 && <span aria-hidden className="pointer-events-none absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-panel bg-accent" />}
+    </span>
+  );
+}
 
 /** A top-bar button for a panel of the side dock (pressed while it shows). */
 function PanelButton({ id, label, title, icon, onOpen, className = "flex" }: { id: PanelId; label: string; title: string; icon: React.ReactNode; onOpen?: () => void; className?: string }) {

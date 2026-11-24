@@ -17,7 +17,13 @@ import { isPrivate, PrivateModeError } from "./privacy";
 export type Share = { progress: boolean; reading: boolean };
 /** `dh`: this device's key pair for whispers in the group chat (made the first time the chat opens). */
 export type MyGroup = { code: string; name: string; me: string; secret: string; share: Share; joined: number; dh?: { pub: JsonWebKey; priv: JsonWebKey } };
-export type GroupMeta = { name: string; book?: { work: string; book: string } | null; created: number };
+/**
+ * A group's shared settings (sealed with the group key, so the server never reads them). `book` is the book the group
+ * is reading now; `list` (my brother's ticket a92da77c, Nov 23) the others: up next (no `done`), and finished
+ * together (`done`: when). Older apps only know `book`, which stays the current one.
+ */
+export type GroupBook = { work: string; book: string };
+export type GroupMeta = { name: string; book?: GroupBook | null; list?: (GroupBook & { done?: number })[]; created: number };
 export type Card = {
   name: string;
   at: number;
@@ -26,7 +32,8 @@ export type Card = {
   weekMins?: number;
   weekChapters?: number;
   studied?: number;
-  book?: { done: number; total: number } | null;
+  /** Chapters of the group's book studied; `of` says which book (older apps leave it out). */
+  book?: { done: number; total: number; of?: { work: string; book: string } } | null;
   /** Chapters of the group's book listened to all the way through (hub 65b00b23). */
   heard?: { done: number; total: number } | null;
   /** The scorecard others see when they tap this member's name (only with progress shared). */
@@ -117,7 +124,8 @@ async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
     card.weekMins = Math.round((t.read + t.listen) / 60);
     card.weekChapters = t.chapters;
     card.studied = items.filter((i) => i.kind === "studied").length;
-    card.book = meta?.book ? bookProgress(map, meta.book.work, meta.book.book) : null;
+    const bp = meta?.book ? bookProgress(map, meta.book.work, meta.book.book) : null;
+    card.book = bp && meta?.book ? { ...bp, of: { work: meta.book.work, book: meta.book.book } } : null;
     if (meta?.book) {
       // chapters of the book heard (every verse played), at any time
       const prefix = `${meta.book.work}/${meta.book.book}/`;
@@ -170,6 +178,7 @@ export async function loadGroup(g: MyGroup, opts: { publishFirst?: boolean } = {
   let raw = await get();
   let meta: GroupMeta | null = null;
   if (raw?.meta) meta = await open<GroupMeta>(k.key, fromBase64(raw.meta.data)).catch(() => null);
+  if (meta) noteFinished(g, meta);
   if (opts.publishFirst !== false) {
     await publish(g, meta);
     raw = await get();
@@ -241,6 +250,66 @@ export function updateMyGroup(code: string, patch: Partial<Pick<MyGroup, "me" | 
 
 export const inviteLink = (g: MyGroup) => `${location.origin}/#group=${g.code}`;
 export const bookLabel = (b: GroupMeta["book"]) => (b ? (findBook(b.work, b.book)?.name ?? b.book) : null);
+
+/* ---- The reading list (hub a92da77c): add, switch, finish; nothing is replaced by accident ---- */
+
+/** Books the group finished while I was in it, kept on this device for the "Finished together" badges. */
+const FINISHED = "va-group-finished:v1";
+function noteFinished(g: MyGroup, meta: GroupMeta) {
+  try {
+    const have = new Set<string>(JSON.parse(localStorage.getItem(FINISHED) ?? "[]"));
+    const before = have.size;
+    for (const x of Array.isArray(meta.list) ? meta.list : [])
+      if (x && typeof x.done === "number" && x.done >= (g.joined || 0)) have.add(`${g.code}:${x.work}/${x.book}:${x.done}`);
+    if (have.size !== before) {
+      localStorage.setItem(FINISHED, JSON.stringify([...have]));
+      window.dispatchEvent(new Event("va-progress")); // (the badges look again)
+    }
+  } catch {
+    /* fine without */
+  }
+}
+const same = (a: GroupBook | null | undefined, b: GroupBook | null | undefined) => !!a && !!b && a.work === b.work && a.book === b.book;
+const cleanList = (meta: GroupMeta) =>
+  (Array.isArray(meta.list) ? meta.list : []).filter((x) => x && typeof x.work === "string" && typeof x.book === "string").slice(-50); // (the newest 50)
+
+/** The group's books: now, up next (in order) and finished (newest first). */
+export function readingList(meta: GroupMeta | null) {
+  if (!meta) return { now: null, next: [] as GroupBook[], finished: [] as (GroupBook & { done: number })[] };
+  const list = cleanList(meta);
+  return {
+    now: meta.book ?? null,
+    next: list.filter((x) => !x.done && !same(x, meta.book)),
+    finished: list.filter((x): x is GroupBook & { done: number } => typeof x.done === "number").sort((a, b) => b.done - a.done),
+  };
+}
+/** Put a book on the list, after the others (not if it's the current one or already waiting). */
+export function withAdded(meta: GroupMeta, b: GroupBook): GroupMeta {
+  const list = cleanList(meta);
+  if (same(meta.book, b) || list.some((x) => !x.done && same(x, b))) return meta;
+  return { ...meta, list: [...list, { work: b.work, book: b.book }] };
+}
+/** Make a book the current one; the one it replaces goes to the top of Up next. */
+export function withCurrent(meta: GroupMeta, b: GroupBook): GroupMeta {
+  const list = cleanList(meta).filter((x) => x.done || !same(x, b));
+  const was = meta.book;
+  return { ...meta, book: { work: b.work, book: b.book }, list: was && !same(was, b) ? [{ work: was.work, book: was.book }, ...list] : list };
+}
+/** Take a book off Up next. */
+export function withRemoved(meta: GroupMeta, b: GroupBook): GroupMeta {
+  return { ...meta, list: cleanList(meta).filter((x) => x.done || !same(x, b)) };
+}
+/** The current book is finished together: into Finished, and the first of Up next (if any) becomes current. */
+export function withFinished(meta: GroupMeta): GroupMeta {
+  if (!meta.book) return meta;
+  const list = cleanList(meta);
+  const next = list.find((x) => !x.done && !same(x, meta.book));
+  return {
+    ...meta,
+    book: next ? { work: next.work, book: next.book } : null,
+    list: [...list.filter((x) => !(next && !x.done && same(x, next))), { work: meta.book.work, book: meta.book.book, done: Date.now() }],
+  };
+}
 
 /** Keep my cards fresh while reading (every 5 minutes, and when leaving the page). */
 let started = false;

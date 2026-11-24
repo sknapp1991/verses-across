@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ensureWhisperKeys, loadChat, sendChat, type ChatLine } from "@/lib/group-chat";
 import { getGroups, type Member, type MyGroup } from "@/lib/groups";
+import { markChatSeen } from "@/lib/group-unread";
 
 /** A colour per person (the same on every device): a hue from their member id, lightness from the theme. */
 const hue = (id: string) => parseInt(id.slice(0, 6), 16) % 360;
@@ -53,6 +54,8 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
         count.current = r.lines.length;
         etag.current = r.etag;
         setLines(r.lines);
+        // shown: nothing up to the newest line is unread any more (the unread dot, hub a92da77c)
+        if (r.lines.length) markChatSeen(g.code, Math.max(...r.lines.map((l) => l.at)));
         // someone new, or a whisper key we don't have yet: reload the group's list (at most every 20 s)
         if (r.stale && Date.now() - staleAt.current > 20_000) {
           staleAt.current = Date.now();

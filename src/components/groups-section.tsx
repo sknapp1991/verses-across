@@ -25,7 +25,14 @@ import {
   type GroupView,
   type Member,
   type MyGroup,
+  readingList,
+  withAdded,
+  withCurrent,
+  withFinished,
+  withRemoved,
+  type GroupMeta,
 } from "@/lib/groups";
+import { useGroupsUnread } from "@/lib/group-unread";
 import { BADGES } from "@/lib/achievements";
 import { fmtDuration } from "@/lib/activity";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
@@ -212,6 +219,43 @@ function ago(t: number) {
 }
 
 /** Progress in the group's book: "Studied" (chapters marked studied) in the accent colour, "Heard" (listened all the way through) in teal. */
+/** The first time a group is opened on this device: how groups work, in three lines (hub a92da77c). */
+function HowGroupsWork() {
+  const KEY = "va-groups-howto:v1";
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- this device's note is only readable after hydration
+      if (!localStorage.getItem(KEY)) setShown(true);
+    } catch {
+      /* fine without */
+    }
+  }, []);
+  if (!shown) return null;
+  return (
+    <div className="rounded-lg border border-line px-3 py-2 text-xs text-muted">
+      <p className="mb-1 font-semibold text-ink">How groups work</p>
+      <ul className="list-disc space-y-0.5 pl-4">
+        <li>The group reads one book at a time; each person&apos;s bars show their chapters of that book.</li>
+        <li>Add more books to the reading list in Settings; when everyone finishes, start the next one.</li>
+        <li>Once someone joins, tap 💬 Chat to talk with the group; tap a name to see their scorecard.</li>
+      </ul>
+      <button
+        type="button"
+        onClick={() => {
+          setShown(false);
+          try {
+            localStorage.setItem(KEY, "1");
+          } catch {}
+        }}
+        className="mt-1.5 text-accent underline-offset-2 hover:underline"
+      >
+        Got it
+      </button>
+    </div>
+  );
+}
+
 function BookBar({ kind, done, total, book }: { kind: "Studied" | "Heard"; done: number; total: number; book: string }) {
   return (
     <p className="mt-1 flex items-center gap-2 text-[11px] text-muted" role="img" aria-label={`${kind} ${done} of ${total} chapters of ${book}`}>
@@ -349,23 +393,88 @@ function GroupCard({ g }: { g: MyGroup }) {
   const onStale = useCallback(() => void refresh(false), [refresh]);
   const book = view?.meta?.book ?? null;
   const here = findBook(ref.work, ref.book);
+  const unread = useGroupsUnread()[g.code] ?? 0;
+  const list = readingList(view?.meta ?? null);
+  // finished together: at least two people sharing their progress OF THIS BOOK (a card says which book it counts),
+  // and every one of them has studied every chapter
+  const sharing =
+    view?.members.filter((m) => book && m.book && m.book.total > 0 && m.book.of && m.book.of.work === book.work && m.book.of.book === book.book) ?? [];
+  const allDone = !!book && sharing.length >= 2 && sharing.every((m) => m.book!.done >= m.book!.total);
+  // switching the current book asks first (it was too easy to replace it by accident): from Settings, or from the list
+  const [confirmSwitch, setConfirmSwitch] = useState(false);
+  const [askSwitch, setAskSwitch] = useState<string | null>(null); // "work/book" of a listed book asked about
+  const save = async (next: GroupMeta, done: string) => {
+    if (!view?.meta) return;
+    try {
+      await updateMeta(g, next, view.metaEtag);
+      toast(done);
+      void refresh();
+    } catch (e) {
+      toast((e as Error).message);
+      void refresh(false); // (someone else changed it first: load theirs, so trying again works)
+    }
+  };
 
   return (
     <div className="rounded-xl border border-line">
-      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left">
-        <span className="min-w-0">
-          <span className="block truncate font-medium text-ink">{view?.meta?.name ?? g.name}</span>
-          <span className="block text-xs text-muted">
-            {view ? `${view.members.length} ${view.members.length === 1 ? "person" : "people"}` : err ? err : "Loading…"}
-            {book ? ` · reading ${bookLabel(book)}` : ""}
+      <div className="flex items-center gap-1 pr-2">
+        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left">
+          <span className="min-w-0">
+            <span className="block truncate font-medium text-ink">{view?.meta?.name ?? g.name}</span>
+            <span className="block text-xs text-muted">
+              {view ? `${view.members.length} ${view.members.length === 1 ? "person" : "people"}` : err ? err : "Loading…"}
+              {book ? ` · reading ${bookLabel(book)}` : ""}
+            </span>
           </span>
-        </span>
-        <span className="text-faint" aria-hidden>
-          {open ? "▴" : "▾"}
-        </span>
-      </button>
+          <span className="text-faint" aria-hidden>
+            {open ? "▴" : "▾"}
+          </span>
+        </button>
+        {/* the chat in one tap, from the card's first line, with what's new (hub a92da77c) */}
+        {view && view.members.length >= 2 && (
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(true);
+              setCard("chat");
+            }}
+            aria-label={unread ? `Chat: ${unread} new` : "Chat"}
+            className="relative flex min-h-9 shrink-0 items-center gap-1 rounded-full border border-line px-3 text-xs font-medium text-ink hover:bg-raised"
+          >
+            💬 Chat
+            {unread > 0 && (
+              <span aria-hidden className="ml-0.5 rounded-full bg-accent px-1.5 text-[10px] font-semibold tabular-nums text-accent-ink">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
       {open && (
         <div className="space-y-3 border-t border-line px-3 py-2 text-sm">
+          <HowGroupsWork />
+          {view && (
+            <p className="rounded-lg bg-raised px-3 py-2 text-xs text-muted">
+              {book ? (
+                <>
+                  <strong className="font-semibold text-ink">Group goal: read {bookLabel(book)} together.</strong> The bars show each
+                  person&apos;s chapters of {bookLabel(book)} <span className="text-accent">studied</span> and{" "}
+                  <span className="text-heard">heard</span>; other reading counts in your own Progress.
+                </>
+              ) : (
+                <>No book yet: open a book and choose it in Settings, or pick one from Up next below.</>
+              )}
+            </p>
+          )}
+          {allDone && view?.meta && (
+            <div className="rounded-lg border border-accent/50 bg-accent-soft px-3 py-2 text-center">
+              <p className="font-serif text-base font-semibold text-ink">🎉 You finished {bookLabel(book)} together!</p>
+              <p className="text-xs text-muted">Everyone sharing their progress has studied every chapter.</p>
+              <button type="button" onClick={() => void save(withFinished(view.meta!), `${bookLabel(book)} is in Finished`)} className={`${btn} mt-2 w-full bg-accent font-medium text-accent-ink`}>
+                {list.next[0] ? `Mark it finished and start ${bookLabel(list.next[0])}` : "Mark it finished"}
+              </button>
+            </div>
+          )}
           {view && (
             <ul className="divide-y divide-line/70">
               {view.members.map((m) => (
@@ -425,6 +534,52 @@ function GroupCard({ g }: { g: MyGroup }) {
                 </li>
               ))}
             </ul>
+          )}
+
+          {view?.meta && (list.next.length > 0 || list.finished.length > 0) && (
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-faint">Reading list</h4>
+              {list.next.map((b, i) => (
+                <p key={`${b.work}/${b.book}`} className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="min-w-0 flex-1 truncate text-ink">
+                    {i === 0 ? "Up next: " : ""}
+                    {bookLabel(b)}
+                  </span>
+                  {askSwitch === `${b.work}/${b.book}` ? (
+                    <>
+                      <span className="basis-full text-muted">
+                        Switch the group{book ? ` from ${bookLabel(book)}` : ""} to {bookLabel(b)}?{book ? ` ${bookLabel(book)} stays on the list.` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAskSwitch(null);
+                          void save(withCurrent(view.meta!, b), `The group is now reading ${bookLabel(b)}`);
+                        }}
+                        className="shrink-0 rounded-full bg-accent px-2.5 py-1 font-medium text-accent-ink"
+                      >
+                        Switch
+                      </button>
+                      <button type="button" onClick={() => setAskSwitch(null)} className="shrink-0 text-muted underline-offset-2 hover:underline">
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" onClick={() => setAskSwitch(`${b.work}/${b.book}`)} className="shrink-0 text-accent underline-offset-2 hover:underline">
+                      Read now
+                    </button>
+                  )}
+                  <button type="button" onClick={() => void save(withRemoved(view.meta!, b), `${bookLabel(b)} is off the list`)} aria-label={`Take ${bookLabel(b)} off the list`} className="shrink-0 px-1 text-faint hover:text-ink">
+                    ✕
+                  </button>
+                </p>
+              ))}
+              {list.finished.map((b, i) => (
+                <p key={`${b.work}/${b.book}/${b.done}/${i}`} className="text-xs text-muted">
+                  ✓ {bookLabel(b)} <span className="text-faint">· finished together {new Date(b.done).toLocaleDateString()}</span>
+                </p>
+              ))}
+            </div>
           )}
 
           <div className="flex flex-wrap gap-2">
@@ -498,22 +653,47 @@ function GroupCard({ g }: { g: MyGroup }) {
                 />
                 Show which chapter I’m reading (so others can join)
               </label>
-              {view?.meta && here && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await updateMeta(g, { ...view.meta!, book: { work: ref.work, book: ref.book } }, view.metaEtag);
-                      toast(`The group is now reading ${here.name}`);
-                      void refresh();
-                    } catch (e) {
-                      toast((e as Error).message);
-                    }
-                  }}
-                  className={`${btn} w-full border border-line text-ink hover:bg-raised`}
-                >
-                  Read {here.name} together
-                </button>
+              {view?.meta && here && !(book && book.work === ref.work && book.book === ref.book) && (
+                // the book open now: onto the list, or the group's book now (asking first if it replaces one)
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void save(withAdded(view.meta!, { work: ref.work, book: ref.book }), `${here.name} is on the reading list`)}
+                    className={`${btn} w-full border border-line text-ink hover:bg-raised`}
+                  >
+                    Add {here.name} to the reading list
+                  </button>
+                  {book && !confirmSwitch ? (
+                    <button type="button" onClick={() => setConfirmSwitch(true)} className={`${btn} w-full border border-line text-ink hover:bg-raised`}>
+                      Read {here.name} together now
+                    </button>
+                  ) : (
+                    <div className={book ? "rounded-lg border border-accent/50 p-2" : ""}>
+                      {book && (
+                        <p className="mb-1.5 text-xs text-muted">
+                          Switch the group from {bookLabel(book)} to {here.name}? {bookLabel(book)} stays on the list, Up next.
+                        </p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setConfirmSwitch(false);
+                            void save(withCurrent(view.meta!, { work: ref.work, book: ref.book }), `The group is now reading ${here.name}`);
+                          }}
+                          className={`${btn} flex-1 bg-accent font-medium text-accent-ink`}
+                        >
+                          {book ? "Switch" : `Read ${here.name} together`}
+                        </button>
+                        {book && (
+                          <button type="button" onClick={() => setConfirmSwitch(false)} className={`${btn} border border-line text-ink hover:bg-raised`}>
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
               <button
                 type="button"

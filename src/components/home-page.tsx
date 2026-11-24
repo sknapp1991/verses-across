@@ -19,6 +19,7 @@ import { openTour } from "./tour";
 import { BookIcon, CalendarIcon, ColumnsIcon, LibraryIcon, NoteIcon, MailIcon, RocketIcon, SparkIcon, StarIcon, UsersIcon } from "./icons";
 import { useGroups } from "@/lib/groups";
 import { openGroupChat } from "./groups-section";
+import { useGroupsUnread } from "@/lib/group-unread";
 import { SuggestionsTile } from "./home-suggestions";
 
 const library = SITE_SIDE === "library";
@@ -65,6 +66,7 @@ function Tile({ icon, title, children, href, onClick, newTab }: { icon: ReactNod
  */
 function GroupsTile() {
   const groups = useGroups();
+  const unread = useGroupsUnread();
   if (!groups.length)
     return (
       <Tile icon={<UsersIcon width={18} height={18} />} title="Study groups" onClick={() => openPanel("groups")}>
@@ -85,6 +87,9 @@ function GroupsTile() {
             <button type="button" onClick={() => openGroupChat(g.code)} className="flex min-h-9 w-full items-center gap-2 text-left text-sm font-medium text-accent hover:underline">
               <span className="min-w-0 truncate">{g.name}</span>
               <span className="shrink-0">· chat →</span>
+              {(unread[g.code] ?? 0) > 0 && (
+                <span className="shrink-0 rounded-full bg-accent px-1.5 text-[10px] font-semibold tabular-nums text-accent-ink">{unread[g.code]} new</span>
+              )}
             </button>
           </li>
         ))}
