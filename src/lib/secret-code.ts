@@ -65,7 +65,14 @@ export async function open<T>(key: CryptoKey, data: ArrayBuffer | Uint8Array): P
   const b = new Uint8Array(data instanceof Uint8Array ? data : new Uint8Array(data)); // own ArrayBuffer copy
   const plain = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b.slice(0, 12) }, key, b.slice(12)));
   // gzip starts with 1f 8b; older/uncompressed payloads start with "{"
-  const raw = plain[0] === 0x1f && plain[1] === 0x8b ? await pipe(plain, new DecompressionStream("gzip")) : plain;
+  // (Safari before 16.4 has no DecompressionStream: unzipped in JavaScript there, else a group or a sync code made on
+  // another device "didn't unlock"; my brother's ticket d34c3093, Safari 15.6)
+  const raw =
+    plain[0] === 0x1f && plain[1] === 0x8b
+      ? typeof DecompressionStream !== "undefined"
+        ? await pipe(plain, new DecompressionStream("gzip"))
+        : (await import("fflate")).gunzipSync(plain)
+      : plain;
   return JSON.parse(new TextDecoder().decode(raw)) as T;
 }
 
