@@ -997,6 +997,11 @@ export function TextSettingsButton() {
       </div>
       {/* the width right under the layout (columns or stacked): like things together (hub 814f3560) */}
       <WidthControl />
+      {/* the whole app's zoom, above Text size, as in the phone's More sheet (hub ba7299ae) */}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Zoom</h3>
+        <ZoomControl />
+      </div>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Text size</h3>
         <FontSizeControl />
