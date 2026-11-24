@@ -166,28 +166,39 @@ export function XrefPanel({ bookRef, versions, raised }: { bookRef: BookRef; ver
       aria-label="Cross references"
       data-no-swipe
       style={sheetH ? { height: sheetH } : undefined}
-      className={`fixed inset-x-0 z-30 flex h-[55dvh] flex-col overflow-hidden rounded-t-2xl border border-line bg-panel pb-[env(safe-area-inset-bottom)] shadow-2xl ${
+      // Phone: drag the title bar (or the handle above it) up or down, like the other sheets (my brother's ticket
+      // 59e0d9fe: only a thin top edge moved this one); drag it right down to close.
+      onPointerDown={(e) => {
+        const t = e.target as HTMLElement;
+        const top = e.clientY - e.currentTarget.getBoundingClientRect().top;
+        if (!(t.closest("header") || top < 28) || t.closest("button, a, input, select, textarea")) return;
+        const startY = e.clientY;
+        const startH = sheetH ?? window.innerHeight * 0.55;
+        let last = startH;
+        const onMove = (ev: PointerEvent) => {
+          last = Math.min(window.innerHeight - 40, Math.max(window.innerHeight * 0.12, startH - (ev.clientY - startY)));
+          setSheetH(last);
+        };
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          window.removeEventListener("pointercancel", onUp);
+          if (last < window.innerHeight * 0.22) {
+            setSheetH(null);
+            closeXref(); // dragged right down: close, as the other sheets do
+          }
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onUp);
+      }}
+      className={`fixed inset-x-0 z-30 flex h-[55dvh] flex-col overflow-hidden rounded-t-2xl border border-line bg-panel pb-[env(safe-area-inset-bottom)] shadow-2xl [&_header]:cursor-ns-resize [&_header]:touch-none [&_header]:select-none ${
         raised ? "bottom-28" : "bottom-0"
       }`}
     >
-      {/* Phone: drag the top edge to make the sheet taller or shorter. */}
-      <div
-        onPointerDown={(e) => {
-          const startY = e.clientY;
-          const startH = sheetH ?? window.innerHeight * 0.55;
-          const onMove = (ev: PointerEvent) =>
-            setSheetH(Math.min(window.innerHeight - 40, Math.max(window.innerHeight * 0.25, startH - (ev.clientY - startY))));
-          const onUp = () => {
-            window.removeEventListener("pointermove", onMove);
-            window.removeEventListener("pointerup", onUp);
-          };
-          window.addEventListener("pointermove", onMove);
-          window.addEventListener("pointerup", onUp);
-        }}
-        aria-label="Drag to resize"
-        className="absolute inset-x-0 top-0 z-10 flex h-3 touch-none justify-center"
-      >
-        <span className="mt-1 h-1 w-10 rounded-full bg-line" />
+      {/* the handle: a bigger grip at the top edge */}
+      <div aria-hidden className="absolute inset-x-0 top-0 z-10 flex h-6 cursor-ns-resize touch-none justify-center">
+        <span className="mt-1.5 h-1.5 w-12 rounded-full bg-faint/60" />
       </div>
       <XrefBody bookRef={bookRef} versions={versions} phone />
     </section>
