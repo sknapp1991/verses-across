@@ -57,9 +57,11 @@ function Shelf({ label, books, current, read, wide, empty }: { label: string; bo
   // unread first (newest first), read ones at the end of the shelf
   const sorted = [...books].sort((x, y) => Number(!!read[x.slug]) - Number(!!read[y.slug]) || y.date.localeCompare(x.date));
   return (
-    <div className="mb-3">
+    // wide: every shelf the same height (room for the tallest book), its board at the bottom, so shelves side by side
+    // line up whatever the sort or filter (my brother's ticket 4e978791)
+    <div className={wide ? "mb-3 flex h-full flex-col" : "mb-3"}>
       <p className={`mb-1 truncate px-1 font-semibold uppercase tracking-wide text-[#e9d7a6]/80 ${wide ? "text-xs" : "text-[11px]"}`}>{label}</p>
-      <div className={`flex flex-wrap items-end px-1.5 pt-2 ${wide ? "min-h-24 gap-1" : "gap-[3px]"}`}>
+      <div className={`flex flex-wrap items-end px-1.5 pt-2 ${wide ? "min-h-[16.5rem] flex-1 content-end gap-1" : "gap-[3px]"}`}>
         {sorted.map((a) => (
           <Spine key={a.slug} a={a} current={a.slug === current} read={!!read[a.slug]} wide={wide} />
         ))}
