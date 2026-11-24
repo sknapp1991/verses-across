@@ -579,6 +579,8 @@ function GroupCard({ g }: { g: MyGroup }) {
               )}
             </div>
           )}
+          {/* the chat, right under the readings and above the goal, so it's easy to read (hub 994d98e9) */}
+          {card === "chat" && view && view.members.length >= 2 && <GroupChat g={g} members={view.members} onKeysMade={onKeysMade} onStale={onStale} />}
           {view && (
             <p className="rounded-lg bg-raised px-3 py-2 text-xs text-muted">
               {shownBook ? (
@@ -687,7 +689,10 @@ function GroupCard({ g }: { g: MyGroup }) {
                         </p>
                         {m.weekMins != null ? (
                           <p className="text-xs text-muted">
-                            <StreakIcon days={m.streak ?? 0} /> {m.streak ?? 0} · {m.weekMins} min this week · {m.weekChapters ?? 0} {m.weekChapters === 1 ? "chapter" : "chapters"}
+                            {/* spelled out (hub 994d98e9): the level, the streak, then this week's time and chapters (any book) */}
+                            {m.profile && typeof m.profile.level === "number" ? `Level ${m.profile.level} · ` : ""}
+                            {m.streak ?? 0} day streak <StreakIcon days={m.streak ?? 0} /> · {m.weekMins} min this week · {m.weekChapters ?? 0}{" "}
+                            {m.weekChapters === 1 ? "chapter" : "chapters"} this week (any book)
                           </p>
                         ) : (
                           <p className="text-xs text-faint">Progress not shared</p>
@@ -749,7 +754,7 @@ function GroupCard({ g }: { g: MyGroup }) {
           </div>
 
           {card === "invite" && <Invite g={g} />}
-          {card === "chat" && view && view.members.length >= 2 && <GroupChat g={g} members={view.members} onKeysMade={onKeysMade} onStale={onStale} />}
+          {/* (the chat sits higher up, above the goal: hub 994d98e9) */}
 
           {settings && (
             <div className="space-y-2 rounded-lg border border-line px-3 py-2">
