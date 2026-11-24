@@ -667,10 +667,15 @@ function LevelCard({ stats }: { stats: Stats }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-serif text-xl font-semibold leading-tight text-ink">
-            Level {l.level} <span className="text-base font-normal text-muted">· {l.title}</span>
+            Level {l.level}{" "}
+            <span className="text-base font-normal text-muted">
+              · {l.title}
+              {l.ranks > 1 ? `, rank ${l.rank} of ${l.ranks}` : ""}
+            </span>
           </p>
           <p className="text-xs text-muted">
             {l.to ? `${(l.to - xp).toLocaleString()} XP to level ${l.level + 1}` : "The highest level. Well done!"}
+            {l.next ? ` · ${l.next.title} at level ${l.next.at}` : ""}
           </p>
         </div>
       </div>

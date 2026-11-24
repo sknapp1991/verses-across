@@ -337,13 +337,20 @@ const TITLES: [number, string][] = [
   [1, "Seeker"],
 ];
 
-export type LevelInfo = { level: number; title: string; xp: number; from: number; to: number | null; progress: number };
+/** `rank`: the level within its title ("Reader, rank 5 of 10"); `next`: the next title and the level it starts at. */
+export type LevelInfo = { level: number; title: string; rank: number; ranks: number; next: { title: string; at: number } | null; xp: number; from: number; to: number | null; progress: number };
 export function levelOf(xp: number): LevelInfo {
   let level = 1;
   while (level < MAX_LEVEL && xp >= xpForLevel(level + 1)) level++;
   const from = xpForLevel(level);
   const to = level < MAX_LEVEL ? xpForLevel(level + 1) : null;
-  return { level, title: TITLES.find(([n]) => level >= n)![1], xp, from, to, progress: to ? (xp - from) / (to - from) : 1 };
+  const i = TITLES.findIndex(([n]) => level >= n);
+  const [start, title] = TITLES[i];
+  const next = i > 0 ? { title: TITLES[i - 1][1], at: TITLES[i - 1][0] } : null;
+  // the level within the title (my brother's ticket cd8f20f6): Reader is levels 10–19, so level 14 is its rank 5 of 10
+  const rank = level - start + 1;
+  const ranks = next ? next.at - start : MAX_LEVEL - start + 1;
+  return { level, title, rank, ranks, next, xp, from, to, progress: to ? (xp - from) / (to - from) : 1 };
 }
 
 /* Announced level (so a level-up is celebrated once). */

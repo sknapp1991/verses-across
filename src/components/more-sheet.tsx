@@ -50,7 +50,7 @@ import { OfflineDownloadsButton } from "./downloads-dialog";
 import { TourButton } from "./tour";
 import { InstallAppButton } from "./install-app";
 import { FeedbackButton } from "./feedback-dialog";
-import { useGoalRing, useLevel } from "./progress-panel";
+import { useLevel } from "./progress-panel";
 import { useShareHere } from "./read-together";
 
 export function MoreSheet() {
@@ -349,12 +349,12 @@ function Tile({
   );
 }
 
-/** Progress: the trophy with today's goal as a ring and the level in the corner, like the desktop button. */
+/** Progress: the trophy with the progress to the next level as a ring and the level in the corner, like the desktop button. */
 function ProgressTile() {
-  const ring = useGoalRing();
-  const { level } = useLevel();
+  const { level, progress } = useLevel();
+  const ring = level >= 60 ? 1 : progress;
   const c = 2 * Math.PI * 15;
-  const goal = ring == null ? "" : `, today's goal ${Math.round(ring * 100)}%`;
+  const goal = `, ${Math.round(ring * 100)}% to the next level`;
   return (
     <button
       type="button"

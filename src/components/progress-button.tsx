@@ -6,16 +6,17 @@
 import { ProgressGlyph } from "./trophy-icon";
 import { isShowing, togglePanel, useUi } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
-import { useGoalRing, useLevel } from "./progress-panel";
+import { useLevel } from "./progress-panel";
 
 export function ProgressButton() {
   const u = useUi();
   const { xrefMode } = useSettings();
-  const ring = useGoalRing();
-  const { level } = useLevel();
+  // the ring: progress to the next level, like the XP bar in the panel (my brother's ticket cd8f20f6; it was today's goal)
+  const { level, progress, title, rank, ranks } = useLevel();
+  const ring = level >= 60 ? 1 : progress;
   const on = isShowing(u, xrefMode, "progress");
   const c = 2 * Math.PI * 19;
-  const goal = ring == null ? "" : `, today's goal ${Math.round(ring * 100)}%`;
+  const goal = `, ${title}${ranks > 1 ? ` rank ${rank} of ${ranks}` : ""}, ${Math.round(ring * 100)}% to the next level`;
   return (
     <button
       type="button"
@@ -28,7 +29,7 @@ export function ProgressButton() {
       }`}
     >
       <ProgressGlyph size={20} />
-      {ring != null && ring > 0 && (
+      {ring > 0 && (
         <svg viewBox="0 0 44 44" aria-hidden className="pointer-events-none absolute inset-0 -rotate-90">
           <circle cx="22" cy="22" r="19" fill="none" stroke="var(--line)" strokeWidth="2" />
           <circle cx="22" cy="22" r="19" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeDasharray={`${c * ring} ${c}`} />
