@@ -6,8 +6,8 @@
  "volume": 3,
  "traditions": ["Judaism", "Christianity", "Islam", "Hinduism", "Buddhism", "Taoism", "Confucianism", "Philosophy", "Psychology"],
  "themes": ["truth", "deception", "honesty", "meaning", "freedom", "sacrifice"],
- "status": "review",
+ "status": "published",
  "date": "2026-11-22",
  "summary": "What do the scriptures and the philosophers mean by truth? Its pillars, why we are drawn to it, the parable of the painted well, how believers and non-believers see it, and what it asks of us.",
- "aiNote": "Rough draft for review: the Verses Across team's own text, edited and fact-checked with AI. Scripture is quoted from the public-domain translations on this site (King James Version, Pickthall's Qur'an, Muller's Upanishads, Legge's Tao Te Ching)."
+ "aiNote": "The Verses Across team's own text, edited and fact-checked with AI. Scripture is quoted from the public-domain translations on this site (King James Version, Pickthall's Qur'an, Muller's Upanishads, Legge's Tao Te Ching)."
 }
