@@ -9,7 +9,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
 import { addGoalMet, BADGES, deviceCountsKey, parseCounts, subscribeDeviceCounts, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
 import { finishedPlans, useStartedPlans } from "@/lib/plans";
-import { findBook, scriptureShelves } from "@/lib/catalog";
+import { catalog, findBook, scriptureShelves } from "@/lib/catalog";
+import { SITE_SIDE } from "@/lib/site";
 import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
 import { StreakIcon } from "./streak-icon";
 import { useStudy } from "@/lib/study";
@@ -318,13 +319,27 @@ function AddGoal({ onDone }: { onDone: () => void }) {
   const in30 = new Date();
   in30.setDate(in30.getDate() + 30);
   const [by, setBy] = useState(dayKey(in30));
-  const book = findBook(ref.work, ref.book);
+  // the book: the one open now by default, or any other picked here (my brother's ticket 0a7d88e7)
+  const [pick, setPick] = useState<{ work: string; book: string } | null>(null);
+  const target_ = pick ?? { work: ref.work, book: ref.book };
+  const book = findBook(target_.work, target_.book);
+  const shelves = SITE_SIDE === "library" ? catalog.religions.filter((r) => !scriptureShelves.includes(r)) : scriptureShelves;
+  // the collection the chosen book is on (for the first list), and its books (for the second)
+  const collKey = (rid: string, cid: string) => `${rid}/${cid}`;
+  const where =
+    shelves.flatMap((r) => r.collections.filter((c) => c.items.some((it) => it.work === target_.work && it.id === target_.book)).map((c) => collKey(r.id, c.id)))[0] ?? "";
+  const [coll, setColl] = useState<string>("");
+  const shownColl = coll || where;
+  const collItems = (() => {
+    const [rid, cid] = shownColl.split("/");
+    return (shelves.find((r) => r.id === rid)?.collections.find((c) => c.id === cid)?.items ?? []).filter((it) => it.work && it.chapters && it.status !== "coming-soon");
+  })();
   const minutes = metric === "time" || metric === "read" || metric === "listen";
   const field = "h-10 rounded-lg border border-line bg-raised px-2 text-base md:text-sm";
   const save = () => {
     if (kind === "book") {
       if (!book) return;
-      addGoal({ type: "book", work: ref.work, book: ref.book, by, from: dayKey() });
+      addGoal({ type: "book", work: target_.work, book: target_.book, by, from: dayKey() });
     } else {
       if (!(target > 0)) return;
       addGoal({ type: "amount", metric, period, target: Math.round(target) });
@@ -357,19 +372,68 @@ function AddGoal({ onDone }: { onDone: () => void }) {
           </select>
           {!minutes && metric === "chapters" && <p className="w-full text-xs text-faint">A chapter counts once you’ve read it for 30 seconds.</p>}
         </div>
-      ) : book ? (
-        <label className="flex flex-wrap items-center gap-2">
-          <span>
-            Study all {book.chapters} chapters of <strong className="text-ink">{book.name}</strong> by
-          </span>
-          <input type="date" value={by} min={dayKey()} onChange={(e) => setBy(e.target.value)} className={field} />
-          <span className="w-full text-xs text-faint">Open another book first to pick it instead. Chapters count when you mark them as studied.</span>
-        </label>
       ) : (
-        <p className="text-muted">Open a book first, then come back here.</p>
+        <div className="space-y-2">
+          {/* which book: the open one to start with; any other from these two lists */}
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={shownColl}
+              onChange={(e) => {
+                setColl(e.target.value);
+                const [rid, cid] = e.target.value.split("/");
+                const first = shelves.find((r) => r.id === rid)?.collections.find((c) => c.id === cid)?.items.find((it) => it.work && it.chapters && it.status !== "coming-soon");
+                if (first?.work) setPick({ work: first.work, book: first.id });
+              }}
+              aria-label="Collection"
+              className={`${field} min-w-0 flex-1`}
+            >
+              {!shownColl && <option value="">Pick a collection…</option>}
+              {shelves.map((r) => (
+                <optgroup key={r.id} label={r.name}>
+                  {r.collections.map((c) => (
+                    <option key={c.id} value={collKey(r.id, c.id)}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            {collItems.length > 0 && (
+              <select
+                value={book && collItems.some((it) => it.work === target_.work && it.id === target_.book) ? `${target_.work}/${target_.book}` : ""}
+                onChange={(e) => {
+                  const [w, b] = e.target.value.split("/");
+                  if (w && b) setPick({ work: w, book: b });
+                }}
+                aria-label="Book"
+                className={`${field} min-w-0 flex-1`}
+              >
+                {!collItems.some((it) => it.work === target_.work && it.id === target_.book) && <option value="">Pick a book…</option>}
+                {collItems.map((it) => (
+                  <option key={`${it.work}/${it.id}`} value={`${it.work}/${it.id}`}>
+                    {it.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          {book ? (
+            <label className="flex flex-wrap items-center gap-2">
+              <span>
+                Study all {book.chapters} chapters of <strong className="text-ink">{book.name}</strong> by
+              </span>
+              <input type="date" value={by} min={dayKey()} onChange={(e) => setBy(e.target.value)} className={field} />
+              <span className="w-full text-xs text-faint">
+                Chapters count when you mark them as studied. For more books, set one goal for each.
+              </span>
+            </label>
+          ) : (
+            <p className="text-muted">Pick a book above.</p>
+          )}
+        </div>
       )}
       <div className="flex gap-2">
-        <button type="button" onClick={save} className="min-h-10 flex-1 rounded-lg bg-accent font-medium text-accent-ink">
+        <button type="button" onClick={save} disabled={kind === "book" && !book} className="min-h-10 flex-1 rounded-lg bg-accent font-medium text-accent-ink disabled:opacity-50">
           Set goal
         </button>
         <button type="button" onClick={onDone} className="min-h-10 rounded-lg px-4 text-muted hover:bg-raised">
