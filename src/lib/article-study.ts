@@ -147,3 +147,33 @@ export function useLibraryView(): boolean {
     () => false,
   );
 }
+
+/* ---- The bookcase in HD (my brother's ticket 126db598): textures and spine details; SD (the plain one) by default ---- */
+const HD = "va-bookcase-hd:v1";
+const hdSubs = new Set<() => void>();
+function readHd(): boolean {
+  try {
+    return localStorage.getItem(HD) === "1";
+  } catch {
+    return false;
+  }
+}
+export function setBookcaseHd(on: boolean) {
+  try {
+    if (on) localStorage.setItem(HD, "1");
+    else localStorage.removeItem(HD);
+  } catch {
+    /* fine without */
+  }
+  hdSubs.forEach((l) => l());
+}
+export function useBookcaseHd(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      hdSubs.add(l);
+      return () => hdSubs.delete(l);
+    },
+    readHd,
+    () => false,
+  );
+}
