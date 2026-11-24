@@ -499,7 +499,7 @@ function GroupCard({ g }: { g: MyGroup }) {
             type="button"
             onClick={() => {
               setOpen(true);
-              setCard("chat");
+              setTimeout(() => document.getElementById(`group-chat-${g.code}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
             }}
             aria-label={unread ? `Chat: ${unread} new` : "Chat"}
             className="relative flex min-h-9 shrink-0 items-center gap-1 rounded-full border border-line px-3 text-xs font-medium text-ink hover:bg-raised"
@@ -579,15 +579,30 @@ function GroupCard({ g }: { g: MyGroup }) {
               )}
             </div>
           )}
-          {/* the chat, right under the readings and above the goal, so it's easy to read (hub 994d98e9) */}
-          {card === "chat" && view && view.members.length >= 2 && <GroupChat g={g} members={view.members} onKeysMade={onKeysMade} onStale={onStale} />}
+          {/* the chat, right under the readings and above the goal (hub 994d98e9), always shown: no button (hub e233bcc5) */}
+          {view && view.members.length >= 2 && (
+            <div id={`group-chat-${g.code}`} className="scroll-mt-4">
+              <GroupChat g={g} members={view.members} onKeysMade={onKeysMade} onStale={onStale} />
+            </div>
+          )}
           {view && (
-            <p className="rounded-lg bg-raised px-3 py-2 text-xs text-muted">
-              {shownBook ? (
-                <>
+            // one line; the bars' explanation folded behind ⓘ (hub e233bcc5: the panel felt cluttered)
+            <details className="rounded-lg bg-raised px-3 py-2 text-xs text-muted">
+              <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                {shownBook ? (
                   <strong className="font-semibold text-ink">
                     {finishedShown ? `${bookLabel(shownBook)}: finished together ${new Date(shownBook.done).toLocaleDateString()}.` : isFocus ? `Group goal: read ${bookLabel(shownBook)} together.` : `Also on the group's readings: ${bookLabel(shownBook)}.`}
-                  </strong>{" "}
+                  </strong>
+                ) : (
+                  <span>No readings yet</span>
+                )}{" "}
+                <span aria-hidden className="text-faint">
+                  ⓘ
+                </span>
+              </summary>
+              <p className="mt-1">
+              {shownBook ? (
+                <>
                   The bars show each person&apos;s chapters of {bookLabel(shownBook)} <span className="text-accent">studied</span> and{" "}
                   <span className="text-heard">heard</span>; other reading counts in your own Progress.
                 </>
@@ -596,7 +611,8 @@ function GroupCard({ g }: { g: MyGroup }) {
               ) : (
                 <>No readings yet: the group&apos;s owner adds them.</>
               )}
-            </p>
+              </p>
+            </details>
           )}
           {allDone && view?.meta && shownBook && (
             <div className="rounded-lg border border-accent/50 bg-accent-soft px-3 py-2 text-center">
@@ -735,16 +751,6 @@ function GroupCard({ g }: { g: MyGroup }) {
             >
               Invite
             </button>
-            {view && view.members.length >= 2 && (
-              <button
-                type="button"
-                onClick={() => setCard(card === "chat" ? null : "chat")}
-                aria-pressed={card === "chat"}
-                className={`${btn} flex-1 border border-line ${card === "chat" ? "bg-accent-soft text-accent" : "text-ink hover:bg-raised"}`}
-              >
-                Chat
-              </button>
-            )}
             <button type="button" onClick={() => void refresh()} className={`${btn} border border-line text-ink hover:bg-raised`}>
               Refresh
             </button>

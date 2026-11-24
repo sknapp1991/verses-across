@@ -248,11 +248,15 @@ export function GroupChat({ g, members, onKeysMade, onStale }: { g: MyGroup; mem
           Send
         </button>
       </form>
-      <p id={`chat-help-${g.code}`} className="text-[11px] text-faint">
-        /w name message whispers to one person; /r replies to the last one who whispered you; Tab after /w goes to the
-        next name. Anyone with this group&rsquo;s code can read the chat; a whisper only the two of you. Messages stay
-        after someone leaves.
-      </p>
+      {/* folded away, so the panel stays tidy (my brother's ticket e233bcc5) */}
+      <details className="text-[11px] text-faint">
+        <summary className="cursor-pointer select-none hover:text-muted">How the chat works ⓘ</summary>
+        <p id={`chat-help-${g.code}`} className="mt-1">
+          /w name message whispers to one person; /r replies to the last one who whispered you; Tab after /w goes to the
+          next name. Anyone with this group&rsquo;s code can read the chat; a whisper only the two of you. Messages stay
+          after someone leaves.
+        </p>
+      </details>
     </div>
   );
 }
