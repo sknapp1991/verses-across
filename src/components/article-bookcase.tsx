@@ -23,13 +23,14 @@ const longest = (a: ArticleSummary) => Math.max(...Object.values(a.depths).map((
 /* ---- HD (my brother's ticket 126db598): textures drawn by the browser (SVG noise: nothing to download), leather spines
    with raised bands, gold rules and a title label, widths from the article's length, the odd book leaning ---- */
 const svg = (s: string) => `url("data:image/svg+xml,${encodeURIComponent(s)}")`;
-/** Wood grain: long stretched noise, darkened in streaks. */
+/** Wood grain: long stretched noise as dark, see-through streaks over the wood colour underneath. (The SVG's own "#"
+ * is encoded by encodeURIComponent; encoded twice, the filter breaks and the layer is solid black.) */
 const WOOD = svg(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='0.004 0.09' numOctaves='4' seed='7'/><feColorMatrix values='0 0 0 0 0.16  0 0 0 0 0.09  0 0 0 0 0.04  0 0 0 1.1 -0.35'/></filter><rect width='100%' height='100%' filter='url(%23w)'/></svg>`,
+  `<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='0.004 0.09' numOctaves='4' seed='7'/><feColorMatrix values='0 0 0 0 0.12  0 0 0 0 0.06  0 0 0 0 0.02  1.3 0 0 0 -0.45'/></filter><rect width='100%' height='100%' filter='url(#w)'/></svg>`,
 );
 /** Leather: fine grain, a little light and dark. */
 const LEATHER_GRAIN = svg(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='3'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 -0.12'/></filter><rect width='100%' height='100%' filter='url(%23l)'/></svg>`,
+  `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='l'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='3'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.6 0 0 0 -0.18'/></filter><rect width='100%' height='100%' filter='url(#l)'/></svg>`,
 );
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 11);
 /** A gold raised band across the spine. */
