@@ -21,6 +21,20 @@ export function count(kind: "view" | "play" | "download", work: string, versions
   void fetch("/api/count", { method: "POST", body, headers: { "content-type": "application/json" }, keepalive: true }).catch(() => {});
 }
 
+/** An article opened: once per tab per day for the same article (counts only published ones; the server checks). */
+export function countArticle(slug: string) {
+  const k = `${new Date().toISOString().slice(0, 10)}|article|${slug}`;
+  if (seen.has(k) || typeof window === "undefined" || process.env.NODE_ENV !== "production" || isPrivate()) return;
+  seen.add(k);
+  const body = JSON.stringify({ kind: "article", slug });
+  try {
+    if (navigator.sendBeacon?.("/api/count", new Blob([body], { type: "application/json" }))) return;
+  } catch {
+    /* fall through */
+  }
+  void fetch("/api/count", { method: "POST", body, headers: { "content-type": "application/json" }, keepalive: true }).catch(() => {});
+}
+
 /** Once per tab per day for the same chapter and versions (re-renders and quick back-and-forth don't add up). */
 export function countOnce(kind: "view" | "play", key: string, work: string, versions: string[]) {
   const k = `${new Date().toISOString().slice(0, 10)}|${kind}|${key}|${versions.join(",")}`;

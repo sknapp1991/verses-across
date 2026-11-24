@@ -11,6 +11,7 @@ import { HomeAndBack, PageChrome } from "@/components/page-chrome";
 import { DEPTH_LABEL, DEPTHS, volumeName, type Article, type ArticleSummary, type Depth, type StudyRef } from "@/lib/articles";
 import type { FoundRef } from "@/lib/refs";
 import { articleStudyChanged } from "@/lib/article-study";
+import { countArticle } from "@/lib/count";
 import { FurtherStudy, RefMention, ShareBar, StudyGuide } from "@/components/article-study";
 import { Bookcase } from "@/components/article-bookcase";
 
@@ -241,6 +242,10 @@ function pickDepth(article: Article): Depth {
  * for the next article, shareable with ?depth=; a reading-progress bar; contents for the longer depths.
  */
 export function ArticleReader({ article, library = [] }: { article: Article; library?: ArticleSummary[] }) {
+  // counted (anonymously, once a day in this tab) for the bookcase's "Most read" shelf: published articles only
+  useEffect(() => {
+    if (article.status === "published") countArticle(article.slug);
+  }, [article.slug, article.status]);
   const have = DEPTHS.filter((d) => article.tiers[d]);
   const [depth, setDepth] = useState<Depth>(have.includes("medium") ? "medium" : have[0]);
   const [progress, setProgress] = useState(0);

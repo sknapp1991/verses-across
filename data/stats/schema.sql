@@ -2,7 +2,7 @@
 -- One row per day + kind + work + version; nothing about any person (no IPs, IDs, cookies or times of day).
 CREATE TABLE IF NOT EXISTS daily (
   day TEXT NOT NULL,      -- YYYY-MM-DD (UTC)
-  kind TEXT NOT NULL,     -- view | play | download
+  kind TEXT NOT NULL,     -- view | play | download | article (work "articles", version = the article's slug)
   work TEXT NOT NULL,     -- e.g. bible
   version TEXT NOT NULL,  -- e.g. kjv
   lang TEXT NOT NULL,     -- the version's language, e.g. en

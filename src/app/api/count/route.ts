@@ -1,12 +1,16 @@
 /**
  * Anonymous counts: one chapter view, read-along play or offline download, added to that day's total
- * for the work and version (D1 database versesacross-stats, binding STATS_DB; table in
+ * for the work and version, or an article opened (kind "article": work "articles", version = its slug; Nov 24) (D1 database versesacross-stats, binding STATS_DB; table in
  * data/stats/schema.sql). Nothing about the visitor is stored: no IP, no ID, no time of day. The IP is
  * used only for the rate limit and never stored. Only the site's own pages can send counts (a naive
  * script is refused; counts are approximate by nature). Sent by src/lib/count.ts.
  */
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { catalog } from "@/lib/catalog";
+import articleIndex from "../../../../public/articles/index.json";
+
+/** Articles that can be counted: the published ones (a preview in review isn't). Skylar's OK, Nov 24 (hub e555be87). */
+const ARTICLES = new Set((articleIndex as { slug: string; status: string }[]).filter((a) => a.status === "published").map((a) => a.slug));
 
 type D1 = { prepare(q: string): { bind(...v: unknown[]): unknown }; batch(s: unknown[]): Promise<unknown> };
 type Limiter = { limit(o: { key: string }): Promise<{ success: boolean }> };
@@ -35,6 +39,16 @@ export async function POST(request: Request) {
     body = JSON.parse(raw);
   } catch {
     return new Response(null, { status: 400 });
+  }
+  // an article read: one more for that article today (same table; version = the article's slug)
+  if (body.kind === "article") {
+    const slug = typeof (body as { slug?: unknown }).slug === "string" ? (body as { slug: string }).slug : "";
+    if (!ARTICLES.has(slug)) return new Response(null, { status: 400 });
+    const day = new Date().toISOString().slice(0, 10);
+    await env.STATS_DB.batch([
+      env.STATS_DB.prepare("INSERT INTO daily (day, kind, work, version, lang, n) VALUES (?, 'article', 'articles', ?, '*', 1) ON CONFLICT (day, kind, work, version) DO UPDATE SET n = n + 1").bind(day, slug),
+    ]);
+    return new Response(null, { status: 204 });
   }
   const kind = typeof body.kind === "string" && KINDS.has(body.kind) ? body.kind : null;
   const work = typeof body.work === "string" ? body.work : "";

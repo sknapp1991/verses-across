@@ -121,10 +121,10 @@ function Spine({ a, current, read, wide }: { a: ArticleSummary; current: boolean
   );
 }
 
-function Shelf({ label, books, current, read, wide, empty, hd }: { label: string; books: ArticleSummary[]; current: string; read: Record<string, unknown>; wide?: boolean; empty?: string; hd?: boolean }) {
+function Shelf({ label, books, current, read, wide, empty, hd, keepOrder }: { label: string; books: ArticleSummary[]; current: string; read: Record<string, unknown>; wide?: boolean; empty?: string; hd?: boolean; keepOrder?: boolean }) {
   if (!books.length && !empty) return null;
-  // unread first (newest first), read ones at the end of the shelf
-  const sorted = [...books].sort((x, y) => Number(!!read[x.slug]) - Number(!!read[y.slug]) || y.date.localeCompare(x.date));
+  // unread first (newest first), read ones at the end of the shelf; "Most read" keeps its order (most first)
+  const sorted = keepOrder ? books : [...books].sort((x, y) => Number(!!read[x.slug]) - Number(!!read[y.slug]) || y.date.localeCompare(x.date));
   return (
     // wide: every shelf the same height (room for the tallest book), its board at the bottom, so shelves side by side
     // line up whatever the sort or filter (my brother's ticket 4e978791)
@@ -187,6 +187,24 @@ export function Bookcase({ articles, current, wide = false, volumeCounts }: { ar
   const uid = useId(); // (the bookcase can be on the page twice: beside the text and folded under it)
   const traditions = useMemo(() => [...new Set(articles.flatMap((a) => a.traditions))].sort(), [articles]);
   const list = useMemo(() => articles.filter((a) => !tradition || a.traditions.includes(tradition)), [articles, tradition]);
+  // "Most read": the articles opened most in the last 90 days, most first (/api/count/articles: the order only).
+  // Shown once the library is bigger than the shelf (with a few articles it would only reorder them all).
+  const [ranked, setRanked] = useState<string[]>([]);
+  useEffect(() => {
+    if (articles.length <= 6) return;
+    let live = true;
+    fetch("/api/count/articles")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((v: unknown) => live && setRanked(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [articles.length]);
+  const mostRead = useMemo(() => {
+    const bySlug = new Map(list.map((a) => [a.slug, a]));
+    return ranked.flatMap((s) => (bySlug.has(s) ? [bySlug.get(s)!] : [])).slice(0, 6);
+  }, [list, ranked]);
   const suggested = useMemo(() => suggestArticles(list.filter((a) => a.slug !== current), read, saved, 6), [list, read, saved, current]);
   const shelves = useMemo((): [string, ArticleSummary[]][] => {
     if (sort === "new") return [["Newest", [...list].sort((a, b) => b.date.localeCompare(a.date))]];
@@ -274,6 +292,7 @@ export function Bookcase({ articles, current, wide = false, volumeCounts }: { ar
         </div>
       </div>
       {suggested.length > 0 && <Shelf label="Suggested for you" books={suggested} current={current} read={read} wide={wide} hd={hd} />}
+      {mostRead.length > 0 && <Shelf label="Most read" books={mostRead} current={current} read={read} wide={wide} hd={hd} keepOrder />}
       {/* (wide: two bookcases side by side on a big screen) */}
       <div className={wide ? "grid gap-x-4 lg:grid-cols-2" : ""}>
         {shelves.map(([label, books]) => (

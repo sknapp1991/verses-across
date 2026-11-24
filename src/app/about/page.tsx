@@ -164,9 +164,10 @@ export default function AboutPage() {
               you visit. The short description shown is Wikipedia&rsquo;s (CC BY-SA 4.0).
             </li>
             <li>
-              We count, anonymously, how often chapters are read, read-along audio is played and versions are downloaded:
-              only daily totals per work, version and language. Nothing about you is stored with them (no IP address, no
-              ID, no cookie), so the totals can&rsquo;t be linked to anyone.
+              We count, anonymously, how often chapters are read, read-along audio is played, versions are downloaded and
+              articles are opened: only daily totals per work, version and language, and per article (they pick the
+              articles&rsquo; &ldquo;Most read&rdquo; shelf). Nothing about you is stored with them (no IP address, no ID, no
+              cookie), so the totals can&rsquo;t be linked to anyone.
             </li>
             <li>
               Your notes, highlights, bookmarks, plans and settings are stored only on your device. We never see them. Clearing
