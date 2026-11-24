@@ -541,6 +541,8 @@ function Rich({ text: raw, preferWork }: { text: string; preferWork?: string }) 
 
 /** **bold**, *emphasis* in italics, Hebrew / Greek words tappable (a word card), and scripture references as links. */
 function inlineRich(s: string, preferWork?: string): ReactNode {
+  // a name marked just before a chapter, across bold too ("**[[Daniel]]** 7:13"): plain text, for the verse link
+  s = s.replace(new RegExp(`${ENTITY.source}(?=\\*{0,2}[\\s  ]?\\*{0,2}\\d)`, "g"), (_, t: string, shown?: string) => shown ?? t);
   return s.split(/(\*\*(?:[^*]|\*(?!\*)|\*(?=\*\*))+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
       <strong key={i}>{withEntities(part.slice(2, -2), preferWork)}</strong>
@@ -553,9 +555,27 @@ function inlineRich(s: string, preferWork?: string): ReactNode {
 /** People and places the model marked [[Title|text]]: blue, with a Wikipedia card (entity-link.tsx, ticket 839c4446). */
 function withEntities(s: string, preferWork?: string): ReactNode {
   if (!s.includes("[[")) return withWords(s, preferWork);
-  // "[[Isaiah]] 53" or "[[Mark the Evangelist|Mark]] 1:1": a book with a chapter, so plain text for the verse link.
-  s = s.replace(new RegExp(`${ENTITY.source}(?=\\s?\\d)`, "g"), (_, t: string, shown?: string) => shown ?? t);
+  // "[[Isaiah]] 53" or "[[Mark the Evangelist|Mark]] 1:1": a book with a chapter, so plain text for the verse link
+  // (any space, a no-break one too; hub e3260164: "Daniel 7:13" became a card about Daniel).
+  s = s.replace(new RegExp(`${ENTITY.source}(?=[\\s  ]?\\d)`, "g"), (_, t: string, shown?: string) => shown ?? t);
   if (!s.includes("[[")) return withWords(s, preferWork);
+  // and never a name inside a verse reference the text holds: that stays the verse link
+  {
+    let plainAt = 0;
+    let last = 0;
+    const spans: { start: number; end: number; at: number; len: number; shown: string }[] = [];
+    for (const m of s.matchAll(ENTITY)) {
+      plainAt += m.index! - last;
+      const shown = m[2] ?? m[1];
+      spans.push({ start: plainAt, end: plainAt + shown.length, at: m.index!, len: m[0].length, shown });
+      plainAt += shown.length;
+      last = m.index! + m[0].length;
+    }
+    const refs = findRefs(stripEntities(s), preferWork);
+    for (const sp of spans.filter((x) => refs.some((rf) => x.start < rf.end && x.end > rf.start)).reverse())
+      s = s.slice(0, sp.at) + sp.shown + s.slice(sp.at + sp.len);
+    if (!s.includes("[[")) return withWords(s, preferWork);
+  }
   const out: ReactNode[] = [];
   let last = 0;
   for (const m of s.matchAll(ENTITY)) {
