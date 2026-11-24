@@ -160,7 +160,8 @@ export function HomePage() {
         <p className="mt-1 text-muted">
           {library ? "Classic books, free to read: fiction, poetry, drama, children's books and more." : "The world's scriptures side by side, in many languages."}
         </p>
-        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* dense: a single tile moves up into a hole left before a wide one, so no gaps show (hub 64e1ba05) */}
+        <div className="mt-6 grid grid-flow-row-dense grid-cols-1 gap-3 sm:grid-cols-2">
           <Tile icon={<BookIcon width={18} height={18} />} title={last ? "Continue reading" : "Start reading"} href={readHref(start, versions(start))}>
             {(last ? lastEntry : startEntry) ? chapterTitle(last ? lastEntry : startEntry, start.chapter) : "Open the first chapter"}
             {!last && <span className="block text-faint">or pick any book from the list</span>}
