@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, readHref } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { downloadBackup, lastBackup } from "@/lib/backup";
-import { formatStamp, highlightBg, highlightColours, importJson, removeItem, useStudy, type StudyItem, type StudyKind } from "@/lib/study";
+import { EXTRA_HIGHLIGHTS, formatStamp, highlightBg, highlightColours, importJson, removeItem, useStudy, type StudyItem, type StudyKind } from "@/lib/study";
 import { closePanel, toast } from "@/lib/ui-store";
 import { BookIcon, CloseIcon, ClockIcon, LibraryIcon, NoteIcon, StarIcon, MarkerIcon, CheckSquareIcon } from "./icons";
 import { openSyncDialog, syncSummary } from "./sync-dialog";
@@ -40,8 +40,12 @@ const religionOf = (i: StudyItem) => findBook(i.work, i.book)?.religion.name ?? 
 const bookName = (i: StudyItem) => findBook(i.work, i.book)?.name ?? i.book;
 
 export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
-  const myColours = highlightColours(useSettings().highlightExtra); // (the five, then the ones added with "+")
+  const extra = useSettings().highlightExtra;
   const { items, ready } = useStudy();
+  // the filter: the five, the ones added with "+", and any colour a highlight still has after it was taken off the
+  // palette (my brother's ticket 74253cbe: a teal highlight stays, so teal stays here too)
+  const used = new Set([...items.values()].flatMap((i) => (i.kind === "highlight" && i.color ? [i.color] : [])));
+  const filterColours = highlightColours([...extra, ...EXTRA_HIGHLIGHTS.map((h) => h.id).filter((id) => used.has(id) && !extra.includes(id))]);
   const [tab, setTab] = useState<StudyKind | "articles">(lastTab);
   const [color, setColor] = useState<string | null>(null);
   const [religion, setReligion] = useState<string | null>(lastView.religion);
@@ -141,11 +145,11 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
         </button>
       </div>
       {tab === "highlight" && (counts.highlight ?? 0) > 0 && (
-        <div className="flex items-center gap-1 px-3 pt-2" aria-label="Filter by colour">
+        <div className="flex flex-wrap items-center gap-1 px-3 pt-2" aria-label="Filter by colour">
           <button type="button" onClick={() => setColor(null)} className={`min-h-9 rounded-full px-3 text-xs ${!color ? "bg-raised font-medium" : "text-muted"}`}>
             All
           </button>
-          {myColours.map((h) => (
+          {filterColours.map((h) => (
             <button
               key={h.id}
               type="button"
