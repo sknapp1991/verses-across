@@ -64,6 +64,19 @@ export function TabBar() {
   const router = useRouter();
   const barRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
+  // Phone: are the other traditions' chips (at the end of the row) in view? If not, a button slides there.
+  const [othersInView, setOthersInView] = useState(true);
+  const onBarScroll = () => {
+    const bar = barRef.current;
+    const chips = bar?.querySelector<HTMLElement>("[data-other-traditions]");
+    if (!bar || !chips) return;
+    setOthersInView(chips.offsetLeft + 24 <= bar.scrollLeft + bar.clientWidth);
+  };
+  useEffect(() => {
+    onBarScroll();
+    window.addEventListener("resize", onBarScroll);
+    return () => window.removeEventListener("resize", onBarScroll);
+  });
 
   // Groups (traditions) in the order their first tab appears.
   const groups: { id: string; name: string }[] = [];
@@ -193,7 +206,8 @@ export function TabBar() {
           />
         </div>
       )}
-      <div ref={barRef} className="flex h-11 items-stretch gap-1 overflow-x-auto px-2 [scrollbar-width:none]">
+      <div className="relative">
+      <div ref={barRef} onScroll={onBarScroll} className="flex h-11 items-stretch gap-1 overflow-x-auto px-2 [scrollbar-width:none]">
       <div role="tablist" aria-label="Open books" className="flex items-stretch gap-1">
         {visible.map((t, i) => {
           const r = parse(t);
@@ -266,7 +280,7 @@ export function TabBar() {
         })}
       </div>
       {groups.length > 1 && (
-        <div role="group" aria-label="Other traditions" className="flex items-center gap-1 pl-1 desk:hidden">
+        <div role="group" aria-label="Other traditions" data-other-traditions className="flex items-center gap-1 pl-1 desk:hidden">
           <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-line" />
           {counted
             .filter((g) => g.id !== activeGroup)
@@ -285,6 +299,29 @@ export function TabBar() {
               </button>
             ))}
         </div>
+      )}
+      </div>
+      {/* Phone, many books open: a button at the right edge slides the row to the other traditions (my brother's
+          ticket 723bec45: 17 Christianity tabs to scroll past to reach Islam or Judaism). Hidden once they're in view. */}
+      {groups.length > 1 && !othersInView && (
+        <button
+          type="button"
+          onClick={() => {
+            const bar = barRef.current;
+            const chips = bar?.querySelector<HTMLElement>("[data-other-traditions]");
+            if (bar && chips) bar.scrollTo({ left: chips.offsetLeft - 8, behavior: "smooth" });
+          }}
+          aria-label="Show your other traditions' books"
+          title="Other traditions"
+          className="absolute inset-y-0 right-0 flex items-center bg-gradient-to-l from-panel via-panel/95 to-transparent pl-5 pr-1.5 desk:hidden"
+        >
+          <span className="flex min-h-8 items-center gap-0.5 rounded-full bg-trad-soft px-2.5 text-[11px] font-semibold uppercase tracking-wide text-trad shadow-sm">
+            {counted.filter((g) => g.id !== activeGroup).length} more
+            <span aria-hidden className="text-sm leading-none">
+              ›
+            </span>
+          </span>
+        </button>
       )}
       </div>
     </div>
