@@ -55,7 +55,7 @@ export default async function ArticlePage({ params }: Props) {
       : null;
   return (
     <>
-      {ld && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\u003c") }} />}
+      {ld && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, "\\u003c") }} />}
       <ArticleReader article={article} library={library} />
     </>
   );
