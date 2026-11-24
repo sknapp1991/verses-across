@@ -10,7 +10,7 @@ import { dayIndex, planDays, PLANS, recordFinished, startPlan, stopPlan, useStar
 import { getItem, toggle, useStudy } from "@/lib/study";
 import { closePanel, toast } from "@/lib/ui-store";
 import { CalendarIcon } from "./icons";
-import { Goals } from "./progress-panel";
+import { Goals, Ring } from "./progress-panel";
 import { useReaderState } from "./use-reader-state";
 import { PanelHeader } from "./panel-header";
 
@@ -87,24 +87,31 @@ function ActivePlan({ plan, start, onNavigate }: { plan: PlanDef; start: number;
     setUndo(null);
   };
   const href = (r: BookRef) => readHref(r, r.work === ref.work ? versions : DEFAULT_VERSIONS[r.work]);
+  const [open, setOpen] = useState(false);
 
+  const pace = today ? `Day ${next + 1}${behind > 0 ? ` · ${behind} day${behind === 1 ? "" : "s"} behind, no rush` : behind < 0 ? " · ahead of schedule" : " · on track"}` : "Finished: well done! 🎉";
   return (
-    <section className="rounded-xl border border-line bg-raised/60 p-3">
-      <div className="flex items-baseline justify-between gap-2">
-        <h3 className="font-semibold">{plan.name}</h3>
-        <span className="shrink-0 text-xs tabular-nums text-muted">
-          {finished}/{total} days
+    // one look with the goals: a ring, the name and the pace; open it for the day's chapters (hub 777e6ee4)
+    <section className="rounded-xl border border-line">
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center gap-3 px-3 py-2 text-left">
+        <span className="relative">
+          <Ring value={total ? finished / total : 0} />
+          {!today && <span className="absolute inset-0 flex items-center justify-center text-sm text-accent">✓</span>}
         </span>
-      </div>
-      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden>
-        <div className="h-full rounded-full bg-accent" style={{ width: `${(finished / total) * 100}%` }} />
-      </div>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-ink">{plan.name}</span>
+          <span className="block text-xs text-muted">
+            {pace} · {finished}/{total} days
+          </span>
+        </span>
+        <span aria-hidden className={`shrink-0 text-faint transition ${open ? "rotate-90" : ""}`}>
+          ›
+        </span>
+      </button>
+      {open && (
+      <div className="border-t border-line px-3 pb-2 pt-1">
       {today ? (
         <>
-          <p className="mt-2 text-xs text-muted">
-            Day {next + 1}
-            {behind > 0 ? ` · ${behind} day${behind === 1 ? "" : "s"} behind — no rush` : behind < 0 ? " · ahead of schedule" : " · on track"}
-          </p>
           <ul className="mt-1.5 space-y-1">
             {today.map((r) => {
               const ok = done(r);
@@ -129,9 +136,7 @@ function ActivePlan({ plan, start, onNavigate }: { plan: PlanDef; start: number;
             Mark day {next + 1} as read
           </button>
         </>
-      ) : (
-        <p className="mt-2 text-sm font-medium text-accent">Finished — well done! 🎉</p>
-      )}
+      ) : null}
       {/* Only while it still applies (gone once anything else is ticked or unticked). */}
       {undo && undo.at === (next >= 0 ? next : days.length) && (
         <p role="status" className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-accent-soft px-3 py-1.5 text-sm text-ink">
@@ -152,6 +157,8 @@ function ActivePlan({ plan, start, onNavigate }: { plan: PlanDef; start: number;
       >
         Stop this plan
       </button>
+      </div>
+      )}
     </section>
   );
 }

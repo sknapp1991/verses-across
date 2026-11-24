@@ -9,11 +9,12 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { dayKey, fmtDuration, periodStart, startActivityTracking, totals, useActivity, type Activity } from "@/lib/activity";
 import { addGoalMet, BADGES, deviceCountsKey, parseCounts, subscribeDeviceCounts, earned, goalsMetCount, levelOf, markLevel, markSeen, MAX_LEVEL, seenBadges, seenLevel, XP_RULES, xpOf, type Stats } from "@/lib/achievements";
 import { finishedPlans, useStartedPlans } from "@/lib/plans";
-import { catalog, findBook, scriptureShelves } from "@/lib/catalog";
+import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, readHref, scriptureShelves } from "@/lib/catalog";
+import Link from "next/link";
 import { SITE_SIDE } from "@/lib/site";
 import { addGoal, getGoals, goalProgress, METRICS, removeGoal, useGoals, type Metric } from "@/lib/goals";
 import { StreakIcon } from "./streak-icon";
-import { useStudy } from "@/lib/study";
+import { getItem, toggle, useStudy } from "@/lib/study";
 import { closePanel, openPanel, toast } from "@/lib/ui-store";
 import { TrashIcon } from "./icons";
 import { useReaderState } from "./use-reader-state";
@@ -260,7 +261,7 @@ function Chart({ a, period }: { a: Activity; period: Exclude<Period, "day"> }) {
   );
 }
 
-function Ring({ value, size = 40 }: { value: number; size?: number }) {
+export function Ring({ value, size = 40 }: { value: number; size?: number }) {
   const r = size / 2 - 3;
   const c = 2 * Math.PI * r;
   return (
@@ -271,12 +272,55 @@ function Ring({ value, size = 40 }: { value: number; size?: number }) {
   );
 }
 
+/**
+ * A "Finish a book" goal, opened: the chapters to study today to finish on time (the next ones not studied yet, as
+ * many as a day needs), each ticked here or opened to read (my brother's ticket 777e6ee4: like the reading plans).
+ */
+/** Days left until the end of `by` (YYYY-MM-DD), at least 1. */
+const daysUntil = (by: string) => Math.max(1, Math.ceil((Date.parse(`${by}T23:59:59`) - Date.now()) / 86_400_000));
+
+function BookGoalToday({ work, book, by }: { work: string; book: string; by: string }) {
+  useStudy(); // re-render when chapters are ticked
+  const { ref, versions } = useReaderState();
+  const entry = findBook(work, book);
+  if (!entry?.chapters) return null;
+  const all = Array.from({ length: entry.chapters }, (_, i) => ({ work, book, chapter: i + 1 }));
+  const left = all.filter((r) => !getItem("studied", r));
+  const days = daysUntil(by);
+  const today = left.slice(0, Math.max(1, Math.ceil(left.length / days)));
+  return (
+    <div className="border-t border-line px-3 py-2">
+      <p className="text-xs text-muted">Today, to finish on time:</p>
+      <ul className="mt-1 space-y-1">
+        {today.map((r) => (
+          <li key={r.chapter} className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={`Tick ${chapterTitle(entry, r.chapter)} as studied`}
+              onClick={() => toggle("studied", r)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line text-sm"
+            />
+            <Link
+              href={readHref(r, r.work === ref.work ? versions : DEFAULT_VERSIONS[r.work] ?? [])}
+              onClick={() => closePanel()}
+              className="min-h-9 flex-1 content-center text-sm font-medium text-accent"
+            >
+              {chapterTitle(entry, r.chapter)}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Goals: in Plans & Goals. */
 export function Goals() {
   const a = useActivity();
   const goals = useGoals();
   const { items } = useStudy();
   const [adding, setAdding] = useState(false);
+  const [openGoal, setOpenGoal] = useState<string | null>(null);
   return (
     <section className="space-y-2" aria-label="Goals">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Goals</h3>
@@ -285,18 +329,34 @@ export function Goals() {
         {goals.map((g) => {
           const p = goalProgress(g, a, items);
           return (
-            <li key={g.id} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2">
-              <div className="relative">
-                <Ring value={p.target ? p.value / p.target : 0} />
-                {p.done && <span className="absolute inset-0 flex items-center justify-center text-sm text-accent">✓</span>}
+            <li key={g.id} className="rounded-xl border border-line">
+              <div className="flex items-center gap-3 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => g.type === "book" && setOpenGoal(openGoal === g.id ? null : g.id)}
+                  aria-expanded={g.type === "book" ? openGoal === g.id : undefined}
+                  disabled={g.type !== "book"}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default"
+                >
+                  <span className="relative">
+                    <Ring value={p.target ? p.value / p.target : 0} />
+                    {p.done && <span className="absolute inset-0 flex items-center justify-center text-sm text-accent">✓</span>}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-ink">{p.label}</span>
+                    <span className="block text-xs text-muted">{p.detail}</span>
+                  </span>
+                  {g.type === "book" && !p.done && (
+                    <span aria-hidden className={`shrink-0 text-faint transition ${openGoal === g.id ? "rotate-90" : ""}`}>
+                      ›
+                    </span>
+                  )}
+                </button>
+                <button type="button" onClick={() => removeGoal(g.id)} aria-label={`Remove goal: ${p.label}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-faint hover:bg-raised hover:text-ink">
+                  <TrashIcon width={16} height={16} />
+                </button>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink">{p.label}</p>
-                <p className="text-xs text-muted">{p.detail}</p>
-              </div>
-              <button type="button" onClick={() => removeGoal(g.id)} aria-label={`Remove goal: ${p.label}`} className="flex h-9 w-9 items-center justify-center rounded-lg text-faint hover:bg-raised hover:text-ink">
-                <TrashIcon width={16} height={16} />
-              </button>
+              {g.type === "book" && openGoal === g.id && !p.done && <BookGoalToday work={g.work} book={g.book} by={g.by} />}
             </li>
           );
         })}
