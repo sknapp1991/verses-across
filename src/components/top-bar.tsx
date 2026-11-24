@@ -3,7 +3,7 @@ import { SITE_NAME, SITE_SIDE } from "@/lib/site";
 import Link from "next/link";
 import { chapterTitle } from "@/lib/catalog";
 import { useEffect, useRef, useState } from "react";
-import { ArticlesIcon, CalendarIcon, LanguagesIcon, LibraryIcon, HomeIcon, MenuIcon, MoreIcon, SearchIcon, SlidersIcon, UsersIcon } from "./icons";
+import { ArticlesIcon, CalendarIcon, LanguagesIcon, LibraryIcon, HomeIcon, MenuIcon, MoreIcon, SearchIcon, ShareIcon, SlidersIcon, UsersIcon } from "./icons";
 import { ReadTogether } from "./read-together";
 import { isShowing, openSheet, togglePanel, useUi, type PanelId } from "@/lib/ui-store";
 import { useSettings } from "@/lib/settings";
@@ -97,15 +97,12 @@ export function TopBar({ onOpenLibrary, menuOnDesk = false }: { onOpenLibrary: (
       <Group label="Progress, plans, goals and reading together">
         <ProgressButton />
         <PanelButton id="plans" label="Plans and goals" title="Plans & Goals: reading plans and daily goals" icon={<CalendarIcon />} className="hidden desk:flex" />
-        {/* Study groups and Read together in one menu (hub 1e79e2c3, Nov 21) */}
+        {/* Study groups straight to their panel, and Read together (share this spot) on its own button beside it
+            (my brother's ticket 62f7e444, Nov 23; they had been one menu since hub 1e79e2c3) */}
+        <PanelButton id="groups" label="Study groups" title="Study groups: shared progress and a group chat" icon={<UsersIcon />} className="hidden desk:flex" />
         <span className="hidden desk:flex">
-          <TopPopover label="Together: study groups and read together" title="Together: study groups, or send a link to this exact spot" icon={<UsersIcon />}>
-            {(close) => (
-              <>
-                <TogetherGroups close={close} />
-                <ReadTogether />
-              </>
-            )}
+          <TopPopover label="Read together: share this page" title="Read together: send a link to this exact spot" icon={<ShareIcon />}>
+            <ReadTogether />
           </TopPopover>
         </span>
       </Group>
@@ -241,30 +238,6 @@ function VersionsPopover({ count }: { count: number }) {
  * A top-bar button with a pop-up under it: the button opens and closes it (like My Study), so does
  * Escape or a click outside. The pop-up never runs off the screen: it scrolls inside.
  */
-/** In the Together menu: open the Study groups panel (and close the menu). */
-function TogetherGroups({ close }: { close: () => void }) {
-  const u = useUi();
-  const { xrefMode } = useSettings();
-  const showing = isShowing(u, xrefMode, "groups");
-  return (
-    <section className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Study groups</h3>
-      <p className="text-sm text-muted">Read with friends or family: shared progress, notes and a group chat.</p>
-      <button
-        type="button"
-        onClick={() => {
-          if (!showing) togglePanel("groups");
-          close();
-        }}
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-line bg-raised px-3 text-sm font-medium hover:text-accent"
-      >
-        <UsersIcon width={18} height={18} />
-        {showing ? "Study groups are open" : "Open study groups"}
-      </button>
-    </section>
-  );
-}
-
 function TopPopover({ label, title, icon, children }: { label: string; title: string; icon: React.ReactNode; children: React.ReactNode | ((close: () => void) => React.ReactNode) }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
