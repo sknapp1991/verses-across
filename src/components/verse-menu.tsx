@@ -12,6 +12,7 @@ import { features } from "@/lib/features";
 import { getItem, highlightColours, saveNote, setHighlight, toggle, useStudy, type StudyRef } from "@/lib/study";
 import { closeVerseMenu, toast, useUi } from "@/lib/ui-store";
 import { openFeedback } from "@/lib/feedback";
+import { MAIL_CHOICES, mailWith, openEmail, setMailWith } from "@/lib/email-with";
 import { askAboutVerse, sendAi, useAiChat } from "@/lib/ai-chat";
 import { useSettings, versionColor } from "@/lib/settings";
 import { renderVerseImage, shareVerseImage } from "@/lib/verse-image";
@@ -120,8 +121,18 @@ function MenuBody({
     }
     toast((await copyText(shareBody())) ? "Verse and link copied" : "Couldn’t copy");
   };
+  // Email: in the email this reader uses (Gmail, Outlook, Yahoo or the mail app), asked once (hub 90d15e23)
+  const [askMail, setAskMail] = useState(false);
+  // the choice kept on this device, read after the first render (so the server's HTML matches)
+  const [savedMail, setSavedMail] = useState<ReturnType<typeof mailWith>>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- this device's choice is only readable after hydration
+    setSavedMail(mailWith());
+  }, [askMail]);
   const email = () => {
-    window.location.assign(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(shareBody())}`);
+    const how = mailWith();
+    if (how) openEmail(how, subject, shareBody());
+    else setAskMail(true);
   };
   const [drawing, setDrawing] = useState(false);
   const image = async () => {
@@ -262,9 +273,39 @@ function MenuBody({
           <button type="button" onClick={share} className={`${pill} border-line`}>
             <LinkIcon width={18} height={18} /> Share
           </button>
-          <button type="button" onClick={email} className={`${pill} border-line`}>
+          <button type="button" onClick={email} aria-expanded={askMail} className={`${pill} border-line`}>
             <MailIcon width={18} height={18} /> Email
           </button>
+          {!askMail && savedMail && (
+            <p className="col-span-full basis-full text-[11px] text-faint">
+              Email opens in {MAIL_CHOICES.find((c) => c.id === savedMail)?.label}
+              {" · "}
+              <button type="button" onClick={() => setAskMail(true)} className="underline underline-offset-2 hover:text-muted">
+                change
+              </button>
+            </p>
+          )}
+          {askMail && (
+            <div role="group" aria-label="Email with" className="col-span-full basis-full space-y-1.5 rounded-lg border border-line p-2 text-sm">
+              <p className="text-xs text-muted">Which email do you use? (Remembered on this device.)</p>
+              <div className="flex flex-wrap gap-1.5">
+                {MAIL_CHOICES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setMailWith(c.id);
+                      setAskMail(false);
+                      openEmail(c.id, subject, shareBody());
+                    }}
+                    className="min-h-9 rounded-full border border-line px-3 text-sm hover:border-accent hover:text-accent"
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <button type="button" onClick={image} disabled={drawing} className={`${pill} border-line disabled:opacity-60`}>
             <ImageIcon width={18} height={18} /> {drawing ? "Drawing…" : "Picture"}
           </button>
