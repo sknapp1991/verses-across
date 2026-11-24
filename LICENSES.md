@@ -529,6 +529,13 @@ From Project Gutenberg (read from its mirror).
   lines that end each Part); the opening words, set in capitals, are in normal case, and a running head printed
   into III §13 is removed. His footnotes are left out.
 
+## The Laws of Manu (added Nov 24 2026, `scripts/import-world.ts`)
+
+- **The Laws of Manu (Manusmriti)** — translated by Georg Bühler (Sacred Books of the East, vol. 25; Oxford:
+  Clarendon Press, 1886); public domain, text from sacred-texts.com's transcription. The twelve chapters; verse = Bühler's numbered verse (VI 76–77, translated together, is one verse running
+  to the next). His supplied words in round brackets and his spellings of Sanskrit names are kept; a few slips of
+  the transcription are corrected; his introduction and footnotes are left out.
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain

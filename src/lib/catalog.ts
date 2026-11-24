@@ -147,6 +147,7 @@ export const DEFAULT_VERSIONS: Record<string, string[]> = {
   "cloud-of-unknowing": ["underhill"],
   "sepher-yetzirah": ["westcott"],
   kuzari: ["hirschfeld"],
+  manu: ["buhler"],
   gilgamesh: ["thompson"],
   "enuma-elish": ["budge"],
   hammurabi: ["johns"],

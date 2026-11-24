@@ -3974,7 +3974,58 @@ async function kuzari() {
   report("kuzari", 5, total);
 }
 
+/**
+ * The Laws of Manu (Manusmriti), Georg Bühler's translation (Sacred Books of the East vol. 25, 1886), from
+ * sacred-texts.com (read in Chrome with Skylar's OK, Nov 24 2026, saved to data/raw/manu/, git-ignored). The site's text
+ * runs each chapter as one paragraph of numbered verses ("1. The great sages… 2. 'Deign…"): split at each next number
+ * in turn (a number inside a verse can't be taken for the next one), checked against Bühler's counts.
+ */
+async function manu() {
+  const raw = JSON.parse(await readFile(path.join(ROOT, "data", "raw", "manu", "manu-buhler-sacred-texts.json"), "utf8")) as { chapters: Record<string, string> };
+  const ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
+  const COUNTS = [119, 249, 286, 260, 169, 97, 226, 420, 336, 131, 266, 126]; // Bühler's verses per chapter
+  await resetVersion("manu", "buhler");
+  let total = 0;
+  for (const [k, r] of ROMAN.entries()) {
+    // the chapter's text: after its heading, before the site's own panels
+    let t = raw.chapters[r].split(/\s{3,}Advertisement/)[0];
+    t = t.replace(new RegExp(`^CHAPTER ${r.toUpperCase()}\\.\\s*`), "").replace(/\s+/g, " ").trim();
+    const verses: Verse[] = [];
+    // each next verse: "n. ", or "n " before a capital or "(" (a few numbers lost their full stop: "39 (Horse-faced)"),
+    // or two joined: "76-77. Let him quit…" (one verse running to the next number)
+    let at = 0;
+    for (let n = 1; ; ) {
+      const re = new RegExp(`(?:^| )${n}(?:-(\\d+))?(?:\\. | (?=[A-Z('"]))`, "g");
+      re.lastIndex = at;
+      const m = re.exec(t);
+      if (!m) break;
+      if (verses.length) verses[verses.length - 1].t = t.slice(at, m.index).trim();
+      at = m.index + m[0].length;
+      const to = m[1] ? Number(m[1]) : n;
+      verses.push(to > n ? { v: String(n), t: "", to: String(to), n: `${n}–${to}` } : { v: String(n), t: "" });
+      n = to + 1;
+    }
+    if (verses.length) verses[verses.length - 1].t = t.slice(at).trim();
+    const last = verses.length ? Number(verses[verses.length - 1].to ?? verses[verses.length - 1].v) : 0;
+    if (verses.some((x) => !x.t)) throw new Error(`manu ${r}: an empty verse`);
+    if (last !== COUNTS[k]) throw new Error(`manu ${r.toUpperCase()}: ends at verse ${last} (Bühler numbers ${COUNTS[k]})`);
+    // the transcription's slips (Fable review, Nov 24)
+    const FIX: Record<string, [string, string][]> = {
+      "2:226": [["Pragipati", "Pragapati"]],
+      "3:40": [["Endowded", "Endowed"]],
+      "3:131": [["unaquainted", "unacquainted"]],
+      "6:2": [["and. the sons", "and the sons"]],
+      "8:420": [["conclusion. all", "conclusion, all"]],
+    };
+    for (const v of verses) for (const [a, b] of FIX[`${k + 1}:${v.v}`] ?? []) v.t = v.t.replace(a, b);
+    await writeChapter("manu", "buhler", "manu", k + 1, verses, undefined, `Chapter ${r.toUpperCase()}`);
+    total += verses.length;
+  }
+  report("manu", 12, total);
+}
+
 const ALL: Record<string, () => Promise<unknown>> = {
+  manu,
   kuzari,
   sepherYetzirah,
   cloud,

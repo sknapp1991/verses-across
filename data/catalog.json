@@ -77,6 +77,7 @@
     { "id": "cloud-of-unknowing", "name": "The Cloud of Unknowing", "versification": "cloud-of-unknowing" },
     { "id": "sepher-yetzirah", "name": "Sepher Yetzirah (The Book of Formation)", "versification": "sepher-yetzirah" },
     { "id": "kuzari", "name": "The Kuzari (Kitab al Khazari)", "versification": "kuzari" },
+    { "id": "manu", "name": "The Laws of Manu (Manusmriti)", "versification": "manu" },
     { "id": "aeneid", "name": "The Aeneid", "versification": "aeneid" },
     { "id": "metamorphoses", "name": "Metamorphoses", "versification": "metamorphoses" },
     { "id": "republic", "name": "The Republic", "versification": "republic" },
@@ -2311,6 +2312,23 @@
       "sourceUrl": "https://en.wikisource.org/wiki/Kitab_al_Khazari",
       "licensed": false,
       "versification": "kuzari"
+    },
+    {
+      "id": "buhler",
+      "work": "manu",
+      "abbr": "Bühler",
+      "name": "The Laws of Manu (Georg Bühler)",
+      "language": "en",
+      "kind": "native",
+      "dir": "ltr",
+      "year": 1886,
+      "translator": "Georg Bühler, from the Sanskrit",
+      "license": "Public Domain",
+      "licenseNote": "The Manusmriti in its twelve chapters; verse = Bühler's numbered verse (VI 76–77, which he translates together, is one verse running to the next). His supplied words in round brackets are kept, and so are his spellings of Sanskrit names (Pragapati, Kandala), printed without his italics; a few slips of the transcription are corrected. His introduction and footnotes are left out. From sacred-texts.com's transcription.",
+      "attribution": "The Laws of Manu, translated with extracts from seven commentaries by G. Bühler (Sacred Books of the East, vol. 25; Oxford: Clarendon Press, 1886), public domain; text from sacred-texts.com.",
+      "sourceUrl": "https://sacred-texts.com/book/the-laws-of-manu",
+      "licensed": false,
+      "versification": "manu"
     }
   ],
   "religions": [
@@ -2825,7 +2843,14 @@
           {"id": "av18", "name": "Atharva Veda, Book 18", "work": "vedas", "chapters": 4, "chapterName": "Atharva Veda 18."},
           {"id": "av19", "name": "Atharva Veda, Book 19", "work": "vedas", "chapters": 72, "chapterName": "Atharva Veda 19."},
           {"id": "av20", "name": "Atharva Veda, Book 20", "work": "vedas", "chapters": 143, "chapterName": "Atharva Veda 20."}
-        ] }
+        ] },
+        {
+          "id": "dharmashastra",
+          "name": "Dharmashastra (Law)",
+          "items": [
+            { "id": "manu", "name": "The Laws of Manu (Manusmriti)", "work": "manu", "chapters": 12, "chapterName": "Chapter" }
+          ]
+        }
       ]
     },
     {
