@@ -98,6 +98,8 @@ export type Settings = {
   /** Reading levels: underline words from this CEFR level up ("archaic" = only old-fashioned words). */
   levelMarks: "off" | "B1" | "B2" | "C1" | "archaic";
   highlightColor: string;
+  /** Extra highlight colours this reader added with "+" (ids of EXTRA_HIGHLIGHTS in study.ts; hub 74253cbe). */
+  highlightExtra: string[];
   /** Cross-reference mode: tapping a verse shows similar verses. Where to look: its own religion and/or others (religion ids). */
   xrefMode: boolean;
   /** Desktop: width of the My Study / Search panel in px (null = default). */
@@ -191,6 +193,7 @@ const DEFAULTS: Settings = {
   wordMode: false,
   levelMarks: "off",
   highlightColor: "yellow",
+  highlightExtra: [],
   xrefMode: false,
   panelWidth: null,
   xrefSame: true,
@@ -259,6 +262,7 @@ function read(): Settings {
       wordMode: (p as { wordMode?: unknown }).wordMode === true,
       levelMarks: (["B1", "B2", "C1", "archaic"] as const).find((x) => x === (p as { levelMarks?: unknown }).levelMarks) ?? "off",
       highlightColor: typeof p.highlightColor === "string" ? p.highlightColor : "yellow",
+      highlightExtra: Array.isArray(p.highlightExtra) ? [...new Set(p.highlightExtra.filter((x): x is string => typeof x === "string"))].slice(0, 12) : [],
       xrefMode: (p as { xrefMode?: unknown }).xrefMode === true,
       panelWidth: typeof (p as { panelWidth?: unknown }).panelWidth === "number" ? (p as { panelWidth: number }).panelWidth : null,
       xrefSame: (p as { xrefSame?: unknown }).xrefSame !== false,
@@ -297,7 +301,7 @@ export function getSettings(): Settings {
 }
 
 /** Settings that follow you to other devices with sync (sizes and layout stay per device). */
-export const SYNCED_SETTINGS = ["versions", "setups", "activeSetup", "palette", "versionColors", "langColors", "redLetter", "levelMarks", "highlightColor", "theme", "xrefOthers", "xrefOtherSide", "ttsMix", "ttsMixOrder", "ttsRecorded"] as const;
+export const SYNCED_SETTINGS = ["versions", "setups", "activeSetup", "palette", "versionColors", "langColors", "redLetter", "levelMarks", "highlightColor", "highlightExtra", "theme", "xrefOthers", "xrefOtherSide", "ttsMix", "ttsMixOrder", "ttsRecorded"] as const;
 
 export function updateSettings(patch: Partial<Settings>, fromSync = false) {
   current = { ...snapshot(), ...patch };

@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { updateSettings, useMediaQuery, useSettings, WIDE_QUERY } from "@/lib/settings";
-import { HIGHLIGHTS } from "@/lib/study";
+import { EXTRA_HIGHLIGHTS, highlightColour, highlightColours } from "@/lib/study";
 import { CloseIcon, MarkerIcon, WordsIcon } from "./icons";
 
 /** The shape of the three mode buttons: an icon (top bar), icon + "… on/off" (full) or an icon over a short name (tile). */
@@ -17,7 +17,7 @@ export const modeButtonClass = (on: boolean, shape: "icon" | "full" | "tile", on
 
 export function HighlightModeToggle({ full = false, tile = false }: { full?: boolean; tile?: boolean }) {
   const { highlightMode, highlightColor } = useSettings();
-  const dot = HIGHLIGHTS.find((h) => h.id === highlightColor)?.dot;
+  const dot = highlightColour(highlightColor)?.dot;
   return (
     <button
       type="button"
@@ -40,7 +40,7 @@ export function HighlightModeToggle({ full = false, tile = false }: { full?: boo
  * (easy to spot, unlike a small note at the bottom) and turns the mode off. Highlight mode also picks the colour.
  */
 export function ModeBanner() {
-  const { highlightMode, highlightColor, wordMode } = useSettings();
+  const { highlightMode, highlightColor, wordMode, highlightExtra } = useSettings();
   if (!highlightMode && !wordMode) return null;
   return (
     <>
@@ -61,7 +61,7 @@ export function ModeBanner() {
       </span>
       {highlightMode && (
         <span className="flex items-center gap-0.5" role="group" aria-label="Highlight colour">
-          {HIGHLIGHTS.map((h) => (
+          {highlightColours(highlightExtra).map((h) => (
             <button
               key={h.id}
               type="button"
@@ -73,6 +73,7 @@ export function ModeBanner() {
               <span className="h-6 w-6 rounded-full" style={{ background: h.dot }} />
             </button>
           ))}
+          <AddColour size="h-9 w-9" />
         </span>
       )}
       <button
@@ -144,11 +145,11 @@ function ModeBubbleOnPhone() {
  * mode's icon and name, the colour (tap it for the others) and x to turn the mode off.
  */
 function ModeBubble() {
-  const { highlightMode, highlightColor, wordMode } = useSettings();
+  const { highlightMode, highlightColor, wordMode, highlightExtra } = useSettings();
   const [colours, setColours] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const bottom = useFreeBottom(box);
-  const colour = HIGHLIGHTS.find((h) => h.id === highlightColor);
+  const colour = highlightColour(highlightColor);
   useEffect(() => {
     if (!colours) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setColours(false);
@@ -170,7 +171,7 @@ function ModeBubble() {
     >
       {highlightMode && colours && (
         <span className="flex items-center gap-0.5 rounded-full border border-line bg-panel/95 p-1 shadow-lg backdrop-blur" role="group" aria-label="Pick a highlight colour">
-          {HIGHLIGHTS.map((h) => (
+          {highlightColours(highlightExtra).map((h) => (
             <button
               key={h.id}
               type="button"
@@ -185,6 +186,7 @@ function ModeBubble() {
               <span className="h-6 w-6 rounded-full" style={{ background: h.dot }} />
             </button>
           ))}
+          <AddColour size="h-11 w-11" up />
         </span>
       )}
       <div className="flex items-center gap-1 rounded-full border border-accent/50 bg-panel/90 p-1 pr-1 shadow-lg backdrop-blur">
@@ -219,3 +221,73 @@ function ModeBubble() {
   );
 }
 
+
+/**
+ * "+": a palette of 12 more colours (my brother's ticket 74253cbe). Tap one to add it to your colours and highlight
+ * with it; tap one you added (✓) to take it off again. Kept with your settings (and synced, if sync is on).
+ */
+function AddColour({ size, up = false }: { size: string; up?: boolean }) {
+  const { highlightExtra, highlightColor } = useSettings();
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open]);
+  const pick = (id: string) => {
+    const has = highlightExtra.includes(id);
+    if (has) updateSettings({ highlightExtra: highlightExtra.filter((x) => x !== id), ...(highlightColor === id ? { highlightColor: "yellow" } : {}) });
+    else updateSettings({ highlightExtra: [...highlightExtra, id], highlightColor: id });
+    setOpen(false);
+  };
+  return (
+    <span ref={box} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-label="More highlight colours"
+        title="More colours"
+        className={`flex ${size} items-center justify-center rounded-full border-2 border-dashed border-line text-lg leading-none text-muted hover:border-faint hover:text-ink`}
+      >
+        +
+      </button>
+      {open && (
+        <span
+          role="group"
+          aria-label="Add a highlight colour"
+          className={`absolute z-40 grid w-[13.5rem] grid-cols-6 gap-1 rounded-xl border border-line bg-panel p-2 shadow-xl ${up ? "bottom-full left-0 mb-2" : "right-0 top-full mt-2"}`}
+        >
+          {EXTRA_HIGHLIGHTS.map((h) => {
+            const added = highlightExtra.includes(h.id);
+            return (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => pick(h.id)}
+                aria-pressed={added}
+                aria-label={added ? `${h.label}: added, tap to remove` : `Add ${h.label}`}
+                title={added ? `${h.label} (tap to remove)` : h.label}
+                className="relative flex h-8 w-8 items-center justify-center rounded-full"
+              >
+                <span className="h-6 w-6 rounded-full" style={{ background: h.dot }} />
+                {added && (
+                  <span aria-hidden className="absolute text-xs font-bold text-white drop-shadow">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </span>
+      )}
+    </span>
+  );
+}

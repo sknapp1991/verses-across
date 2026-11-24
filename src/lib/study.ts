@@ -17,7 +17,30 @@ export const HIGHLIGHTS = [
   { id: "pink", label: "Pink", bg: "rgb(236 72 153 / 0.24)", dot: "#ec4899" },
   { id: "orange", label: "Orange", bg: "rgb(249 115 22 / 0.28)", dot: "#f97316" },
 ] as const;
-export const highlightBg = (id?: string) => HIGHLIGHTS.find((h) => h.id === id)?.bg;
+/** Twelve more to add with "+" (my brother's ticket 74253cbe): each reader keeps the ones they add (settings.highlightExtra). */
+export const EXTRA_HIGHLIGHTS = [
+  { id: "red", label: "Red", bg: "rgb(239 68 68 / 0.26)", dot: "#ef4444" },
+  { id: "rose", label: "Rose", bg: "rgb(244 63 94 / 0.24)", dot: "#f43f5e" },
+  { id: "purple", label: "Purple", bg: "rgb(168 85 247 / 0.24)", dot: "#a855f7" },
+  { id: "violet", label: "Violet", bg: "rgb(139 92 246 / 0.24)", dot: "#8b5cf6" },
+  { id: "indigo", label: "Indigo", bg: "rgb(99 102 241 / 0.24)", dot: "#6366f1" },
+  { id: "sky", label: "Sky", bg: "rgb(14 165 233 / 0.24)", dot: "#0ea5e9" },
+  { id: "cyan", label: "Cyan", bg: "rgb(6 182 212 / 0.24)", dot: "#06b6d4" },
+  { id: "teal", label: "Teal", bg: "rgb(20 184 166 / 0.24)", dot: "#14b8a6" },
+  { id: "lime", label: "Lime", bg: "rgb(132 204 22 / 0.26)", dot: "#84cc16" },
+  { id: "amber", label: "Amber", bg: "rgb(245 158 11 / 0.28)", dot: "#f59e0b" },
+  { id: "brown", label: "Brown", bg: "rgb(161 98 7 / 0.26)", dot: "#a16207" },
+  { id: "gray", label: "Grey", bg: "rgb(120 113 108 / 0.28)", dot: "#78716c" },
+] as const;
+export type HighlightColour = { id: string; label: string; bg: string; dot: string };
+const ALL_HIGHLIGHTS: readonly HighlightColour[] = [...HIGHLIGHTS, ...EXTRA_HIGHLIGHTS];
+/** The colours a reader picks from: the five, then the extra ones they added, in the order added. */
+export const highlightColours = (extra: readonly string[] = []): HighlightColour[] => [
+  ...HIGHLIGHTS,
+  ...extra.flatMap((id) => EXTRA_HIGHLIGHTS.filter((h) => h.id === id)),
+];
+export const highlightColour = (id?: string) => ALL_HIGHLIGHTS.find((h) => h.id === id);
+export const highlightBg = (id?: string) => highlightColour(id)?.bg;
 
 export const refKey = (r: StudyRef) => `${r.work}/${r.book}/${r.chapter}${r.verse ? `:${r.verse}` : ""}`;
 export const itemId = (kind: StudyKind, r: StudyRef) => `${kind}:${refKey(r)}`;

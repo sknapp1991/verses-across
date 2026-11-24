@@ -1,10 +1,11 @@
 "use client";
+import { useSettings } from "@/lib/settings";
 /**
  * The small box that opens when a verse number is tapped: favorite, study later, highlight colours,
  * listen from here, note, and "More" (the full verse menu). Sits just under (or above) the number.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { getItem, HIGHLIGHTS, setHighlight, toggle, useStudy, type StudyRef } from "@/lib/study";
+import { getItem, highlightColours, setHighlight, toggle, useStudy, type StudyRef } from "@/lib/study";
 import { toast } from "@/lib/ui-store";
 import { verseReference } from "./verse-menu";
 import { ClockIcon, HeadphonesIcon, NoteIcon, StarIcon } from "./icons";
@@ -24,6 +25,7 @@ export function VerseQuick({
   onListen?: (verse: string) => void;
   onMenu: (verse: string, focus?: "note") => void;
 }) {
+  const myColours = highlightColours(useSettings().highlightExtra); // (the five, then the ones added with "+")
   useStudy(); // re-render when marks change
   const box = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -141,7 +143,7 @@ export function VerseQuick({
         </button>
       </div>
       <div className="mt-1 flex items-center justify-center gap-1.5 border-t border-line pt-1.5" role="group" aria-label="Highlight">
-        {HIGHLIGHTS.map((h) => (
+        {myColours.map((h) => (
           <button
             key={h.id}
             type="button"

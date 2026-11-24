@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ASK_SERVICES, askUrl, buildAskPrompt, type AskTranslation } from "@/lib/ask-in";
 import { catalog, chapterTitle, findBook, readHref } from "@/lib/catalog";
 import { features } from "@/lib/features";
-import { getItem, HIGHLIGHTS, saveNote, setHighlight, toggle, useStudy, type StudyRef } from "@/lib/study";
+import { getItem, highlightColours, saveNote, setHighlight, toggle, useStudy, type StudyRef } from "@/lib/study";
 import { closeVerseMenu, toast, useUi } from "@/lib/ui-store";
 import { openFeedback } from "@/lib/feedback";
 import { askAboutVerse, sendAi, useAiChat } from "@/lib/ai-chat";
@@ -78,6 +78,7 @@ function MenuBody({
   const privateMode = usePrivate(); // no "Ask in ChatGPT / Claude" links either: they send the verse to another site
   const settings = useSettings();
   const highlight = getItem("highlight", r)?.color;
+  const myColours = highlightColours(settings.highlightExtra);
   const fav = !!getItem("favorite", r);
   const later = !!getItem("later", r);
   const savedNote = getItem("note", r)?.text ?? "";
@@ -205,7 +206,7 @@ function MenuBody({
         )}
 
         <div role="group" aria-label="Highlight colour" className="flex items-center gap-2">
-          {HIGHLIGHTS.map((h) => (
+          {myColours.map((h) => (
             <button
               key={h.id}
               type="button"

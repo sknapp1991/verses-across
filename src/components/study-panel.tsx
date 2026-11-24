@@ -1,4 +1,5 @@
 "use client";
+import { useSettings } from "@/lib/settings";
 /**
  * My Study: favorites, study later, highlights, notes and studied chapters (newest first),
  * each a link back to the verse. Backup / restore as a JSON file, since data lives on this device.
@@ -9,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { catalog, chapterTitle, DEFAULT_VERSIONS, findBook, readHref } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { downloadBackup, lastBackup } from "@/lib/backup";
-import { formatStamp, highlightBg, HIGHLIGHTS, importJson, removeItem, useStudy, type StudyItem, type StudyKind } from "@/lib/study";
+import { formatStamp, highlightBg, highlightColours, importJson, removeItem, useStudy, type StudyItem, type StudyKind } from "@/lib/study";
 import { closePanel, toast } from "@/lib/ui-store";
 import { BookIcon, CloseIcon, ClockIcon, LibraryIcon, NoteIcon, StarIcon, MarkerIcon, CheckSquareIcon } from "./icons";
 import { openSyncDialog, syncSummary } from "./sync-dialog";
@@ -39,6 +40,7 @@ const religionOf = (i: StudyItem) => findBook(i.work, i.book)?.religion.name ?? 
 const bookName = (i: StudyItem) => findBook(i.work, i.book)?.name ?? i.book;
 
 export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
+  const myColours = highlightColours(useSettings().highlightExtra); // (the five, then the ones added with "+")
   const { items, ready } = useStudy();
   const [tab, setTab] = useState<StudyKind | "articles">(lastTab);
   const [color, setColor] = useState<string | null>(null);
@@ -143,7 +145,7 @@ export function StudyPanel({ onNavigate }: { onNavigate?: () => void }) {
           <button type="button" onClick={() => setColor(null)} className={`min-h-9 rounded-full px-3 text-xs ${!color ? "bg-raised font-medium" : "text-muted"}`}>
             All
           </button>
-          {HIGHLIGHTS.map((h) => (
+          {myColours.map((h) => (
             <button
               key={h.id}
               type="button"
