@@ -62,6 +62,11 @@ function withLiterature(base: Catalog, l: LitCatalog): Catalog {
 export const catalog = withLiterature(raw as unknown as Catalog, lit as unknown as LitCatalog);
 
 export type BookRef = { work: string; book: string; chapter: number };
+
+/** A short note shown under the chapter title of every chapter of a work (approved on the hub, 9c42a3b0, Nov 25). */
+export const WORK_NOTES: Record<string, string> = {
+  manu: "An ancient legal and religious text, presented as a historical source. Its rules on caste and on women reflect its time and are not endorsed here.",
+};
 export type BookEntry = CatalogItem & { religion: Religion; collection: Collection };
 
 /** Versions shown when the user has not chosen any yet. */

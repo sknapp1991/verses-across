@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { alignVerses, type AlignedRow } from "@/lib/align";
-import { adjacentChapters, catalog, chapterTitle, findBook, getVersion, readHref, type BookRef } from "@/lib/catalog";
+import { adjacentChapters, catalog, chapterTitle, findBook, getVersion, readHref, WORK_NOTES, type BookRef } from "@/lib/catalog";
 import { chapterKey, loadChapter, useChapters, type ChapterEntry } from "@/lib/chapter-store";
 import { getLanguage } from "@/lib/languages";
 import { joinAbbrs, seoChapterName } from "@/lib/seo-shared";
@@ -802,6 +802,9 @@ function ChapterHeader({
         </p>
         <h1 className="font-serif text-2xl font-semibold pland:text-xl md:text-3xl">{title}</h1>
         {subtitle && <p className="mt-0.5 font-serif text-base text-muted pland:mt-0 md:text-lg">{subtitle}</p>}
+        {!preview && WORK_NOTES[bookRef.work] && (
+          <p className="mt-1 max-w-prose text-xs italic text-muted pland:hidden">{WORK_NOTES[bookRef.work]}</p>
+        )}
         {/* The versions being read: tap to add, remove or reorder them (the sheet opens at that section). */}
         {!preview && !titleOnly && (
           <button
