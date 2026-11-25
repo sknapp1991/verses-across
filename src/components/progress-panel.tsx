@@ -23,15 +23,26 @@ import { startGroups } from "@/lib/groups";
 import { statsNow } from "@/lib/stats-now";
 import { PanelHeader } from "./panel-header";
 
-type Period = "day" | "week" | "month" | "year" | "all";
+type Period = "day" | "yesterday" | "week" | "month" | "year" | "all";
 const PERIODS: { id: Period; label: string }[] = [
   { id: "day", label: "Today" },
+  { id: "yesterday", label: "Yesterday" }, // (my brother's ticket 3f244553)
   { id: "week", label: "Week" },
   { id: "month", label: "Month" },
   { id: "year", label: "Year" },
   { id: "all", label: "All time" },
 ];
 let lastPeriod: Period = "week";
+/** The days a period covers: from (inclusive) and, for Yesterday, to. */
+function rangeOf(p: Period): { from: string; to?: string } {
+  if (p === "all") return { from: "" };
+  if (p === "yesterday") {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return { from: dayKey(d), to: dayKey(d) };
+  }
+  return { from: periodStart(p) };
+}
 
 export function ProgressPanel() {
   const a = useActivity();
@@ -41,27 +52,32 @@ export function ProgressPanel() {
     lastPeriod = period;
   }, [period]);
   const stats = useStats();
-  const t = useMemo(() => totals(a, period === "all" ? undefined : periodStart(period)), [a, period]);
+  const t = useMemo(() => {
+    const { from, to } = rangeOf(period);
+    return totals(a, from || undefined, to);
+  }, [a, period]);
   const studiedIn = useMemo(() => {
-    const from = period === "all" ? "" : periodStart(period);
+    const { from, to = "9999" } = rangeOf(period);
+    const inRange = (k: string) => k >= from && k <= to;
     let n = 0;
     // each time through counts, re-reads too ("Studied it again")
     for (const it of items.values())
       if (it.kind === "studied") {
-        if (dayKey(it.createdAt) >= from) n++;
-        for (const t of Array.isArray(it.again) ? it.again : []) if (dayKey(t) >= from) n++;
+        if (inRange(dayKey(it.createdAt))) n++;
+        for (const t of Array.isArray(it.again) ? it.again : []) if (inRange(dayKey(t))) n++;
       }
     return n;
   }, [items, period]);
   // Books finished in this period: every chapter studied (or heard), the last of them within the period.
   const booksIn = useMemo(() => {
-    const from = period === "all" ? "" : periodStart(period);
+    const { from, to = "9999" } = rangeOf(period);
     const finishedIn = (perBook: Map<string, string[]>) => {
       let n = 0;
       for (const [k, days] of perBook) {
         const [w, b] = k.split("/");
         const total = findBook(w, b)?.chapters ?? 0;
-        if (total > 0 && days.length >= total && days.sort()[days.length - 1] >= from) n++;
+        const last = days.sort()[days.length - 1];
+        if (total > 0 && days.length >= total && last >= from && last <= to) n++;
       }
       return n;
     };
@@ -124,22 +140,27 @@ export function ProgressPanel() {
               </button>
             ))}
           </div>
-          {/* Reading and studying on the left, listening on the right (ticket 049c25a8). */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Reading and studying on the left, listening in the middle (ticket 049c25a8), both together on the right
+              (my brother's ticket 3f244553). */}
+          <div className="grid grid-cols-3 gap-1.5">
             <p className="text-xs font-semibold uppercase tracking-wide text-faint">📖 Reading</p>
             <p className="text-xs font-semibold uppercase tracking-wide text-faint">🎧 Listening</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-faint"><span aria-hidden>Σ </span>Total</p>
             <Tile label="Time reading" value={fmtDuration(t.read)} />
             <Tile label="Time listening" value={fmtDuration(t.listen)} />
+            <Tile label="Total time" value={fmtDuration(t.read + t.listen)} total />
             <Tile label="Verses read" value={t.verses.toLocaleString()} />
             <Tile label="Verses heard" value={t.versesHeard.toLocaleString()} />
+            <Tile label="Verses in all" value={(t.verses + t.versesHeard).toLocaleString()} total />
             <Tile label="Chapters read" value={t.chapters.toLocaleString()} />
             <Tile label="Chapters heard" value={t.chaptersHeard.toLocaleString()} />
+            <Tile label="Chapters in all" value={(t.chapters + t.chaptersHeard).toLocaleString()} total />
             <Tile label="Chapters studied" value={studiedIn.toLocaleString()} />
             <Tile label="Books heard" value={booksIn.heard.toLocaleString()} />
+            <Tile label={period === "day" ? "Traditions today" : "Traditions"} value={String(traditionsIn(t.works))} total />
             <Tile label="Books studied" value={booksIn.studied.toLocaleString()} />
-            <Tile label={period === "day" ? "Traditions today" : "Traditions"} value={String(traditionsIn(t.works))} />
           </div>
-          {period !== "day" && <Chart a={a} period={period} />}
+          {period !== "day" && period !== "yesterday" && <Chart key={period} a={a} period={period} />}
         </section>
 
         <button
@@ -198,31 +219,45 @@ function traditionsIn(works: Set<string>) {
   return rel.size;
 }
 
-function Tile({ label, value }: { label: string; value: string }) {
+function Tile({ label, value, total = false }: { label: string; value: string; total?: boolean }) {
   return (
-    <div className="rounded-xl border border-line px-3 py-2">
-      <p className="text-xs text-muted">{label}</p>
-      <p className="font-serif text-xl font-semibold tabular-nums text-ink">{value}</p>
+    <div className={`min-w-0 rounded-xl border border-line px-2 py-2 ${total ? "bg-raised" : ""}`}>
+      <p className="text-[11px] leading-tight text-muted">{label}</p>
+      <p className="font-serif text-base font-semibold leading-snug tabular-nums text-ink min-[400px]:text-lg">{value}</p>
     </div>
   );
 }
 
-/** Minutes per day (week, month) or per month (year, all time): one series, hover for the value. */
-function Chart({ a, period }: { a: Activity; period: Exclude<Period, "day"> }) {
+type Bar = { label: string; long: string; mins: number; from: string; to: string; month?: Date };
+
+/**
+ * Minutes per day (week, month) or per month (year, all time). Tap a bar for that day's or month's numbers; a month
+ * opens to its days (my brother's ticket 3f244553: more detail from the chart).
+ */
+function Chart({ a, period }: { a: Activity; period: Exclude<Period, "day" | "yesterday"> }) {
+  const [month, setMonth] = useState<Date | null>(null); // a month opened to its days
+  const [pick, setPick] = useState<number | null>(null);
   const bars = useMemo(() => {
-    const out: { label: string; long: string; mins: number }[] = [];
+    const out: Bar[] = [];
     const now = new Date();
-    if (period === "week" || period === "month") {
+    const dayBar = (d: Date, label: string): Bar => {
+      const k = dayKey(d);
+      const day = a.days[k];
+      return { label, long: d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }), mins: day ? Math.round((day.r + day.l) / 60) : 0, from: k, to: k };
+    };
+    if (month) {
+      const n = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+      for (let i = 1; i <= n; i++) {
+        const d = new Date(month.getFullYear(), month.getMonth(), i);
+        if (d > now) break;
+        out.push(dayBar(d, i === 1 || i % 5 === 0 ? String(i) : ""));
+      }
+    } else if (period === "week" || period === "month") {
       const n = period === "week" ? 7 : 30;
       for (let i = n - 1; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        const day = a.days[dayKey(d)];
-        out.push({
-          label: period === "week" ? d.toLocaleDateString(undefined, { weekday: "narrow" }) : i % 5 === 0 ? String(d.getDate()) : "",
-          long: d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
-          mins: day ? Math.round((day.r + day.l) / 60) : 0,
-        });
+        out.push(dayBar(d, period === "week" ? d.toLocaleDateString(undefined, { weekday: "narrow" }) : i % 5 === 0 ? String(d.getDate()) : ""));
       }
     } else {
       for (let i = 11; i >= 0; i--) {
@@ -230,24 +265,57 @@ function Chart({ a, period }: { a: Activity; period: Exclude<Period, "day"> }) {
         const prefix = dayKey(d).slice(0, 7);
         let s = 0;
         for (const [k, day] of Object.entries(a.days)) if (k.startsWith(prefix)) s += day.r + day.l;
-        out.push({ label: d.toLocaleDateString(undefined, { month: "narrow" }), long: d.toLocaleDateString(undefined, { month: "long", year: "numeric" }), mins: Math.round(s / 60) });
+        const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        out.push({ label: d.toLocaleDateString(undefined, { month: "narrow" }), long: d.toLocaleDateString(undefined, { month: "long", year: "numeric" }), mins: Math.round(s / 60), from: dayKey(d), to: dayKey(last), month: d });
       }
     }
     return out;
-  }, [a, period]);
+  }, [a, period, month]);
   const max = Math.max(1, ...bars.map((b) => b.mins));
-  const caption = period === "week" ? "Minutes a day, last 7 days" : period === "month" ? "Minutes a day, last 30 days" : "Minutes a month, last 12 months";
+  const caption = month
+    ? `Minutes a day, ${month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`
+    : period === "week" ? "Minutes a day, last 7 days" : period === "month" ? "Minutes a day, last 30 days" : "Minutes a month, last 12 months";
+  const chosen = pick !== null ? bars[pick] : null;
+  const t = chosen ? totals(a, chosen.from, chosen.to) : null;
   return (
     <figure className="space-y-1">
-      <figcaption className="flex justify-between text-xs text-muted">
+      <figcaption className="flex items-center justify-between gap-2 text-xs text-muted">
         <span>{caption}</span>
-        <span className="tabular-nums text-faint">max {max} min</span>
+        {month ? (
+          <button type="button" onClick={() => (setMonth(null), setPick(null))} className="min-h-8 rounded-md px-2 font-medium text-accent hover:underline">
+            ← All months
+          </button>
+        ) : (
+          <span className="tabular-nums text-faint">max {max} min</span>
+        )}
       </figcaption>
-      <div className="flex h-24 items-end gap-[2px] border-b border-line" role="img" aria-label={`${caption}: ${bars.map((b) => `${b.long} ${b.mins}`).join(", ")}`}>
+      <div
+        role="group"
+        className="flex h-24 cursor-pointer items-end gap-[2px] border-b border-line"
+        aria-label={`${caption}: tap a bar for its numbers`}
+        onClick={(e) => {
+          // a mouse or finger: the bar under it, however thin; a key press: the focused bar
+          const el = (e.target as HTMLElement).closest("[data-i]") as HTMLElement | null;
+          const box = e.currentTarget.getBoundingClientRect();
+          const i = e.detail === 0 && el ? Number(el.dataset.i) : Math.min(bars.length - 1, Math.max(0, Math.floor(((e.clientX - box.left) / box.width) * bars.length)));
+          setPick(pick === i ? null : i);
+        }}
+      >
         {bars.map((b, i) => (
-          <div key={i} className="group relative flex h-full flex-1 items-end" title={`${b.long}: ${b.mins} min`}>
-            <div className="w-full rounded-t-[4px] bg-accent group-hover:opacity-80" style={{ height: b.mins ? `${Math.max(3, (b.mins / max) * 100)}%` : 0 }} />
-          </div>
+          <button
+            key={i}
+            type="button"
+            data-i={i}
+            aria-pressed={pick === i}
+            aria-label={`${b.long}: ${b.mins} min`}
+            title={`${b.long}: ${b.mins} min`}
+            className="group relative flex h-full flex-1 items-end"
+          >
+            <span
+              className={`block w-full rounded-t-[4px] ${pick === i ? "bg-ink" : "bg-accent group-hover:opacity-80"}`}
+              style={{ height: b.mins ? `${Math.max(3, (b.mins / max) * 100)}%` : pick === i ? 2 : 0 }}
+            />
+          </button>
         ))}
       </div>
       <div className="flex gap-[2px] text-center text-[10px] text-faint" aria-hidden>
@@ -257,6 +325,29 @@ function Chart({ a, period }: { a: Activity; period: Exclude<Period, "day"> }) {
           </span>
         ))}
       </div>
+      {chosen && t ? (
+        <div aria-live="polite" className="mt-2 rounded-xl border border-line bg-raised px-3 py-2 text-sm">
+          <p className="flex items-baseline justify-between gap-2">
+            <strong className="text-ink">{chosen.long}</strong>
+            {chosen.month && (
+              <button type="button" onClick={() => (setMonth(chosen.month!), setPick(null))} className="min-h-8 shrink-0 text-xs font-medium text-accent hover:underline">
+                Show its days →
+              </button>
+            )}
+          </p>
+          <p className="mt-1 text-muted">
+            <span aria-hidden>📖 </span>Reading {fmtDuration(t.read)} · {t.verses.toLocaleString()} verses · {t.chapters.toLocaleString()} chapters
+          </p>
+          <p className="text-muted">
+            <span aria-hidden>🎧 </span>Listening {fmtDuration(t.listen)} · {t.versesHeard.toLocaleString()} verses · {t.chaptersHeard.toLocaleString()} chapters
+          </p>
+          <p className="text-muted">
+            Total {fmtDuration(t.read + t.listen)} · {traditionsIn(t.works)} tradition{traditionsIn(t.works) === 1 ? "" : "s"}
+          </p>
+        </div>
+      ) : (
+        <p className="text-[11px] text-faint">Tap a bar for its numbers{month || period === "week" || period === "month" ? "" : "; a month opens to its days"}.</p>
+      )}
     </figure>
   );
 }
