@@ -14,6 +14,7 @@ import { articleStudyChanged } from "@/lib/article-study";
 import { countArticle } from "@/lib/count";
 import { FurtherStudy, RefMention, ShareBar, StudyGuide } from "@/components/article-study";
 import { Bookcase } from "@/components/article-bookcase";
+import { touch } from "@/lib/stamps";
 
 const PREF = "va-article-depth:v1"; // localStorage: the depth a reader last chose
 const EMPTY_STUDY: StudyRef[] = [];
@@ -28,7 +29,7 @@ function PanelTitle({ children, action }: { children: ReactNode; action?: ReactN
     </div>
   );
 }
-const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/q/<question words>": answer } (this device only)
+const ANSWERS = "va-article-answers:v1"; // localStorage: { "slug/q/<question words>": answer } (synced, Nov 25)
 const READ = "va-article-read:v1"; // localStorage: { slug: { depth: "YYYY-MM-DD" } }
 
 function load<T>(key: string, empty: T): T {
@@ -44,6 +45,7 @@ function save(key: string, value: unknown) {
   } catch {
     /* storage blocked: nothing kept */
   }
+  if (key === ANSWERS || key === READ) touch("articles"); // (sync carries read ticks and answers to the other devices)
 }
 
 /**
@@ -68,6 +70,10 @@ function Answer({ id, legacy, question }: { id: string; legacy: string; question
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- this browser's saved answer is only readable after hydration
     setText(all[id] ?? "");
+    // an answer synced from another device while this box is open (not while typing here)
+    const onSync = () => pending.current === null && setText(load<Record<string, string>>(ANSWERS, {})[id] ?? "");
+    window.addEventListener("va-article-study", onSync);
+    return () => window.removeEventListener("va-article-study", onSync);
   }, [id, legacy]);
   const store = (v: string) => {
     clearTimeout(timer.current);
@@ -103,10 +109,10 @@ function Answer({ id, legacy, question }: { id: string; legacy: string; question
       <textarea
         value={text}
         onChange={(e) => change(e.target.value)}
-        onBlur={(e) => store(e.target.value)}
+        onBlur={() => pending.current !== null && store(pending.current)} // (only what was typed: never an old copy over a synced answer)
         rows={3}
         aria-label={`Your answer: ${question}`}
-        placeholder="Your answer (kept on this device only)"
+        placeholder="Your answer (kept on this device, and on your other devices if sync is on)"
         className="block w-full resize-y rounded-lg border border-line bg-panel px-3 py-2 font-sans text-base not-italic text-ink placeholder:text-faint focus:border-accent focus:outline-none"
       />
       <span aria-live="polite" className="mt-1 block h-4 font-sans text-xs text-faint">

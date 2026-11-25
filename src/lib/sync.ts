@@ -8,6 +8,9 @@
  * device (each device only adds to its own, so totals never double; the device id outlives turning sync
  * off and on); goals, plans and settings entry by entry (each goal, each plan, each setting), the most
  * recently changed one winning, with removals remembered, so changes on two devices don't undo each other.
+ * Articles (read ticks, saved items, reflection answers) and study groups go the same way, entry by entry (my brother's
+ * ticket 2d90a8f3, Nov 25). A group joined from two browsers is one member after syncing: the identity holding a role
+ * (owner, then mod), else the one that joined first, is kept everywhere, and the other's card is taken out of the group.
  */
 import { useSyncExternalStore } from "react";
 import { getOtherActivity, getOwnActivity, setOtherActivity, type Activity } from "./activity";
@@ -19,6 +22,7 @@ import { onLocalChange, stampOf } from "./stamps";
 import { allItems, getDeleted, mergeFromSync, onStudyChange, type StudyItem } from "./study";
 import { toast } from "./ui-store";
 import { isPrivate, PrivateModeError } from "./privacy";
+import { dropIdentity, flushDrops, getGroups, pickIdentity, setGroupsFromSync, type MyGroup } from "./groups";
 
 type Payload = {
   v: 1;
@@ -34,7 +38,17 @@ type Payload = {
   entries?: Partial<Record<Area, Entries>>;
 };
 
-type Area = "goals" | "plans" | "settings";
+type Area = "goals" | "plans" | "settings" | "articles" | "groups";
+const AREAS: Area[] = ["goals", "plans", "settings", "articles", "groups"];
+/** Articles' storage on the device (article-study.ts, article-reader.tsx): what's saved, read and answered. */
+const ART = { saved: "va-article-saved:v1", read: "va-article-read:v1", answers: "va-article-answers:v1" } as const;
+const readJson = <T,>(key: string, empty: T): T => {
+  try {
+    return (JSON.parse(localStorage.getItem(key) ?? "null") as T) ?? empty;
+  } catch {
+    return empty;
+  }
+};
 /** key -> when it last changed and its value as JSON (null = removed). */
 type Entries = Record<string, { at: number; v: string | null }>;
 
@@ -103,9 +117,9 @@ function deviceId(fallback?: string): string {
 
 function readEntries(): Record<Area, Entries> {
   try {
-    return { goals: {}, plans: {}, settings: {}, ...(JSON.parse(localStorage.getItem(ENTRIES_KEY) ?? "{}") as Partial<Record<Area, Entries>>) };
+    return { goals: {}, plans: {}, settings: {}, articles: {}, groups: {}, ...(JSON.parse(localStorage.getItem(ENTRIES_KEY) ?? "{}") as Partial<Record<Area, Entries>>) };
   } catch {
-    return { goals: {}, plans: {}, settings: {} };
+    return { goals: {}, plans: {}, settings: {}, articles: {}, groups: {} };
   }
 }
 function writeEntries(e: Record<Area, Entries>) {
@@ -121,13 +135,71 @@ function localValues(area: Area): Record<string, string> {
   const out: Record<string, string> = {};
   if (area === "goals") for (const g of getGoals()) out[g.id] = JSON.stringify(g);
   else if (area === "plans") for (const [id, p] of Object.entries(getStartedPlans())) out[id] = JSON.stringify(p);
+  else if (area === "articles") {
+    // s:<id> a saved item · r:<slug>|<depth> the day it was marked read · a:<question key> a reflection answer
+    for (const [id, ref] of Object.entries(readJson<Record<string, unknown>>(ART.saved, {}))) out[`s:${id}`] = JSON.stringify(ref);
+    for (const [slug, depths] of Object.entries(readJson<Record<string, Record<string, string>>>(ART.read, {})))
+      for (const [d, day] of Object.entries(depths ?? {})) if (day) out[`r:${slug}|${d}`] = JSON.stringify(day);
+    for (const [k, v] of Object.entries(readJson<Record<string, string>>(ART.answers, {}))) if (v) out[`a:${k}`] = JSON.stringify(v);
+  } else if (area === "groups") for (const g of getGroups()) out[g.code] = JSON.stringify(g);
   else for (const [k, v] of Object.entries(pickSettings(getSettings()))) out[k] = JSON.stringify(v ?? null);
+  return out;
+}
+
+/** The articles' storage rebuilt from synced entries (then the bookcase, My Study and badges update). */
+function applyArticles(live: [string, { at: number; v: string }][]) {
+  const saved: Record<string, unknown> = {};
+  const read: Record<string, Record<string, string>> = {};
+  const answers: Record<string, string> = {};
+  for (const [k, e] of live) {
+    const v = JSON.parse(e.v);
+    if (k.startsWith("s:")) saved[k.slice(2)] = v;
+    else if (k.startsWith("r:")) {
+      const [slug, d] = [k.slice(2, k.lastIndexOf("|")), k.slice(k.lastIndexOf("|") + 1)];
+      (read[slug] ??= {})[d] = v;
+    } else if (k.startsWith("a:")) answers[k.slice(2)] = v;
+  }
+  try {
+    localStorage.setItem(ART.saved, JSON.stringify(saved));
+    localStorage.setItem(ART.read, JSON.stringify(read));
+    localStorage.setItem(ART.answers, JSON.stringify(answers));
+  } catch {
+    /* private mode */
+  }
+  window.dispatchEvent(new Event("va-article-study"));
+  window.dispatchEvent(new Event("va-progress"));
+}
+
+/**
+ * Before merging groups: a group this device is in under one identity and the synced copy under another (joined from
+ * two browsers) keeps one identity, the same on every device: owner, then mod, then the first to join. The synced entry
+ * is replaced by the kept one (stamped newer, so every device takes it) and the other card leaves the group.
+ */
+async function oneIdentityPerGroup(remote: Entries | null): Promise<Entries | null> {
+  if (!remote) return remote;
+  const out: Entries = { ...remote };
+  const newest = Math.max(Date.now(), ...Object.values(remote).map((e) => e.at)) + 1;
+  for (const mine of getGroups()) {
+    const r = remote[mine.code];
+    if (!r?.v) continue;
+    const theirs = JSON.parse(r.v) as MyGroup;
+    if (theirs.secret === mine.secret) continue;
+    const pick = await pickIdentity(mine, theirs);
+    if (pick === "gone") continue; // the group no longer exists: the synced copy stands, nothing to remove
+    if (!pick) {
+      delete out[mine.code]; // roles unreadable (offline?): keep this device's identity for now, decide next time
+      continue;
+    }
+    out[mine.code] = { at: newest, v: JSON.stringify(pick.keep) };
+    await dropIdentity(pick.drop).catch(() => null); // (kept in a retry list until the server confirms)
+  }
   return out;
 }
 
 /** Older payloads only have whole blobs: read them as entries all stamped with the blob's time. */
 function legacyEntries(remote: Payload, area: Area): Entries {
   const out: Entries = {};
+  if (area === "articles" || area === "groups") return out; // (not in older payloads)
   if (area === "goals") for (const g of remote.goals?.list ?? []) out[g.id] = { at: remote.goals.at, v: JSON.stringify(g) };
   else if (area === "plans") for (const [id, p] of Object.entries(remote.plans?.data ?? {})) out[id] = { at: remote.plans.at, v: JSON.stringify(p) };
   else for (const [k, v] of Object.entries(remote.settings?.data ?? {})) out[k] = { at: remote.settings.at, v: JSON.stringify(v ?? null) };
@@ -149,6 +221,14 @@ function mergeArea(area: Area, remote: Entries | null, known: Entries): Entries 
   for (const [k, e] of Object.entries(mine)) if (e.v !== null && !(k in now)) mine[k] = { at: stamp, v: null };
   const merged: Entries = { ...mine };
   for (const [k, e] of Object.entries(remote ?? {})) if (!merged[k] || e.at >= merged[k].at) merged[k] = e;
+  // a reflection answered differently on two devices before they first synced: keep both texts, not just the newer
+  if (area === "articles")
+    for (const [k, e] of Object.entries(remote ?? {})) {
+      if (!k.startsWith("a:") || known[k] || !e.v || !now[k] || e.v === now[k]) continue;
+      const [a, b] = [JSON.parse(now[k]) as unknown, JSON.parse(e.v) as unknown];
+      if (typeof a !== "string" || typeof b !== "string") continue;
+      merged[k] = { at: Math.max(e.at, mine[k]?.at ?? 0) + 1, v: JSON.stringify(a.includes(b) ? a : b.includes(a) ? b : b + "\n\n" + a) };
+    }
 
   const changed = Object.keys(merged).some((k) => (merged[k].v ?? undefined) !== now[k]);
   if (changed) {
@@ -159,7 +239,15 @@ function mergeArea(area: Area, remote: Entries | null, known: Entries): Entries 
       live.sort(([a], [b]) => rank(a) - rank(b));
       setGoals(live.map(([, e]) => JSON.parse(e.v) as Goal), true);
     } else if (area === "plans") setStartedPlans(Object.fromEntries(live.map(([k, e]) => [k, JSON.parse(e.v)])));
-    else {
+    else if (area === "articles") applyArticles(live);
+    else if (area === "groups") {
+      const order = getGroups().map((g) => g.code);
+      const rank = (c: string) => (order.includes(c) ? order.indexOf(c) : order.length);
+      live.sort(([a], [b]) => rank(a) - rank(b));
+      // a group left on another device: this device's card goes too (it may have republished it meanwhile)
+      for (const g of getGroups()) if (!live.some(([c]) => c === g.code)) void dropIdentity(g).catch(() => null);
+      setGroupsFromSync(live.map(([, e]) => JSON.parse(e.v) as MyGroup));
+    } else {
       const patch: Record<string, unknown> = {};
       for (const [k, e] of live) if ((SYNCED_SETTINGS as readonly string[]).includes(k) && e.v !== now[k]) patch[k] = JSON.parse(e.v);
       if (Object.keys(patch).length) updateSettings(patch as Partial<Settings>, true);
@@ -190,6 +278,7 @@ function pickSettings(s: Settings): Partial<Settings> {
 /** Merge what's on the server into this device, then build the combined payload to upload. */
 async function mergeAndBuild(remote: Payload | null, device: string): Promise<Payload> {
   const now = Date.now();
+  await flushDrops().catch(() => null); // group cards still to take out (an extra identity, a group left elsewhere)
   let deleted = getDeleted();
   if (remote) {
     deleted = await mergeFromSync(remote.items ?? [], remote.deleted ?? {});
@@ -199,8 +288,9 @@ async function mergeAndBuild(remote: Payload | null, device: string): Promise<Pa
   }
   const known = readEntries();
   const entries = {} as Record<Area, Entries>;
-  for (const area of ["goals", "plans", "settings"] as const) {
-    const r = remote ? (remote.entries?.[area] ?? legacyEntries(remote, area)) : null;
+  for (const area of AREAS) {
+    let r = remote ? (remote.entries?.[area] ?? legacyEntries(remote, area)) : null;
+    if (area === "groups") r = await oneIdentityPerGroup(r);
     entries[area] = mergeArea(area, r, known[area]);
   }
   writeEntries(entries);

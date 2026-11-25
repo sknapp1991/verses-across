@@ -13,6 +13,7 @@ import { statsNow } from "./stats-now";
 import { deriveKeys, fromBase64, hex, newCode, normalizeCode, open, seal, type CodeKeys } from "./secret-code";
 import { allItems } from "./study";
 import { isPrivate, PrivateModeError } from "./privacy";
+import { touch } from "./stamps";
 
 export type Share = { progress: boolean; reading: boolean };
 /** `dh`: this device's key pair for whispers in the group chat (made the first time the chat opens). */
@@ -78,7 +79,8 @@ export function getGroups(): MyGroup[] {
   }
   return groups!;
 }
-function saveGroups(next: MyGroup[]) {
+function saveGroups(next: MyGroup[], fromSync = false) {
+  if (!fromSync) touch("groups"); // (sync carries the change to the other devices)
   groups = next;
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
@@ -88,6 +90,83 @@ function saveGroups(next: MyGroup[]) {
   subs.forEach((l) => l());
   if (typeof window !== "undefined") window.dispatchEvent(new Event("va-progress")); // (badges: PROGRESS_EVENT)
 }
+/** The groups as synced from another device (sync.ts). */
+export const setGroupsFromSync = (next: MyGroup[]) => saveGroups(next, true);
+
+/**
+ * Two identities for one group (joined from two browsers): keep the owner, then a mod, then the first to join (then the
+ * smaller member id, so every device makes the same choice). Null when the group's roles couldn't be read: then nothing
+ * is decided (and nothing removed) this time, so an owner is never dropped because of a bad connection.
+ */
+export async function pickIdentity(a: MyGroup, b: MyGroup): Promise<{ keep: MyGroup; drop: MyGroup } | "gone" | null> {
+  try {
+    const k = await keysAlways(a.code);
+    const res = await fetch(`/api/group/${k.id}`, { cache: "no-store" });
+    if (res.status === 404) return "gone";
+    if (!res.ok) return null;
+    const roles = ((await res.json()) as { roles?: Roles | null }).roles ?? null;
+    const [ia, ib] = await Promise.all([memberId(a.secret), memberId(b.secret)]);
+    const score = (id: string) => (roles?.owner === id ? 2 : roles?.mods?.[id] ? 1 : 0);
+    const [sa, sb] = [score(ia), score(ib)];
+    const aFirst = sa !== sb ? sa > sb : a.joined !== b.joined ? a.joined < b.joined : ia < ib;
+    return aFirst ? { keep: a, drop: b } : { keep: b, drop: a };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Cards to take out of groups (an extra identity, or a group left on another device), kept until the server has said
+ * so twice at least a minute apart: a card that this browser was still publishing when it was removed goes too.
+ */
+const DROPS = "va-group-drops:v1";
+type Drop = { code: string; secret: string; done: number; last: number };
+const readDrops = (): Drop[] => {
+  try {
+    const d = JSON.parse(localStorage.getItem(DROPS) ?? "[]");
+    return Array.isArray(d) ? d : [];
+  } catch {
+    return [];
+  }
+};
+const writeDrops = (d: Drop[]) => {
+  try {
+    if (d.length) localStorage.setItem(DROPS, JSON.stringify(d));
+    else localStorage.removeItem(DROPS);
+  } catch {
+    /* private mode */
+  }
+};
+export function dropIdentity(g: Pick<MyGroup, "code" | "secret">) {
+  const d = readDrops();
+  if (!d.some((x) => x.code === g.code && x.secret === g.secret)) writeDrops([...d, { code: g.code, secret: g.secret, done: 0, last: 0 }]);
+  return flushDrops();
+}
+/** Try the waiting removals (each sync, and when one is added). */
+export async function flushDrops() {
+  const start = readDrops();
+  const left: Drop[] = [];
+  const using = getGroups();
+  for (const x of start) {
+    if (using.some((g) => g.code === x.code && g.secret === x.secret)) continue; // in use again here: never remove it
+    if (x.done && Date.now() - x.last < 60_000) {
+      left.push(x);
+      continue;
+    }
+    try {
+      const k = await keysAlways(x.code);
+      const res = await fetch(`/api/group/${k.id}/${await memberId(x.secret)}`, { method: "DELETE", headers: { "x-member-key": x.secret } });
+      const ok = res.ok || res.status === 404;
+      if (!ok || x.done < 1) left.push({ ...x, done: x.done + (ok ? 1 : 0), last: Date.now() });
+    } catch {
+      left.push(x); // offline: next time
+    }
+  }
+  // (anything added while this ran is kept)
+  const same = (x: Drop, y: Drop) => x.code === y.code && x.secret === y.secret;
+  writeDrops([...left, ...readDrops().filter((n) => !start.some((x) => same(x, n)))]);
+}
+
 export function useGroups(): MyGroup[] {
   return useSyncExternalStore(
     (l) => {

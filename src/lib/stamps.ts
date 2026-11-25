@@ -1,5 +1,5 @@
 /**
- * When each synced piece (goals, plans, settings) last changed on this device, so sync can keep the
+ * When each synced piece (goals, plans, settings, articles, groups) last changed on this device, so sync can keep the
  * newest version, plus a hook so sync uploads soon after a change.
  */
 const KEY = "va-stamps:v1";

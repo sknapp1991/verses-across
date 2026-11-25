@@ -55,8 +55,9 @@ function ConfirmLink({ code }: { code: string }) {
       <h2 className="font-serif text-lg font-semibold">Connect this device to sync?</h2>
       <p className="font-mono text-ink">{code}</p>
       <p className="text-muted">
-        Your notes, highlights, favorites, progress, goals and settings on this device will be combined with this code’s and
-        shared with every device that uses it.
+        Your notes, highlights, favorites, progress, goals, settings, articles, reflections and study groups on this device
+        will be combined with this code’s and shared with every device that uses it. A study group joined on two devices
+        becomes one member.
       </p>
       <p className="rounded-lg bg-accent-soft px-3 py-2 text-xs text-ink">
         <strong>Only connect if this is your own code</strong>, from your own device. Anyone who has the code can read what’s
@@ -130,7 +131,7 @@ function Body() {
         {!s.on ? (
           <>
             <p className="text-muted">
-              Keep your notes, highlights, favorites, plans, goals, progress and settings the same on your phone, tablet and
+              Keep your notes, highlights, favorites, plans, goals, progress, settings, articles and study groups the same on your phone, tablet and
               computer, and safe if this browser is cleared. No account, email or name: a private code is the key.
             </p>
             <p className="text-muted">
@@ -213,7 +214,8 @@ function Body() {
             </div>
             <p className="rounded-lg bg-accent-soft px-3 py-2 text-xs text-ink">
               <strong>Keep this code somewhere safe</strong>, for example in your password manager or a note. It’s the only way
-              back to your data, and anyone who has it can see your notes, so share it only with your own devices.
+              back to your data, and anyone who has it can see your notes and act as you in your study groups, so share it only
+              with your own devices.
             </p>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => void syncNow()} disabled={s.status === "syncing"} className={`${btn} flex-1 border border-line text-ink hover:bg-raised disabled:opacity-60`}>

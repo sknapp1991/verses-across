@@ -5,6 +5,7 @@
  * Articles tab with the articles read there, and used for the bookcase's "Suggested for you" shelf.
  */
 import { useSyncExternalStore } from "react";
+import { touch } from "./stamps";
 
 export const SAVED = "va-article-saved:v1"; // localStorage: { [id]: SavedRef }
 export const READ = "va-article-read:v1"; // localStorage: { slug: { depth: "YYYY-MM-DD" } } (article-reader writes it)
@@ -62,6 +63,7 @@ export function toggleSaved(ref: Omit<SavedRef, "at">, on: boolean) {
   } catch {
     /* storage blocked: nothing kept */
   }
+  touch("articles"); // (sync carries it to the other devices)
   snapshot = null;
   window.dispatchEvent(new Event(EVENT));
 }

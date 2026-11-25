@@ -183,7 +183,7 @@ export default function AboutPage() {
             </li>
             <li>
               <strong className="text-ink">Sync (optional).</strong> If you turn on sync, your study data, progress, goals,
-              plans and some settings are locked (encrypted) on your device with your private sync code before they are
+              plans, some settings, articles and reflection answers, and your study groups (with their member keys) are locked (encrypted) on your device with your private sync code before they are
               uploaded. We store only that locked copy and can&rsquo;t read it; without the code it&rsquo;s meaningless. You
               can delete it from the server at any time (My Study → Sync).
             </li>
