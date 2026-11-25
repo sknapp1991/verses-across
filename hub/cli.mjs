@@ -9,7 +9,7 @@
 //   node hub/cli.mjs list [New|Seen|Working|Question|Reopened|Live|Done|Roadmap] [--site verses|library]
 //   node hub/cli.mjs site <id> <verses|library>     (which site the ticket is about; "[LA]" in lists = Library Across)
 //   node hub/cli.mjs show <id>
-//   node hub/cli.mjs status <id> <Status> [note…]
+//   node hub/cli.mjs status <id> <Status> [note…]   (Live needs a note with What: … Try it: … Untested: …, and a link first)
 //   node hub/cli.mjs link <id> <https://versesacross.com/… or https://libraryacross.com/…>
 //   node hub/cli.mjs say <id> <message…>            (a reply on the report, as Claude)
 //   node hub/cli.mjs approval <title> <clip path> [detail…]
@@ -19,6 +19,7 @@
 //   node hub/cli.mjs get <media id> <save to path>   (download a report's photo/video to look at)
 //   node hub/cli.mjs chat <message…>                (a message in the team chat, Test & chat)
 //   node hub/cli.mjs test <title> [https://…] [steps…]  (a test to try, in Test & chat)
+//   node hub/cli.mjs digest                         (the weekly summary, as posted in the team chat on Sundays)
 //   node hub/cli.mjs autoreview                     (tickets closed automatically a week+ ago, to check they stayed fixed)
 //   node hub/cli.mjs watch [--minutes 29] [--every 60]  (constant ticket watch for the Monitor tool: NEW TICKET / NEW REPLY /
 //                                                     REOPENED lines, HUB UNREACHABLE, then WATCH ENDED → re-arm)
@@ -134,7 +135,7 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
   } else if (cmd === "approval") {
     const { id: aid } = await send("/api/approvals", { kind: "clip", title: a[0], detail: a.slice(2).join(" ") });
     await upload("approval", aid, a[1]);
-    console.log(`approval ${aid} waiting for Skylar`);
+    console.log(`approval ${aid} waiting for Skylar or his brother`);
   } else if (cmd === "approvals") {
     for (const x of await api("/api/approvals")) console.log(`${x.id}  ${x.status.padEnd(8)} ${x.title}${x.note ? `  (${x.note})` : ""}`);
   } else if (cmd === "feedback") {
@@ -252,6 +253,8 @@ ${r.type} · ${r.status} · by ${r.author.split("@")[0]} · ${r.created}\nWhere:
     // a test for Test & chat: test <title> [url] [steps…]
     const { id: tid } = await send("/api/uat", { title: a[0], url: a[1] && a[1].startsWith("https://") ? a[1] : "", steps: a.slice(a[1] && a[1].startsWith("https://") ? 2 : 1).join(" ") });
     console.log(`test ${tid}`);
+  } else if (cmd === "digest") {
+    console.log((await api("/api/digest")).text);
   } else if (cmd === "me") {
     console.log(await api("/api/me"));
   } else {

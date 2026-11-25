@@ -296,13 +296,43 @@ function guessDevice() {
   const ua = navigator.userAgent;
   return /iPhone|iPad|iPod/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : "computer";
 }
+/** e.g. "Safari 15.6 · macOS 10.15", "Chrome 131 · Windows", "Safari 17.2 · iOS 17.2" (Nov 25: on each ticket). */
+function browserName() {
+  const ua = navigator.userAgent;
+  const m = (re) => (re.exec(ua) || [])[1];
+  const name = m(/Edg\\/(\\d+)/) ? "Edge " + m(/Edg\\/(\\d+)/)
+    : m(/Firefox\\/(\\d+)/) ? "Firefox " + m(/Firefox\\/(\\d+)/)
+    : m(/CriOS\\/(\\d+)/) ? "Chrome " + m(/CriOS\\/(\\d+)/)
+    : m(/Chrome\\/(\\d+)/) ? "Chrome " + m(/Chrome\\/(\\d+)/)
+    : m(/Version\\/([\\d.]+).*Safari/) ? "Safari " + m(/Version\\/([\\d.]+).*Safari/)
+    : "Browser";
+  const ios = m(/(?:iPhone|iPad|iPod).*? OS (\\d+[_\\d]*)/);
+  const mac = m(/Mac OS X (\\d+[_\\d]*)/);
+  const android = m(/Android (\\d+(?:\\.\\d+)?)/);
+  const os = ios ? "iOS " + ios.replace(/_/g, ".") : android ? "Android " + android : mac ? "macOS " + mac.replace(/_/g, ".") : /Windows/.test(ua) ? "Windows" : /Linux/.test(ua) ? "Linux" : "";
+  return (name + (os ? " · " + os : "")).slice(0, 80);
+}
+/** What each "How soon?" means, and how soon someone looks (Nov 25). */
+const PRIO_MEANING = {
+  urgent: "Urgent: the site is broken or something is lost. Looked at within the hour (6 AM to 6 PM ET).",
+  normal: "Normal: looked at the same day.",
+  someday: "Someday: a good idea for later; it may go on the roadmap.",
+};
+/** What to write, by type (Nov 25: prompts, nothing required). */
+const TYPE_PROMPT = {
+  Bug: "What did you do, what did you expect, and what happened instead?",
+  Idea: "What would you like, and what problem would it solve?",
+  Content: "Which text or page, and what should change?",
+  Question: "What would you like to know?",
+};
 /** A row of chips to pick one (or, when optional, none by tapping it again). */
-function chipChoice(title, list, start, optional) {
+function chipChoice(title, list, start, optional, onPick) {
   let value = start;
   const chips = h("div.chips", { role: "radiogroup", "aria-label": title }, list.map(([v, label]) =>
     h("button.chip", { type: "button", role: "radio", "data-v": v, "aria-pressed": v === value ? "true" : "false", onclick: () => {
       value = optional && value === v ? "" : v;
       chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c.dataset.v === value ? "true" : "false"));
+      if (onPick) onPick(value);
     } }, label)));
   return { el: h("div", {}, h("label", {}, title), chips), value: () => value };
 }
@@ -332,12 +362,14 @@ function updateTicketsBadge(list) {
 async function showReport() {
   let type = "Bug";
   const chips = h("div.chips", { role: "radiogroup", "aria-label": "Type" }, ["Bug", "Idea", "Content", "Question"].map((t) =>
-    h("button.chip", { type: "button", role: "radio", "aria-pressed": t === type ? "true" : "false", onclick: (e) => { type = t; chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c === e.currentTarget ? "true" : "false")); } }, t)));
-  const body = h("textarea", { placeholder: "What happened, or what's the idea? As much detail as you like." });
+    h("button.chip", { type: "button", role: "radio", "aria-pressed": t === type ? "true" : "false", onclick: (e) => { type = t; body.placeholder = TYPE_PROMPT[t]; chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", c === e.currentTarget ? "true" : "false")); } }, t)));
+  const body = h("textarea", { placeholder: TYPE_PROMPT.Bug });
   const place = h("input", { type: "text", placeholder: "e.g. Psalm 23, Moby Dick ch. 3, versesacross.com/…" });
   // Sorting: how soon, which part, which device (guessed from this phone or computer; tap to change)
   const site = chipChoice("Which site?", SITE_LIST, "verses");
-  const prio = chipChoice("How soon?", PRIOS, "normal");
+  const prioHint = h("div.faint", { style: "margin-top:4px" }, PRIO_MEANING.normal);
+  const prio = chipChoice("How soon?", PRIOS, "normal", false, (v) => { prioHint.textContent = PRIO_MEANING[v] || ""; });
+  prio.el.append(prioHint);
   const area = chipChoice("Which part of the site? (optional)", AREA_LIST, "", true);
   const device = chipChoice("On which device?", DEVICE_LIST, guessDevice(), true);
   const picker = filePicker();
@@ -348,7 +380,7 @@ async function showReport() {
     if (!body.value.trim()) return toast("Write what it is first");
     send.disabled = true; send.textContent = "Sending…";
     try {
-      const { id } = await post("/api/reports", { type, body: body.value, place: place.value, priority: prio.value(), area: area.value(), device: device.value(), site: site.value() });
+      const { id } = await post("/api/reports", { type, body: body.value, place: place.value, priority: prio.value(), area: area.value(), device: device.value(), site: site.value(), browser: browserName() });
       const files = picker.files();
       if (files.length) {
         bar.classList.remove("hidden");
@@ -408,9 +440,9 @@ function renderTickets(list, target) {
         r.media ? h("span.faint", {}, "📎" + r.media) : null, r.comments ? h("span.faint", {}, "💬" + r.comments) : null,
         isFresh(r) ? h("span.fresh", { title: "Changed since you last opened it" }, "● New activity") : null),
       h("div.pre", { style: "margin-top:6px" }, r.body.length > 220 ? r.body.slice(0, 220) + "…" : r.body),
-      siteOf(r) === "library" || r.area || r.device || age >= 3 ? h("div.row", { style: "margin-top:6px" },
+      siteOf(r) === "library" || r.area || r.device || r.browser || age >= 3 ? h("div.row", { style: "margin-top:6px" },
         siteOf(r) === "library" ? tag("Library Across", "color:var(--accent);border-color:var(--accent)") : null,
-        r.area ? tag(labelOf(AREA_LIST, r.area)) : null, r.device ? tag(labelOf(DEVICE_LIST, r.device)) : null,
+        r.area ? tag(labelOf(AREA_LIST, r.area)) : null, r.device ? tag(labelOf(DEVICE_LIST, r.device)) : null, r.browser ? tag(r.browser) : null,
         age >= 3 ? tag("Waiting " + age + " days", "color:var(--warn);border-color:var(--warn)") : null) : null,
       r.dup_of ? h("div.faint", { style: "margin-top:6px" }, "Same as " + num(r.dup_of)) : null,
       r.notes ? h("div.faint.pre", { style: "margin-top:6px" }, "Claude" + (r.updated ? " · " + when(r.updated) : "") + ": " + r.notes) : null);
@@ -625,6 +657,7 @@ async function showOne(id) {
         r.priority === "urgent" ? h("span.tag", { style: "color:var(--bad);border-color:var(--bad)" }, "Urgent") : null,
         h("span.faint", {}, num(r.id) + " · " + r.type + " · " + who(r.author) + " · " + when(r.created))),
       r.place ? h("div.faint", { style: "margin-top:6px" }, "Where: " + r.place) : null,
+      r.browser ? h("div.faint", { style: "margin-top:2px" }, "Sent from: " + r.browser) : null,
       r.dup_of ? h("p", { style: "margin:6px 0 0" }, h("a", { href: "#inbox/" + r.dup_of }, "Same as " + num(r.dup_of) + " →")) : null,
       bodyBox(r, id),
       r.files && r.files.length ? h("div.thumbs", {}, r.files.map(mediaEl)) : null,
@@ -760,7 +793,7 @@ async function showChat(seg) {
 async function showApprovals() {
   const [aps, fb] = await Promise.all([api("/api/approvals"), api("/api/feedback").catch(() => [])]);
   const decide = (a) => {
-    if (!ME.owner) return h("p.faint", {}, a.status === "Waiting" ? "Waiting for the owner." : "");
+    if (!ME.approver) return h("p.faint", {}, a.status === "Waiting" ? "Waiting for Skylar or his brother." : "");
     const note = h("input", { type: "text", placeholder: "Note (what to change)…" });
     const btn = (label, cls) => h("button.btn.small" + cls, { type: "button", onclick: async () => {
       try { await post("/api/approvals/" + a.id, { decision: label, note: note.value }, "PATCH"); toast(label); go("approvals"); } catch (e) { toast(e.message); }
@@ -776,9 +809,11 @@ async function showApprovals() {
     const card = h("div.card", {},
       h("div.row", {}, status(f.status), h("span.faint", {}, f.topic + " · " + (f.page || "no page") + " · " + when(f.received))),
       h("div.pre", { style: "margin-top:6px" }, f.message));
-    if (ME.owner && f.status === "sheet") card.append(h("div.row", { style: "margin-top:8px" },
-      ...["Go", "No"].map((d) => h("button.btn.small" + (d === "Go" ? ".primary" : ""), { type: "button", onclick: async () => {
-        try { await post("/api/feedback/" + f.id, { decision: d }, "PATCH"); toast(d); go("approvals"); } catch (e) { toast(e.message); }
+    if (ME.approver && f.status === "sheet") card.append(h("div.row", { style: "margin-top:8px" },
+      ...["Go", "No"].map((d) => h("button.btn.small" + (d === "Go" ? ".primary" : ""), { type: "button", onclick: async (e) => {
+        card.querySelectorAll("button").forEach((b) => (b.disabled = true)); // once (a second tap would decide twice)
+        try { await post("/api/feedback/" + f.id, { decision: d }, "PATCH"); toast(d === "Go" ? "Go: it's a ticket for Claude now" : "No"); go("approvals"); }
+        catch (err) { toast(err.message); card.querySelectorAll("button").forEach((b) => (b.disabled = false)); }
       } }, d))));
     return card;
   });
@@ -801,9 +836,9 @@ async function showApprovals() {
     add = h("details.card", {}, h("summary", { class: "faint" }, "Add a clip for approval (Claude)"), h("label", {}, "Title"), title, h("label", {}, "Detail"), detail, h("label", {}, "Clip"), picker.el, bar, b);
   }
   show(h("h2", {}, "Approvals"),
-    h("p.muted", {}, ME.owner ? "Only you can approve. Every decision is logged with who and when." : "Things waiting on the owner's OK."),
+    h("p.muted", {}, ME.approver ? "Skylar and his brother both approve (equal say). Every decision is logged with who and when." : "Things waiting on the team's OK."),
     h("h3", {}, "Clips and other things"), apCards.length ? h("div", {}, apCards) : h("p.faint", {}, "Nothing waiting."), add,
-    h("h3", {}, "Website feedback (Go builds it; No closes it)"), fbCards.length ? h("div", {}, fbCards) : h("p.faint", {}, "No website feedback waiting."));
+    h("h3", {}, "Website feedback (Go makes it a ticket for Claude; No closes it)"), fbCards.length ? h("div", {}, fbCards) : h("p.faint", {}, "No website feedback waiting."));
 }
 
 /* ---------- Roadmap ---------- */
@@ -894,11 +929,17 @@ function byWeek(items, dateOf, render) {
       h("div", { style: "margin-top:6px" }, list.map(render))));
 }
 async function showShipped() {
-  const [s, hl, au] = await Promise.all([api("/api/shipped"), api("/api/health").catch(() => null), api("/api/audit").catch(() => null)]);
+  const [s, hl, au, dg] = await Promise.all([api("/api/shipped"), api("/api/health").catch(() => null), api("/api/audit").catch(() => null), api("/api/digest").catch(() => null)]);
   const label = { view: "Chapters read", play: "Read-alongs started", download: "Downloads" };
   const kindName = (k) => (Object.hasOwn(label, k) ? label[k] : k);
   show(h("h2", {}, "Shipped"),
     s.totals.length ? h("div.grid2", {}, s.totals.map((t) => h("div.card", {}, h("div.faint", {}, kindName(t.kind)), h("div.num", {}, Number(t.week || 0).toLocaleString()), h("div.faint", {}, "this week · " + Number(t.month || 0).toLocaleString() + " in 30 days")))) : null,
+    dg ? h("details.card", {}, h("summary", { style: "cursor:pointer;font-weight:600" }, "Weekly summary (the last 7 days)"), h("div.pre", { style: "margin-top:6px" }, dg.text)) : null,
+    s.tickets && s.tickets.length ? h("h3", {}, "Tickets shipped, by week") : null,
+    s.tickets && s.tickets.length ? byWeek(s.tickets, (t) => t.at, (t) => h("div.comment", {},
+      h("div.who", {}, when(t.at) + " · " + (t.status === "Done" ? "Resolved" : t.status)),
+      h("a", { href: "#inbox/" + t.id }, num(t.id) + " " + t.title),
+      t.url ? h("div", {}, h("a", { href: t.url, target: "_blank", rel: "noopener" }, "Try it →")) : null)) : null,
     s.notes.length ? h("h3", {}, "In plain words, by week") : null,
     byWeek(s.notes, (n) => n.created, (n) => h("div.comment", {}, h("div.pre", {}, n.text), n.url ? h("a", { href: n.url, target: "_blank", rel: "noopener" }, "See it →") : null)),
     h("h3", {}, "Changes to the site, by week"),

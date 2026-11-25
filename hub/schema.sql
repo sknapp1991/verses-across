@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS reports (
   type TEXT NOT NULL,            -- Bug | Idea | Content | Question
   place TEXT NOT NULL DEFAULT '', -- where: a page, URL or verse
   body TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'New', -- New | Seen | Working | Question (open) · Live | Done | Roadmap (history)
+  status TEXT NOT NULL DEFAULT 'New', -- New | Seen | Working | Question | Reopened (open) · Pending (a tester's, waiting for an OK) · Live | Done | Roadmap (history)
   notes TEXT NOT NULL DEFAULT '',     -- Claude's plain note (what changed / the question)
   live_url TEXT NOT NULL DEFAULT '',  -- where to test it once Live
   updated TEXT NOT NULL,
@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS reports (
   area TEXT NOT NULL DEFAULT '',
   device TEXT NOT NULL DEFAULT '',
   dup_of TEXT NOT NULL DEFAULT '',
-  site TEXT NOT NULL DEFAULT 'verses' -- verses | library (HB8: which site the ticket is about)
+  site TEXT NOT NULL DEFAULT 'verses', -- verses | library (HB8: which site the ticket is about)
+  browser TEXT NOT NULL DEFAULT ''     -- e.g. Safari 15.6 · macOS 10.15, from the page (Nov 25; the Worker adds it to older tables)
 );
 CREATE INDEX IF NOT EXISTS reports_status ON reports (status, created);
 

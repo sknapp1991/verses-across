@@ -7,7 +7,8 @@
  * does not trust that alone: every request must carry a valid Access token (Cf-Access-Jwt-Assertion,
  * RS256, signed by the team's keys, for this app's AUD, not expired) whose email is on TEAM_EMAILS (or TESTER_EMAILS:
  * testers, who reach only their own tickets and Test & chat, see testerRoutes).
- * Approving is only for OWNER_EMAIL. Everything people type is stored and shown as text (never HTML).
+ * Approving: any team member (Skylar and his brother have equal say, Skylar Nov 25); never Claude or a tester.
+ * Everything people type is stored and shown as text (never HTML).
  */
 import { PAGE } from "./page";
 
@@ -164,7 +165,7 @@ export default {
   async scheduled(event: { cron: string }, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }) {
     if (event.cron === HEALTH_CRON) return ctx.waitUntil(checkSite(env));
     ctx.waitUntil(autoClose(env));
-    if (new Date().getUTCDay() === 0) ctx.waitUntil(backup(env)); // Sundays
+    if (new Date().getUTCDay() === 0) ctx.waitUntil(Promise.all([backup(env), weeklyDigest(env)])); // Sundays
   },
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
@@ -176,6 +177,8 @@ export default {
     // a tester (on TESTER_EMAILS and not on the team list): their own tickets, Test & chat, nothing else
     const tester = me !== "claude" && !emails(env.TEAM_EMAILS).includes(me);
     const role = me === "claude" ? "claude" : tester ? "tester" : owner ? "owner" : "team";
+    // who approves (clips, website feedback, testers' tickets): the team's people, with equal say (Skylar, Nov 25)
+    const approver = me !== "claude" && !tester;
     const path = url.pathname;
     const m = req.method;
 
@@ -197,7 +200,7 @@ export default {
             "referrer-policy": "no-referrer",
           },
         });
-      if (path === "/api/me") return json({ email: me, owner, worker, role, name: me === "claude" ? "Claude" : me.split("@")[0] });
+      if (path === "/api/me") return json({ email: me, owner, worker, approver, role, name: me === "claude" ? "Claude" : me.split("@")[0] });
 
       // Test & chat (hub 94dcc186): everyone signed in
       if (path === "/api/uat" && m === "GET" && !tester) return listUat(env);
@@ -238,10 +241,10 @@ export default {
       if (path === "/api/approvals" && m === "GET") return listApprovals(env);
       if (path === "/api/approvals" && m === "POST") return worker ? createApproval(env, me, await req.json()) : bad("Only the owner or Claude can add approvals", 403);
       r = /^\/api\/approvals\/([a-f0-9]{16})$/.exec(path);
-      if (r && m === "PATCH") return owner ? decideApproval(env, me, r[1], await req.json()) : bad("Only the owner can approve", 403);
+      if (r && m === "PATCH") return approver ? decideApproval(env, me, r[1], await req.json()) : bad("Only Skylar or his brother approve", 403);
       if (path === "/api/feedback" && m === "GET") return listFeedback(env);
       r = /^\/api\/feedback\/([a-f0-9]{8})$/.exec(path);
-      if (r && m === "PATCH") return owner ? decideFeedback(env, me, r[1], await req.json()) : bad("Only the owner can decide", 403);
+      if (r && m === "PATCH") return approver ? decideFeedback(env, me, r[1], await req.json()) : bad("Only Skylar or his brother decide", 403);
 
       // Roadmap, votes, shipped
       if (path === "/api/roadmap" && m === "GET") return roadmap(env, me, url.searchParams.get("site") === "library" ? "library" : "verses");
@@ -253,6 +256,7 @@ export default {
       // Site health, the audit list and backups (HB5, HB6)
       if (path === "/api/health" && m === "GET") return health(env);
       if (path === "/api/audit" && m === "GET") return audit(env);
+      if (path === "/api/digest" && m === "GET") return json({ text: await digestText(env) });
       if (path === "/api/backup" && m === "POST") return worker ? json(await backup(env)) : bad("Only the owner or Claude", 403);
       if (path === "/api/check" && m === "POST") return worker ? json(await checkSite(env)) : bad("Only the owner or Claude", 403);
 
@@ -292,11 +296,21 @@ async function createReport(env: Env, me: string, b: Row, status = "New") {
   const area = AREAS.has(String(b.area)) ? String(b.area) : "";
   const device = DEVICES.has(String(b.device)) ? String(b.device) : "";
   const site = SITES.has(String(b.site)) ? String(b.site) : "verses";
-  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device, site, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device, site, status)
+  await ensureColumns(env);
+  // e.g. "Safari 15.6 · macOS 10.15", worked out by the page from the browser (shown as text, never trusted for anything)
+  const browser = clip(b.browser, 80).replace(/[^\w .,·()/-]+/g, "");
+  await env.DB.prepare("INSERT INTO reports (id, created, author, type, place, body, updated, priority, area, device, site, status, browser) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, t, me, type, clip(b.place, 500), body, t, priority, area, device, site, status, browser)
     .run();
   return json({ id });
 }
+
+/** Columns added after the first schema (a Worker adding its own; schema.sql has them): browser (Nov 25). */
+let colsReady: Promise<unknown> | null = null;
+const ensureColumns = (env: Env) =>
+  (colsReady ??= env.DB.prepare("ALTER TABLE reports ADD COLUMN browser TEXT NOT NULL DEFAULT ''")
+    .run()
+    .catch((e: Error) => (/duplicate column/i.test(e.message) ? null : ((colsReady = null), Promise.reject(e)))));
 
 async function getReport(env: Env, id: string) {
   const report = await env.DB.prepare("SELECT * FROM reports WHERE id = ?").bind(id).first();
@@ -345,6 +359,14 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   if (b.status !== undefined) {
     if (!owner) return bad("Only the owner's session sets status", 403);
     if (!STATUSES.has(String(b.status))) return bad("Unknown status");
+    if (String(b.status) === "Live") {
+      const full = await env.DB.prepare("SELECT type, notes, live_url FROM reports WHERE id = ?").bind(id).first<{ type: string; notes: string; live_url: string }>();
+      const note = b.notes !== undefined ? clip(b.notes, 4000) : full?.notes ?? "";
+      const link = b.live_url !== undefined ? clip(b.live_url, 500) : full?.live_url ?? "";
+      const missing = liveNoteMissing(note);
+      if (missing) return bad(`A Live note needs ${missing} (What: … Try it: … Untested: …)`);
+      if (!link && full?.type !== "Question") return bad("Set the test link first (link <id> <url>)");
+    }
     if (b.dup_of) return bad("Set the status or the duplicate, not both");
     sets.push("status = ?");
     vals.push(String(b.status));
@@ -376,6 +398,17 @@ async function patchReport(env: Env, me: string, owner: boolean /* owner or Clau
   return json({ ok: true, updated: t });
 }
 
+/** What a Live note lacks, or "" (the hub's definition of done, Nov 25): what changed, how to try it, what wasn't tested. */
+function liveNoteMissing(note: string) {
+  const need = [
+    [/\bwhat\b/i, "what changed"],
+    [/\btry\b|\bexample/i, "how to try it"],
+    [/\buntested\b|\bnot tested\b|\bwasn'?t tested\b|\bnot checked\b/i, "what wasn't tested"],
+  ] as const;
+  const lacks = need.filter(([re]) => !re.test(note)).map(([, w]) => w);
+  return note.trim().length < 40 ? "a few sentences" : lacks.join(", ");
+}
+
 /** "Not fixed": either of you can send a finished report (Live or Done) back with a note; it shows as Reopened. */
 async function reopenReport(env: Env, me: string, id: string, b: Row) {
   const note = clip(b.note, 20000);
@@ -389,6 +422,12 @@ async function reopenReport(env: Env, me: string, id: string, b: Row) {
     env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), `report:${id}`, me, `Reopened, not fixed: ${note}`, t),
     logged(env, `report:${id}`, "Reopened", note, me, t),
   ]);
+  // the edge case becomes a standing test (Nov 25: a reopen is a regression to keep checking)
+  await ensureUat(env);
+  const first = await env.DB.prepare("SELECT body, live_url FROM reports WHERE id = ?").bind(id).first<{ body: string; live_url: string }>();
+  await env.DB.prepare("INSERT INTO uat (id, created, created_by, title, steps, url) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(uid(), t, "claude", `Recheck #${id.slice(0, 6)}: ${String(first?.body ?? "").split("\n")[0].slice(0, 120)}`, `Reopened because: ${note.slice(0, 1500)}`, first?.live_url ?? "")
+    .run();
   return json({ ok: true });
 }
 
@@ -535,7 +574,10 @@ async function listUat(env: Env, tester?: string) {
   const targets = new Set(items.map((i) => i.target));
   const by: Record<string, Row[]> = {};
   for (const x of results.results.reverse()) if (targets.has(String(x.target))) (by[String(x.target)] ??= []).push(tester ? { ...x, author: shown(env, tester, String(x.author)) } : x);
-  return json({ items: tester ? items.map((i) => ("by" in i ? { ...i, by: shown(env, tester, String(i.by)) } : i)) : items, results: by });
+  return json({
+    items: tester ? items.map((i) => ("by" in i ? { ...i, by: shown(env, tester, String(i.by)), ...(String(i.title).startsWith("Recheck #") ? { steps: "" } : {}) } : i)) : items,
+    results: by,
+  });
 }
 
 async function addUat(env: Env, me: string, b: Row) {
@@ -712,9 +754,20 @@ async function decideFeedback(env: Env, me: string, id: string, b: Row) {
   const decision = b.decision === "Go" ? "go" : b.decision === "No" ? "no" : null;
   if (!decision) return bad("Go or No");
   const note = clip(b.note, 2000);
-  const row = await env.SITE_DB.prepare("SELECT status FROM feedback_queue WHERE id = ?").bind(id).first<{ status: string }>();
+  const row = await env.SITE_DB.prepare("SELECT status, topic, message, page FROM feedback_queue WHERE id = ?").bind(id).first<{ status: string; topic: string; message: string; page: string }>();
   if (!row) return bad("Not found", 404);
-  await env.SITE_DB.prepare("UPDATE feedback_queue SET status = ? WHERE id = ?").bind(decision, id).run();
+  if (row.status !== "sheet") return bad("Already decided", 409);
+  // only the first decision counts (a double tap, or both of you at once, changes nothing more)
+  const res = (await env.SITE_DB.prepare("UPDATE feedback_queue SET status = ? WHERE id = ? AND status = 'sheet'").bind(decision, id).run()) as { meta?: { changes?: number } };
+  if (res?.meta?.changes === 0) return bad("Already decided", 409);
+  if (decision === "go") {
+    // a Go makes it a ticket for Claude, linked back to the feedback (Nov 25); if that fails the Go is undone
+    const made = await createReport(env, me, { type: row.topic === "bug" ? "Bug" : "Idea", body: `Website feedback (Go${note ? ": " + note : ""}):\n\n${row.message}`, place: `feedback ${id}${row.page ? " · " + row.page : ""}` }).catch(() => null);
+    if (!made || !made.ok) {
+      await env.SITE_DB.prepare("UPDATE feedback_queue SET status = 'sheet' WHERE id = ?").bind(id).run();
+      return bad("Couldn't make the ticket; try again", 500);
+    }
+  }
   await env.DB.prepare("INSERT INTO decisions (id, what, decision, note, by, at) VALUES (?, ?, ?, ?, ?, ?)").bind(uid(), `feedback:${id}`, decision === "go" ? "Go" : "No", note, me, now()).run();
   return json({ ok: true });
 }
@@ -780,13 +833,24 @@ async function shipped(env: Env) {
     }
   }
   const notes = await env.DB.prepare("SELECT * FROM shipped ORDER BY created DESC LIMIT 50").all();
+  // tickets that went Live in the last 60 days (each once, its latest time)
+  const tickets = await env.DB.prepare(
+    "SELECT r.id, r.body, r.live_url, r.status, MAX(d.at) AS at FROM decisions d JOIN reports r ON d.what = 'report:' || r.id WHERE d.decision = 'Live' AND d.at >= ? GROUP BY r.id ORDER BY at DESC LIMIT 200",
+  )
+    .bind(new Date(Date.now() - 60 * 86_400_000).toISOString())
+    .all<{ id: string; body: string; live_url: string; status: string; at: string }>();
   // Anonymous reading totals from the public site (chapters read, read-alongs started, downloads), last 7 and 30 days
   const totals = await env.SITE_DB.prepare(
     "SELECT kind, SUM(CASE WHEN day >= date('now', '-7 day') THEN n ELSE 0 END) AS week, SUM(CASE WHEN day >= date('now', '-30 day') THEN n ELSE 0 END) AS month FROM daily WHERE version = '*' GROUP BY kind",
   )
     .all()
     .catch(() => ({ results: [] }));
-  return json({ notes: notes.results, commits: commitsCache?.list ?? [], totals: totals.results });
+  return json({
+    notes: notes.results,
+    commits: commitsCache?.list ?? [],
+    totals: totals.results,
+    tickets: tickets.results.map((t) => ({ id: t.id, title: t.body.split("\n")[0].slice(0, 160), url: t.live_url, status: t.status, at: t.at })),
+  });
 }
 
 async function addShipped(env: Env, b: Row) {
@@ -795,6 +859,45 @@ async function addShipped(env: Env, b: Row) {
   const u = clip(b.url, 500);
   await env.DB.prepare("INSERT INTO shipped (id, created, text, url) VALUES (?, ?, ?, ?)").bind(uid(), now(), text, /^https:\/\/(www\.)?versesacross\.com(\/|$)/.test(u) ? u : "").run();
   return json({ ok: true });
+}
+
+/* ---------------- Weekly summary (Nov 25) ---------------- */
+
+/** The week in four numbers, for the team chat on Sundays (and `cli.mjs digest`): what shipped, what waits on a
+ * person, reopens, how long tickets take from sent to Live, and how many fixes a person confirmed. */
+async function digestText(env: Env, at = new Date(), titles = true) {
+  const since = new Date(at.getTime() - 7 * 86_400_000).toISOString();
+  const { results: log } = await env.DB.prepare("SELECT what, decision, note, by, at FROM decisions WHERE what LIKE 'report:%' AND at >= ? ORDER BY at").bind(since).all<{ what: string; decision: string; note: string; by: string; at: string }>();
+  const live = new Set(log.filter((d) => d.decision === "Live").map((d) => d.what));
+  const reopened = new Set(log.filter((d) => d.decision === "Reopened").map((d) => d.what));
+  const closed = log.filter((d) => d.decision === "Done");
+  // confirmed by a person: their "Fixed, closed" (resolveReport), not status saves or duplicates
+  const byPerson = (await env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE thread LIKE 'report:%' AND body LIKE 'Fixed, closed%' AND created >= ?").bind(since).first<{ n: number }>())?.n ?? 0;
+  const auto = closed.filter((d) => d.note === AUTO_CLOSED).length;
+  // sent → first Live, for tickets that went Live this week
+  const hours: number[] = [];
+  for (const w of live) {
+    const r = await env.DB.prepare("SELECT created FROM reports WHERE id = ?").bind(w.slice(7)).first<{ created: string }>();
+    const first = log.find((d) => d.what === w && d.decision === "Live");
+    if (r && first) hours.push((Date.parse(first.at) - Date.parse(r.created)) / 3_600_000);
+  }
+  hours.sort((a, z) => a - z);
+  const median = hours.length ? hours[Math.floor(hours.length / 2)] : null;
+  const waiting = await env.DB.prepare("SELECT id, body, status, created FROM reports WHERE status IN ('Question', 'Pending') ORDER BY created").all<{ id: string; body: string; status: string; created: string }>();
+  const open = await env.DB.prepare("SELECT id, body, created FROM reports WHERE status IN ('New', 'Seen', 'Working', 'Reopened') ORDER BY created LIMIT 1").first<{ id: string; body: string; created: string }>();
+  const line = (r: { id: string; body: string }) => `#${r.id.slice(0, 6)} ${r.body.split("\n")[0].slice(0, 70)}`;
+  const fmt = (h: number) => (h < 1 ? `${Math.round(h * 60)} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`);
+  return [
+    `Weekly summary (${since.slice(0, 10)} to ${at.toISOString().slice(0, 10)})`,
+    `Shipped: ${live.size} ticket${live.size === 1 ? "" : "s"}${median !== null ? ` · usually ${fmt(median)} from sent to Live` : ""}`,
+    `Reopened: ${reopened.size} · Closed: ${closed.length} (${byPerson} confirmed by a person, ${auto} automatically)`,
+    waiting.results.length ? `Waiting on you: ${waiting.results.length}${titles ? ": " + waiting.results.slice(0, 5).map(line).join(" · ") : " (see Shipped → Weekly summary)"}` : "Waiting on you: nothing",
+    open ? `Oldest open: ${titles ? line(open) : "#" + open.id.slice(0, 6)} (since ${open.created.slice(0, 10)})` : "Open tickets: none",
+  ].join("\n");
+}
+
+async function weeklyDigest(env: Env) {
+  await env.DB.prepare("INSERT INTO comments (id, thread, author, body, created) VALUES (?, ?, ?, ?, ?)").bind(uid(), "chat:team", "claude", await digestText(env, new Date(), false), now()).run();
 }
 
 /* ---------------- Site health, audit and backups (HB5, HB6) ---------------- */

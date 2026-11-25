@@ -1,15 +1,47 @@
 # Verses Across team hub
 
-A private, phone-first page for the two people who make Verses Across: <https://hub.versesacross.com>.
+A private, phone-first page for the people who make and test Verses Across (and Library Across): <https://hub.versesacross.com>.
 Report a bug or idea (with photos or a screen recording), follow its status and talk it through, approve
 clips and website feedback, see the roadmap and what shipped.
 
-- **Who gets in:** Cloudflare Access (Zero Trust, free) lets in only the two team emails (one-time code by
-  email). The Worker also checks the Access token itself on every request.
+- **Who gets in:** Cloudflare Access (Zero Trust, free) lets in only the team's and testers' emails (one-time
+  code by email). The Worker also checks the Access token itself on every request.
 - **Claude** gets in with its own Access service token, "Claude", whose secret is only on Skylar's PC. It
   can set statuses, notes and test links, reply as Claude, add clips for approval and "what shipped"
   lines. It can't approve, decide website feedback, vote, or act as a person.
-- **Only the owner approves.** Every decision is logged with who and when.
+- **Skylar and his brother approve, with equal say** (Skylar, Nov 25). Every decision is logged with who and when.
+
+## Who decides what (Nov 25)
+
+| What | Who says yes | Notes |
+|---|---|---|
+| Bug fixes and ideas on a team member's ticket | Pre-approved | Claude builds them, reviewer agent first. |
+| A tester's ticket (Pending) | Skylar or his brother | Nothing Pending is built. |
+| Publishing (articles, new texts, content notes), downloads, clips, website feedback Go / No, roadmap calls | Skylar or his brother | Either one's yes is enough; Claude asks on the hub (`ask`). |
+| Heavy jobs on Skylar's PC (rendering, big imports) | Check with the other Claude sessions first | HOUSE-RULES and heavy-jobs.md. |
+| Money, passwords, keys, accounts | A person does it themselves | Claude never types or spends these. |
+
+## Statuses
+
+Open: **New**, **Seen**, **Working**, **Question** (Claude asked), **Reopened**. **Pending**: a tester's ticket
+waiting for an OK. Finished: **Live** (shipped, waiting for the reporter to check), **Done** (shown as Resolved:
+"Fixed, closed", or closed automatically after 3 quiet days Live), **Roadmap** (later).
+
+**How soon:** Urgent = the site is broken or something is lost, looked at within the hour (6 AM to 6 PM ET);
+Normal = the same day; Someday = for later, may go on the roadmap.
+
+## Definition of done (before Claude sets Live)
+
+1. The reviewer agent passed it.
+2. It is live: `node scripts/wait-live.mjs <commit>` says LIVE (the site's /api/version includes the commit).
+3. Checked at phone width, and for old Safari (15.6): no newer web feature without a fallback.
+4. A Live note with **What:** changed, **Try it:** (2-3 steps), **Untested:** what wasn't checked, and the test
+   link (the hub refuses Live without them; a Question needs no link).
+
+A reopen adds a "Recheck #…" test to Test & chat, so the edge case is tried again. On Sundays the hub posts a
+weekly summary in the team chat (shipped, waiting on you, reopens, time to Live; `node hub/cli.mjs digest`).
+Website feedback marked Go becomes a ticket, linked by its feedback number. Each ticket records the browser it
+was sent from.
 
 ## Testers (Test & chat, Nov 23)
 

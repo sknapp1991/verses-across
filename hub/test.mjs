@@ -56,7 +56,7 @@ if (process.argv[2] === "serve") {
   const alg = jwt(OWNER).split("."); alg[0] = b64({ alg: "none", kid: key().kid });
   check("alg none → 403", (await call(alg.join("."), "/api/me")).status === 403);
   let r = await J(await call(OWNER, "/api/me"));
-  check("owner signs in", r.status === 200 && r.body.owner === true, JSON.stringify(r.body));
+  check("owner signs in", r.status === 200 && r.body.owner === true && r.body.approver === true, JSON.stringify(r.body));
   r = await J(await call(TEAMMATE, "/api/me"));
   check("teammate signs in, not owner", r.status === 200 && r.body.owner === false);
   check("page served with CSP", (await call(OWNER, "/")).headers.get("content-security-policy")?.includes("frame-ancestors 'none'"));
@@ -72,6 +72,9 @@ if (process.argv[2] === "serve") {
   check("bad type rejected", (await call(TEAMMATE, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Hack", body: "x" }) })).status === 400);
   r = await J(await call(OWNER, "/api/reports"));
   check("owner sees it in the inbox", r.body.some((x) => x.id === rid && x.status === "New"));
+  const bid = (await J(await call(TEAMMATE, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "with browser", browser: "Safari 15.6 · macOS 10.15<script>" }) }))).body.id;
+  r = await J(await call(OWNER, `/api/reports/${bid}`));
+  check("the browser is recorded (as plain text)", r.body.browser === "Safari 15.6 · macOS 10.15script", JSON.stringify(r.body.browser));
   check("teammate can't set status", (await call(TEAMMATE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live" }) })).status === 403);
   check("owner sets status + note", (await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Working", notes: "On it", live_url: "https://versesacross.com/read/bible/psa/23" }) })).status === 200);
   check("test link must be versesacross.com", (await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ live_url: "https://evil.example" }) })).status === 400);
@@ -115,7 +118,8 @@ if (process.argv[2] === "serve") {
   r = await J(await call(OWNER, "/api/approvals", { method: "POST", body: JSON.stringify({ kind: "clip", title: "Add to Home Screen clip", detail: "For X on 11-12" }) }));
   const aid = r.body.id;
   check("owner adds a clip for approval", /^[a-f0-9]{16}$/.test(aid));
-  check("teammate can't approve", (await call(TEAMMATE, `/api/approvals/${aid}`, { method: "PATCH", body: JSON.stringify({ decision: "Approved" }) })).status === 403);
+  // Skylar and his brother approve with equal say (Nov 25)
+  check("teammate approves too (equal say)", (await call(TEAMMATE, `/api/approvals/${aid}`, { method: "PATCH", body: JSON.stringify({ decision: "Changes", note: "shorter" }) })).status === 200);
   check("owner approves", (await call(OWNER, `/api/approvals/${aid}`, { method: "PATCH", body: JSON.stringify({ decision: "Approved", note: "Looks good" }) })).status === 200);
   r = await J(await call(TEAMMATE, "/api/approvals"));
   const ap = r.body.find((x) => x.id === aid);
@@ -126,8 +130,11 @@ if (process.argv[2] === "serve") {
   check("feedback list loads", r.status === 200 && Array.isArray(r.body), JSON.stringify(r.body).slice(0, 120));
   const fb = r.body.find((x) => x.status === "sheet");
   if (fb) {
-    check("teammate can't decide feedback", (await call(TEAMMATE, `/api/feedback/${fb.id}`, { method: "PATCH", body: JSON.stringify({ decision: "Go" }) })).status === 403);
-    check("owner says Go", (await call(OWNER, `/api/feedback/${fb.id}`, { method: "PATCH", body: JSON.stringify({ decision: "Go" }) })).status === 200);
+    check("teammate decides feedback too (equal say)", (await call(TEAMMATE, `/api/feedback/${fb.id}`, { method: "PATCH", body: JSON.stringify({ decision: "Go" }) })).status === 200);
+    const made = (await J(await call(OWNER, "/api/reports"))).body.find((x) => x.place.startsWith(`feedback ${fb.id}`));
+    check("a Go makes a ticket, linked to the feedback", !!made && made.status === "New", JSON.stringify(made ?? null).slice(0, 120));
+    check("a second Go changes nothing (no duplicate ticket)", (await call(TEAMMATE, `/api/feedback/${fb.id}`, { method: "PATCH", body: JSON.stringify({ decision: "Go" }) })).status === 409 &&
+      (await J(await call(OWNER, "/api/reports"))).body.filter((x) => x.place.startsWith(`feedback ${fb.id}`)).length === 1);
   } else console.log("(no 'sheet' feedback row in the local DB to decide)");
 
   // Roadmap + votes, shipped
@@ -145,8 +152,17 @@ if (process.argv[2] === "serve") {
   const CLAUDE = jwt(null, { service: "test-claude.access" });
   check("unknown service token → 403", (await call(jwt(null, { service: "someone-else.access" }), "/api/me")).status === 403);
   r = await J(await call(CLAUDE, "/api/me"));
-  check("Claude's token signs in as Claude, not owner", r.status === 200 && r.body.email === "claude" && r.body.owner === false && r.body.worker === true, JSON.stringify(r.body));
-  check("Claude sets status + note", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "Shipped" }) })).status === 200);
+  check("Claude's token signs in as Claude, not owner", r.status === 200 && r.body.email === "claude" && r.body.owner === false && r.body.worker === true && r.body.approver === false, JSON.stringify(r.body));
+  r = await J(await call(CLAUDE, "/api/digest"));
+  check("the weekly summary reads", r.status === 200 && /^Weekly summary/.test(r.body.text) && /Shipped: /.test(r.body.text), JSON.stringify(r.body).slice(0, 200));
+  // the definition of done: Live needs a full note (what / try it / untested) and a link
+  check("Live with a thin note is refused", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "Shipped" }) })).status === 400);
+  check("Live without 'untested' is refused", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "What: the psalm no longer jumps. Try it: open Psalm 23 and scroll." }) })).status === 400);
+  const noLink = (await J(await call(OWNER, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "no link yet" }) }))).body.id;
+  check("Live without a test link is refused", (await call(CLAUDE, `/api/reports/${noLink}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "What: fixed the thing properly. Try it: open the page. Untested: old Safari." }) })).status === 400);
+  check("Claude sets Live with a full note", (await call(CLAUDE, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "What: the psalm no longer jumps. Try it: open Psalm 23 and scroll. Untested: old Safari." }) })).status === 200);
+  const q = (await J(await call(OWNER, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Question", body: "is there SEO?" }) }))).body.id;
+  check("a Question can go Live without a link", (await call(CLAUDE, `/api/reports/${q}`, { method: "PATCH", body: JSON.stringify({ status: "Live", notes: "What: an answer and a small fix. Try it: share a link. Untested: Google itself." }) })).status === 200);
   await call(CLAUDE, "/api/comments", { method: "POST", body: JSON.stringify({ thread: `report:${rid}`, body: "Live now" }) });
   r = await J(await call(OWNER, `/api/comments?thread=report:${rid}`));
   check("Claude's reply shows as Claude", r.body.at(-1).author === "claude");
@@ -165,6 +181,8 @@ if (process.argv[2] === "serve") {
   await call(OWNER, `/api/reports/${rid}`, { method: "PATCH", body: JSON.stringify({ status: "Done" }) });
   check("Claude can't reopen", (await call(CLAUDE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "x" }) })).status === 403);
   check("teammate reopens with a note", (await call(TEAMMATE, `/api/reports/${rid}/reopen`, { method: "POST", body: JSON.stringify({ note: "fix not verified" }) })).status === 200);
+  r = await J(await call(OWNER, "/api/uat"));
+  check("a reopen adds a recheck test", r.body.items.some((i) => i.kind === "test" && i.title.startsWith(`Recheck #${rid.slice(0, 6)}`) && /fix not verified/.test(i.steps)), JSON.stringify(r.body.items.map((i) => i.title)).slice(0, 200));
   r = await J(await call(OWNER, `/api/reports/${rid}`));
   check("status is Reopened", r.body.status === "Reopened");
   r = await J(await call(OWNER, `/api/comments?thread=report:${rid}`));
@@ -231,13 +249,16 @@ if (process.argv[2] === "serve") {
   check("tester signs in as a tester", r.status === 200 && r.body.role === "tester" && r.body.owner === false);
   check("tester can't see approvals", (await call(TESTER, "/api/approvals")).status === 403);
   check("tester can't see the roadmap", (await call(TESTER, "/api/roadmap")).status === 403);
+  check("tester can't see the weekly summary", (await call(TESTER, "/api/digest")).status === 403);
+  const tu = (await J(await call(TESTER, "/api/uat"))).body.items.filter((i) => String(i.title).startsWith("Recheck #"));
+  check("tester sees a recheck test but not why it was reopened", tu.length > 0 && tu.every((i) => i.steps === ""), JSON.stringify(tu.slice(0, 1)));
   check("tester can't see feedback, audit or shipped", (await call(TESTER, "/api/feedback")).status === 403 && (await call(TESTER, "/api/audit")).status === 403 && (await call(TESTER, "/api/shipped")).status === 403);
   check("tester can't open someone else's ticket", (await call(TESTER, `/api/reports/${rid}`)).status === 404);
   check("tester can't read someone else's thread", (await call(TESTER, `/api/comments?thread=report:${rid}`)).status === 404);
   r = await J(await call(TESTER, "/api/reports", { method: "POST", body: JSON.stringify({ type: "Bug", body: "Search jumps on my phone" }) }));
   const tid = r.body?.id;
   r = await J(await call(TESTER, "/api/reports"));
-  check("tester's ticket waits as Pending, and they see only their own", r.body.length === 1 && r.body[0].id === tid && r.body[0].status === "Pending");
+  check("tester's ticket waits as Pending, and they see only their own", r.body.some((x) => x.id === tid && x.status === "Pending") && r.body.every((x) => x.author === TESTER));
   check("tester can't set a status", (await call(TESTER, `/api/reports/${tid}`, { method: "PATCH", body: JSON.stringify({ status: "New" }) })).status === 403);
   check("Claude can't move a Pending ticket", (await call(jwt(null, { service: "test-claude.access" }), `/api/reports/${tid}`, { method: "PATCH", body: JSON.stringify({ status: "Working" }) })).status !== 200);
   check("tester can't approve", (await call(TESTER, `/api/reports/${tid}/approve`, { method: "POST", body: JSON.stringify({ decision: "go" }) })).status === 403);
