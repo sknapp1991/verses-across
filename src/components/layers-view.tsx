@@ -7,7 +7,10 @@
  * Art and puzzle, built on the real traditions (gematria, isopsephy, abjad): never offered as hidden prophecy.
  */
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { AiWindow } from "./ai-window";
+import { askAboutVerse, openAi } from "@/lib/ai-chat";
+import { updateSettings } from "@/lib/settings";
 import { LAYER_VERSES } from "@/lib/layer-verses";
 import { lettersOf, valueOf, wordsOf, type Letter, type Script } from "@/lib/letter-values";
 import { LAYER_GLOSSES } from "@/lib/layer-glosses";
@@ -247,9 +250,23 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
         )}
         <p className="mt-2 text-xs">{SYSTEM[script].how}</p>
       </details>
-      <Link href={v.href} className="text-xs text-accent hover:underline">
-        Read it in context →
-      </Link>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Link href={v.href} className="text-xs text-accent hover:underline">
+          Read it in context →
+        </Link>
+        <button
+          type="button"
+          onClick={() =>
+            askAboutVerse({
+              reference: v.ref,
+              texts: [{ abbr: SYSTEM[script].name, name: v.lang, language: script === "hebrew" ? "Hebrew" : script === "greek" ? "Greek" : "Arabic", text: v.text }],
+            })
+          }
+          className="text-xs font-medium text-accent hover:underline"
+        >
+          ✦ Ask AI about this verse
+        </button>
+      </div>
     </section>
   );
 }
@@ -257,12 +274,13 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
 /* ---------------- puzzles ---------------- */
 
 const SOLVED_KEY = "va-layers:v1";
-type Puzzle = { id: string; ask: string; hint: string; check: (a: string) => boolean; after: string };
+type Puzzle = { id: string; ask: string; hint: string; answer: string; check: (a: string) => boolean; after: string };
 const PUZZLES: Puzzle[] = [
   {
     id: "86",
     ask: "In Genesis 1:1, one word adds up to 86. Which word is it? (Type it in English.)",
     hint: "It's the third word: the one who creates.",
+    answer: "God (Elohim, אֱלֹהִים)",
     check: (a) => /^(god|elohim|elohiym)$/i.test(a.trim()),
     after: "Elohim: aleph 1 + lamed 30 + he 5 + yod 10 + mem 40 = 86.",
   },
@@ -270,6 +288,7 @@ const PUZZLES: Puzzle[] = [
     id: "373",
     ask: "John 1:1 says one word three times. What is that word's value?",
     hint: "The Word: lambda, omicron, gamma, omicron, sigma.",
+    answer: "373",
     check: (a) => a.trim() === "373",
     after: "Logos: 30 + 70 + 3 + 70 + 200 = 373, said three times in one verse.",
   },
@@ -277,6 +296,7 @@ const PUZZLES: Puzzle[] = [
     id: "786",
     ask: "What is the value of the whole first verse of the Quran?",
     hint: "Add its 19 counted letters (the small alif isn't counted).",
+    answer: "786",
     check: (a) => a.trim() === "786",
     after: "786: a number some Muslims, mainly in South Asia, write in place of the Bismillah.",
   },
@@ -284,6 +304,7 @@ const PUZZLES: Puzzle[] = [
     id: "73",
     ask: "Genesis 1:1 adds up to 2701. That's 37 times what?",
     hint: "Divide, or try the number with 37's digits turned around.",
+    answer: "73",
     check: (a) => a.trim() === "73",
     after: "2701 = 37 × 73, and 37 and 73 are each other's mirror. Make of it what you will; it's arithmetic, not a message.",
   },
@@ -351,7 +372,18 @@ function Open({ p, onSolve }: { p: Puzzle; onSolve: () => void }) {
           Check
         </button>
       </form>
-      {wrong > 0 && <p className="text-faint">{wrong > 1 ? `Hint: ${p.hint}` : "Not quite. Try again."}</p>}
+      {wrong > 0 && wrong < 3 && <p className="text-faint">{wrong > 1 ? `Hint: ${p.hint}` : "Not quite. Try again."}</p>}
+      {/* after three misses: the answer, then on (my brother's ask) */}
+      {wrong >= 3 && (
+        <p className="flex flex-wrap items-center gap-2 text-ink">
+          <span>
+            The answer: <strong>{p.answer}</strong>
+          </span>
+          <button type="button" onClick={onSolve} className="min-h-9 rounded-lg border border-line px-3 text-xs hover:bg-raised">
+            Next →
+          </button>
+        </p>
+      )}
     </li>
   );
 }
@@ -363,7 +395,28 @@ export function LayersView() {
     <main className="h-app overflow-y-auto bg-paper">
       <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
       <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">א · α · ا</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">א · α · ا</p>
+          <span className="flex gap-2">
+            <button type="button" onClick={() => openAi()} className="min-h-9 rounded-lg border border-line px-3 text-xs font-medium text-ink hover:bg-raised">
+              ✦ Ask AI
+            </button>
+            <button
+              type="button"
+              aria-label="Dark or light"
+              title="Dark or light"
+              onClick={() => {
+                // (this page isn't inside the reader, which keeps the theme in step: so switch it here too)
+                const dark = !document.documentElement.classList.contains("dark");
+                document.documentElement.classList.toggle("dark", dark);
+                updateSettings({ theme: dark ? "dark" : "light" });
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-ink hover:bg-raised"
+            >
+              ◐
+            </button>
+          </span>
+        </div>
         <h1 className="font-serif text-3xl font-semibold text-ink">Letters as numbers</h1>
         <p className="text-muted">
           In Hebrew, Greek and Arabic every letter was also a number, so every verse has a sum and a shape (and, for the Bible
@@ -395,6 +448,9 @@ export function LayersView() {
         </p>
       </footer>
       </div>
+      <Suspense fallback={null}>
+        <AiWindow />
+      </Suspense>
     </main>
   );
 }
