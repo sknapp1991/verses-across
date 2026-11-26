@@ -665,7 +665,7 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
             </p>
             {script === "arabic" ? (
               <a href="https://quran.com/1/1" target="_blank" rel="noopener" className="text-xs font-medium text-accent hover:underline">
-                Hear it recited ↗
+                Hear it recited on Quran.com ↗
               </a>
             ) : (
               <button
@@ -874,7 +874,11 @@ export function LayersView() {
           <a href="https://tanzil.net" target="_blank" rel="noopener" className="underline">
             tanzil.net
           </a>
-          ), licensed CC BY 3.0, shown verbatim. Hebrew: Westminster Leningrad Codex. Greek: Textus Receptus. Hebrew words&rsquo; sounds and meanings: STEP Bible (Tyndale House, Cambridge), CC BY 4.0.
+          ), licensed CC BY 3.0, shown verbatim. Hebrew: Westminster Leningrad Codex. Greek: Textus Receptus. Hebrew words&rsquo; sounds and meanings: STEP Bible (Tyndale House, Cambridge), CC BY 4.0. Recitation:{" "}
+          <a href="https://quran.com" target="_blank" rel="noopener" className="underline">
+            Quran.com
+          </a>
+          , a project of the Quran Foundation, with thanks.
         </p>
         <p>
           <Link href="/" className="text-accent hover:underline">
