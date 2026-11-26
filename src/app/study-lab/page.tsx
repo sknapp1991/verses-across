@@ -23,6 +23,9 @@ const LAYERS = [
   { href: "/memorize", title: "Memorize", note: "Learn verses by heart with gentle repetition, first-letter hints and, if you like, the original language." },
   { href: "/literary-shape", title: "Literary shape", note: "The hidden structure of passages: acrostics, parallel lines and mirrored stories." },
   { href: "/slow-reading", title: "Slow reading", note: "One short passage, read slowly several times, with quiet prompts and a private journal." },
+  { href: "/time-and-place", title: "Time and place", note: "When and where the texts were written, and the places a chapter names on a map." },
+  { href: "/echoes", title: "Echoes", note: "Where later texts quote or retell earlier ones, and a map of the Bible's books by verses closest in meaning." },
+  { href: "/commentary", title: "Classic commentary", note: "Matthew Henry's notes beside the text, chapter by chapter." },
 ];
 
 export default function Page() {

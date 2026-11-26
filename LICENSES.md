@@ -536,6 +536,33 @@ From Project Gutenberg (read from its mirror).
   to the next). His supplied words in round brackets and his spellings of Sanskrit names are kept; a few slips of
   the transcription are corrected; his introduction and footnotes are left out.
 
+## Matthew Henry's Concise Commentary (hidden study page `/commentary`, added Nov 26 2026, `scripts/build-commentary-mhc.mts`)
+
+- **Concise Commentary on the Whole Bible** — Matthew Henry (1662–1714), the one-volume abridgement of his
+  *Exposition of the Old and New Testaments* (1706–1714, Romans to Revelation finished after his death by other ministers, partly from his notes; the Concise abridgement is
+  by later, other hands); public domain.
+  Text from the CrossWire Bible Society's SWORD module MHCC (version 2.0, 2021; its Distribution License: "Public
+  Domain", "Copy Freely"), whose text in turn comes from the Christian Classics Ethereal Library's plain-text edition
+  (ccel.org marks the work "Public Domain"; its own site terms ask permission to republish its editions, so only the
+  plain text is used here, none of CCEL's markup, and the page credits it: "text from the Christian Classics Ethereal Library's transcription (ccel.org)"). Notes are matched to KJV
+  verses by the module's verse index and by Henry's own "Verses 4-7" headings; each chapter's outline and each book's
+  introduction are kept; a chapter with one note for all of it covers every verse. Leviticus 19 and Psalm 108 have
+  no notes in the module. Output: `public/commentary/mhc/<book>.json`, shown beside the KJV on the hidden page.
+
+## Bible places and map outline (hidden study page `/time-and-place`, added Nov 26 2026, `scripts/build-places.mts`)
+
+- **OpenBible.info Bible Geocoding Data** (https://github.com/openbibleinfo/Bible-Geocoding-Data,
+  https://www.openbible.info/geo/); licensed CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). Used: `data/ancient.jsonl` (place names, verse references,
+  identifications and their scores). Changed here: only the best-scored location per place is kept, with a simple
+  sureness label derived from its scores; names are matched to the KJV spelling; two symbolic uses of "Babylon"
+  (1 Peter 5:13, Revelation) are kept off the map. Its readme notes that some of its geometry and coordinates come
+  from OpenStreetMap (© OpenStreetMap contributors, ODbL 1.0, https://opendatacommons.org/licenses/odbl/); only
+  points are used here, and the page credits OpenStreetMap too. Output: `public/places/<book>.json`.
+- **Natural Earth** 1:10m land, lakes and rivers (https://www.naturalearthdata.com/, via
+  github.com/nvkelso/natural-earth-vector); public domain ("No permission is needed"). Clipped to the Mediterranean
+  and Near East and simplified into `public/places/map.json`. The page says "Made with Natural Earth".
+
 ## Recorded audio (audio v2)
 
 - **King James Version, human reading**: read by Michael Armenta for LibriVox (2001), public domain
