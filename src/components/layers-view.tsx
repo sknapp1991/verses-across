@@ -160,6 +160,17 @@ function Strand({ letters, rtl, lit, word, marks = [] }: { letters: Letter[]; rt
     if (!el || lit < 0) return;
     el.scrollLeft = x(lit) - el.clientWidth / 2;
   });
+  // a word picked: the strand moves to it if it's out of view (my brother's video)
+  useEffect(() => {
+    const el = box.current;
+    if (!el || word === null) return;
+    const idx = letters.map((l, i) => (l.word === word ? i : -1)).filter((i) => i >= 0);
+    if (!idx.length) return;
+    const [a, z] = [x(idx[0]), x(idx[idx.length - 1])];
+    const lo = Math.min(a, z) - step, hi = Math.max(a, z) + step;
+    if (lo < el.scrollLeft || hi > el.scrollLeft + el.clientWidth) el.scrollTo({ left: (lo + hi) / 2 - el.clientWidth / 2, behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the picked word changes
+  }, [word]);
   return (
     <div ref={box} className="overflow-x-auto" dir="ltr">
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`${letters.length} letters as a strand`}>
