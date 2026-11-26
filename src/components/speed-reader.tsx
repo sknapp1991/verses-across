@@ -26,9 +26,11 @@ import {
 } from "@/lib/speed-reader";
 
 const STORE = "va-speed-reader";
-const PRESETS = [150, 250, 400, 600];
+const PRESETS = [150, 250, 400, 600, 1000];
 const MIN_WPM = 60;
-const MAX_WPM = 1000;
+const MAX_WPM = 1500;
+/** No word is shown for less than this, so very high speeds stay steady. */
+const FLOOR_MS = 35;
 /** Where the focus letter sits, from the start of the line. */
 const FOCUS_AT = 38;
 
@@ -131,6 +133,8 @@ export function SpeedReader() {
   const [wpm, setWpm] = useState(250);
   const [doneKey, setDoneKey] = useState<string | null>(null);
   const [stats, setStats] = useState({ words: 0, ms: 0 });
+  /** "Clear session" asks for a second tap before it wipes anything. */
+  const [confirmClear, setConfirmClear] = useState(false);
   const [check, setCheck] = useState(false);
   const [ratings, setRatings] = useState<Rating[]>([]);
   /** Counts finished readings, so a re-read can be rated again. */
@@ -228,7 +232,7 @@ export function SpeedReader() {
   useEffect(() => {
     if (!playing || !ready || !token) return;
     const started = Date.now();
-    const full = delayOf(token, slow ? wpm / 2 : wpm) / ready.mean;
+    const full = Math.max(FLOOR_MS, delayOf(token, slow ? wpm / 2 : wpm) / ready.mean);
     const part = partRef.current;
     const doneFrac = part && part.key === key && part.i === idx ? part.frac : 0;
     let fired = false;
@@ -258,6 +262,13 @@ export function SpeedReader() {
     };
   }, [playing, ready, token, idx, wpm, slow, key]);
 
+  // An unanswered "tap again to clear" goes back to normal after a few seconds.
+  useEffect(() => {
+    if (!confirmClear) return;
+    const id = setTimeout(() => setConfirmClear(false), 4000);
+    return () => clearTimeout(id);
+  }, [confirmClear]);
+
   // A hidden tab pauses.
   useEffect(() => {
     const onHide = () => {
@@ -286,6 +297,25 @@ export function SpeedReader() {
   };
 
   const back = () => jump(sentenceBack(tokens, idx));
+  const toStart = () => {
+    setPlaying(false);
+    jump(0);
+  };
+  const toVerseStart = () => {
+    let j = idx;
+    while (j > 0 && tokens[j - 1].verse === tokens[idx].verse) j--;
+    jump(j);
+  };
+  const clearSession = () => {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      return;
+    }
+    setConfirmClear(false);
+    setStats({ words: 0, ms: 0 });
+    setRatings([]);
+    setChap({ key, words: 0, ms: 0 });
+  };
   const forward = () => jump(sentenceForward(tokens, idx));
 
   const choose = (p: Pick | null, play = false) => {
@@ -471,6 +501,14 @@ export function SpeedReader() {
             </span>
             {ready && <span>about {formatTime(left)} left</span>}
           </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button type="button" onClick={toStart} onMouseDown={noFocus} disabled={!ready || (idx === 0 && !playing)} className={btn}>
+              Start from the beginning
+            </button>
+            <button type="button" onClick={toVerseStart} onMouseDown={noFocus} disabled={!ready} className={btn}>
+              Beginning of the verse
+            </button>
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button type="button" onClick={back} onMouseDown={noFocus} disabled={!ready} className={btn} aria-label="Back a sentence">
@@ -591,6 +629,9 @@ export function SpeedReader() {
               </button>
             ))}
           </div>
+          {ready && 60000 / wpm / ready.mean < FLOOR_MS && (
+            <p className="text-xs text-muted">At this speed the shortest words are held for {FLOOR_MS} thousandths of a second, so the pace stays steady.</p>
+          )}
           {wpm > 500 && <p className="text-xs text-muted">Above about 500 words a minute, most readers take in less. Good for skimming; slow down for close reading.</p>}
           <label className="flex items-start gap-2 text-sm text-ink">
             <input type="checkbox" checked={check} onChange={(e) => setCheck(e.target.checked)} className="mt-1" style={{ accentColor: "var(--accent)" }} />
@@ -600,7 +641,18 @@ export function SpeedReader() {
 
         {/* This session */}
         <section className="space-y-2 rounded-2xl border border-line bg-panel p-4">
-          <p className="text-sm font-medium text-ink">This session</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-ink">This session</p>
+            <button
+              type="button"
+              onClick={clearSession}
+              onMouseDown={noFocus}
+              disabled={!stats.words && !stats.ms && !ratings.length}
+              className={`min-h-9 rounded-lg border px-3 text-xs font-medium disabled:opacity-50 ${confirmClear ? "border-accent bg-accent text-accent-ink" : "border-line text-ink hover:bg-raised"}`}
+            >
+              {confirmClear ? "Tap again to clear" : "Clear session"}
+            </button>
+          </div>
           <dl className="grid grid-cols-3 gap-2 text-center">
             <div>
               <dt className="text-xs text-faint">Words</dt>
