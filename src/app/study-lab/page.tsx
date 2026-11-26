@@ -20,6 +20,9 @@ const LAYERS = [
   { href: "/learn-alphabets", title: "Learn the alphabets", note: "Hebrew, Greek and Arabic letters in short lessons, ending with reading a first verse yourself." },
   { href: "/study-paths", title: "Study paths", note: "Guided four-week courses across traditions, with a question to reflect on each day." },
   { href: "/speed-reader", title: "Speed reader", note: "One word at a time, at the pace you choose, from slow to very fast." },
+  { href: "/memorize", title: "Memorize", note: "Learn verses by heart with gentle repetition, first-letter hints and, if you like, the original language." },
+  { href: "/literary-shape", title: "Literary shape", note: "The hidden structure of passages: acrostics, parallel lines and mirrored stories." },
+  { href: "/slow-reading", title: "Slow reading", note: "One short passage, read slowly several times, with quiet prompts and a private journal." },
 ];
 
 export default function Page() {
