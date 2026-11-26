@@ -72,7 +72,7 @@ function playStrand(letters: Letter[], onStep: (i: number) => void): () => void 
 
 /* ---------------- the strand ---------------- */
 
-function Strand({ letters, rtl, lit }: { letters: Letter[]; rtl: boolean; lit: number }) {
+function Strand({ letters, rtl, lit, word }: { letters: Letter[]; rtl: boolean; lit: number; word: number | null }) {
   const step = 14;
   const w = Math.max(240, letters.length * step + 24);
   const h = 96;
@@ -92,9 +92,11 @@ function Strand({ letters, rtl, lit }: { letters: Letter[]; rtl: boolean; lit: n
             key={`b${i}`}
             cx={x(i)}
             cy={y(i, 0)}
-            r={(lit === i ? 2.5 : 0) + 3 + sizeOf(l.value) * 1.4}
+            r={(lit === i ? 2.5 : 0) + (word === l.word ? 1.5 : 0) + 3 + sizeOf(l.value) * 1.4}
             fill={SIZE_COLOUR[sizeOf(l.value)]}
-            opacity={lit === -1 || lit === i ? 1 : 0.45}
+            stroke={word === l.word ? "var(--ink)" : "none"}
+            strokeWidth={1.5}
+            opacity={lit >= 0 ? (lit === i ? 1 : 0.45) : word === null || word === l.word ? 1 : 0.25}
           >
             <title>
               {l.ch} = {l.value}
@@ -112,7 +114,9 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
   const words = useMemo(() => wordsOf(v.text, script), [v.text, script]);
   const total = useMemo(() => valueOf(v.text, script), [v.text, script]);
   const [lit, setLit] = useState(-1);
+  const [word, setWord] = useState<number | null>(null); // a word picked from the list (hub c74b9402, his second ask)
   const stop = useRef<(() => void) | null>(null);
+  const playing = word === null ? letters : letters.filter((l) => l.word === word);
   useEffect(() => () => stop.current?.(), []);
   const rtl = script !== "greek";
   return (
@@ -126,7 +130,7 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
       <p dir={rtl ? "rtl" : "ltr"} lang={script === "hebrew" ? "he" : script === "greek" ? "grc" : "ar"} className="font-serif text-2xl leading-relaxed text-ink">
         {v.text}
       </p>
-      <Strand letters={letters} rtl={rtl} lit={lit} />
+      <Strand letters={letters} rtl={rtl} lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={word} />
       <div className="flex flex-wrap items-center gap-2">
         {script === "arabic" ? (
           <span className="text-xs text-faint">No tones for the Quran: many Muslims hold that its words shouldn&rsquo;t be set to music.</span>
@@ -139,14 +143,14 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
               stop.current = null;
               return;
             }
-            stop.current = playStrand(letters, (i) => {
+            stop.current = playStrand(playing, (i) => {
               setLit(i);
               if (i === -1) stop.current = null;
             });
           }}
           className="min-h-10 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink"
         >
-          {lit >= 0 ? "■ Stop" : "▶ Play its letters as tones"}
+          {lit >= 0 ? "■ Stop" : word === null ? "▶ Play its letters as tones" : "▶ Play this word"}
         </button>
         )}
         <span className="text-sm text-muted">
@@ -155,13 +159,38 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
       </div>
       <details className="text-sm text-muted">
         <summary className="cursor-pointer">Each word&rsquo;s value</summary>
+        <p className="mt-2 text-xs text-faint">Tap a word to see it on the strand, letter by letter{script === "arabic" ? "" : ", and to play it alone"}.</p>
         <ul dir={rtl ? "rtl" : "ltr"} className="mt-2 flex flex-wrap gap-2">
           {words.map((w, i) => (
-            <li key={i} className="rounded-lg border border-line px-2 py-1">
-              <span className="font-serif text-base text-ink">{w.text}</span> <span className="tabular-nums text-faint">{w.value}</span>
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => {
+                  stop.current?.();
+                  setWord(word === i ? null : i);
+                }}
+                aria-pressed={word === i}
+                className={`min-h-9 rounded-lg border px-2 py-1 ${word === i ? "border-accent bg-accent-soft" : "border-line hover:bg-raised"}`}
+              >
+                <span className="font-serif text-base text-ink">{w.text}</span> <span className="tabular-nums text-faint">{w.value}</span>
+              </button>
             </li>
           ))}
         </ul>
+        {word !== null && (
+          <p dir={rtl ? "rtl" : "ltr"} aria-live="polite" className="mt-2 rounded-lg bg-raised px-3 py-2 font-serif text-base text-ink">
+            {letters
+              .filter((l) => l.word === word)
+              .map((l, i) => (
+                <span key={i} className="whitespace-nowrap">
+                  {i > 0 && <span className="text-faint"> + </span>}
+                  {l.ch} <span className="text-sm tabular-nums" style={{ color: SIZE_COLOUR[sizeOf(l.value)] }}>{l.value}</span>
+                </span>
+              ))}
+            <span className="text-faint"> = </span>
+            <strong className="tabular-nums">{words[word]?.value}</strong>
+          </p>
+        )}
         <p className="mt-2 text-xs">{SYSTEM[script].how}</p>
       </details>
       <Link href={v.href} className="text-xs text-accent hover:underline">
@@ -277,7 +306,8 @@ function Open({ p, onSolve }: { p: Puzzle; onSolve: () => void }) {
 
 export function LayersView() {
   return (
-    <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
+    <main className="h-app overflow-y-auto bg-paper">
+      <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
       <header className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">א · α · ا</p>
         <h1 className="font-serif text-3xl font-semibold text-ink">Letters as numbers</h1>
@@ -310,6 +340,7 @@ export function LayersView() {
           </Link>
         </p>
       </footer>
+      </div>
     </main>
   );
 }
