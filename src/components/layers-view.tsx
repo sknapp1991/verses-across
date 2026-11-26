@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LAYER_VERSES } from "@/lib/layer-verses";
 import { lettersOf, valueOf, wordsOf, type Letter, type Script } from "@/lib/letter-values";
+import { LAYER_GLOSSES } from "@/lib/layer-glosses";
 
 const SIZE_COLOUR = ["#f59e0b", "#60a5fa", "#c084fc", "#f472b6"]; // ones, tens, hundreds, thousands
 const sizeOf = (v: number) => (v >= 1000 ? 3 : v >= 100 ? 2 : v >= 10 ? 1 : 0);
@@ -70,6 +71,32 @@ function playStrand(letters: Letter[], onStep: (i: number) => void): () => void 
   return stop;
 }
 
+/* ---------------- saying a word ---------------- */
+
+const VOICE_LANG: Partial<Record<Script, string>> = { hebrew: "he", greek: "el" };
+/** The device's voice for a language, if it has one (they load late on some browsers: asked each time). */
+const voiceFor = (lang: string) => {
+  try {
+    return window.speechSynthesis?.getVoices().find((v) => v.lang.toLowerCase().startsWith(lang)) ?? null;
+  } catch {
+    return null;
+  }
+};
+function sayWord(text: string, script: Script): boolean {
+  const lang = VOICE_LANG[script];
+  const voice = lang ? voiceFor(lang) : null;
+  if (!lang || !voice || typeof SpeechSynthesisUtterance === "undefined") return false;
+  stopPlaying?.();
+  window.speechSynthesis.cancel();
+  // the cantillation (chanting) marks would trip the voice: dropped for speaking only (the shown text is unchanged)
+  const u = new SpeechSynthesisUtterance(script === "hebrew" ? text.replace(/[֑-ֽ֯׀׃]/g, "") : text);
+  u.voice = voice;
+  u.lang = voice.lang;
+  u.rate = 0.8;
+  window.speechSynthesis.speak(u);
+  return true;
+}
+
 /* ---------------- the strand ---------------- */
 
 function Strand({ letters, rtl, lit, word }: { letters: Letter[]; rtl: boolean; lit: number; word: number | null }) {
@@ -117,6 +144,8 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
   const [word, setWord] = useState<number | null>(null); // a word picked from the list (hub c74b9402, his second ask)
   const stop = useRef<(() => void) | null>(null);
   const playing = word === null ? letters : letters.filter((l) => l.word === word);
+  const gloss = word !== null ? LAYER_GLOSSES[v.id]?.[word] : undefined;
+  const [noVoice, setNoVoice] = useState(false);
   useEffect(() => () => stop.current?.(), []);
   const rtl = script !== "greek";
   return (
@@ -167,6 +196,7 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
                 type="button"
                 onClick={() => {
                   stop.current?.();
+                  setNoVoice(false);
                   setWord(word === i ? null : i);
                 }}
                 aria-pressed={word === i}
@@ -190,6 +220,30 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
             <span className="text-faint"> = </span>
             <strong className="tabular-nums">{words[word]?.value}</strong>
           </p>
+        )}
+        {/* the study layer: how it sounds and what it means, and the word said aloud (my brother's third ask) */}
+        {word !== null && gloss && (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2">
+            <p className="text-sm">
+              <span className="font-serif text-base text-ink">{words[word]?.text}</span> <span className="italic text-ink">{gloss.say}</span>{" "}
+              <span className="text-muted">· {gloss.means}</span>
+            </p>
+            {script === "arabic" ? (
+              <a href="https://quran.com/1/1" target="_blank" rel="noopener" className="text-xs font-medium text-accent hover:underline">
+                Hear it recited ↗
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setNoVoice(!sayWord(words[word]?.text ?? "", script))}
+                className="min-h-9 rounded-lg border border-line px-3 text-xs font-medium text-ink hover:bg-raised"
+              >
+                🔊 Say it
+              </button>
+            )}
+            {noVoice && <p className="w-full text-xs text-faint">This device has no {script === "hebrew" ? "Hebrew" : "Greek"} voice installed, so it can&rsquo;t say it.</p>}
+            {script !== "arabic" && <p className="w-full text-[11px] text-faint">Said by your device&rsquo;s voice, in today&rsquo;s {script === "hebrew" ? "Hebrew" : "Greek"} pronunciation.</p>}
+          </div>
         )}
         <p className="mt-2 text-xs">{SYSTEM[script].how}</p>
       </details>
