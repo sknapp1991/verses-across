@@ -88,8 +88,8 @@ function sayWord(text: string, script: Script): boolean {
   if (!lang || !voice || typeof SpeechSynthesisUtterance === "undefined") return false;
   stopPlaying?.();
   window.speechSynthesis.cancel();
-  // the cantillation (chanting) marks would trip the voice: dropped for speaking only (the shown text is unchanged)
-  const u = new SpeechSynthesisUtterance(script === "hebrew" ? text.replace(/[֑-ֽ֯׀׃]/g, "") : text);
+  // Hebrew is spoken from its bare letters: chanting marks and vowel points dropped (voices read plain Hebrew best; the shown text is unchanged)
+  const u = new SpeechSynthesisUtterance(script === "hebrew" ? text.replace(/[\u0591-\u05C7]/g, "") : text);
   u.voice = voice;
   u.lang = voice.lang;
   u.rate = 0.8;
