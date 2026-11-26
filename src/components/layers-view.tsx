@@ -12,7 +12,7 @@ import { AiWindow } from "./ai-window";
 import { askAboutVerse, openAi } from "@/lib/ai-chat";
 import { updateSettings } from "@/lib/settings";
 import { LAYER_VERSES } from "@/lib/layer-verses";
-import { lettersOf, valueOf, wordsOf, type Letter, type Script } from "@/lib/letter-values";
+import { lettersOf, tokensOf, valueOf, wordsOf, type Letter, type Script } from "@/lib/letter-values";
 import { LAYER_GLOSSES } from "@/lib/layer-glosses";
 import { GENESIS_1 } from "@/lib/layer-gen1";
 
@@ -33,7 +33,7 @@ type WithWebkit = typeof window & { webkitAudioContext?: typeof AudioContext };
 
 let stopPlaying: (() => void) | null = null; // (one strand plays at a time)
 
-function playStrand(letters: Letter[], onStep: (i: number) => void): () => void {
+function playStrand(letters: Letter[], onStep: (i: number) => void, speed = 1): () => void {
   stopPlaying?.();
   const Ctx = window.AudioContext ?? (window as WithWebkit).webkitAudioContext;
   if (!Ctx) return () => {};
@@ -45,7 +45,7 @@ function playStrand(letters: Letter[], onStep: (i: number) => void): () => void 
   let t = ctx.currentTime + 0.05;
   const timers: ReturnType<typeof setTimeout>[] = [];
   letters.forEach((l, i) => {
-    if (i > 0 && letters[i - 1].word !== l.word) t += 0.14; // a breath between words
+    if (i > 0 && letters[i - 1].word !== l.word) t += 0.14 / speed; // a breath between words
     const f = BASE[sizeOf(l.value)] * Math.pow(2, SCALE[firstDigit(l.value) - 1] / 12);
     const o = ctx.createOscillator();
     const g = ctx.createGain();
@@ -53,13 +53,14 @@ function playStrand(letters: Letter[], onStep: (i: number) => void): () => void 
     o.frequency.value = f;
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(1, t + 0.015);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+    const len = Math.min(0.32, 0.32 / speed + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
     o.connect(g);
     g.connect(out);
     o.start(t);
-    o.stop(t + 0.34);
+    o.stop(t + len + 0.02);
     timers.push(setTimeout(() => onStep(i), (t - ctx.currentTime) * 1000));
-    t += 0.17;
+    t += 0.17 / speed;
   });
   let closed = false;
   const stop = () => {
@@ -73,6 +74,45 @@ function playStrand(letters: Letter[], onStep: (i: number) => void): () => void 
   timers.push(setTimeout(stop, (t - ctx.currentTime) * 1000 + 300));
   stopPlaying = stop;
   return stop;
+}
+
+/** How fast the tones go (my brother's ask): kept for the page while it's open. */
+const SPEEDS = [0.5, 0.75, 1, 1.5, 2, 3];
+function Tempo({ speed, onChange }: { speed: number; onChange: (s: number) => void }) {
+  return (
+    <label className="flex items-center gap-1 text-xs text-muted">
+      Tempo
+      <select value={speed} onChange={(e) => onChange(Number(e.target.value))} aria-label="Tempo" className="min-h-9 rounded-lg border border-line bg-raised px-2 text-ink">
+        {SPEEDS.map((s) => (
+          <option key={s} value={s}>
+            {s === 1 ? "1× (normal)" : `${s}×`}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/**
+ * A verse exactly as written, each word its own span so the word sounding can be lit (the spaces, maqaf and marks
+ * between them are kept as they are). `lit`: the word's number as lettersOf counts them, or -1.
+ */
+function VerseText({ text, script, lit }: { text: string; script: Script; lit: number }) {
+  const counted = new Set(tokensOf(text, script));
+  let n = -1;
+  return (
+    <>
+      {text.split(script === "hebrew" ? /([\s\u05BE]+)/ : /(\s+)/).map((part, i) => {
+        if (!part || /^[\s\u05BE]+$/.test(part) || !counted.has(part) || !lettersOf(part, script).length) return <span key={i}>{part}</span>;
+        n++;
+        return (
+          <span key={i} className={n === lit ? "rounded bg-accent/30 text-ink" : undefined}>
+            {part}
+          </span>
+        );
+      })}
+    </>
+  );
 }
 
 /* ---------------- saying a word ---------------- */
@@ -169,7 +209,9 @@ function ChapterCard() {
   const [word, setWord] = useState<number | null>(null); // a word of the focus verse
   const [lit, setLit] = useState(-1);
   const [noVoice, setNoVoice] = useState(false);
+  const [speed, setSpeed] = useState(1);
   const stop = useRef<(() => void) | null>(null);
+  const list = useRef<HTMLOListElement>(null);
   useEffect(() => () => stop.current?.(), []);
   const verses = useMemo(() => GENESIS_1.filter((v) => chosen.includes(v.v)), [chosen]);
   // all chosen letters in one strand: the word numbers run on across verses; where each verse starts
@@ -192,7 +234,15 @@ function ChapterCard() {
   const focusWords = useMemo(() => wordsOf(focusVerse.text, "hebrew"), [focusVerse]);
   const strandWord = word !== null && chosen.includes(focus) ? (starts[focus] ?? 0) + word : null;
   const playing = strandWord === null ? letters : letters.filter((l) => l.word === strandWord);
-  const sounding = lit >= 0 ? (playing[lit] as (typeof letters)[number] | undefined)?.verse : undefined;
+  const now = lit >= 0 ? (playing[lit] as (typeof letters)[number] | undefined) : undefined;
+  const sounding = now?.verse;
+  const soundingWord = now ? now.word - (starts[now.verse] ?? 0) : -1; // within its verse
+  // the list follows the verse sounding (only its own scroll box moves, not the page)
+  useEffect(() => {
+    const box = list.current;
+    const row = sounding ? (box?.querySelector(`[data-v="${sounding}"]`) as HTMLElement | null) : null;
+    if (box && row && box.scrollHeight > box.clientHeight) box.scrollTop = row.offsetTop - box.offsetTop - box.clientHeight / 2 + row.clientHeight / 2;
+  }, [sounding]);
   const pick = (list: number[]) => {
     stop.current?.();
     const next = [...new Set(list)].sort((a, b) => a - b);
@@ -235,16 +285,18 @@ function ChapterCard() {
         </div>
       </div>
       {/* the chosen verses, exactly as written; the one sounding is lit; tap one to open its words */}
-      <ol dir="rtl" lang="he" className={`space-y-1 ${verses.length > 6 ? "max-h-80 overflow-y-auto pe-1" : ""}`}>
+      <ol ref={list} dir="rtl" lang="he" className={`relative space-y-1 ${verses.length > 6 ? "max-h-80 overflow-y-auto pe-1" : ""}`}>
         {verses.map((v) => (
-          <li key={v.v}>
+          <li key={v.v} data-v={v.v}>
             <button
               type="button"
               onClick={() => (setFocus(v.v), setWord(null))}
               className={`flex w-full items-baseline gap-2 rounded-lg px-2 py-1 text-right ${sounding === v.v ? "bg-accent-soft" : focus === v.v && verses.length > 1 ? "bg-raised" : ""}`}
             >
               <span dir="ltr" className="shrink-0 text-xs tabular-nums text-faint">{v.v}</span>
-              <span className="flex-1 font-serif text-xl leading-relaxed text-ink">{v.text}</span>
+              <span className="flex-1 font-serif text-xl leading-relaxed text-ink">
+                <VerseText text={v.text} script="hebrew" lit={sounding === v.v ? soundingWord : -1} />
+              </span>
               <span dir="ltr" className="shrink-0 text-xs tabular-nums text-faint">{valueOf(v.text, "hebrew").toLocaleString("en-US")}</span>
             </button>
           </li>
@@ -260,15 +312,20 @@ function ChapterCard() {
               stop.current = null;
               return;
             }
-            stop.current = playStrand(playing, (i) => {
-              setLit(i);
-              if (i === -1) stop.current = null;
-            });
+            stop.current = playStrand(
+              playing,
+              (i) => {
+                setLit(i);
+                if (i === -1) stop.current = null;
+              },
+              speed,
+            );
           }}
           className="min-h-10 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink"
         >
           {lit >= 0 ? "■ Stop" : strandWord !== null ? "▶ Play this word" : verses.length > 1 ? `▶ Play ${verses.length} verses as tones` : "▶ Play its letters as tones"}
         </button>
+        <Tempo speed={speed} onChange={(s) => (stop.current?.(), setSpeed(s))} />
         <span className="text-sm text-muted">
           {letters.length.toLocaleString("en-US")} letters · {verses.reduce((n, v) => n + v.words.length, 0)} words · total{" "}
           <strong className="tabular-nums text-ink">{total.toLocaleString("en-US")}</strong>
@@ -357,6 +414,7 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
   const playing = word === null ? letters : letters.filter((l) => l.word === word);
   const gloss = word !== null ? LAYER_GLOSSES[v.id]?.[word] : undefined;
   const [noVoice, setNoVoice] = useState(false);
+  const [speed, setSpeed] = useState(1);
   useEffect(() => () => stop.current?.(), []);
   const rtl = script !== "greek";
   return (
@@ -368,7 +426,7 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
         </span>
       </div>
       <p dir={rtl ? "rtl" : "ltr"} lang={script === "hebrew" ? "he" : script === "greek" ? "grc" : "ar"} className="font-serif text-2xl leading-relaxed text-ink">
-        {v.text}
+        <VerseText text={v.text} script={script} lit={lit >= 0 ? (playing[lit]?.word ?? -1) : -1} />
       </p>
       <Strand letters={letters} rtl={rtl} lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={word} />
       <div className="flex flex-wrap items-center gap-2">
@@ -383,16 +441,21 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
               stop.current = null;
               return;
             }
-            stop.current = playStrand(playing, (i) => {
-              setLit(i);
-              if (i === -1) stop.current = null;
-            });
+            stop.current = playStrand(
+              playing,
+              (i) => {
+                setLit(i);
+                if (i === -1) stop.current = null;
+              },
+              speed,
+            );
           }}
           className="min-h-10 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink"
         >
           {lit >= 0 ? "■ Stop" : word === null ? "▶ Play its letters as tones" : "▶ Play this word"}
         </button>
         )}
+        {script !== "arabic" && <Tempo speed={speed} onChange={(s) => (stop.current?.(), setSpeed(s))} />}
         <span className="text-sm text-muted">
           {letters.length} letters · {words.length} words · total <strong className="tabular-nums text-ink">{total.toLocaleString("en-US")}</strong>
         </span>
