@@ -42,6 +42,21 @@ type Load =
   | { key: string; status: "error"; message: string }
   | { key: string; status: "ok"; verses: Verse[]; tokens: Token[]; mean: number; cum: number[] };
 
+/** A commonly cited average for adults reading silently, used for "time saved". */
+const USUAL_WPM = 238;
+
+/** One stretch read in a session: a chapter from where you started to where you stopped. */
+type Item = { seg: number; title: string; from: number; to: number; fromLabel: string; toLabel: string; words: number; ms: number };
+
+/** "Genesis 1, verses 1-31" (or "verse 4" when it stayed in one verse). */
+const itemTitle = (it: Item) => `${it.title}, ${it.from === it.to ? `verse ${it.fromLabel}` : `verses ${it.fromLabel}-${it.toLabel}`}`;
+
+/** Time saved against the usual pace; a slower reading shows as extra time. */
+function savedText(words: number, ms: number) {
+  const d = (words / USUAL_WPM) * 60000 - ms;
+  return d >= 0 ? `${formatTime(d)} saved` : `${formatTime(-d)} extra`;
+}
+
 /** One finished reading of a chapter, rated at the speed actually read. */
 type Rating = { round: number; title: string; wpm: number; rating: number };
 
@@ -64,6 +79,9 @@ function fontFor(lang: string): CSSProperties | undefined {
   if (lang === "el") return { fontFamily: "var(--font-greek), var(--font-serif)" };
   return undefined;
 }
+
+/** The clock, read only inside the reading timer's effect and callbacks. */
+const now = () => Date.now();
 
 const clampWpm = (n: number) => Math.max(MIN_WPM, Math.min(MAX_WPM, Math.round(n)));
 
@@ -135,6 +153,9 @@ export function SpeedReader() {
   const [stats, setStats] = useState({ words: 0, ms: 0 });
   /** "Clear session" asks for a second tap before it wipes anything. */
   const [confirmClear, setConfirmClear] = useState(false);
+  /** The stretches read this session, and the current one's number (a new one on each chapter pick or re-read). */
+  const [items, setItems] = useState<Item[]>([]);
+  const [seg, setSeg] = useState(0);
   const [check, setCheck] = useState(false);
   const [ratings, setRatings] = useState<Rating[]>([]);
   /** Counts finished readings, so a re-read can be rated again. */
@@ -231,12 +252,33 @@ export function SpeedReader() {
   // what was already shown, and its time still counts.
   useEffect(() => {
     if (!playing || !ready || !token) return;
-    const started = Date.now();
+    const started = now();
     const full = Math.max(FLOOR_MS, delayOf(token, slow ? wpm / 2 : wpm) / ready.mean);
     const part = partRef.current;
     const doneFrac = part && part.key === key && part.i === idx ? part.frac : 0;
     let fired = false;
+    const vi = token.verse;
+    const label = ready.verses[vi].n ?? ready.verses[vi].v;
     const add = (words: number, ms: number) => {
+      setItems((list) => {
+        const last = list[list.length - 1];
+        if (last && last.seg === seg) {
+          const lower = words > 0 && vi < last.from;
+          const higher = words > 0 && vi > last.to;
+          const it: Item = {
+            ...last,
+            words: last.words + words,
+            ms: last.ms + ms,
+            from: lower ? vi : last.from,
+            fromLabel: lower ? label : last.fromLabel,
+            to: higher ? vi : last.to,
+            toLabel: higher ? label : last.toLabel,
+          };
+          return [...list.slice(0, -1), it];
+        }
+        if (!words) return list; // (a pause before the first word isn't a reading yet)
+        return [...list, { seg, title, from: vi, to: vi, fromLabel: label, toLabel: label, words, ms }];
+      });
       setStats((st) => ({ words: st.words + words, ms: st.ms + ms }));
       setChap((c) => (c.key === key ? { key, words: c.words + words, ms: c.ms + ms } : { key, words, ms }));
     };
@@ -244,7 +286,7 @@ export function SpeedReader() {
       () => {
         fired = true;
         partRef.current = null;
-        add(1, Date.now() - started);
+        add(1, now() - started);
         if (idx + 1 >= ready.tokens.length) {
           setPlaying(false);
           setDoneKey(key);
@@ -256,11 +298,11 @@ export function SpeedReader() {
     return () => {
       clearTimeout(id);
       if (fired) return;
-      const spent = Date.now() - started;
+      const spent = now() - started;
       partRef.current = { key, i: idx, frac: Math.min(1, doneFrac + (full > 0 ? spent / full : 1)) };
       add(0, spent);
     };
-  }, [playing, ready, token, idx, wpm, slow, key]);
+  }, [playing, ready, token, idx, wpm, slow, key, seg, title]);
 
   // An unanswered "tap again to clear" goes back to normal after a few seconds.
   useEffect(() => {
@@ -289,6 +331,7 @@ export function SpeedReader() {
     if (finished) {
       setDoneKey(null);
       setChap({ key, words: 0, ms: 0 });
+      setSeg((n) => n + 1);
       setPos({ key, i: 0 });
       setPlaying(true);
       return;
@@ -314,6 +357,8 @@ export function SpeedReader() {
     setConfirmClear(false);
     setStats({ words: 0, ms: 0 });
     setRatings([]);
+    setItems([]);
+    setSeg((n) => n + 1);
     setChap({ key, words: 0, ms: 0 });
   };
   const forward = () => jump(sentenceForward(tokens, idx));
@@ -323,6 +368,7 @@ export function SpeedReader() {
     setPlaying(play);
     setDoneKey(null);
     setChap({ key: keyOf(p), words: 0, ms: 0 });
+    setSeg((n) => n + 1);
     setPick(p);
     setPos({ key: keyOf(p), i: 0 });
   };
@@ -647,7 +693,7 @@ export function SpeedReader() {
               type="button"
               onClick={clearSession}
               onMouseDown={noFocus}
-              disabled={!stats.words && !stats.ms && !ratings.length}
+              disabled={!stats.words && !stats.ms && !ratings.length && !items.length}
               className={`min-h-9 rounded-lg border px-3 text-xs font-medium disabled:opacity-50 ${confirmClear ? "border-accent bg-accent text-accent-ink" : "border-line text-ink hover:bg-raised"}`}
             >
               {confirmClear ? "Tap again to clear" : "Clear session"}
@@ -667,6 +713,34 @@ export function SpeedReader() {
               <dd className="text-lg font-semibold text-ink">{avg ? `${avg} wpm` : "-"}</dd>
             </div>
           </dl>
+          {items.length > 0 && (
+            <div className="space-y-2 border-t border-line pt-2">
+              <ul className="space-y-2">
+                {items.map((it) => (
+                  <li key={it.seg} className="text-xs">
+                    <span className="block font-medium text-ink">{itemTitle(it)}</span>
+                    <span className="block text-muted">
+                      {it.words.toLocaleString()} words · {formatTime(it.ms)} · {it.ms > 1000 ? `${Math.round(it.words / (it.ms / 60000))} wpm` : "-"} ·{" "}
+                      {savedText(it.words, it.ms)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {items.length > 1 && (
+                <p className="border-t border-line pt-2 text-xs">
+                  <span className="font-medium text-ink">Total: </span>
+                  <span className="text-muted">
+                    {items.reduce((n, it) => n + it.words, 0).toLocaleString()} words · {formatTime(items.reduce((n, it) => n + it.ms, 0))} ·{" "}
+                    {savedText(
+                      items.reduce((n, it) => n + it.words, 0),
+                      items.reduce((n, it) => n + it.ms, 0),
+                    )}
+                  </span>
+                </p>
+              )}
+              <p className="text-[11px] text-faint">Time saved is compared with {USUAL_WPM} words a minute, a commonly cited average for adults reading silently.</p>
+            </div>
+          )}
           {ratings.length > 0 && (
             <ul className="space-y-1 border-t border-line pt-2 text-xs text-muted">
               {ratings.map((r) => (
