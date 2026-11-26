@@ -7,7 +7,7 @@
  * Data: STEP Bible (lib/word-journeys.ts), the KJV's Strong's tags and Strong's dictionary (lib/strongs.ts).
  */
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiWindow } from "./ai-window";
 import { askAboutVerse, openAi } from "@/lib/ai-chat";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
@@ -27,6 +27,7 @@ import {
   searchWords,
   shortStrong,
   STARTERS,
+  type BookText,
   type Found,
   type IWord,
   type Place,
@@ -41,6 +42,9 @@ const placeTitle = (p: Place) => `${chapterTitle(findBook("bible", p.book), p.ch
 const plainNum = (n: string) => n.replace(/^([HG])0*(\d+).*$/, "$1$2");
 /** The KJV puts a psalm's title in verse 1; the interlinear calls it verse 0. */
 const kjvVerse = (v: string) => (v === "0" ? "1" : v);
+const placeId = (p: Place) => `${p.book} ${p.ch}:${p.v}`;
+/** The KJV count: overall, the top word per book ("mercy (12)"), and the words in each verse. */
+type Tally = { done: number; of: number; words: [string, number][]; none: number; byBook: Record<string, string>; byPlace: Record<string, string[]> };
 
 /* ---------------- picking a word ---------------- */
 
@@ -160,7 +164,7 @@ function Picker({ current, onPick }: { current: string | null; onPick: (base: st
 
 type Detail = { kjv: string | null; tags: Tag[] | null; words: IWord[] | null };
 
-function PlaceDetail({ p, base, hebrew }: { p: Place; base: string; hebrew: boolean }) {
+function PlaceDetail({ p, base, hebrew, onText }: { p: Place; base: string; hebrew: boolean; onText: (book: string, t: BookText) => void }) {
   const [d, setD] = useState<Detail | null | false>(null);
   useEffect(() => {
     let live = true;
@@ -168,13 +172,14 @@ function PlaceDetail({ p, base, hebrew }: { p: Place; base: string; hebrew: bool
     void Promise.all([kjvBook(p.book), loadTags("kjv", p.book), interChapter(p.book, p.ch)]).then(([text, tags, inter]) => {
       if (!live) return;
       if (!text && !inter) return setD(false);
+      if (text) onText(p.book, text);
       const kjv = text?.chapters[String(p.ch)]?.verses.find((x) => x.v === v)?.t ?? null;
       setD({ kjv, tags: tags?.[`${p.ch}:${v}`] ?? null, words: inter?.[p.v] ?? null });
     });
     return () => {
       live = false;
     };
-  }, [p.book, p.ch, p.v]);
+  }, [p.book, p.ch, p.v, onText]);
 
   const num = plainNum(base);
   const parts = useMemo(() => {
@@ -293,6 +298,368 @@ function PlaceDetail({ p, base, hebrew }: { p: Place; base: string; hebrew: bool
   );
 }
 
+/* ---------------- the bar chart ---------------- */
+
+type Group = { name: string; n: number };
+
+/**
+ * A bar per book. A mouse shows a book's details on hover and filters on click; a finger's first tap shows the
+ * details (with a button to filter) and a second tap filters. Keyboard: focus shows them, Enter filters, Esc closes.
+ */
+function BarChart({
+  books,
+  perBook,
+  places,
+  groups,
+  book,
+  onFilter,
+  topKjv,
+}: {
+  books: string[];
+  perBook: number[];
+  places: Place[];
+  groups: Group[];
+  book: string | null;
+  onFilter: (b: string | null) => void;
+  topKjv?: Record<string, string>;
+}) {
+  const [tip, setTip] = useState<string | null>(null);
+  const touch = useRef(false);
+  const box = useRef<HTMLDivElement>(null);
+  const max = Math.max(1, ...perBook);
+  const total = places.length;
+
+  useEffect(() => {
+    if (!tip) return;
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTip(null);
+    };
+    const away = (e: PointerEvent) => {
+      if (box.current && !box.current.contains(e.target as Node)) setTip(null);
+    };
+    document.addEventListener("keydown", key);
+    document.addEventListener("pointerdown", away);
+    return () => {
+      document.removeEventListener("keydown", key);
+      document.removeEventListener("pointerdown", away);
+    };
+  }, [tip]);
+
+  const ti = tip ? books.indexOf(tip) : -1;
+  const tn = ti >= 0 ? perBook[ti] : 0;
+  const first = tip ? places.find((p) => p.book === tip) : undefined;
+  const filter = (id: string | null) => {
+    onFilter(id);
+    setTip(null);
+  };
+
+  return (
+    <div ref={box} className="relative" onMouseLeave={() => !touch.current && setTip(null)}>
+      {tip && ti >= 0 && (
+        <div
+          className="absolute bottom-full z-10 mb-2 w-44 rounded-xl border border-line bg-raised p-2 text-xs text-muted shadow-lg"
+          style={{ left: `clamp(0px, calc(${((ti + 0.5) / books.length) * 100}% - 88px), calc(100% - 176px))` }}
+        >
+          <div role="tooltip" id="wj-tip" className="space-y-0.5">
+            <p className="font-semibold text-ink">{bookName(tip)}</p>
+            <p>
+              {tn.toLocaleString()} verse{tn === 1 ? "" : "s"} · {total ? Math.round((tn / total) * 1000) / 10 : 0}% of all its places
+            </p>
+            {topKjv?.[tip] && <p>KJV most often: {topKjv[tip]}</p>}
+            {first && <p>First: {placeTitle(first)}</p>}
+          </div>
+          <div className="mt-1.5 flex gap-2">
+            <button type="button" onClick={() => filter(book === tip ? null : tip)} className="min-h-8 flex-1 rounded-lg bg-accent px-2 font-medium text-accent-ink">
+              {book === tip ? "Show every book" : "Show only this book"}
+            </button>
+            <button type="button" aria-label="Close" onClick={() => setTip(null)} className="min-h-8 rounded-lg border border-line px-2 text-ink">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="flex h-32 items-end gap-px border-b border-line" role="group" aria-label="Verses per book">
+        {books.map((id, i) => {
+          const n = perBook[i];
+          const sel = book === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              disabled={!n}
+              aria-pressed={sel}
+              aria-label={`${bookName(id)}: ${n} verse${n === 1 ? "" : "s"}`}
+              aria-describedby={tip === id ? "wj-tip" : undefined}
+              onPointerDown={(e) => {
+                touch.current = e.pointerType !== "mouse";
+              }}
+              onMouseEnter={() => !touch.current && setTip(id)}
+              onFocus={() => !touch.current && setTip(id)}
+              onKeyDown={() => {
+                touch.current = false;
+              }}
+              onClick={() => {
+                if (touch.current && tip !== id) return setTip(id); // first tap: details
+                filter(sel ? null : id);
+              }}
+              className="flex h-full min-w-0 flex-1 items-end"
+            >
+              <span
+                className={`block w-full rounded-t-sm ${!n ? "" : (book && !sel) || (tip && tip !== id) ? "bg-accent-soft" : "bg-accent"}`}
+                style={{ height: n ? `${Math.max(3, (n / max) * 100)}%` : 0 }}
+              />
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex gap-px text-[10px] text-faint">
+        {groups.map((g) => (
+          <span key={g.name} style={{ flexGrow: g.n, flexBasis: 0 }} className="min-w-0 truncate border-l border-line pl-0.5">
+            {g.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- every place, folded by section and book ---------------- */
+
+type Sort = "canon" | "count" | "alpha";
+type BookGroup = { id: string; bi: number; items: Place[] };
+
+function PlaceList({
+  places,
+  senses,
+  senseLabel,
+  book,
+  onBook,
+  books,
+  groups,
+  base,
+  hebrew,
+  kjvWords,
+  texts,
+  onText,
+}: {
+  places: Place[];
+  senses: Sense[];
+  senseLabel: (s: Sense) => string;
+  book: string | null;
+  onBook: (b: string | null) => void;
+  books: string[];
+  groups: Group[];
+  base: string;
+  hebrew: boolean;
+  kjvWords?: Record<string, string[]>;
+  texts: Record<string, BookText>;
+  onText: (book: string, t: BookText) => void;
+}) {
+  const [sort, setSort] = useState<Sort>("canon");
+  const [sense, setSense] = useState("");
+  const [q, setQ] = useState("");
+  const [fold, setFold] = useState<{ all?: boolean; ov: Record<string, boolean> }>({ ov: {} });
+  const [shown, setShown] = useState<Record<string, number>>({});
+  const [open, setOpen] = useState<string[]>([]);
+
+  const list = useMemo(() => {
+    const qq = q.trim().toLowerCase();
+    return places.filter((p) => {
+      if (book && p.book !== book) return false;
+      if (sense && p.keys.indexOf(sense) < 0) return false;
+      if (!qq) return true;
+      if (placeTitle(p).toLowerCase().indexOf(qq) >= 0 || p.gloss.indexOf(qq) >= 0) return true;
+      if ((kjvWords?.[placeId(p)] ?? []).some((w) => w.indexOf(qq) >= 0)) return true;
+      const t = texts[p.book]?.chapters[String(p.ch)]?.verses.find((x) => x.v === kjvVerse(p.v))?.t;
+      return !!t && t.toLowerCase().indexOf(qq) >= 0;
+    });
+  }, [places, book, sense, q, kjvWords, texts]);
+
+  const byBook = useMemo(() => {
+    const m = new Map<string, BookGroup>();
+    for (const p of list) {
+      let g = m.get(p.book);
+      if (!g) m.set(p.book, (g = { id: p.book, bi: p.bi, items: [] }));
+      g.items.push(p);
+    }
+    const out = [...m.values()];
+    if (sort === "count") out.sort((a, b) => b.items.length - a.items.length || a.bi - b.bi);
+    else if (sort === "alpha") out.sort((a, b) => (bookName(a.id) < bookName(b.id) ? -1 : 1));
+    else out.sort((a, b) => a.bi - b.bi);
+    return out;
+  }, [list, sort]);
+
+  /** Canonical order: books inside their sections. The other sorts: books only. */
+  const sections = useMemo(() => {
+    if (sort !== "canon") return null;
+    let start = 0;
+    return groups
+      .map((g) => {
+        const from = start;
+        start += g.n;
+        return { name: g.name, books: byBook.filter((b) => b.bi >= from && b.bi < from + g.n) };
+      })
+      .filter((s) => s.books.length);
+  }, [sort, groups, byBook]);
+
+  const isOpen = (key: string, first: boolean) => (key in fold.ov ? fold.ov[key] : fold.all !== undefined ? fold.all : first);
+  const toggle = (key: string, first: boolean) => setFold({ all: fold.all, ov: { ...fold.ov, [key]: !isOpen(key, first) } });
+  const font = fontOf(hebrew);
+  const lang = hebrew ? "he" : "grc";
+
+  const bookFold = (g: BookGroup, first: boolean) => {
+    const key = `b:${g.id}`;
+    const opened = isOpen(key, first);
+    const n = shown[g.id] ?? PAGE;
+    return (
+      <li key={g.id}>
+        <button
+          type="button"
+          aria-expanded={opened}
+          onClick={() => toggle(key, first)}
+          className="flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm font-medium text-ink hover:bg-raised"
+        >
+          <span aria-hidden className="w-3 text-xs text-faint">
+            {opened ? "▾" : "▸"}
+          </span>
+          <span className="flex-1">{bookName(g.id)}</span>
+          <span className="text-xs font-normal text-muted">{g.items.length.toLocaleString()}</span>
+        </button>
+        {opened && (
+          <>
+            <ol className="divide-y divide-line border-t border-line">
+              {g.items.slice(0, n).map((p) => {
+                const id = placeId(p);
+                const vOpen = open.indexOf(id) >= 0;
+                return (
+                  <li key={id}>
+                    <button
+                      type="button"
+                      aria-expanded={vOpen}
+                      onClick={() => setOpen(vOpen ? open.filter((x) => x !== id) : open.concat(id))}
+                      className="flex min-h-10 w-full items-baseline gap-2 py-1.5 pl-8 pr-3 text-left hover:bg-raised"
+                    >
+                      <span className="w-24 shrink-0 text-sm text-ink">{placeTitle(p)}</span>
+                      <span lang={lang} dir={hebrew ? "rtl" : "ltr"} className="shrink-0 text-base text-ink" style={font}>
+                        {p.form}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs text-muted">{kjvWords?.[id]?.length ? `KJV: ${kjvWords[id].join(", ")}` : p.gloss}</span>
+                      <span aria-hidden className="shrink-0 text-xs text-faint">
+                        {vOpen ? "▴" : "▾"}
+                      </span>
+                    </button>
+                    {vOpen && <PlaceDetail p={p} base={base} hebrew={hebrew} onText={onText} />}
+                  </li>
+                );
+              })}
+            </ol>
+            {n < g.items.length && (
+              <button
+                type="button"
+                onClick={() => setShown({ ...shown, [g.id]: n + PAGE })}
+                className="min-h-9 w-full border-t border-line px-3 text-left text-sm text-accent hover:bg-raised"
+              >
+                Show {Math.min(PAGE, g.items.length - n)} more in {bookName(g.id)} ({(g.items.length - n).toLocaleString()} left)
+              </button>
+            )}
+          </>
+        )}
+      </li>
+    );
+  };
+
+  const control = "min-h-9 rounded-lg border border-line bg-paper px-2 text-sm text-ink";
+  return (
+    <section className="space-y-3">
+      <h2 className="font-serif text-lg font-semibold text-ink">
+        Every place <span className="text-sm font-normal text-muted">({list.length.toLocaleString()})</span>
+      </h2>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+        <label className="flex items-center gap-1">
+          Order
+          <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className={control}>
+            <option value="canon">Bible order</option>
+            <option value="count">Most first</option>
+            <option value="alpha">A to Z by book</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1">
+          Book
+          <select value={book ?? ""} onChange={(e) => onBook(e.target.value || null)} className={control}>
+            <option value="">Every book</option>
+            {books.map((id) => (places.some((p) => p.book === id) ? <option key={id} value={id}>{bookName(id)}</option> : null))}
+          </select>
+        </label>
+        {senses.length > 1 && (
+          <label className="flex items-center gap-1">
+            Entry
+            <select value={sense} onChange={(e) => setSense(e.target.value)} className={control}>
+              <option value="">All</option>
+              {senses.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {senseLabel(s)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Filter: a verse or a KJV word"
+          aria-label="Filter the places by reference or KJV word"
+          className={`${control} min-w-0 flex-1 basis-40 placeholder:text-faint`}
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+        <button type="button" onClick={() => setFold({ all: true, ov: {} })} className="min-h-8 text-accent hover:underline">
+          Open all
+        </button>
+        <button type="button" onClick={() => setFold({ all: false, ov: {} })} className="min-h-8 text-accent hover:underline">
+          Close all
+        </button>
+        <span className="text-faint">
+          Tap a verse to see it in the KJV and the {hebrew ? "Hebrew" : "Greek"}.{" "}
+          {q.trim() && !kjvWords ? "KJV words match in verses you've opened; count the KJV's words above to match them everywhere." : ""}
+        </span>
+      </div>
+      {!list.length ? (
+        <p className="text-sm text-muted">No places match. Try another filter.</p>
+      ) : sections ? (
+        <ul className="space-y-2">
+          {sections.map((s, si) => {
+            const key = `s:${s.name}`;
+            const opened = isOpen(key, si === 0);
+            const count = s.books.reduce((n, b) => n + b.items.length, 0);
+            return (
+              <li key={s.name} className="overflow-hidden rounded-xl border border-line bg-panel">
+                <button
+                  type="button"
+                  aria-expanded={opened}
+                  onClick={() => toggle(key, si === 0)}
+                  className="flex min-h-11 w-full items-center gap-2 px-3 text-left font-serif font-semibold text-ink hover:bg-raised"
+                >
+                  <span aria-hidden className="w-3 text-xs text-faint">
+                    {opened ? "▾" : "▸"}
+                  </span>
+                  <span className="flex-1">{s.name}</span>
+                  <span className="font-sans text-xs font-normal text-muted">
+                    {count.toLocaleString()} in {s.books.length} book{s.books.length === 1 ? "" : "s"}
+                  </span>
+                </button>
+                {opened && <ul className="divide-y divide-line border-t border-line">{s.books.map((b, bi) => bookFold(b, si === 0 && bi === 0))}</ul>}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-panel">{byBook.map((b, i) => bookFold(b, i === 0))}</ul>
+      )}
+    </section>
+  );
+}
+
 /* ---------------- the journey ---------------- */
 
 function Journey({ base }: { base: string }) {
@@ -301,9 +668,9 @@ function Journey({ base }: { base: string }) {
   const [dict, setDict] = useState<LexEntry | null>(null);
   const [off, setOff] = useState<string[]>([]); // senses switched off
   const [book, setBook] = useState<string | null>(null);
-  const [shown, setShown] = useState(PAGE);
-  const [open, setOpen] = useState<string[]>([]);
-  const [tally, setTally] = useState<{ done: number; of: number; words: [string, number][]; none: number } | null>(null);
+  const [tally, setTally] = useState<Tally | null>(null);
+  const [texts, setTexts] = useState<Record<string, BookText>>({}); // KJV books already loaded (for the list's text filter)
+  const gotText = useCallback((b: string, t: BookText) => setTexts((x) => (x[b] ? x : { ...x, [b]: t })), []);
   const tallyRun = useRef(0); // a newer count (or a sense switched) makes an older one stop
 
   useEffect(() => {
@@ -323,8 +690,6 @@ function Journey({ base }: { base: string }) {
     for (const p of places) if (p.bi >= 0) n[p.bi]++;
     return n;
   }, [places, books]);
-  const max = Math.max(1, ...perBook);
-  const list = useMemo(() => (book ? places.filter((p) => p.book === book) : places), [places, book]);
   const glosses = useMemo(() => {
     const n = new Map<string, number>();
     for (const p of places) n.set(p.gloss, (n.get(p.gloss) ?? 0) + 1);
@@ -369,19 +734,34 @@ function Journey({ base }: { base: string }) {
     const num = plainNum(base);
     const ids = books.filter((b) => places.some((p) => p.book === b));
     const words = new Map<string, number>();
+    const byBook: Record<string, string> = {};
+    const byPlace: Record<string, string[]> = {};
     let none = 0;
     const run = ++tallyRun.current;
-    setTally({ done: 0, of: ids.length, words: [], none: 0 });
+    setTally({ done: 0, of: ids.length, words: [], none: 0, byBook: {}, byPlace: {} });
     for (let i = 0; i < ids.length; i++) {
       const tags = await loadTags("kjv", ids[i]);
       if (run !== tallyRun.current) return;
+      const inBook = new Map<string, number>();
       for (const p of places) {
         if (p.book !== ids[i]) continue;
-        const here = (tags?.[`${p.ch}:${kjvVerse(p.v)}`] ?? []).filter((t) => t.slice(1).some((n) => plainNum(n) === num)).map((t) => t[0].toLowerCase().replace(/[’'.,;:!?]+$/, ""));
+        const here = [
+          ...new Set(
+            (tags?.[`${p.ch}:${kjvVerse(p.v)}`] ?? [])
+              .filter((t) => t.slice(1).some((n) => plainNum(n) === num))
+              .map((t) => t[0].toLowerCase().replace(/[’'.,;:!?]+$/, "")),
+          ),
+        ];
         if (!here.length) none++;
-        for (const w of new Set(here)) words.set(w, (words.get(w) ?? 0) + 1);
+        byPlace[placeId(p)] = here;
+        for (const w of here) {
+          words.set(w, (words.get(w) ?? 0) + 1);
+          inBook.set(w, (inBook.get(w) ?? 0) + 1);
+        }
       }
-      setTally({ done: i + 1, of: ids.length, words: [...words].sort((a, b) => b[1] - a[1]), none });
+      const top = [...inBook].sort((a, b) => b[1] - a[1])[0];
+      if (top) byBook[ids[i]] = `${top[0]} (${top[1]})`;
+      setTally({ done: i + 1, of: ids.length, words: [...words].sort((a, b) => b[1] - a[1]), none, byBook: { ...byBook }, byPlace: { ...byPlace } });
     }
   };
 
@@ -415,7 +795,6 @@ function Journey({ base }: { base: string }) {
                     aria-pressed={isOn}
                     onClick={() => {
                       setOff(isOn ? off.concat(s.key) : off.filter((k) => k !== s.key));
-                      setShown(PAGE);
                       tallyRun.current++;
                       setTally(null);
                     }}
@@ -478,52 +857,15 @@ function Journey({ base }: { base: string }) {
         <p className="text-sm text-muted">
           In {places.length.toLocaleString()} verse{places.length === 1 ? "" : "s"} of the {hebrew ? "Old" : "New"} Testament
           {topBooks.length > 0 && <>, most often in {topBooks.map((b) => `${bookName(b.id)} (${b.n})`).join(", ")}</>}. Each bar is a book, in order from{" "}
-          {hebrew ? "Genesis to Malachi" : "Matthew to Revelation"}.
+          {hebrew ? "Genesis to Malachi" : "Matthew to Revelation"}: point at one (or tap it once) for its details, click (or tap again) to see only that book.
         </p>
-        <div>
-          <div className="flex h-32 items-end gap-px border-b border-line" role="group" aria-label="Verses per book">
-            {books.map((id, i) => {
-              const n = perBook[i];
-              const sel = book === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={!n}
-                  aria-pressed={sel}
-                  aria-label={`${bookName(id)}: ${n} verse${n === 1 ? "" : "s"}`}
-                  title={`${bookName(id)}: ${n}`}
-                  onClick={() => {
-                    setBook(sel ? null : id);
-                    setShown(PAGE);
-                  }}
-                  className="flex h-full min-w-0 flex-1 items-end"
-                >
-                  <span
-                    className={`block w-full rounded-t-sm ${!n ? "" : book && !sel ? "bg-accent-soft" : "bg-accent"}`}
-                    style={{ height: n ? `${Math.max(3, (n / max) * 100)}%` : 0 }}
-                  />
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-1 flex gap-px text-[10px] text-faint">
-            {groups.map((g) => (
-              <span key={g.name} style={{ flexGrow: g.n, flexBasis: 0 }} className="min-w-0 truncate border-l border-line pl-0.5">
-                {g.name}
-              </span>
-            ))}
-          </div>
-        </div>
+        <BarChart books={books} perBook={perBook} places={places} groups={groups} book={book} onFilter={setBook} topKjv={tally?.byBook} />
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-          <label htmlFor="wj-book">Tap a bar, or choose a book:</label>
+          <label htmlFor="wj-book">Or choose a book:</label>
           <select
             id="wj-book"
             value={book ?? ""}
-            onChange={(e) => {
-              setBook(e.target.value || null);
-              setShown(PAGE);
-            }}
+            onChange={(e) => setBook(e.target.value || null)}
             className="min-h-9 rounded-lg border border-line bg-paper px-2 text-sm text-ink"
           >
             <option value="">Every book ({places.length.toLocaleString()})</option>
@@ -594,43 +936,20 @@ function Journey({ base }: { base: string }) {
         </div>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="font-serif text-lg font-semibold text-ink">
-          Every place{book ? ` in ${bookName(book)}` : ""} <span className="text-sm font-normal text-muted">({list.length.toLocaleString()})</span>
-        </h2>
-        <p className="text-xs text-muted">Tap a verse to see it in the KJV and in the {hebrew ? "Hebrew" : "Greek"}, with the word lit up.</p>
-        <ol className="divide-y divide-line rounded-xl border border-line bg-panel">
-          {list.slice(0, shown).map((p) => {
-            const id = `${p.book} ${p.ch}:${p.v}`;
-            const isOpen = open.indexOf(id) >= 0;
-            return (
-              <li key={id}>
-                <button
-                  type="button"
-                  aria-expanded={isOpen}
-                  onClick={() => setOpen(isOpen ? open.filter((x) => x !== id) : open.concat(id))}
-                  className="flex min-h-10 w-full items-baseline gap-2 px-3 py-1.5 text-left hover:bg-raised"
-                >
-                  <span className="w-28 shrink-0 text-sm text-ink">{placeTitle(p)}</span>
-                  <span lang={hebrew ? "he" : "grc"} dir={hebrew ? "rtl" : "ltr"} className="shrink-0 text-base text-ink" style={fontOf(hebrew)}>
-                    {p.form}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-xs text-muted">{p.gloss}</span>
-                  <span aria-hidden className="shrink-0 text-xs text-faint">
-                    {isOpen ? "▴" : "▾"}
-                  </span>
-                </button>
-                {isOpen && <PlaceDetail p={p} base={base} hebrew={hebrew} />}
-              </li>
-            );
-          })}
-        </ol>
-        {shown < list.length && (
-          <button type="button" onClick={() => setShown(shown + PAGE)} className="min-h-9 text-sm text-accent hover:underline">
-            Show more ({(list.length - shown).toLocaleString()} left)
-          </button>
-        )}
-      </section>
+      <PlaceList
+        places={places}
+        senses={senses.filter((x) => on.has(x.key))}
+        senseLabel={senseLabel}
+        book={book}
+        onBook={setBook}
+        books={books}
+        groups={groups}
+        base={base}
+        hebrew={hebrew}
+        kjvWords={tally?.byPlace}
+        texts={texts}
+        onText={gotText}
+      />
     </>
   );
 }

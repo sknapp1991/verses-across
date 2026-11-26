@@ -16,17 +16,16 @@ export const OT_BOOKS = (
 export const NT_BOOKS = "mat mrk luk jhn act rom 1co 2co gal eph php col 1th 2th 1ti 2ti tit phm heb jas 1pe 2pe 1jn 2jn 3jn jud rev".split(" ");
 /** The usual sections, for the strip under the chart (counts of books, in order). */
 export const OT_GROUPS = [
-  { name: "Law", n: 5 },
+  { name: "Torah", n: 5 },
   { name: "History", n: 12 },
-  { name: "Poetry", n: 5 },
+  { name: "Wisdom", n: 5 },
   { name: "Prophets", n: 17 },
 ];
 export const NT_GROUPS = [
   { name: "Gospels", n: 4 },
   { name: "Acts", n: 1 },
-  { name: "Paul", n: 13 },
-  { name: "Letters", n: 8 },
-  { name: "Rev.", n: 1 },
+  { name: "Letters", n: 21 },
+  { name: "Revelation", n: 1 },
 ];
 
 /** Starting words (each checked against the lexicon and concordance, Nov 26). */
