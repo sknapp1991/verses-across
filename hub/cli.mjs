@@ -5,6 +5,7 @@
 //   %USERPROFILE%\.va-hub\claude-secret.txt  the Client Secret
 // What it can do is limited by the hub itself: statuses, notes, test links, replies as Claude, clips for
 // approval, "what shipped" lines. It can't approve, decide website feedback, vote, or act as a person.
+// Badges (Nov 26) are Skylar's and his brother's alone: Claude can't give, list or revoke them (the hub refuses).
 //
 //   node hub/cli.mjs list [New|Seen|Working|Question|Reopened|Live|Done|Roadmap] [--site verses|library]
 //   node hub/cli.mjs site <id> <verses|library>     (which site the ticket is about; "[LA]" in lists = Library Across)

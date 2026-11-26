@@ -11,6 +11,7 @@ import { AiWindow } from "./ai-window";
 import { askAboutVerse, sendAi } from "@/lib/ai-chat";
 import { booksOfWork, chapterTitle, findBook, getVersion, readHref, versionsForWork } from "@/lib/catalog";
 import { getLanguage } from "@/lib/languages";
+import { noteLab } from "@/lib/lab-badges";
 import { diffWords, keysOf, tokenize, type DiffPart } from "@/lib/translation-diff";
 
 const ENGLISH = ["kjv", "asv", "web", "ylt", "bbe"];
@@ -177,6 +178,8 @@ export function TranslationLab() {
       /* no storage here: start from John 3:16 */
     }
   }, []);
+  // a verse compared, for the study lab's badges (src/lib/lab-badges.ts)
+  useEffect(() => noteLab("verses", `${pick.book} ${pick.chapter}:${pick.verse}`), [pick.book, pick.chapter, pick.verse]);
   const choose = (p: Pick, b = base) => {
     setPick(p);
     setBase(b);

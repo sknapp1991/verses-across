@@ -558,10 +558,20 @@ From Project Gutenberg (read from its mirror).
   sureness label derived from its scores; names are matched to the KJV spelling; two symbolic uses of "Babylon"
   (1 Peter 5:13, Revelation) are kept off the map. Its readme notes that some of its geometry and coordinates come
   from OpenStreetMap (© OpenStreetMap contributors, ODbL 1.0, https://opendatacommons.org/licenses/odbl/); only
-  points are used here, and the page credits OpenStreetMap too. Output: `public/places/<book>.json`.
+  points are used here, and the page credits OpenStreetMap too. Output: `public/places/<book>.json`,
+  `public/places/index.json` (search), `public/places/p/<id>.json` (place pages), `public/places/journeys.json`
+  (journey stops; the Exodus routes use OpenBible's own alternative proposals for Mount Sinai).
+- **Place-page photos**: Wikimedia Commons thumbnails (500 px), chosen from OpenBible.info's `data/image.jsonl`,
+  which records each photo's author, licence and Commons page. Only Commons photos under CC0, CC BY, CC BY-SA,
+  public domain or the Free Art License are used (never NC or ND, satellite or copyrighted images); each is shown
+  with its author and licence, linked to its Commons page. Click to load: nothing is fetched from Wikimedia until
+  the viewer taps "Show photo".
 - **Natural Earth** 1:10m land, lakes and rivers (https://www.naturalearthdata.com/, via
   github.com/nvkelso/natural-earth-vector); public domain ("No permission is needed"). Clipped to the Mediterranean
-  and Near East and simplified into `public/places/map.json`. The page says "Made with Natural Earth".
+  and Near East and simplified in two levels into `public/places/map.json` and `map-detail.json`. The page says
+  "Made with Natural Earth".
+- **Era shapes** (the rough reach of Egypt, Assyria, Babylon, Persia, the Ptolemies, the Seleucids and Rome): drawn
+  by hand for this site as approximate sketches (`src/lib/time-and-place-eras.ts`); no outside boundary data.
 
 ## Recorded audio (audio v2)
 

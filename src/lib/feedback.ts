@@ -79,7 +79,8 @@ export function gatherDetails(req: FeedbackRequest) {
       ? "installed web app"
       : "browser";
   return {
-    page: location.pathname + location.search + location.hash,
+    // only a verse marker like #v12 is kept: a #fragment can hold a badge, a sync code, a group invite or moved notes
+    page: location.pathname + location.search + (/^#v\d{1,4}$/.test(location.hash) ? location.hash : ""),
     title: document.title,
     ...(req.versions?.length ? { versionsOnScreen: req.versions } : {}),
     ...(req.verse ? { verse: req.verse } : {}),

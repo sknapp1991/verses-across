@@ -33,7 +33,8 @@ type R2 = {
  * CERTS_URL: local tests only (`wrangler dev --var CERTS_URL:…`, hub/test.mjs); never set in production. */
 /** TESTER_EMAILS (secret, comma-separated): testers (hub 94dcc186). They see only their own tickets, Test & chat; what
  * they send waits as Pending until a team member approves it, and Claude builds nothing Pending. */
-type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; TESTER_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string };
+/** BADGE_SIGNING_KEY (secret): the private half of the badge key pair, a P-256 JWK as a JSON string (see Badges below). */
+type Env = { DB: D1; SITE_DB: D1; MEDIA: R2; TEAM_DOMAIN: string; POLICY_AUD: string; TEAM_EMAILS?: string; TESTER_EMAILS?: string; OWNER_EMAIL?: string; CLAUDE_TOKEN_ID?: string; REPO: string; SITE: string; CERTS_URL?: string; BADGE_SIGNING_KEY?: string };
 
 const TYPES = new Set(["Bug", "Idea", "Content", "Question"]);
 /** Open: New, Seen, Working, Question, Reopened. History: Live (shipped), Done (closed), Roadmap (later).
@@ -252,6 +253,17 @@ export default {
       if (r && m === "POST") return me === "claude" ? bad("Votes are for people", 403) : vote(env, me, r[1]);
       if (path === "/api/shipped" && m === "GET") return shipped(env);
       if (path === "/api/shipped" && m === "POST") return worker ? addShipped(env, await req.json()) : bad("Only the owner or Claude can add", 403);
+
+      // Badges (Nov 26): issued and revoked by Skylar or his brother only (never Claude or a tester)
+      if (path.startsWith("/api/badges")) {
+        // people on TEAM_EMAILS only; Claude never, whichever way it signs in
+        if (me === "claude" || !approver || !emails(env.TEAM_EMAILS).includes(me)) return bad("Only Skylar or his brother issue badges", 403);
+        if (path === "/api/badges" && m === "GET") return listBadges(env);
+        if (path === "/api/badges/issue" && m === "POST") return issueBadge(env, me, owner, await req.json());
+        r = /^\/api\/badges\/([a-f0-9]{16})\/revoke$/.exec(path);
+        if (r && m === "POST") return revokeBadge(env, me, r[1]);
+        return bad("Not found", 404);
+      }
 
       // Site health, the audit list and backups (HB5, HB6)
       if (path === "/api/health" && m === "GET") return health(env);
@@ -959,14 +971,113 @@ async function audit(env: Env) {
   });
 }
 
+/* ---------------- Badges (Nov 26) ---------------- */
+
+/**
+ * Signed badges for people (src/lib/issued-badges.ts on the site has the catalogue, the public key and the checks).
+ * A token is base64url(JSON payload) + "." + base64url(ECDSA P-256 / SHA-256 signature, raw r||s) over the first
+ * part's ASCII bytes. Payload: { v: 2, id, b: badge, n: name, i: issued ISO date, by: "owner" | "steward", h: { x, y } }.
+ * `h` is the public half of a fresh "holder" key pair made for this badge; its private half goes ONLY into the link's
+ * fragment (…/badge#<token>.<holder key>), so the person can prove in a study group that the badge is theirs. The link
+ * is returned once; neither the token nor the holder key is stored or logged here: only who issued which badge to whom
+ * (badges_issued, and a line in decisions). Revoking writes the id to the site's database (badge_revoked), read by
+ * GET /api/badges/revoked.
+ */
+const BADGE_KINDS: Record<string, string> = { steward: "Steward", moderator: "Moderator", partner: "Partner", tester: "Tester" };
+
+let badgesReady: Promise<unknown> | null = null;
+const ensureBadges = (env: Env) =>
+  (badgesReady ??= env.DB.prepare(
+    "CREATE TABLE IF NOT EXISTS badges_issued (id TEXT PRIMARY KEY, badge TEXT NOT NULL, name TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', by TEXT NOT NULL, at TEXT NOT NULL, revoked TEXT, revoked_by TEXT)",
+  )
+    .run()
+    .catch((e) => ((badgesReady = null), Promise.reject(e))));
+let revokedReady: Promise<unknown> | null = null;
+const ensureRevoked = (env: Env) =>
+  (revokedReady ??= env.SITE_DB.prepare("CREATE TABLE IF NOT EXISTS badge_revoked (id TEXT PRIMARY KEY, at TEXT NOT NULL)")
+    .run()
+    .catch((e) => ((revokedReady = null), Promise.reject(e))));
+
+const b64urlBytes = (bytes: Uint8Array) => {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+
+let signKey: { src: string; key: Promise<CryptoKey> } | null = null;
+async function badgeKey(env: Env) {
+  const src = env.BADGE_SIGNING_KEY ?? "";
+  if (!src) return null;
+  if (signKey?.src !== src) {
+    const jwk = JSON.parse(src) as JsonWebKey;
+    if (jwk.kty !== "EC" || jwk.crv !== "P-256" || !jwk.d) throw new Error("BADGE_SIGNING_KEY is not a P-256 private key");
+    const key = crypto.subtle.importKey("jwk", { kty: "EC", crv: "P-256", x: jwk.x, y: jwk.y, d: jwk.d }, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+    key.catch(() => (signKey = null)); // (a bad key is tried again next time, not cached)
+    signKey = { src, key };
+  }
+  return signKey.key;
+}
+
+async function issueBadge(env: Env, me: string, owner: boolean, b: Row) {
+  const badge = String(b.badge ?? "");
+  if (!Object.hasOwn(BADGE_KINDS, badge)) return bad("Pick a badge");
+  // a display name: no control, invisible or direction-changing characters, at most 40 (whole characters, so an emoji
+  // is never cut in half)
+  const cleaned = clip(b.name, 200).replace(/[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069\ufeff]/g, "").trim();
+  const name = Array.from(cleaned).slice(0, 40).join("").trim();
+  if (!name) return bad("Type the name to put on the badge");
+  const note = clip(b.note, 500);
+  const key = await badgeKey(env).catch(() => null);
+  if (!key) return bad("Badges aren't set up yet: the signing key (BADGE_SIGNING_KEY) is missing or wrong", 503);
+  const id = uid();
+  const t = now();
+  // the badge's own holder key: public half signed into the token, private half only in the link
+  const holder = (await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"])) as CryptoKeyPair;
+  const hj = (await crypto.subtle.exportKey("jwk", holder.privateKey)) as JsonWebKey;
+  const payload = { v: 2, id, b: badge, n: name, i: t, by: owner ? "owner" : "steward", h: { x: hj.x, y: hj.y } };
+  const data = b64urlBytes(new TextEncoder().encode(JSON.stringify(payload)));
+  const sig = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(data)));
+  const token = `${data}.${b64urlBytes(sig)}`;
+  const holderKey = b64urlBytes(new TextEncoder().encode(JSON.stringify({ d: hj.d, x: hj.x, y: hj.y })));
+  await ensureBadges(env);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO badges_issued (id, badge, name, note, by, at) VALUES (?, ?, ?, ?, ?, ?)").bind(id, badge, name, note, me, t),
+    logged(env, `badge:${id}`, "Issued", `${BADGE_KINDS[badge]} to ${name}${note ? ". " + note : ""}`, me, t),
+  ]);
+  return json({ id, link: `${env.SITE}/badge#${token}.${holderKey}` });
+}
+
+async function listBadges(env: Env) {
+  await ensureBadges(env);
+  const { results } = await env.DB.prepare("SELECT id, badge, name, note, by, at, revoked, revoked_by FROM badges_issued ORDER BY at DESC LIMIT 300").all();
+  return json({ kinds: BADGE_KINDS, list: results, ready: !!env.BADGE_SIGNING_KEY });
+}
+
+async function revokeBadge(env: Env, me: string, id: string) {
+  await ensureBadges(env);
+  const row = await env.DB.prepare("SELECT badge, name, revoked FROM badges_issued WHERE id = ?").bind(id).first<{ badge: string; name: string; revoked: string | null }>();
+  if (!row) return bad("Not found", 404);
+  if (row.revoked) return bad("Already revoked", 409);
+  const t = now();
+  // the site's list first: if that fails, nothing here says it was revoked
+  await ensureRevoked(env);
+  await env.SITE_DB.prepare("INSERT OR IGNORE INTO badge_revoked (id, at) VALUES (?, ?)").bind(id, t).run();
+  await env.DB.batch([
+    env.DB.prepare("UPDATE badges_issued SET revoked = ?, revoked_by = ? WHERE id = ? AND revoked IS NULL").bind(t, me, id),
+    logged(env, `badge:${id}`, "Revoked", `${BADGE_KINDS[row.badge] ?? row.badge} of ${row.name}`, me, t),
+  ]);
+  return json({ ok: true, revoked: t });
+}
+
 /** Weekly (Sundays): every table of the hub's database, plus the site's feedback queue and reading totals, as one
  * JSON file in the hub's private storage (backups/…). The newest 12 are kept. */
 async function backup(env: Env) {
   const tables: Record<string, unknown[]> = {};
   await ensureUat(env); // (so the Test & chat tables are in the backup too)
-  for (const t of ["reports", "comments", "media", "approvals", "decisions", "votes", "shipped", "health", "uat", "uat_results"])
+  await ensureBadges(env);
+  for (const t of ["reports", "comments", "media", "approvals", "decisions", "votes", "shipped", "health", "uat", "uat_results", "badges_issued"])
     tables[t] = (await env.DB.prepare(`SELECT * FROM ${t}`).all()).results;
-  for (const t of ["feedback_queue", "daily"])
+  for (const t of ["feedback_queue", "daily", "badge_revoked"])
     tables[`site.${t}`] = (await env.SITE_DB.prepare(`SELECT * FROM ${t}`).all().catch(() => ({ results: [] }))).results;
   const key = `backups/hub-${now().slice(0, 19).replace(/:/g, "-")}.json`;
   const body = JSON.stringify({ at: now(), tables });

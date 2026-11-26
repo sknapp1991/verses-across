@@ -8,6 +8,7 @@
  */
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { noteLab } from "@/lib/lab-badges";
 import { AiWindow } from "./ai-window";
 import { askAboutVerse, openAi } from "@/lib/ai-chat";
 import { chapterTitle, findBook, readHref } from "@/lib/catalog";
@@ -964,6 +965,10 @@ export function WordJourneys() {
     const b = w ? normStrong(w) : null;
     if (b) setBase(b); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
+  // a word journeyed, for the study lab's badges (src/lib/lab-badges.ts)
+  useEffect(() => {
+    if (base) noteLab("journeys", base);
+  }, [base]);
   const pick = (b: string) => {
     setBase(b);
     try {

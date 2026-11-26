@@ -85,6 +85,9 @@ next-env.d.ts
 
 # hub local test key and state
 hub/.test-key.json
+hub/.test-badge.env
+hub/.test-badge-pub.json
+hub/.test-verify-in.json
 hub/.wrangler/
 hub/.dev.vars
 

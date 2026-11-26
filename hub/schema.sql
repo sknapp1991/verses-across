@@ -107,3 +107,16 @@ CREATE TABLE IF NOT EXISTS health (
 CREATE TABLE IF NOT EXISTS uat (id TEXT PRIMARY KEY, created TEXT NOT NULL, created_by TEXT NOT NULL, title TEXT NOT NULL, steps TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', closed TEXT);
 CREATE TABLE IF NOT EXISTS uat_results (target TEXT NOT NULL, author TEXT NOT NULL, result TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', at TEXT NOT NULL, PRIMARY KEY (target, author));
 -- The team chat is the comments thread "chat:team". A tester's tickets start as status Pending (approved: New).
+
+-- Badges given to people (Nov 26; the Worker also makes this table itself the first time). The signed token is never
+-- stored, only who gave which badge to whom. Revoked ids also go to the site's database: badge_revoked (id, at).
+CREATE TABLE IF NOT EXISTS badges_issued (
+  id TEXT PRIMARY KEY,           -- the badge's id (16 hex), also inside the signed token
+  badge TEXT NOT NULL,           -- steward | moderator | partner | tester
+  name TEXT NOT NULL,            -- the display name on the badge (max 40)
+  note TEXT NOT NULL DEFAULT '',
+  by TEXT NOT NULL,              -- the email of who gave it
+  at TEXT NOT NULL,
+  revoked TEXT,
+  revoked_by TEXT
+);

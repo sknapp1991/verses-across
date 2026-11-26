@@ -2,17 +2,32 @@
 //   1. npx wrangler d1 execute va-hub --local --file schema.sql            (in hub/)
 //      npx wrangler d1 execute versesacross-stats --local --file ../data/feedback/schema.sql
 //      npx wrangler d1 execute versesacross-stats --local --file ../data/stats/schema.sql
-//   2. node test.mjs serve        (fake Access signing keys on :8799)
-//   3. npx wrangler dev --local --port 8788 --var CERTS_URL:http://127.0.0.1:8799/certs --var TEAM_EMAILS:owner@example.com,team@example.com --var OWNER_EMAIL:owner@example.com
+//   2. node test.mjs serve        (fake Access signing keys on :8799, and a throwaway badge key in .test-badge.env)
+//   3. npx wrangler dev --local --port 8788 --env-file .dev.vars --env-file .test-badge.env --var CERTS_URL:http://127.0.0.1:8799/certs --var TEAM_EMAILS:owner@example.com,team@example.com --var OWNER_EMAIL:owner@example.com
 //   4. node test.mjs              (runs the checks against :8788)
+// The badge key made here is for this test only (never the real one, which only Skylar makes; see README "Badges").
 import { createServer } from "node:http";
-import { generateKeyPairSync, createSign, randomBytes } from "node:crypto";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { generateKeyPairSync, createSign, randomBytes, webcrypto } from "node:crypto";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const TEAM = "tight-leaf-77ed.cloudflareaccess.com";
 const AUD = "39ff06db220e1d12871310c408e16ca691c6948a6410796d1a9de007683d5032";
 const KEYFILE = new URL("./.test-key.json", import.meta.url);
 const HUB = "http://127.0.0.1:8788";
+const BADGE_ENV = new URL("./.test-badge.env", import.meta.url);
+const BADGE_PUB = new URL("./.test-badge-pub.json", import.meta.url);
+
+/** A throwaway P-256 badge key for the local Worker (private half in .test-badge.env, public half for the checks). */
+function badgeKey() {
+  if (existsSync(BADGE_ENV) && existsSync(BADGE_PUB)) return JSON.parse(readFileSync(BADGE_PUB, "utf8"));
+  const { publicKey, privateKey } = generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const pub = publicKey.export({ format: "jwk" });
+  writeFileSync(BADGE_ENV, `BADGE_SIGNING_KEY='${JSON.stringify(privateKey.export({ format: "jwk" }))}'\n`);
+  writeFileSync(BADGE_PUB, JSON.stringify(pub));
+  return pub;
+}
 
 function key() {
   if (existsSync(KEYFILE)) return JSON.parse(readFileSync(KEYFILE, "utf8"));
@@ -32,6 +47,7 @@ function jwt(email, { aud = AUD, iss = `https://${TEAM}`, exp = Math.floor(Date.
 }
 
 if (process.argv[2] === "serve") {
+  badgeKey();
   const k = key();
   createServer((req, res) => {
     res.setHeader("content-type", "application/json");
@@ -298,6 +314,64 @@ if (process.argv[2] === "serve") {
   r = await J(await call(TESTER, "/api/uat"));
   check("tester's tests don't show team emails", JSON.stringify(r.body).indexOf(TEAMMATE) === -1);
   check("tester can't read the testers list", (await call(TESTER, "/api/testers")).status === 404);
+
+  // Badges (Nov 26): only Skylar or his brother issue and revoke; the token is signed, the name can't be changed
+  const unb64 = (s) => Buffer.from(s, "base64url");
+  const verifyToken = async (token) => {
+    const [data, sig] = token.split(".");
+    const pub = await webcrypto.subtle.importKey("jwk", badgeKey(), { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
+    return webcrypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, pub, unb64(sig), new TextEncoder().encode(data));
+  };
+  // the link: https://versesacross.com/badge#<payload>.<signature>.<holder private key>
+  const linkParts = (link) => (link ?? "").slice((link ?? "").indexOf("#") + 1).split(".");
+  const tokenOf = (link) => linkParts(link).slice(0, 2).join(".");
+  r = await J(await call(OWNER, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "steward", name: "  Ann \u202e\u200bEvil\ufeff  ", note: "for testing" }) }));
+  const link1 = r.body?.link ?? "";
+  check("owner issues a badge (link with token and holder key, no bare token)", r.status === 200 && /^[a-f0-9]{16}$/.test(r.body?.id) && link1.startsWith("https://versesacross.com/badge#") && linkParts(link1).length === 3 && !("token" in r.body), JSON.stringify(r.body));
+  const tok = tokenOf(link1);
+  const bid1 = r.body?.id;
+  const pay = tok ? JSON.parse(unb64(tok.split(".")[0]).toString("utf8")) : {};
+  const holder1 = JSON.parse(unb64(linkParts(link1)[2] || "e30").toString("utf8"));
+  check("payload: v2, steward, cleaned name, issued by owner, holder key h", pay.v === 2 && pay.id === bid1 && pay.b === "steward" && pay.n === "Ann Evil" && pay.by === "owner" && !isNaN(Date.parse(pay.i)) && pay.h?.x === holder1.x && pay.h?.y === holder1.y && typeof holder1.d === "string" && !("d" in pay.h), JSON.stringify(pay));
+  r = await J(await call(OWNER, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "partner", name: "🙂".repeat(45) }) }));
+  const longName = JSON.parse(unb64(tokenOf(r.body?.link).split(".")[0]).toString("utf8")).n;
+  check("a long name is cut at 40 whole characters (emoji not split)", Array.from(longName).length === 40 && longName === "🙂".repeat(40));
+  check("signature is 64 bytes and verifies", tok && unb64(tok.split(".")[1]).length === 64 && (await verifyToken(tok)));
+  const forgedPay = Buffer.from(JSON.stringify({ ...pay, n: "Mallory" })).toString("base64url");
+  check("a changed name doesn't verify", tok && !(await verifyToken(`${forgedPay}.${tok.split(".")[1]}`)));
+  r = await J(await call(TEAMMATE, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "tester", name: "Ben" }) }));
+  const bid2 = r.body?.id;
+  check("teammate (my brother) issues a badge, marked steward", r.status === 200 && JSON.parse(unb64(tokenOf(r.body.link).split(".")[0]).toString("utf8")).by === "steward" && (await verifyToken(tokenOf(r.body.link))));
+  // the site's own verifier (src/lib/issued-badges.ts) on the hub's link: token, proof for this member only, no forging
+  const vin = fileURLToPath(new URL("./.test-verify-in.json", import.meta.url));
+  writeFileSync(vin, JSON.stringify({ pub: badgeKey(), link: link1, gid: "a".repeat(64), mid: "b".repeat(64), other: "c".repeat(64) }));
+  let site = {};
+  try {
+    site = JSON.parse(execFileSync(process.execPath, [fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url)), fileURLToPath(new URL("./test-site-verify.mts", import.meta.url)), vin], { encoding: "utf8" }).trim().split("\n").pop());
+  } catch (e) { site = { error: String(e.message).slice(0, 300) }; }
+  unlinkSync(vin);
+  check("site verifier: the hub's badge verifies, with the signed name", site.verifies === true && site.name === "Ann Evil" && site.known === true, JSON.stringify(site));
+  check("site verifier: the holder's proof works for its own member id", site.proofOk === true);
+  check("site verifier: a copied proof fails for another member or group", site.proofOtherMember === false && site.proofOtherGroup === false);
+  check("site verifier: a changed name, a v1 token or a cut-off token is refused", site.forgedName === false && site.v1Refused === true && site.truncated === false);
+  check("tester can't issue", (await call(TESTER, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "steward", name: "Me" }) })).status === 403);
+  check("tester can't list badges", (await call(TESTER, "/api/badges")).status === 403);
+  check("Claude can't issue", (await call(CLAUDE, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "steward", name: "Claude" }) })).status === 403);
+  check("Claude can't list badges", (await call(CLAUDE, "/api/badges")).status === 403);
+  check("unknown badge refused", (await call(OWNER, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "admin", name: "X" }) })).status === 400);
+  check("empty name refused", (await call(OWNER, "/api/badges/issue", { method: "POST", body: JSON.stringify({ badge: "steward", name: " \u0007 " }) })).status === 400);
+  r = await J(await call(TEAMMATE, "/api/badges"));
+  check("both badges listed, without their tokens or holder keys", r.status === 200 && r.body.list.some((b) => b.id === bid1 && b.name === "Ann Evil" && b.by === OWNER) && r.body.list.some((b) => b.id === bid2) && !JSON.stringify(r.body).includes(tok.split(".")[1]) && !JSON.stringify(r.body).includes(holder1.d));
+  r = await J(await call(OWNER, "/api/audit"));
+  check("the decisions log has no token or holder key", !JSON.stringify(r.body).includes(tok.split(".")[1]) && !JSON.stringify(r.body).includes(holder1.d));
+  check("Claude can't revoke", (await call(CLAUDE, `/api/badges/${bid1}/revoke`, { method: "POST", body: "{}" })).status === 403);
+  check("tester can't revoke", (await call(TESTER, `/api/badges/${bid1}/revoke`, { method: "POST", body: "{}" })).status === 403);
+  check("teammate revokes the owner's badge", (await call(TEAMMATE, `/api/badges/${bid1}/revoke`, { method: "POST", body: "{}" })).status === 200);
+  check("revoking twice is refused", (await call(OWNER, `/api/badges/${bid1}/revoke`, { method: "POST", body: "{}" })).status === 409);
+  r = await J(await call(OWNER, "/api/badges"));
+  check("the list shows it revoked, by whom", r.body.list.some((b) => b.id === bid1 && b.revoked && b.revoked_by === TEAMMATE));
+  r = await J(await call(OWNER, "/api/audit"));
+  check("issuing and revoking are in the decisions log", r.body.log.some((d) => d.what === `badge:${bid1}` && d.decision === "Issued") && r.body.log.some((d) => d.what === `badge:${bid1}` && d.decision === "Revoked"));
 
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

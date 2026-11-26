@@ -11,6 +11,7 @@
  * Articles (read ticks, saved items, reflection answers) and study groups go the same way, entry by entry (my brother's
  * ticket 2d90a8f3, Nov 25). A group joined from two browsers is one member after syncing: the identity holding a role
  * (owner, then mod), else the one that joined first, is kept everywhere, and the other's card is taken out of the group.
+ * The study lab's earned badges and badges the team gave (issued tokens) go entry by entry too ("lab", "badges"; Nov 26).
  */
 import { useSyncExternalStore } from "react";
 import { getOtherActivity, getOwnActivity, setOtherActivity, type Activity } from "./activity";
@@ -23,6 +24,8 @@ import { allItems, getDeleted, mergeFromSync, onStudyChange, type StudyItem } fr
 import { toast } from "./ui-store";
 import { isPrivate, PrivateModeError } from "./privacy";
 import { dropIdentity, flushDrops, getGroups, pickIdentity, setGroupsFromSync, type MyGroup } from "./groups";
+import { readEarned, setEarnedFromSync } from "./lab-badges";
+import { savedBadges, setBadgesFromSync, tokenId } from "./issued-badges";
 
 type Payload = {
   v: 1;
@@ -38,8 +41,9 @@ type Payload = {
   entries?: Partial<Record<Area, Entries>>;
 };
 
-type Area = "goals" | "plans" | "settings" | "articles" | "groups";
-const AREAS: Area[] = ["goals", "plans", "settings", "articles", "groups"];
+/** lab: the study lab's earned badges (badge id -> day earned); badges: issued badge tokens, by badge id (Nov 26). */
+type Area = "goals" | "plans" | "settings" | "articles" | "groups" | "lab" | "badges";
+const AREAS: Area[] = ["goals", "plans", "settings", "articles", "groups", "lab", "badges"];
 /** Articles' storage on the device (article-study.ts, article-reader.tsx): what's saved, read and answered. */
 const ART = { saved: "va-article-saved:v1", read: "va-article-read:v1", answers: "va-article-answers:v1" } as const;
 const readJson = <T,>(key: string, empty: T): T => {
@@ -117,9 +121,9 @@ function deviceId(fallback?: string): string {
 
 function readEntries(): Record<Area, Entries> {
   try {
-    return { goals: {}, plans: {}, settings: {}, articles: {}, groups: {}, ...(JSON.parse(localStorage.getItem(ENTRIES_KEY) ?? "{}") as Partial<Record<Area, Entries>>) };
+    return { goals: {}, plans: {}, settings: {}, articles: {}, groups: {}, lab: {}, badges: {}, ...(JSON.parse(localStorage.getItem(ENTRIES_KEY) ?? "{}") as Partial<Record<Area, Entries>>) };
   } catch {
-    return { goals: {}, plans: {}, settings: {}, articles: {}, groups: {} };
+    return { goals: {}, plans: {}, settings: {}, articles: {}, groups: {}, lab: {}, badges: {} };
   }
 }
 function writeEntries(e: Record<Area, Entries>) {
@@ -142,6 +146,13 @@ function localValues(area: Area): Record<string, string> {
       for (const [d, day] of Object.entries(depths ?? {})) if (day) out[`r:${slug}|${d}`] = JSON.stringify(day);
     for (const [k, v] of Object.entries(readJson<Record<string, string>>(ART.answers, {}))) if (v) out[`a:${k}`] = JSON.stringify(v);
   } else if (area === "groups") for (const g of getGroups()) out[g.code] = JSON.stringify(g);
+  else if (area === "lab") for (const [id, day] of Object.entries(readEarned())) out[id] = JSON.stringify(day);
+  else if (area === "badges")
+    // each kept badge (token + its holder key; sync is end-to-end encrypted), kinds this app doesn't know included
+    for (const kb of savedBadges()) {
+      const id = tokenId(kb.t);
+      if (id) out[id] = JSON.stringify(kb);
+    }
   else for (const [k, v] of Object.entries(pickSettings(getSettings()))) out[k] = JSON.stringify(v ?? null);
   return out;
 }
@@ -199,7 +210,7 @@ async function oneIdentityPerGroup(remote: Entries | null): Promise<Entries | nu
 /** Older payloads only have whole blobs: read them as entries all stamped with the blob's time. */
 function legacyEntries(remote: Payload, area: Area): Entries {
   const out: Entries = {};
-  if (area === "articles" || area === "groups") return out; // (not in older payloads)
+  if (area === "articles" || area === "groups" || area === "lab" || area === "badges") return out; // (not in older payloads)
   if (area === "goals") for (const g of remote.goals?.list ?? []) out[g.id] = { at: remote.goals.at, v: JSON.stringify(g) };
   else if (area === "plans") for (const [id, p] of Object.entries(remote.plans?.data ?? {})) out[id] = { at: remote.plans.at, v: JSON.stringify(p) };
   else for (const [k, v] of Object.entries(remote.settings?.data ?? {})) out[k] = { at: remote.settings.at, v: JSON.stringify(v ?? null) };
@@ -247,6 +258,19 @@ function mergeArea(area: Area, remote: Entries | null, known: Entries): Entries 
       // a group left on another device: this device's card goes too (it may have republished it meanwhile)
       for (const g of getGroups()) if (!live.some(([c]) => c === g.code)) void dropIdentity(g).catch(() => null);
       setGroupsFromSync(live.map(([, e]) => JSON.parse(e.v) as MyGroup));
+    } else if (area === "lab") {
+      const earned: Record<string, string> = {};
+      for (const [k, e] of live) {
+        const v = JSON.parse(e.v) as unknown;
+        if (typeof v === "string") earned[k] = v;
+      }
+      setEarnedFromSync(earned);
+    } else if (area === "badges") {
+      // the newest kept first, as on the device that kept it; each token is checked again wherever it's shown
+      const order = savedBadges().map((kb) => tokenId(kb.t));
+      const rank = (id: string) => (order.includes(id) ? order.indexOf(id) : -1);
+      live.sort(([a], [b]) => rank(a) - rank(b));
+      setBadgesFromSync(live.map(([, e]) => JSON.parse(e.v) as unknown));
     } else {
       const patch: Record<string, unknown> = {};
       for (const [k, e] of live) if ((SYNCED_SETTINGS as readonly string[]).includes(k) && e.v !== now[k]) patch[k] = JSON.parse(e.v);

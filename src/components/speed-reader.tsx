@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEve
 import { adjacentChapters, booksOfWork, chapterTitle, findBook, getVersion } from "@/lib/catalog";
 import { fetchBook } from "@/lib/chapter-store";
 import { getLanguage } from "@/lib/languages";
+import { labBest } from "@/lib/lab-badges";
 import {
   delayOf,
   graphemes,
@@ -409,6 +410,10 @@ export function SpeedReader() {
   const progress = tokens.length > 1 ? idx / (tokens.length - 1) : 0;
   const avg = stats.ms > 1000 ? Math.round(stats.words / (stats.ms / 60000)) : 0;
   const chapWpm = chap.key === key && chap.ms > 1000 ? Math.round(chap.words / (chap.ms / 60000)) : wpm;
+  // a whole chapter read (at least 9 words in 10 of it this time through) at its real speed, for the study lab's badges
+  useEffect(() => {
+    if (finished && ready && chap.key === key && chap.ms > 1000 && chap.words >= ready.tokens.length * 0.9) labBest("wpm", chapWpm);
+  }, [finished, ready, chap, key, chapWpm]);
   const askRating = finished && check && !ratings.some((r) => r.round === round);
   const lastRating = finished ? ratings.find((r) => r.round === round) : undefined;
   const left = ready ? ((ready.cum[tokens.length] - ready.cum[idx]) / ready.mean) * (60000 / wpm) : 0;

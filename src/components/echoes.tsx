@@ -8,6 +8,7 @@
  */
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { noteLab } from "@/lib/lab-badges";
 import { AiWindow } from "./ai-window";
 import { askAboutVerse, openAi } from "@/lib/ai-chat";
 import { findBook, readHref } from "@/lib/catalog";
@@ -377,6 +378,8 @@ function ArcMap() {
 function Pairs({ a, b }: { a: string; b: string }) {
   const [got, setGot] = useState<{ key: string; pairs: [string, string, number][] | null } | null>(null);
   const key = `${a}|${b}`;
+  // a pair of books opened, for the study lab's badges (either order counts once)
+  useEffect(() => noteLab("echoes", [a, b].sort().join("|")), [a, b]);
   useEffect(() => {
     let live = true;
     loadPairs(a).then(

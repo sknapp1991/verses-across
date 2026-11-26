@@ -19,6 +19,7 @@ clips and website feedback, see the roadmap and what shipped.
 | A tester's ticket (Pending) | Skylar or his brother | Nothing Pending is built. |
 | Publishing (articles, new texts, content notes), downloads, clips, website feedback Go / No, roadmap calls | Skylar or his brother | Either one's yes is enough; Claude asks on the hub (`ask`). |
 | Heavy jobs on Skylar's PC (rendering, big imports) | Check with the other Claude sessions first | HOUSE-RULES and heavy-jobs.md. |
+| Badges (Steward, Moderator, Partner, Tester): giving and revoking | Skylar or his brother | Badges tab; only people on TEAM_EMAILS. Never Claude (refused whichever way it signs in) or a tester. My brother's own mark is Steward. |
 | Money, passwords, keys, accounts | A person does it themselves | Claude never types or spends these. |
 
 ## Statuses
@@ -56,12 +57,37 @@ see the team as "Team", never their emails. To add one (Skylar does both):
 They sign in at https://hub.versesacross.com with their email and the one-time code it sends. Remove a tester
 the same two ways.
 
+## Badges (Nov 26)
+
+Skylar and his brother (the team emails; never Claude or a tester) can give a person a badge from the **Badges** tab:
+pick the badge, type the name to show on it, an optional note, then **Give badge**. The hub signs it (ECDSA P-256,
+SHA-256) with the secret `BADGE_SIGNING_KEY` and shows a link once, `https://versesacross.com/badge#<token>.<holder key>`,
+to send only to that person. The holder key is a fresh key pair made for that one badge (its public half is signed into
+the token); it lets the person prove in a study group that the badge is theirs, so a badge copied from someone's card
+shows for nobody else. The hub never stores or logs the link, the token or the holder key. Notes are kept in the
+hub's log, which the team and Claude can read. The person opens it, the site checks the signature with the public key in `src/lib/issued-badges.ts`,
+and "Keep this badge" saves it on their device; it then shows next to their name in study groups. The hub keeps who
+gave which badge to whom (never the link). **Revoke** puts the badge's id on the site's list (`badge_revoked` in the
+site's database, read by `/api/badges/revoked`), and the site stops showing it, though it can take up to about 10 to 15 minutes to reach everyone (the list is cached
+by the site and by each browser for a few minutes each).
+
+One-time setup (Skylar, on the PC; Claude never makes or sees the real key):
+
+1. Make the key pair (PowerShell, in the repo folder):
+   `node -e "const c=require('crypto'),fs=require('fs'),p=require('path');const k=c.generateKeyPairSync('ec',{namedCurve:'P-256'});const d=p.join(require('os').homedir(),'.va-hub');fs.mkdirSync(d,{recursive:true});fs.writeFileSync(p.join(d,'badge-private.json'),JSON.stringify(k.privateKey.export({format:'jwk'})));console.log(JSON.stringify(k.publicKey.export({format:'jwk'})))"`
+   It prints the PUBLIC key and saves the private one in `%USERPROFILE%\.va-hub\badge-private.json`.
+2. Put the private key on the hub: `Get-Content $HOME\.va-hub\badge-private.json | npx wrangler secret put BADGE_SIGNING_KEY --config hub/wrangler.jsonc`
+3. Paste the printed public key into `BADGE_PUBLIC_KEY` in `src/lib/issued-badges.ts` (it has only kty, crv, x, y;
+   never a "d"), commit and push. Keep `badge-private.json` somewhere safe offline, or delete it (a lost key only means
+   making a new pair: every badge given so far then stops showing and is given again).
+
 ## Files
 
 - `src/index.ts`: the Worker (API, Access token check, uploads to R2, media with Range).
 - `src/page.ts`: the page (one HTML file; everything typed is shown as text).
 - `schema.sql`: the D1 tables. `test.mjs`: local end-to-end test. `cli.mjs`: Claude's command line.
-- `wrangler.jsonc`: no secrets. Secrets: `TEAM_EMAILS`, `OWNER_EMAIL` (`npx wrangler secret put … --config hub/wrangler.jsonc`).
+- `test-site-verify.mts`: run by `test.mjs`, checks the hub's badge links with the site's own verifier.
+- `wrangler.jsonc`: no secrets. Secrets: `TEAM_EMAILS`, `OWNER_EMAIL`, `TESTER_EMAILS`, `BADGE_SIGNING_KEY` (`npx wrangler secret put … --config hub/wrangler.jsonc`).
 
 Deploys on push to `main` when something in `hub/` changes (Workers Builds project "va-hub").
 
@@ -78,4 +104,5 @@ Revoke it any time in Service credentials; the hub then refuses Claude.
 
 ## Local test
 
-See the top of `test.mjs` (fake Access keys on :8799, `wrangler dev --local` with `.dev.vars`).
+See the top of `test.mjs` (fake Access keys on :8799, `wrangler dev --local` with `.dev.vars`, and a throwaway badge
+key that `node test.mjs serve` writes to `.test-badge.env`).

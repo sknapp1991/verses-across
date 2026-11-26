@@ -45,6 +45,8 @@ import { Modal } from "./modal";
 import { Qr } from "./qr";
 import { useReaderState } from "./use-reader-state";
 import { PanelHeader } from "./panel-header";
+import { BadgeMarks } from "./issued-badge";
+import { BADGES_EVENT, savedBadges } from "@/lib/issued-badges";
 
 const NAME_KEY = "va-group-name";
 const savedName = () => {
@@ -243,6 +245,7 @@ function HowGroupsWork() {
         <li>The group has readings; ★ marks the focus. Tap a book to see everyone&apos;s chapters of it (only on your screen).</li>
         <li>The owner and the moderators they pick add books and set the focus; when everyone finishes one, it&apos;s marked ✓.</li>
         <li>Once someone joins, tap 💬 Chat to talk with the group; tap a name to see their scorecard.</li>
+        <li>A badge the Verses Across team gave you shows by your name; switch off &ldquo;Show the badges I&apos;ve been given&rdquo; in a group to keep it out of that group.</li>
       </ul>
       <button
         type="button"
@@ -352,6 +355,14 @@ function GroupCard({ g }: { g: MyGroup }) {
   const { ref } = useReaderState();
   const [view, setView] = useState<GroupView | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // badges the team gave me (kept on this device): only then is "Show the badges I've been given" offered
+  const [hasBadges, setHasBadges] = useState(false);
+  useEffect(() => {
+    const on = () => setHasBadges(savedBadges().length > 0);
+    on();
+    window.addEventListener(BADGES_EVENT, on);
+    return () => window.removeEventListener(BADGES_EVENT, on);
+  }, []);
   // (opened at its chat from the home page: a card mounting now, or one already on screen)
   const [wantChat, setWantChat] = useState(() => {
     if (focusCode !== g.code) return false;
@@ -700,6 +711,8 @@ function GroupCard({ g }: { g: MyGroup }) {
                               {m.mine ? " (you)" : ""}
                             </span>
                           )}
+                          {/* badges the team gave this member: only ones that verify (src/lib/issued-badges.ts) */}
+                          {m.badges && <BadgeMarks list={m.badges} gid={view.gid} mid={m.id} who={m.name} />}
                           {r && <span className="shrink-0 rounded-full bg-accent-soft px-2 text-[10px] font-semibold text-accent">{r}</span>}
                           <span className="ml-auto shrink-0 text-[11px] text-faint">{ago(m.at)}</span>
                         </p>
@@ -789,7 +802,7 @@ function GroupCard({ g }: { g: MyGroup }) {
                   }}
                   className="h-4 w-4 accent-[var(--accent)]"
                 />
-                Share my streak, time, progress, level and badges
+                Share my streak, time, progress, level and progress badges
               </label>
               <label className="flex items-center gap-2 text-muted">
                 <input
@@ -803,6 +816,20 @@ function GroupCard({ g }: { g: MyGroup }) {
                 />
                 Show which chapter I’m reading (so others can join)
               </label>
+              {hasBadges && (
+                <label className="flex items-center gap-2 text-muted">
+                  <input
+                    type="checkbox"
+                    checked={g.share.badges !== false}
+                    onChange={(e) => {
+                      updateMyGroup(g.code, { share: { ...g.share, badges: e.target.checked } });
+                      setTimeout(() => void refresh(), 0);
+                    }}
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                  Show the badges I&apos;ve been given by the Verses Across team
+                </label>
+              )}
 
               {/* the readings: the owner and moderators add the book open now (or make it the focus) */}
               {view?.meta && here && (role?.runs || role?.unclaimed) && !chips.some((c) => !c.done && c.work === ref.work && c.book === ref.book) && (

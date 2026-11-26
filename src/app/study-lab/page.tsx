@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SITE_SIDE } from "@/lib/site";
+import { LabBadgesShelf } from "@/components/lab-badges-shelf";
 
 /**
  * The study lab (my brother's ticket 7a62bb28, Nov 26): the hidden study layers in one place, for him for now. Not
@@ -48,6 +49,7 @@ export default function Page() {
             </li>
           ))}
         </ul>
+        <LabBadgesShelf />
         <p className="text-xs text-faint">
           <Link href="/" className="text-accent hover:underline">
             Verses Across

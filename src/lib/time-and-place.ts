@@ -12,12 +12,28 @@ export const PROJ = {
   bbox: [-10, 8, 70, 47] as number[],
   /** Where most chapters zoom in (the Levant, Sinai, the Nile delta): the outline keeps more detail here. */
   detailBox: [29, 27.5, 39, 37.5] as number[],
+  /** The Mediterranean and Near East: medium detail (the rest of the map stays coarse). */
+  regionBox: [10, 20, 52, 43] as number[],
   k: 100,
   cos: Math.cos((32 * Math.PI) / 180),
 };
 
 export function project(lon: number, lat: number): [number, number] {
   return [Math.round((lon - PROJ.bbox[0]) * PROJ.k * PROJ.cos), Math.round((PROJ.bbox[3] - lat) * PROJ.k)];
+}
+
+export function unproject(x: number, y: number): [number, number] {
+  return [x / (PROJ.k * PROJ.cos) + PROJ.bbox[0], PROJ.bbox[3] - y / PROJ.k];
+}
+
+/** Great-circle distance in km between two projected points (good to about a kilometre). */
+export function kmBetween(x1: number, y1: number, x2: number, y2: number): number {
+  const [lon1, lat1] = unproject(x1, y1);
+  const [lon2, lat2] = unproject(x2, y2);
+  const rad = Math.PI / 180;
+  const a =
+    Math.sin(((lat2 - lat1) * rad) / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(((lon2 - lon1) * rad) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
 /** The whole map in projected units. */
@@ -50,7 +66,88 @@ export type Place = {
   v: Record<string, number[]>;
 };
 export type BookPlaces = { places: Place[] };
-export type MapOutline = { land: string; lakes: string; rivers: string };
+export type MapOutline = { land: string; lakes: string; rivers: string; labels?: WaterLabel[] };
+/** A sea, river or lake name on the map; z is the widest view (map units across) at which it shows. */
+export type WaterLabel = { n: string; x: number; y: number; k: "sea" | "river" | "lake"; z: number };
+
+/** One place in public/places/index.json, for search across the whole Bible (no verse lists). */
+export type IndexPlace = Omit<Place, "v"> & {
+  /** Other names: other KJV spellings, OpenBible's name, the modern name. */
+  k?: string[];
+  /** Books (canonical order) and the chapters in each that name it. */
+  b: [string, number[]][];
+  /** How many KJV verses name it (for ranking). */
+  w: number;
+  /** Eras whose chapters name it, as bits (see ERAS in time-and-place-eras.ts). */
+  e?: number;
+};
+
+/** public/places/p/<openbible id>.json: every KJV verse that names a place, and maybe a photo. */
+export type PlaceFile = {
+  /** [book, [[chapter, [verses]]]] in canonical order. */
+  v: [string, [number, number[]][]][];
+  /** An openly licensed photo on Wikimedia Commons (from OpenBible.info's image metadata). */
+  img?: { src: string; by: string; lic: string; url: string; alt: string };
+};
+
+/** Letters that NFD doesn't split into a base letter and an accent. */
+const FOLD_EXTRA: Record<string, string> = { ı: "i", ø: "o", ß: "ss", ł: "l", æ: "ae", œ: "oe", đ: "d", Ø: "o", Ł: "l", Æ: "ae", Œ: "oe", Đ: "d" };
+
+/** Lowercase, no accents, letters and digits only ("Beth-lehem" and "Bethlehem" match). */
+export function fold(s: string): string {
+  return s
+    .replace(/[ıøßłæœđØŁÆŒĐ]/g, (ch) => FOLD_EXTRA[ch] ?? ch)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Edit distance with swaps (Damerau, optimal string alignment), stopping early past max. */
+export function editDistance(a: string, b: string, max = 2): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  const prev2: number[] = [];
+  let prev: number[] = [];
+  for (let j = 0; j <= b.length; j++) prev.push(j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      let v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, prev2[j - 2] + 1);
+      cur.push(v);
+      rowMin = Math.min(rowMin, v);
+    }
+    if (rowMin > max) return max + 1;
+    prev2.length = 0;
+    prev2.push(...prev);
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+/**
+ * How well a folded query matches one name (0 = not at all): whole name, start of the name, start of a word,
+ * anywhere, then near misses (one typo for 4+ letters, two for 7+), on the whole name or its first letters.
+ */
+export function matchScore(q: string, name: string): number {
+  const n = fold(name);
+  if (!q || !n) return 0;
+  const qs = q.replace(/ /g, "");
+  const ns = n.replace(/ /g, "");
+  if (ns === qs) return 100;
+  if (ns.startsWith(qs)) return 80;
+  if (n.split(" ").some((w) => w.startsWith(q))) return 65;
+  if (qs.length >= 3 && ns.includes(qs)) return 45;
+  if (qs.length >= 4) {
+    const max = qs.length >= 7 ? 2 : 1;
+    if (editDistance(qs, ns, max) <= max) return 40 - 5 * editDistance(qs, ns, max);
+    if (ns.length > qs.length && editDistance(qs, ns.slice(0, qs.length), max) <= max) return 25;
+  }
+  return 0;
+}
 
 export const SURE_LABEL = ["Uncertain", "Likely", "Widely agreed"];
 export const SURE_NOTE = [

@@ -14,8 +14,10 @@ import { deriveKeys, fromBase64, hex, newCode, normalizeCode, open, seal, type C
 import { allItems } from "./study";
 import { isPrivate, PrivateModeError } from "./privacy";
 import { touch } from "./stamps";
+import { cardBadges } from "./issued-badges";
 
-export type Share = { progress: boolean; reading: boolean };
+/** `badges`: show the badges the team gave me in this group (on unless switched off; older groups lack it). */
+export type Share = { progress: boolean; reading: boolean; badges?: boolean };
 /** `dh`: this device's key pair for whispers in the group chat (made the first time the chat opens). */
 export type MyGroup = { code: string; name: string; me: string; secret: string; share: Share; joined: number; dh?: { pub: JsonWebKey; priv: JsonWebKey } };
 /**
@@ -44,6 +46,9 @@ export type Card = {
   reading?: { work: string; book: string; chapter: number } | null;
   /** Public key for whispers in the group chat (ECDH P-256), when this member has opened the chat. */
   pub?: JsonWebKey;
+  /** Badges the team gave this member (src/lib/issued-badges.ts; at most 5): each signed token with the holder's proof
+   * for this group and this member id. Shown only if both verify. */
+  badges?: { t: string; p: string }[];
 };
 export type Profile = {
   level: number;
@@ -63,7 +68,8 @@ export type Profile = {
 export type Member = Card & { id: string; mine: boolean; seen: number };
 /** Who runs the group, by member id (server: src/app/api/group/[gid]/roles/route.ts). Null: no owner yet. */
 export type Roles = { owner: string; mods: Record<string, number>; joined: Record<string, number>; at: number };
-export type GroupView = { meta: GroupMeta | null; metaEtag: string | null; members: Member[]; roles: Roles | null; me: string };
+/** `gid`: the group's id on the server (what badge proofs are made for). */
+export type GroupView = { meta: GroupMeta | null; metaEtag: string | null; members: Member[]; roles: Roles | null; me: string; gid: string };
 
 const KEY = "va-groups:v1";
 let groups: MyGroup[] | null = null;
@@ -193,8 +199,13 @@ const keysAlways = (code: string) => {
 export const memberId = async (secret: string) => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret)));
 
 /** My card for a group, from what this device knows and what I chose to share. */
-async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
+async function myCard(g: MyGroup, meta: GroupMeta | null, gid: string, mid: string): Promise<Card> {
   const card: Card = { name: g.me.slice(0, 40), at: Date.now(), ...(g.dh ? { pub: g.dh.pub } : {}) };
+  // badges the team gave me, only if I show them here ("Show the badges I've been given", on by default), each with a proof
+  if (g.share.badges !== false) {
+    const badges = await cardBadges(gid, mid).catch(() => []);
+    if (badges.length) card.badges = badges;
+  }
   if (g.share.progress) {
     const a = getActivity();
     const items = await allItems();
@@ -253,10 +264,11 @@ async function myCard(g: MyGroup, meta: GroupMeta | null): Promise<Card> {
 
 async function publish(g: MyGroup, meta: GroupMeta | null) {
   const k = await keysFor(g.code);
-  const res = await fetch(`/api/group/${k.id}/${await memberId(g.secret)}`, {
+  const mid = await memberId(g.secret);
+  const res = await fetch(`/api/group/${k.id}/${mid}`, {
     method: "PUT",
     headers: { "content-type": "application/octet-stream", "x-member-key": g.secret },
-    body: (await seal(k.key, await myCard(g, meta))) as BodyInit,
+    body: (await seal(k.key, await myCard(g, meta, k.id, mid))) as BodyInit,
   });
   if (!res.ok) throw new Error((await res.json().catch(() => null))?.error ?? "Couldn’t update the group.");
 }
@@ -286,7 +298,7 @@ export async function loadGroup(g: MyGroup, opts: { publishFirst?: boolean } = {
     if (c) members.push({ ...c, id: m.id, mine: m.id === mine, seen: m.at ? Date.parse(m.at) : 0 });
   }
   members.sort((a, b) => (b.weekMins ?? -1) - (a.weekMins ?? -1) || a.name.localeCompare(b.name));
-  return { meta, metaEtag: raw.meta?.etag ?? null, members, roles: raw.roles ?? null, me: mine };
+  return { meta, metaEtag: raw.meta?.etag ?? null, members, roles: raw.roles ?? null, me: mine, gid: k.id };
 }
 
 /** Change the group's name or shared book. */

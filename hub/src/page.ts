@@ -1,5 +1,6 @@
 /**
- * The hub's one page (served by src/index.ts): five tabs, phone first, dark by default.
+ * The hub's one page (served by src/index.ts): its tabs, phone first, dark by default. Badges (Nov 26) shows only for
+ * Skylar and his brother.
  * Everything people type is put on the page with textContent (never innerHTML), so nothing typed can run.
  */
 export const PAGE = /* html */ `<!doctype html>
@@ -110,6 +111,7 @@ a { color:var(--accent); }
   <button data-tab="approvals"><span class="i" aria-hidden="true">✓</span>Approvals<span class="badge hidden" id="apBadge"></span></button>
   <button data-tab="roadmap"><span class="i" aria-hidden="true">➜</span>Roadmap</button>
   <button data-tab="shipped"><span class="i" aria-hidden="true">★</span>Shipped</button>
+  <button data-tab="badges"><span class="i" aria-hidden="true">✦</span>Badges</button>
 </nav>
 <script>
 "use strict";
@@ -231,7 +233,7 @@ function mediaEl(f) {
 }
 
 /* ---------- tabs ---------- */
-const TABS = { report: showReport, inbox: showInbox, test: showTest, approvals: showApprovals, roadmap: showRoadmap, shipped: showShipped };
+const TABS = { report: showReport, inbox: showInbox, test: showTest, approvals: showApprovals, roadmap: showRoadmap, shipped: showShipped, badges: showBadges };
 // Back from a ticket to Tickets: return to that ticket (or where the list was), not to the top.
 let here = { tab: "", arg: "" };
 let listY = 0;
@@ -983,7 +985,7 @@ function healthBox(hl, kindName) {
 
 /* ---------- Audit and backups (HB6) ---------- */
 function auditBox(au) {
-  const what = (w) => w.startsWith("report:") ? h("a", { href: "#inbox/" + w.slice(7) }, "Ticket " + num(w.slice(7))) : w.startsWith("approval:") ? "Clip approval" : w.startsWith("feedback:") ? "Website feedback " + w.slice(9) : w;
+  const what = (w) => w.startsWith("report:") ? h("a", { href: "#inbox/" + w.slice(7) }, "Ticket " + num(w.slice(7))) : w.startsWith("approval:") ? "Clip approval" : w.startsWith("feedback:") ? "Website feedback " + w.slice(9) : w.startsWith("badge:") ? "Badge " + w.slice(6, 10) : w;
   const backupNow = ME.owner ? h("button.btn.small", { type: "button", onclick: async (e) => {
     e.currentTarget.disabled = true;
     try { const r = await post("/api/backup", {}); toast("Backed up (" + Math.round(r.bytes / 1024) + " KB)"); go("shipped"); } catch (err) { toast(err.message); }
@@ -997,12 +999,75 @@ function auditBox(au) {
       au.backups.length ? h("div.faint", { style: "margin-top:6px" }, "Last: " + new Date(au.backups[0].at).toLocaleString() + " · " + Math.round(au.backups[0].size / 1024) + " KB · " + au.backups.length + " kept") : h("div.faint", { style: "margin-top:6px" }, "None yet; the first runs this Sunday.")));
 }
 
+/* ---------- Badges (Nov 26): Skylar or his brother give a person a signed badge ---------- */
+async function showBadges() {
+  if (!ME.approver) return show(h("p.muted", {}, "Only Skylar or his brother give badges."));
+  const d = await api("/api/badges");
+  const kinds = Object.entries(d.kinds || {});
+  const badge = h("select", { "aria-label": "Badge" }, kinds.map(([id, label]) => h("option", { value: id }, label)));
+  const name = h("input", { type: "text", maxlength: "40", autocomplete: "off", placeholder: "Their name, as it should show on the badge" });
+  const note = h("input", { type: "text", maxlength: "500", placeholder: "Why (seen by the team, and Claude, in the hub's log)" });
+  const result = h("div");
+  const issue = h("button.btn.primary", { type: "button", style: "margin-top:10px", onclick: async () => {
+    if (!name.value.trim()) return toast("Type the name for the badge");
+    issue.disabled = true;
+    try {
+      const r = await post("/api/badges/issue", { badge: badge.value, name: name.value, note: note.value });
+      const link = h("input", { type: "text", readonly: true, value: r.link, "aria-label": "Badge link", onfocus: (e) => e.currentTarget.select() });
+      const copy = h("button.btn.small", { type: "button", onclick: async () => {
+        try { await navigator.clipboard.writeText(r.link); toast("Link copied"); } catch { link.focus(); toast("Select the link and copy it"); }
+      } }, "Copy link");
+      const share = navigator.share ? h("button.btn.small", { type: "button", onclick: () => navigator.share({ url: r.link }).catch(() => {}) }, "Share…") : null;
+      result.replaceChildren(h("div.card", { style: "border-color:var(--accent)" },
+        h("b", {}, "Badge made. Send this link to " + name.value.trim() + ":"),
+        h("div", { style: "margin-top:8px" }, link),
+        h("div.row", { style: "margin-top:8px" }, copy, share),
+        h("div.faint", { style: "margin-top:8px" }, "The link is shown only now (the hub doesn't keep it). Send it only to them: it holds the key that proves the badge is theirs. Lost it? Revoke this one below and give a new one.")));
+      name.value = ""; note.value = "";
+      loadList();
+    } catch (e) { toast(e.message); }
+    issue.disabled = false;
+  } }, "Give badge");
+  const list = h("div");
+  const labelOfKind = (k) => (d.kinds && d.kinds[k]) || k;
+  async function loadList() {
+    const fresh = await api("/api/badges").catch(() => null);
+    const rows = fresh ? fresh.list : d.list;
+    list.replaceChildren(...(rows.length ? rows.map((b) => {
+      const revoke = b.revoked ? null : h("button.btn.small", { type: "button", onclick: async (e) => {
+        const btn = e.currentTarget;
+        if (btn.dataset.sure !== "1") { btn.dataset.sure = "1"; btn.textContent = "Tap again to revoke"; setTimeout(() => { btn.dataset.sure = ""; btn.textContent = "Revoke"; }, 4000); return; }
+        btn.disabled = true;
+        try { await post("/api/badges/" + b.id + "/revoke", {}); toast("Revoked"); loadList(); } catch (err) { toast(err.message); btn.disabled = false; }
+      } }, "Revoke");
+      return h("div.card", {},
+        h("div.row", {}, h("b.grow", {}, labelOfKind(b.badge) + " · " + b.name), revoke),
+        h("div.faint", {}, "Given by " + who(b.by) + " · " + when(b.at) + (b.revoked ? " · revoked " + when(b.revoked) + " by " + who(b.revoked_by) : "")),
+        b.note ? h("div.pre.muted", { style: "margin-top:4px" }, b.note) : null);
+    }) : [h("p.faint", {}, "None given yet.")]));
+  }
+  show(h("h2", {}, "Badges"),
+    h("p.muted", {}, "A badge is a mark next to a person's name on Verses Across (in study groups and the study lab). It's signed, so nobody can make one up or change the name on it."),
+    d.ready ? null : h("div.card", { style: "border-color:var(--warn)" }, "Badges aren't set up yet: the signing key (BADGE_SIGNING_KEY) isn't on the hub."),
+    h("div.card", {},
+      h("label", {}, "Badge"), badge,
+      h("label", {}, "Name on the badge (at most 40 letters)"), name,
+      h("label", {}, "Note (optional; seen by the team, and Claude, in the hub's log)"), note,
+      issue),
+    result,
+    h("h3", {}, "Given so far"),
+    list);
+  loadList();
+}
+
 /* ---------- start ---------- */
 (async () => {
   try { ME = await api("/api/me"); } catch { show(h("p", {}, "Not signed in.")); return; }
   $("#who").textContent = ME.name + (isTester() ? " · tester" : "");
   // a tester's tabs: Report, their tickets, Test & chat
   if (isTester()) for (const t of ["approvals", "roadmap", "shipped"]) { $('nav.tabs [data-tab="' + t + '"]').remove(); delete TABS[t]; }
+  // Badges: only Skylar and his brother (never Claude or a tester)
+  if (!ME.approver) { $('nav.tabs [data-tab="badges"]').remove(); delete TABS.badges; }
   document.querySelector("nav.tabs").style.setProperty("--tabs", document.querySelectorAll("nav.tabs button").length);
   api("/api/reports").then((list) => { if (!lastList) updateTicketsBadge(list); }).catch(() => {});
   if (!isTester()) api("/api/approvals").then((a) => { const n = a.filter((x) => x.status === "Waiting").length; const b = $("#apBadge"); if (n) { b.textContent = n; b.classList.remove("hidden"); } }).catch(() => {});
