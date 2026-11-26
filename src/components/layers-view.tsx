@@ -7,7 +7,7 @@
  * Art and puzzle, built on the real traditions (gematria, isopsephy, abjad): never offered as hidden prophecy.
  */
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AiWindow } from "./ai-window";
 import { askAboutVerse, openAi } from "@/lib/ai-chat";
 import { updateSettings } from "@/lib/settings";
@@ -112,6 +112,154 @@ function VerseText({ text, script, lit }: { text: string; script: Script; lit: n
         );
       })}
     </>
+  );
+}
+
+/* ---------------- views: helix, circle, score (my brother's asks) ---------------- */
+
+type View = "helix" | "circle" | "score";
+const VIEWS: { id: View; label: string }[] = [
+  { id: "helix", label: "Helix" },
+  { id: "circle", label: "Circle" },
+  { id: "score", label: "Score" },
+];
+/** The view chosen, the same for every card (the switch on any card changes them all). */
+const ViewCtx = createContext<{ view: View; setView: (v: View) => void }>({ view: "helix", setView: () => {} });
+
+function ViewSwitch() {
+  const { view, setView } = useContext(ViewCtx);
+  return (
+    <div role="group" aria-label="View" className="inline-flex rounded-lg border border-line p-0.5">
+      {VIEWS.map((v) => (
+        <button
+          key={v.id}
+          type="button"
+          aria-pressed={view === v.id}
+          onClick={() => setView(v.id)}
+          className={`min-h-8 rounded-md px-3 text-xs font-medium ${view === v.id ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"}`}
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+type ViewProps = { letters: Letter[]; rtl: boolean; lit: number; word: number | null; marks?: { at: number; label: string }[] };
+
+function LetterView(p: ViewProps) {
+  const { view } = useContext(ViewCtx);
+  return view === "circle" ? <Ring {...p} /> : view === "score" ? <Score {...p} /> : <Strand {...p} />;
+}
+
+const beadOpacity = (i: number, l: Letter, lit: number, word: number | null) => (lit >= 0 ? (lit === i ? 1 : 0.45) : word === null || word === l.word ? 1 : 0.25);
+
+/** A verse as a ring of beads, read clockwise from the top; several verses are rings inside each other (the first innermost). */
+function Ring({ letters, lit, word, marks = [] }: ViewProps) {
+  const starts = marks.length ? marks.map((m) => m.at) : [0];
+  const rings = starts.map((s, k) => ({ from: s, to: k + 1 < starts.length ? starts[k + 1] : letters.length, label: marks[k]?.label }));
+  const size = 320;
+  const c = size / 2;
+  const gap = Math.min(30, (c - 34) / Math.max(1, rings.length));
+  return (
+    <div className="flex justify-center">
+      <svg width="100%" style={{ maxWidth: size }} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`${letters.length} letters in ${rings.length} ring${rings.length === 1 ? "" : "s"}`}>
+        {rings.map((r, k) => {
+          const radius = rings.length === 1 ? c - 24 : 30 + gap * (k + 1);
+          const n = r.to - r.from;
+          return (
+            <g key={k}>
+              <circle cx={c} cy={c} r={radius} fill="none" stroke="var(--line)" strokeWidth={1} />
+              {r.label && rings.length > 1 && (
+                <text x={c} y={c - radius - 2} fontSize={8} textAnchor="middle" fill="var(--faint)">
+                  {r.label}
+                </text>
+              )}
+              {letters.slice(r.from, r.to).map((l, j) => {
+                const i = r.from + j;
+                const a = -Math.PI / 2 + (j / n) * Math.PI * 2;
+                const big = rings.length === 1 ? 1.4 : 0.6;
+                return (
+                  <circle
+                    key={i}
+                    cx={c + radius * Math.cos(a)}
+                    cy={c + radius * Math.sin(a)}
+                    r={((lit === i ? 2.5 : 0) + (word === l.word ? 1.2 : 0) + 2.2 + sizeOf(l.value) * big) * (rings.length > 8 ? 0.7 : 1)}
+                    fill={SIZE_COLOUR[sizeOf(l.value)]}
+                    stroke={word === l.word ? "var(--ink)" : "none"}
+                    strokeWidth={1.2}
+                    opacity={beadOpacity(i, l, lit, word)}
+                  >
+                    <title>
+                      {l.ch} = {l.value}
+                    </title>
+                  </circle>
+                );
+              })}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/** The tones as notes on a two-part staff (treble above, bass below): higher notes for ones, lower for hundreds and
+ * thousands; a bar line between words and a mark where each verse starts. Read left to right, as music is. */
+function Score({ letters, lit, word, marks = [] }: ViewProps) {
+  const semis = (l: Letter) => (3 - sizeOf(l.value)) * 12 + SCALE[firstDigit(l.value) - 1]; // above C2
+  const H = 200;
+  const yOf = (s: number) => H - 12 - s * 3.1;
+  const step = 16;
+  const W = Math.max(240, letters.length * step + 40);
+  const xOf = (i: number) => 30 + i * step;
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (el && lit >= 0) el.scrollLeft = xOf(lit) - el.clientWidth / 2;
+  });
+  const lines = [28, 31, 35, 38, 41, 7, 11, 14, 17, 21]; // E4 G4 B4 D5 F5 · G2 B2 D3 F3 A3
+  const markAt = new Set(marks.map((m) => m.at));
+  return (
+    <div ref={box} className="overflow-x-auto" dir="ltr">
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${letters.length} notes on a staff`}>
+        {lines.map((s) => (
+          <line key={s} x1={0} x2={W} y1={yOf(s)} y2={yOf(s)} stroke="var(--line)" strokeWidth={1} />
+        ))}
+        {letters.map((l, i) =>
+          i > 0 && letters[i - 1].word !== l.word ? (
+            <line key={`w${i}`} x1={xOf(i) - step / 2} x2={xOf(i) - step / 2} y1={yOf(41)} y2={yOf(7)} stroke={markAt.has(i) ? "var(--faint)" : "var(--line)"} strokeWidth={markAt.has(i) ? 1.5 : 0.8} />
+          ) : null,
+        )}
+        {marks.map((m) => (
+          <text key={`v${m.at}`} x={xOf(m.at)} y={10} fontSize={10} textAnchor="middle" fill="var(--muted)">
+            {m.label}
+          </text>
+        ))}
+        {letters.map((l, i) => {
+          const y = yOf(semis(l));
+          return (
+            <g key={i} opacity={beadOpacity(i, l, lit, word)}>
+              <line x1={xOf(i) + 4.5} x2={xOf(i) + 4.5} y1={y} y2={y - 20} stroke="var(--muted)" strokeWidth={1} />
+              <ellipse
+                cx={xOf(i)}
+                cy={y}
+                rx={(lit === i ? 7 : 5.5) + (word === l.word ? 0.8 : 0)}
+                ry={lit === i ? 5 : 4}
+                transform={`rotate(-20 ${xOf(i)} ${y})`}
+                fill={SIZE_COLOUR[sizeOf(l.value)]}
+                stroke={word === l.word || lit === i ? "var(--ink)" : "none"}
+                strokeWidth={1.2}
+              >
+                <title>
+                  {l.ch} = {l.value}
+                </title>
+              </ellipse>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 
@@ -313,7 +461,8 @@ function ChapterCard() {
           </li>
         ))}
       </ol>
-      <Strand letters={letters} rtl lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={strandWord} marks={marks} />
+      <ViewSwitch />
+      <LetterView letters={letters} rtl lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={strandWord} marks={marks} />
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -439,7 +588,8 @@ function VerseCard({ v }: { v: (typeof LAYER_VERSES)[number] }) {
       <p dir={rtl ? "rtl" : "ltr"} lang={script === "hebrew" ? "he" : script === "greek" ? "grc" : "ar"} className="font-serif text-2xl leading-relaxed text-ink">
         <VerseText text={v.text} script={script} lit={lit >= 0 ? (playing[lit]?.word ?? -1) : -1} />
       </p>
-      <Strand letters={letters} rtl={rtl} lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={word} />
+      <ViewSwitch />
+      <LetterView letters={letters} rtl={rtl} lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={word} />
       <div className="flex flex-wrap items-center gap-2">
         {script === "arabic" ? (
           <span className="text-xs text-faint">No tones for the Quran: many Muslims hold that its words shouldn&rsquo;t be set to music.</span>
@@ -673,7 +823,9 @@ function Open({ p, onSolve }: { p: Puzzle; onSolve: () => void }) {
 /* ---------------- the page ---------------- */
 
 export function LayersView() {
+  const [view, setView] = useState<View>("helix");
   return (
+    <ViewCtx.Provider value={{ view, setView }}>
     <main className="h-app overflow-y-auto bg-paper">
       <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
       <header className="space-y-2">
@@ -735,5 +887,6 @@ export function LayersView() {
         <AiWindow />
       </Suspense>
     </main>
+    </ViewCtx.Provider>
   );
 }
