@@ -829,6 +829,9 @@ export function LayersView() {
     <main className="h-app overflow-y-auto bg-paper">
       <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
       <header className="space-y-2">
+        <Link href="/study-lab" className="text-xs text-accent hover:underline">
+          ← Study lab
+        </Link>
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">א · α · ا</p>
           <span className="flex gap-2">
