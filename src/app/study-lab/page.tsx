@@ -19,6 +19,7 @@ const LAYERS = [
   { href: "/translation-lab", title: "Translation lab", note: "One verse in many translations, the differences highlighted, and the original word by word." },
   { href: "/learn-alphabets", title: "Learn the alphabets", note: "Hebrew, Greek and Arabic letters in short lessons, ending with reading a first verse yourself." },
   { href: "/study-paths", title: "Study paths", note: "Guided four-week courses across traditions, with a question to reflect on each day." },
+  { href: "/speed-reader", title: "Speed reader", note: "One word at a time, at the pace you choose, from slow to very fast." },
 ];
 
 export default function Page() {
