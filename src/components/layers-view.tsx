@@ -14,6 +14,7 @@ import { updateSettings } from "@/lib/settings";
 import { LAYER_VERSES } from "@/lib/layer-verses";
 import { lettersOf, valueOf, wordsOf, type Letter, type Script } from "@/lib/letter-values";
 import { LAYER_GLOSSES } from "@/lib/layer-glosses";
+import { GENESIS_1 } from "@/lib/layer-gen1";
 
 const SIZE_COLOUR = ["#f59e0b", "#60a5fa", "#c084fc", "#f472b6"]; // ones, tens, hundreds, thousands
 const sizeOf = (v: number) => (v >= 1000 ? 3 : v >= 100 ? 2 : v >= 10 ? 1 : 0);
@@ -102,15 +103,34 @@ function sayWord(text: string, script: Script): boolean {
 
 /* ---------------- the strand ---------------- */
 
-function Strand({ letters, rtl, lit, word }: { letters: Letter[]; rtl: boolean; lit: number; word: number | null }) {
-  const step = 14;
+function Strand({ letters, rtl, lit, word, marks = [] }: { letters: Letter[]; rtl: boolean; lit: number; word: number | null; marks?: { at: number; label: string }[] }) {
+  const step = letters.length > 300 ? 8 : 14;
   const w = Math.max(240, letters.length * step + 24);
-  const h = 96;
+  const h = marks.length ? 110 : 96;
+  const top = marks.length ? 14 : 0;
   const x = (i: number) => (rtl ? w - 12 - i * step : 12 + i * step);
-  const y = (i: number, phase: number) => h / 2 + Math.sin(i * 0.55 + phase) * 26;
+  const y = (i: number, phase: number) => top + (h - top) / 2 + Math.sin(i * 0.55 + phase) * 26;
+  const box = useRef<HTMLDivElement>(null);
+  // a right-to-left strand opens at its start (the right end); while playing, the bead sounding stays in view
+  useEffect(() => {
+    if (rtl && box.current) box.current.scrollLeft = box.current.scrollWidth;
+  }, [rtl, letters.length]);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || lit < 0) return;
+    el.scrollLeft = x(lit) - el.clientWidth / 2;
+  });
   return (
-    <div className="overflow-x-auto" dir={rtl ? "rtl" : "ltr"}>
+    <div ref={box} className="overflow-x-auto" dir="ltr">
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`${letters.length} letters as a strand`}>
+        {marks.map((m) => (
+          <g key={`v${m.at}`}>
+            <line x1={x(m.at) + (rtl ? step / 2 : -step / 2)} x2={x(m.at) + (rtl ? step / 2 : -step / 2)} y1={10} y2={h - 4} stroke="var(--faint)" strokeDasharray="2 3" strokeWidth={1} />
+            <text x={x(m.at)} y={10} fontSize={10} textAnchor="middle" fill="var(--muted)">
+              {m.label}
+            </text>
+          </g>
+        ))}
         {letters.map((_, i) => (
           <line key={`r${i}`} x1={x(i)} x2={x(i)} y1={y(i, 0)} y2={y(i, Math.PI)} stroke="var(--line)" strokeWidth={1} />
         ))}
@@ -135,6 +155,194 @@ function Strand({ letters, rtl, lit, word }: { letters: Letter[]; rtl: boolean; 
         ))}
       </svg>
     </div>
+  );
+}
+
+/**
+ * Genesis 1, any part of it (my brother's ask): one verse, several, or the whole chapter. The verses chosen are listed
+ * (the one sounding is lit), their letters make one strand marked where each verse starts, and one verse at a time
+ * opens to its words: value, letters, sound and meaning, and Say it.
+ */
+function ChapterCard() {
+  const [chosen, setChosen] = useState<number[]>([1]);
+  const [focus, setFocus] = useState(1); // the verse whose words are shown
+  const [word, setWord] = useState<number | null>(null); // a word of the focus verse
+  const [lit, setLit] = useState(-1);
+  const [noVoice, setNoVoice] = useState(false);
+  const stop = useRef<(() => void) | null>(null);
+  useEffect(() => () => stop.current?.(), []);
+  const verses = useMemo(() => GENESIS_1.filter((v) => chosen.includes(v.v)), [chosen]);
+  // all chosen letters in one strand: the word numbers run on across verses; where each verse starts
+  const { letters, marks, starts } = useMemo(() => {
+    const letters: (Letter & { verse: number })[] = [];
+    const marks: { at: number; label: string }[] = [];
+    const starts: Record<number, number> = {}; // verse -> its first word's number in the strand
+    let wordBase = 0;
+    for (const v of verses) {
+      const ls = lettersOf(v.text, "hebrew");
+      marks.push({ at: letters.length, label: String(v.v) });
+      starts[v.v] = wordBase;
+      for (const l of ls) letters.push({ ...l, word: l.word + wordBase, verse: v.v });
+      wordBase += v.words.length;
+    }
+    return { letters, marks: verses.length > 1 ? marks : [], starts };
+  }, [verses]);
+  const total = letters.reduce((n, l) => n + l.value, 0);
+  const focusVerse = GENESIS_1.find((v) => v.v === focus) ?? GENESIS_1[0];
+  const focusWords = useMemo(() => wordsOf(focusVerse.text, "hebrew"), [focusVerse]);
+  const strandWord = word !== null && chosen.includes(focus) ? (starts[focus] ?? 0) + word : null;
+  const playing = strandWord === null ? letters : letters.filter((l) => l.word === strandWord);
+  const sounding = lit >= 0 ? (playing[lit] as (typeof letters)[number] | undefined)?.verse : undefined;
+  const pick = (list: number[]) => {
+    stop.current?.();
+    const next = [...new Set(list)].sort((a, b) => a - b);
+    setChosen(next.length ? next : [1]);
+    if (!next.includes(focus)) setFocus(next[0] ?? 1);
+    setWord(null);
+  };
+  const gloss = word !== null ? focusVerse.words[word] : undefined;
+  return (
+    <section className="space-y-3 rounded-2xl border border-line bg-panel p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="font-serif text-xl font-semibold text-ink">
+          Genesis 1{chosen.length === GENESIS_1.length ? "" : chosen.length === 1 ? `:${chosen[0]}` : ` · ${chosen.length} verses`}
+        </h2>
+        <span className="text-xs text-faint">Hebrew (Masoretic Text, WLC) · Gematria</span>
+      </div>
+      {/* which verses: tap to add or remove; the whole chapter, or back to one */}
+      <div className="space-y-1.5">
+        <div className="flex flex-wrap gap-1" role="group" aria-label="Verses shown">
+          {GENESIS_1.map((v) => (
+            <button
+              key={v.v}
+              type="button"
+              aria-pressed={chosen.includes(v.v)}
+              onClick={() => pick(chosen.includes(v.v) ? chosen.filter((x) => x !== v.v) : [...chosen, v.v])}
+              className={`h-8 min-w-8 rounded-md border px-1 text-xs tabular-nums ${chosen.includes(v.v) ? "border-accent bg-accent text-accent-ink" : "border-line text-muted hover:bg-raised"}`}
+            >
+              {v.v}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3 text-xs">
+          <button type="button" onClick={() => pick(GENESIS_1.map((v) => v.v))} className="font-medium text-accent hover:underline">
+            Whole chapter
+          </button>
+          <button type="button" onClick={() => pick([1])} className="font-medium text-accent hover:underline">
+            Just verse 1
+          </button>
+          <span className="text-faint">Tap numbers to add or take away verses.</span>
+        </div>
+      </div>
+      {/* the chosen verses, exactly as written; the one sounding is lit; tap one to open its words */}
+      <ol dir="rtl" lang="he" className={`space-y-1 ${verses.length > 6 ? "max-h-80 overflow-y-auto pe-1" : ""}`}>
+        {verses.map((v) => (
+          <li key={v.v}>
+            <button
+              type="button"
+              onClick={() => (setFocus(v.v), setWord(null))}
+              className={`flex w-full items-baseline gap-2 rounded-lg px-2 py-1 text-right ${sounding === v.v ? "bg-accent-soft" : focus === v.v && verses.length > 1 ? "bg-raised" : ""}`}
+            >
+              <span dir="ltr" className="shrink-0 text-xs tabular-nums text-faint">{v.v}</span>
+              <span className="flex-1 font-serif text-xl leading-relaxed text-ink">{v.text}</span>
+              <span dir="ltr" className="shrink-0 text-xs tabular-nums text-faint">{valueOf(v.text, "hebrew").toLocaleString("en-US")}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <Strand letters={letters} rtl lit={lit < 0 ? -1 : letters.indexOf(playing[lit])} word={strandWord} marks={marks} />
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (stop.current) {
+              stop.current();
+              stop.current = null;
+              return;
+            }
+            stop.current = playStrand(playing, (i) => {
+              setLit(i);
+              if (i === -1) stop.current = null;
+            });
+          }}
+          className="min-h-10 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink"
+        >
+          {lit >= 0 ? "■ Stop" : strandWord !== null ? "▶ Play this word" : verses.length > 1 ? `▶ Play ${verses.length} verses as tones` : "▶ Play its letters as tones"}
+        </button>
+        <span className="text-sm text-muted">
+          {letters.length.toLocaleString("en-US")} letters · {verses.reduce((n, v) => n + v.words.length, 0)} words · total{" "}
+          <strong className="tabular-nums text-ink">{total.toLocaleString("en-US")}</strong>
+        </span>
+      </div>
+      <details className="text-sm text-muted">
+        <summary className="cursor-pointer">
+          Each word&rsquo;s value{verses.length > 1 ? ` (verse ${focus}; tap a verse above for another)` : ""}
+        </summary>
+        <p className="mt-2 text-xs text-faint">Tap a word to see it on the strand, letter by letter, how it sounds and what it means.</p>
+        <ul dir="rtl" className="mt-2 flex flex-wrap gap-2">
+          {focusWords.map((w, i) => (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => {
+                  stop.current?.();
+                  setNoVoice(false);
+                  setWord(word === i ? null : i);
+                }}
+                aria-pressed={word === i}
+                className={`min-h-9 rounded-lg border px-2 py-1 ${word === i ? "border-accent bg-accent-soft" : "border-line hover:bg-raised"}`}
+              >
+                <span className="font-serif text-base text-ink">{w.text}</span> <span className="tabular-nums text-faint">{w.value}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {word !== null && (
+          <p dir="rtl" aria-live="polite" className="mt-2 rounded-lg bg-raised px-3 py-2 font-serif text-base text-ink">
+            {lettersOf(focusVerse.text, "hebrew")
+              .filter((l) => l.word === word)
+              .map((l, i) => (
+                <span key={i} className="whitespace-nowrap">
+                  {i > 0 && <span className="text-faint"> + </span>}
+                  {l.ch} <span className="text-sm tabular-nums" style={{ color: SIZE_COLOUR[sizeOf(l.value)] }}>{l.value}</span>
+                </span>
+              ))}
+            <span className="text-faint"> = </span>
+            <strong className="tabular-nums">{focusWords[word]?.value}</strong>
+          </p>
+        )}
+        {gloss && (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2">
+            <p className="text-sm">
+              <span className="font-serif text-base text-ink">{gloss.he}</span> <span className="italic text-ink">{gloss.say}</span> <span className="text-muted">· {gloss.means}</span>
+            </p>
+            <button type="button" onClick={() => setNoVoice(!sayWord(gloss.he, "hebrew"))} className="min-h-9 rounded-lg border border-line px-3 text-xs font-medium text-ink hover:bg-raised">
+              🔊 Say it
+            </button>
+            {noVoice && <p className="w-full text-xs text-faint">This device has no Hebrew voice installed, so it can&rsquo;t say it.</p>}
+            <p className="w-full text-[11px] text-faint">Said by your device&rsquo;s voice, in today&rsquo;s Hebrew pronunciation.</p>
+          </div>
+        )}
+        <p className="mt-2 text-xs">{SYSTEM.hebrew.how} A lone פ after a verse marks a new paragraph; it isn&rsquo;t a word and isn&rsquo;t counted.</p>
+      </details>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <Link href="/read/bible/gen/1" className="text-xs text-accent hover:underline">
+          Read Genesis 1 in context →
+        </Link>
+        <button
+          type="button"
+          onClick={() =>
+            askAboutVerse({
+              reference: chosen.length === 1 ? `Genesis 1:${chosen[0]}` : `Genesis 1 (verses ${chosen.join(", ")})`,
+              texts: [{ abbr: "Gematria", name: "Hebrew (Masoretic Text, WLC)", language: "Hebrew", text: verses.map((v) => v.text).join(" ") }],
+            })
+          }
+          className="text-xs font-medium text-accent hover:underline"
+        >
+          ✦ Ask AI about {chosen.length === 1 ? "this verse" : "these verses"}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -429,7 +637,8 @@ export function LayersView() {
           count their letters.
         </p>
       </header>
-      {LAYER_VERSES.map((v) => (
+      <ChapterCard />
+      {LAYER_VERSES.filter((v) => v.id !== "gen").map((v) => (
         <VerseCard key={v.id} v={v} />
       ))}
       <Puzzles />
@@ -439,7 +648,7 @@ export function LayersView() {
           <a href="https://tanzil.net" target="_blank" rel="noopener" className="underline">
             tanzil.net
           </a>
-          ), licensed CC BY 3.0, shown verbatim. Hebrew: Westminster Leningrad Codex. Greek: Textus Receptus.
+          ), licensed CC BY 3.0, shown verbatim. Hebrew: Westminster Leningrad Codex. Greek: Textus Receptus. Hebrew words&rsquo; sounds and meanings: STEP Bible (Tyndale House, Cambridge), CC BY 4.0.
         </p>
         <p>
           <Link href="/" className="text-accent hover:underline">

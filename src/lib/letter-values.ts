@@ -26,33 +26,41 @@ const ARABIC: Record<string, number> = {
 };
 const TABLE: Record<Script, Record<string, number>> = { hebrew: HEBREW, greek: GREEK, arabic: ARABIC };
 
+/**
+ * A verse's words as the counts see them: split at spaces (and, in Hebrew, at the maqaf that joins short words, as the
+ * interlinear does), leaving out the paragraph marks פ and ס that stand alone after some verses (they aren't words).
+ */
+export function tokensOf(text: string, script: Script): string[] {
+  const parts = text.split(script === "hebrew" ? /[\s\u05BE]+/ : /\s+/).filter(Boolean);
+  return script === "hebrew" ? parts.filter((w) => !/^[\u05E4\u05E1]$/.test(w)) : parts;
+}
+
 /** The counted letters of a verse, in reading order, each with its value and which word it is in. */
 export function lettersOf(text: string, script: Script): Letter[] {
   const table = TABLE[script];
-  // Greek: accents and breathings come apart from their letters (NFD) and are dropped; capitals count as small letters
-  const src = script === "greek" ? text.normalize("NFD").toLowerCase() : text;
   const out: Letter[] = [];
   let word = 0;
-  let inWord = false;
-  for (const ch of src) {
-    const v = table[ch];
-    if (v) {
-      out.push({ ch, value: v, word });
-      inWord = true;
-    } else if (/\s/.test(ch) && inWord) {
-      word++;
-      inWord = false;
+  for (const tok of tokensOf(text, script)) {
+    // Greek: accents and breathings come apart from their letters (NFD) and are dropped; capitals count as small letters
+    const src = script === "greek" ? tok.normalize("NFD").toLowerCase() : tok;
+    let any = false;
+    for (const ch of src) {
+      const v = table[ch];
+      if (v) {
+        out.push({ ch, value: v, word });
+        any = true;
+      }
     }
+    if (any) word++;
   }
   return out;
 }
 
 export const valueOf = (text: string, script: Script) => lettersOf(text, script).reduce((n, l) => n + l.value, 0);
 
-/** The verse's words with their values (words as written in the verse, punctuation trimmed). */
+/** The verse's words with their values (as written, punctuation trimmed), in the same order lettersOf numbers them. */
 export function wordsOf(text: string, script: Script): { text: string; value: number }[] {
-  return text
-    .split(/\s+/)
-    .map((w) => ({ text: w.replace(/[׃,.;:·]+$/u, ""), value: valueOf(w, script) }))
+  return tokensOf(text, script)
+    .map((w) => ({ text: w.replace(/[\u05C3,.;:\u00B7\u0387]+$/u, ""), value: valueOf(w, script) }))
     .filter((w) => w.value > 0);
 }
