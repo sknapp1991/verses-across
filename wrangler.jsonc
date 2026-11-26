@@ -47,8 +47,9 @@
   "send_email": [{ "name": "FEEDBACK_MAIL" }],
   "observability": { "enabled": true },
   // Worker name stays "snoopwiggy" (renaming re-creates the Worker). Custom domains attached in the dashboard:
-  // versesacross.com + www (official, Verses Across) and snoopwiggy.com + www, which the app forwards to
-  // versesacross.com together with the visitor's saved data (src/components/domain-move.tsx).
+  // versesacross.com + www (official, Verses Across). Since Nov 26 2026 snoopwiggy.com + www belong to my brother's
+  // site (the separate "snoopwiggy-site" Worker, folder ../snoopwiggy-site), which forwards old Verses Across links
+  // here with the visitor's saved data in the same format as src/components/domain-move.tsx.
 
   // Library Across (libraryacross.com + www): the same code built with NEXT_PUBLIC_SITE=library (src/lib/site.ts),
   // deployed as its own Worker with `opennextjs-cloudflare deploy --env library`. Bindings aren't inherited by an
