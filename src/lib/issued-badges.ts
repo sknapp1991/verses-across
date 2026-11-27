@@ -26,7 +26,7 @@ import { touch } from "./stamps";
  * Never paste the private key ("d") here: it lives only in the hub's secret BADGE_SIGNING_KEY.
  * =====================================================================================================
  */
-export const BADGE_PUBLIC_KEY: JsonWebKey | null = null;
+export const BADGE_PUBLIC_KEY: JsonWebKey | null = { kty: "EC", crv: "P-256", x: "8YNH3RVFUmbMOzTySNuoyLWqgHAyrdDZFNHjhSwwvnQ", y: "3tOnrEwo7F6Ufmo1avlslD72wRa93_TvQ-jHaUjEzMA" };
 
 export type BadgeDef = {
   id: string;
