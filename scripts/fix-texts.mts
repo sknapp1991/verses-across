@@ -5,6 +5,7 @@
  *
  *   npx tsx scripts/fix-texts.mts            (writes; prints what each rule changed)
  *   npx tsx scripts/fix-texts.mts --dry      (only counts)
+ *   npx tsx scripts/fix-texts.mts --only quran/pickthall   (one version, e.g. after re-importing it)
  *
  * Not touched: the Bible and Tanakh versions (word links and recorded audio follow their exact words),
  * except one plain typo; the Arabic Qur'an (Tanzil forbids changes).
@@ -14,6 +15,7 @@ import path from "node:path";
 
 const ROOT = path.join(process.cwd(), "data", "texts");
 const DRY = process.argv.includes("--dry");
+const ONLY = process.argv.includes("--only") ? process.argv[process.argv.indexOf("--only") + 1] : null;
 
 type Verse = { v: string; t: string; [k: string]: unknown };
 type Chapter = { verses: Verse[]; [k: string]: unknown };
@@ -275,6 +277,7 @@ const PICKTHALL_HAND: [number, string, string, string][] = [
 const SPLIT = new Set(["enoch/charles", "quran/pickthall", "vedas/griffith"]);
 let changedFiles = 0;
 for (const [key, files] of byKey) {
+  if (ONLY && key !== ONLY) continue;
   const lang = langOf.get(key) ?? "?";
   for (const f of files) {
     const raw = await readFile(f, "utf8");
