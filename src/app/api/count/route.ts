@@ -17,6 +17,16 @@ type Limiter = { limit(o: { key: string }): Promise<{ success: boolean }> };
 
 const KINDS = new Set(["view", "play", "download"]);
 
+/** Crawlers and headless browsers run the page's scripts too (Meta's AI crawler sent ~4,500 counts a week, Nov 27):
+ *  they get a quiet 204 and are not counted, so "Most read" and the reading totals reflect people. */
+const BOT = /bot|crawl|spider|slurp|externalagent|externalfetcher|facebookexternalhit|headless|phantom|puppeteer|playwright|selenium|python|curl|wget|node-fetch|axios|go-http|java\/|okhttp|preview|scrapy|lighthouse|chrome-lighthouse|pagespeed|gtmetrix/i;
+const isBot = (r: Request) => {
+  const ua = r.headers.get("user-agent") ?? "";
+  if (!ua || BOT.test(ua)) return true;
+  const cf = (r as Request & { cf?: { verifiedBotCategory?: string; botManagement?: { verifiedBot?: boolean } } }).cf;
+  return !!(cf?.verifiedBotCategory || cf?.botManagement?.verifiedBot);
+};
+
 export async function POST(request: Request) {
   let env: { STATS_DB?: D1; STATS_LIMIT?: Limiter } = {};
   try {
@@ -25,6 +35,7 @@ export async function POST(request: Request) {
     /* not on Cloudflare */
   }
   if (!env.STATS_DB) return new Response(null, { status: 204 });
+  if (isBot(request)) return new Response(null, { status: 204 });
   // From the site's own pages only (browsers set this header; a plain script usually doesn't).
   const site = request.headers.get("sec-fetch-site");
   if (site && site !== "same-origin") return new Response(null, { status: 403 });
