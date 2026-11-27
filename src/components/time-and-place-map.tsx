@@ -5,7 +5,7 @@
  * render), and the new view is committed when the gesture ends. Layers: the Natural Earth outline (two levels of
  * detail), shaded regions, routes, background dots, the main dots, and labels placed by priority so they never pile up.
  */
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MutableRefObject } from "react";
+import { memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MutableRefObject } from "react";
 import { MAP_SIZE, SURE_LABEL, project, type IndexPlace, type MapOutline, type WaterLabel } from "@/lib/time-and-place";
 
 /* ---------------- data loading ---------------- */
@@ -83,6 +83,14 @@ export type MapRoute = { id: string; pts: [number, number][]; kind: "main" | "ah
 /** A soft shaded region (a power's rough reach). tone 0 or 1 picks the shade. */
 export type MapRegion = { id: string; d: string; label: string; sub: string; lx: number; ly: number; tone: number };
 export type MapApi = { set: (b: Box) => void; flyTo: (b: Box) => void };
+/** A soft glow (the heat map): t from 0 to 1 sets its size and strength; tone 0 is the accent colour, 1 the second. */
+export type MapGlow = { id: string; x: number; y: number; t: number; tone: 0 | 1 };
+/** The glows' colours (theme tokens, so they follow light and dark). */
+export const GLOW_COLOR = ["var(--accent)", "var(--heard)"];
+/** At most this many glows are drawn at once (the strongest in view). */
+const MAX_GLOWS = 300;
+/** useId, safe inside url(#…) (React's ids can carry colons or other marks). */
+export const useSvgId = () => useId().replace(/[^A-Za-z0-9_-]/g, "");
 
 export function Dot({ c, r, on = false }: { c: number; r: number; on?: boolean }) {
   if (c === 2) return <circle r={r} className="fill-accent stroke-paper" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />;
@@ -159,6 +167,7 @@ export function MapView({
   pickBackground,
   routes = [],
   regions = [],
+  glows = [],
   controlRef,
   label,
 }: {
@@ -176,6 +185,7 @@ export function MapView({
   pickBackground?: (id: string) => void;
   routes?: MapRoute[];
   regions?: MapRegion[];
+  glows?: MapGlow[];
   controlRef?: MutableRefObject<MapApi | null>;
   label: string;
 }) {
@@ -502,6 +512,23 @@ export function MapView({
     [dots, picked, view, u],
   );
 
+  // Glows in view (their size is in screen pixels, so they stay readable at every zoom)
+  const glowId = useSvgId();
+  const shownGlows = useMemo(
+    () => {
+      const near = glows.filter((g) => inView(g.x, g.y, 40 * u));
+      if (near.length <= MAX_GLOWS) return near;
+      // (the strongest, still drawn weakest first so the strong ones sit on top)
+      return near
+        .slice()
+        .sort((a, b) => b.t - a.t)
+        .slice(0, MAX_GLOWS)
+        .reverse();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- inView follows view and u
+    [glows, view, u],
+  );
+
   // Labels by priority: the chosen place, the main dots (surer and more often named first), route names, water,
   // regions, then other places; one that would overlap a label already placed is left out at this zoom
   const labels = useMemo(() => {
@@ -582,6 +609,31 @@ export function MapView({
                 pointerEvents="none"
               />
             ))}
+            {shownGlows.length > 0 && (
+              <>
+                <defs>
+                  {GLOW_COLOR.map((c, i) => (
+                    <radialGradient key={c} id={`tp-glow-${i}-${glowId}`}>
+                      <stop offset="0%" style={{ stopColor: c, stopOpacity: 0.9 }} />
+                      <stop offset="45%" style={{ stopColor: c, stopOpacity: 0.45 }} />
+                      <stop offset="100%" style={{ stopColor: c, stopOpacity: 0 }} />
+                    </radialGradient>
+                  ))}
+                </defs>
+                <g pointerEvents="none">
+                  {shownGlows.map((g) => (
+                    <circle
+                      key={`${g.tone}:${g.id}`}
+                      cx={g.x}
+                      cy={g.y}
+                      r={(10 + 26 * g.t) * u}
+                      fill={`url(#tp-glow-${g.tone}-${glowId})`}
+                      fillOpacity={0.25 + 0.75 * g.t}
+                    />
+                  ))}
+                </g>
+              </>
+            )}
             {routes.map((r) => (
               <path
                 key={r.id}

@@ -1,9 +1,11 @@
 "use client";
 /**
  * Time and place (study lab, my brother's ticket 7a62bb28, Nov 26). Two tabs:
- * - Places: a zoomable map (src/components/time-and-place-map.tsx) in three modes: the places a Bible chapter names,
- *   journeys played stop by stop (time-and-place-journeys.tsx), and eras with the rough reach of the powers of the
- *   time (time-and-place-eras.tsx). A search finds any place in the whole Bible; a place page
+ * - Places: a zoomable map (src/components/time-and-place-map.tsx) in five modes: the places a Bible chapter names,
+ *   journeys played stop by stop (time-and-place-journeys.tsx), eras with the rough reach of the powers of the
+ *   time (time-and-place-eras.tsx), a heat map of where a book's story happens (time-and-place-heat.tsx), and how far
+ *   apart two places are (time-and-place-distance.tsx). A search (time-and-place-search.tsx) finds any place in the
+ *   whole Bible; a place page
  *   (time-and-place-page.tsx) lists every verse that names it. Data: OpenBible.info (CC BY 4.0) and Natural Earth,
  *   built by scripts/build-places.mts into public/places/.
  * - When written: the main scriptures on the site on one timeline, the tradition's own account and the usual
@@ -27,14 +29,18 @@ import {
   type Place,
   type Writing,
 } from "@/lib/time-and-place";
+import { Distance } from "./time-and-place-distance";
 import { Eras } from "./time-and-place-eras";
+import { Heat } from "./time-and-place-heat";
 import { Journeys } from "./time-and-place-journeys";
 import { Legend, MapView, WIDE, boxAround, fitBox, loadJson, type MapApi, type MapDot } from "./time-and-place-map";
 import { PlacePage } from "./time-and-place-page";
+import { Search } from "./time-and-place-search";
 
 const STORE = "va-time-place:v1";
 type Tab = "places" | "time";
-type Mode = "chapter" | "journeys" | "eras";
+type Mode = "chapter" | "journeys" | "eras" | "heat" | "far";
+const MODES: Mode[] = ["chapter", "journeys", "eras", "heat", "far"];
 type Saved = { tab?: Tab; mode?: Mode; book?: string; chapter?: number };
 const field = "min-h-11 w-full rounded-xl border border-line bg-paper px-3 text-ink";
 
@@ -58,7 +64,7 @@ export function TimeAndPlace() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring the last view, once, after hydration
     setReady(true);
     if (s?.tab === "places" || s?.tab === "time") setTab(s.tab);
-    if (s?.mode === "chapter" || s?.mode === "journeys" || s?.mode === "eras") setMode(s.mode);
+    if (s?.mode && MODES.indexOf(s.mode) >= 0) setMode(s.mode);
     const b = s?.book ? findBook("bible", s.book) : undefined;
     if (b && b.collection.id !== "apocrypha") {
       setBook(b.id);
@@ -221,7 +227,7 @@ function Explorer({
       live = false;
     };
   }, [attempt]);
-  const needIndex = wantIndex || !!found || !!page || mode === "eras";
+  const needIndex = wantIndex || !!found || !!page || mode === "eras" || mode === "heat" || mode === "far";
   useEffect(() => {
     if (!needIndex) return;
     let live = true;
@@ -252,6 +258,8 @@ function Explorer({
     ["chapter", "By chapter"],
     ["journeys", "Journeys"],
     ["eras", "Eras"],
+    ["heat", "Heat map"],
+    ["far", "How far"],
   ];
 
   return (
@@ -300,14 +308,15 @@ function Explorer({
           }}
         />
 
-        <div className="flex gap-1 rounded-xl border border-line bg-panel p-1" role="tablist" aria-label="Map view">
-          {modes.map(([id, label]) => (
+        <div className="grid grid-cols-6 gap-1 rounded-xl border border-line bg-panel p-1 sm:grid-cols-5" role="tablist" aria-label="Map view">
+          {/* (on a phone: three across, then two wider ones, so no cell is left empty) */}
+          {modes.map(([id, label], i) => (
             <button
               key={id}
               role="tab"
               aria-selected={mode === id}
               onClick={() => setMode(id)}
-              className={`min-h-10 flex-1 rounded-lg px-2 text-sm ${mode === id ? "bg-accent font-semibold text-accent-ink" : "text-ink hover:bg-raised"}`}
+              className={`min-h-10 rounded-lg px-2 text-sm sm:col-span-1 ${i < 3 ? "col-span-2" : "col-span-3"} ${mode === id ? "bg-accent font-semibold text-accent-ink" : "text-ink hover:bg-raised"}`}
             >
               {label}
             </button>
@@ -345,6 +354,27 @@ function Explorer({
         )}
         {mode === "journeys" && <Journeys outline={outline} openPlace={openPage} />}
         {mode === "eras" && <Eras outline={outline} index={index} picked={found} pick={(id) => setFound(id === found ? null : id)} />}
+        {mode === "heat" && (
+          <Heat
+            outline={outline}
+            index={index}
+            indexFailed={indexFailed}
+            retryIndex={() => setAttempt((a) => a + 1)}
+            books={books}
+            pick={(id) => setFound(id === found ? null : id)}
+            openPlace={openPage}
+          />
+        )}
+        {mode === "far" && (
+          <Distance
+            outline={outline}
+            index={index}
+            failed={indexFailed}
+            retry={() => setAttempt((a) => a + 1)}
+            want={() => setWantIndex(true)}
+            pick={(id) => setFound(id === found ? null : id)}
+          />
+        )}
 
         {foundPlace && (
           <IndexCard
@@ -357,128 +387,6 @@ function Explorer({
         )}
       </div>
     </>
-  );
-}
-
-/** One box that finds any place in the whole Bible, by any name it goes by. */
-function Search({
-  index,
-  failed,
-  retry,
-  want,
-  choose,
-}: {
-  index: IndexPlace[] | null;
-  failed: boolean;
-  retry: () => void;
-  want: () => void;
-  choose: (id: string) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
-  const q = fold(query);
-  const results = useMemo(() => {
-    if (!q || !index) return [];
-    const scored: { p: IndexPlace; s: number; via?: string }[] = [];
-    for (const p of index) {
-      let s = matchScore(q, p.n);
-      let via: string | undefined;
-      for (const k of p.k ?? []) {
-        const t = matchScore(q, k) - 2; // (the KJV name wins a tie)
-        if (t > s) {
-          s = t;
-          via = k;
-        }
-      }
-      if (s > 0) scored.push({ p, s, via });
-    }
-    scored.sort((a, b) => b.s - a.s || b.p.w - a.p.w);
-    return scored.slice(0, 10);
-  }, [q, index]);
-  const pickAt = (i: number) => {
-    const r = results[i];
-    if (!r) return;
-    choose(r.p.id);
-    setQuery("");
-    setActive(0);
-  };
-  const open = q.length > 0;
-
-  return (
-    <div className="relative">
-      <label className="block">
-        <span className="sr-only">Find a place anywhere in the Bible</span>
-        <input
-          type="search"
-          className={field}
-          placeholder="Find a place: Bethlehem, Ur, Patmos…"
-          value={query}
-          role="combobox"
-          aria-expanded={open && results.length > 0}
-          aria-controls="tp-search-results"
-          aria-activedescendant={open && results[active] ? `tp-result-${active}` : undefined}
-          onFocus={want}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-            want();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown" && results.length) {
-              e.preventDefault();
-              setActive((a) => (a + 1) % results.length);
-            } else if (e.key === "ArrowUp" && results.length) {
-              e.preventDefault();
-              setActive((a) => (a - 1 + results.length) % results.length);
-            } else if (e.key === "Enter") {
-              e.preventDefault();
-              pickAt(active);
-            } else if (e.key === "Escape") setQuery("");
-          }}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </label>
-      <p className="sr-only" aria-live="polite">
-        {open && index ? `${results.length} ${results.length === 1 ? "place" : "places"} found` : ""}
-      </p>
-      {open && (
-        <div className="absolute inset-x-0 top-full z-10 mt-1 max-h-80 overflow-y-auto rounded-xl border border-line bg-panel shadow-lg">
-          {failed ? (
-            <p className="p-3 text-sm text-muted">
-              The place list couldn&apos;t be loaded.{" "}
-              <button className="text-accent hover:underline" onClick={retry}>
-                Try again
-              </button>
-            </p>
-          ) : !index ? (
-            <p className="p-3 text-sm text-muted">Loading places…</p>
-          ) : results.length === 0 ? (
-            <p className="p-3 text-sm text-muted">No place by that name. Try fewer letters.</p>
-          ) : (
-            <ul id="tp-search-results" role="listbox">
-              {results.map(({ p, via }, i) => (
-                <li key={p.id} id={`tp-result-${i}`} role="option" aria-selected={i === active}>
-                  <button
-                    tabIndex={-1}
-                    className={`block min-h-11 w-full px-3 py-2 text-left hover:bg-raised ${i === active ? "bg-raised" : ""}`}
-                    onMouseEnter={() => setActive(i)}
-                    onClick={() => pickAt(i)}
-                  >
-                    <span className="font-semibold text-ink">{p.n}</span>
-                    {via && <span className="text-sm text-muted"> ({via})</span>}
-                    <span className="block text-xs text-faint">
-                      {p.u ? "Not on the map" : p.m && p.m !== p.n ? `Identified with ${p.m}` : SURE_LABEL[p.c]} · {p.w}{" "}
-                      {p.w === 1 ? "verse" : "verses"}, {p.b.length} {p.b.length === 1 ? "book" : "books"}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
 

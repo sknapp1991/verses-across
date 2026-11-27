@@ -12,7 +12,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
-import { PROJ, project, type IndexPlace, type Place, type PlaceFile, type WaterLabel } from "../src/lib/time-and-place";
+import { PROJ, project, type HeatFile, type IndexPlace, type Place, type PlaceFile, type WaterLabel } from "../src/lib/time-and-place";
 import { eraOf } from "../src/lib/time-and-place-eras";
 import { JOURNEYS, type Journey, type JourneyStop } from "../src/lib/time-and-place-journeys";
 
@@ -155,6 +155,8 @@ function photoOf(p: Ancient): PlaceFile["img"] | undefined {
 
 const books: Record<string, OutPlace[]> = {};
 const index: IndexPlace[] = [];
+/** The heat map: per book, each place on the map and how many KJV verses in that book name it. */
+const heat: HeatFile = {};
 let placed = 0;
 let unplaced = 0;
 for (const p of ancient) {
@@ -169,7 +171,10 @@ for (const p of ancient) {
     const [ob, c, vs] = osis.split(".");
     const book = OSIS_TO_USX[ob];
     if (!book) continue;
-    ((byBook[book] ??= {})[c] ??= []).push(Number(vs));
+    // (once per verse: two OpenBible verses can map to the same KJV verse)
+    const list = ((byBook[book] ??= {})[c] ??= []);
+    if (list.includes(Number(vs))) continue;
+    list.push(Number(vs));
     const text = kjv(book)[c]?.get(vs)?.replace(/æ/g, "ae").replace(/Æ/g, "Ae");
     if (text) {
       const counts = (kjvNames[book] ??= {});
@@ -254,6 +259,9 @@ for (const p of ancient) {
   if (photo) file.img = photo;
   writeFileSync(`${OUT}/p/${p.id}.json`, JSON.stringify(file));
   placeFiles++;
+  if (out.x !== undefined)
+    for (const [book, chapters] of Object.entries(byBook))
+      (heat[book] ??= []).push([p.id, Object.values(chapters).reduce((s, vs) => s + vs.length, 0)]);
   for (const [book, chapters] of Object.entries(byBook)) {
     for (const vs of Object.values(chapters)) vs.sort((a, b) => a - b);
     (books[book] ??= []).push({
@@ -274,6 +282,10 @@ for (const [book, list] of Object.entries(books)) {
 console.log(`places: ${placed} placed, ${unplaced} unplaced; ${Object.keys(books).length} books, ${(bytes / 1024).toFixed(0)} KB`);
 const is = JSON.stringify({ places: index });
 writeFileSync(`${OUT}/index.json`, is);
+for (const list of Object.values(heat)) list.sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+const hs = JSON.stringify(heat);
+writeFileSync(`${OUT}/heat.json`, hs);
+console.log(`heat: ${Object.keys(heat).length} books, ${(hs.length / 1024).toFixed(0)} KB (${(gzipSync(hs).length / 1024).toFixed(0)} KB gzipped)`);
 /* ---------------- journeys ---------------- */
 
 const byId = new Map(ancient.map((x) => [x.id, x]));

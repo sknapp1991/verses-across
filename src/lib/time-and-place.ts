@@ -90,6 +90,12 @@ export type PlaceFile = {
   img?: { src: string; by: string; lic: string; url: string; alt: string };
 };
 
+/**
+ * public/places/heat.json: per book, each place on the map (OpenBible id, no slug) and how many KJV verses in that
+ * book name it, most named first. No verse text.
+ */
+export type HeatFile = Record<string, [string, number][]>;
+
 /** Letters that NFD doesn't split into a base letter and an accent. */
 const FOLD_EXTRA: Record<string, string> = { ı: "i", ø: "o", ß: "ss", ł: "l", æ: "ae", œ: "oe", đ: "d", Ø: "o", Ł: "l", Æ: "ae", Œ: "oe", Đ: "d" };
 
