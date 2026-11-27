@@ -1,6 +1,6 @@
 "use client";
 /**
- * Time and place (study lab, my brother's ticket 7a62bb28, Nov 26). Two tabs:
+ * Time and place (study lab, my brother's ticket 7a62bb28, Nov 26). Three tabs:
  * - Places: a zoomable map (src/components/time-and-place-map.tsx) in five modes: the places a Bible chapter names,
  *   journeys played stop by stop (time-and-place-journeys.tsx), eras with the rough reach of the powers of the
  *   time (time-and-place-eras.tsx), a heat map of where a book's story happens (time-and-place-heat.tsx), and how far
@@ -10,9 +10,11 @@
  *   built by scripts/build-places.mts into public/places/.
  * - When written: the main scriptures on the site on one timeline, the tradition's own account and the usual
  *   historians' range side by side, filterable by name and tradition.
+ * - When they lived (time-and-place-lives.tsx): the lives of figures from those scriptures, dated the same way, with
+ *   where they lived on the map and where they appear in the texts on the site.
  */
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { booksOfWork, findBook, readHref } from "@/lib/catalog";
 import { fetchBook, type BookFile } from "@/lib/chapter-store";
 import { noteLab } from "@/lib/lab-badges";
@@ -29,20 +31,26 @@ import {
   type Place,
   type Writing,
 } from "@/lib/time-and-place";
+import { TICKS, field, pct, placeFromHash, placePushed, setPlacePushed, squash, tickLabel } from "@/lib/time-and-place-axis";
 import { Distance } from "./time-and-place-distance";
 import { Eras } from "./time-and-place-eras";
 import { Heat } from "./time-and-place-heat";
 import { Journeys } from "./time-and-place-journeys";
+import { Lives } from "./time-and-place-lives";
 import { Legend, MapView, WIDE, boxAround, fitBox, loadJson, type MapApi, type MapDot } from "./time-and-place-map";
 import { PlacePage } from "./time-and-place-page";
 import { Search } from "./time-and-place-search";
 
 const STORE = "va-time-place:v1";
-type Tab = "places" | "time";
+type Tab = "places" | "time" | "lives";
+const TABS: [Tab, string][] = [
+  ["places", "Places"],
+  ["time", "When they were written"],
+  ["lives", "When they lived"],
+];
 type Mode = "chapter" | "journeys" | "eras" | "heat" | "far";
 const MODES: Mode[] = ["chapter", "journeys", "eras", "heat", "far"];
 type Saved = { tab?: Tab; mode?: Mode; book?: string; chapter?: number };
-const field = "min-h-11 w-full rounded-xl border border-line bg-paper px-3 text-ink";
 
 function readSaved(): Saved | null {
   try {
@@ -63,7 +71,7 @@ export function TimeAndPlace() {
     const s = readSaved();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring the last view, once, after hydration
     setReady(true);
-    if (s?.tab === "places" || s?.tab === "time") setTab(s.tab);
+    if (s?.tab === "places" || s?.tab === "time" || s?.tab === "lives") setTab(s.tab);
     if (s?.mode && MODES.indexOf(s.mode) >= 0) setMode(s.mode);
     const b = s?.book ? findBook("bible", s.book) : undefined;
     if (b && b.collection.id !== "apocrypha") {
@@ -80,6 +88,44 @@ export function TimeAndPlace() {
     }
   }, [ready, tab, mode, book, chapter]);
 
+  /**
+   * Switching tabs closes an open place page first: Back if this visit opened it (so no stray history entry is left),
+   * otherwise the #place is just dropped. The tab changes once the address has.
+   */
+  const selectTab = (id: Tab) => {
+    if (id === tab) return;
+    if (placeFromHash()) {
+      if (placePushed()) {
+        setPlacePushed(false);
+        let done = false;
+        const go = () => {
+          if (done) return;
+          done = true;
+          window.removeEventListener("hashchange", go);
+          setTab(id);
+        };
+        window.addEventListener("hashchange", go);
+        setTimeout(go, 400); // (in case the browser doesn't report it)
+        history.back();
+        return;
+      }
+      history.replaceState(history.state, "", location.pathname + location.search);
+    }
+    setTab(id);
+  };
+
+  /** Tabs: the arrow keys (and Home, End) move between them, as tabs should. */
+  const tabKeys = (e: KeyboardEvent<HTMLDivElement>) => {
+    const i = TABS.findIndex(([id]) => id === tab);
+    const n = TABS.length;
+    const next =
+      e.key === "ArrowRight" ? (i + 1) % n : e.key === "ArrowLeft" ? (i + n - 1) % n : e.key === "Home" ? 0 : e.key === "End" ? n - 1 : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    selectTab(TABS[next][0]);
+    document.getElementById(`tp-tab-${TABS[next][0]}`)?.focus();
+  };
+
   return (
     <main className="h-app overflow-y-auto bg-paper">
       <div className="mx-auto max-w-3xl space-y-5 px-4 py-8">
@@ -91,25 +137,21 @@ export function TimeAndPlace() {
           <h1 className="font-serif text-3xl font-semibold text-ink">Where and when</h1>
           <p className="text-muted">
             The places of the Bible on a map, chapter by chapter, journey by journey and era by era, and when the great scriptures were
-            written, as each tradition tells it and as historians usually date it.
+            written and when the figures in them lived, as each tradition tells it and as historians usually date it.
           </p>
         </header>
 
-        <div className="flex gap-2" role="tablist">
-          {(
-            [
-              ["places", "Places"],
-              ["time", "When they were written"],
-            ] as [Tab, string][]
-          ).map(([id, label]) => (
+        <div className="flex gap-2" role="tablist" aria-label="Time and place" onKeyDown={tabKeys}>
+          {TABS.map(([id, label]) => (
             <button
               key={id}
               id={`tp-tab-${id}`}
               role="tab"
-              aria-controls={`tp-panel-${id}`}
+              aria-controls={tab === id ? `tp-panel-${id}` : undefined}
               aria-selected={tab === id}
-              onClick={() => setTab(id)}
-              className={`min-h-11 flex-1 rounded-xl border px-3 text-sm font-semibold ${
+              tabIndex={tab === id ? 0 : -1}
+              onClick={() => selectTab(id)}
+              className={`min-h-11 flex-1 rounded-xl border px-2 py-1 text-sm font-semibold leading-tight ${
                 tab === id ? "border-accent bg-accent text-accent-ink" : "border-line bg-panel text-ink hover:bg-raised"
               }`}
             >
@@ -118,8 +160,17 @@ export function TimeAndPlace() {
           ))}
         </div>
 
-        <div role="tabpanel" id={`tp-panel-${tab}`} aria-labelledby={`tp-tab-${tab}`}>
-          {tab === "places" ? (
+        <div role="tabpanel" id={`tp-panel-${tab}`} aria-labelledby={`tp-tab-${tab}`} tabIndex={0}>
+          {tab === "lives" ? (
+            <Lives
+              showChapter={(b, c) => {
+                setBook(b);
+                setChapter(c);
+                setMode("chapter");
+                setTab("places");
+              }}
+            />
+          ) : tab === "places" ? (
             <Explorer
               mode={mode}
               setMode={setMode}
@@ -147,13 +198,6 @@ const loadPlaces = (book: string) => loadJson<BookPlaces>(`/places/${book}.json`
 const loadOutline = () => loadJson<MapOutline>("/places/map.json");
 const loadIndex = () => loadJson<{ places: IndexPlace[] }>("/places/index.json");
 
-/** "#place=a15257a" opens that place's page (so Back closes it). */
-const placeFromHash = () => {
-  if (typeof location === "undefined") return null;
-  const m = /^#place=(a[0-9a-f]{6})$/.exec(location.hash);
-  return m ? m[1] : null;
-};
-
 function Explorer({
   mode,
   setMode,
@@ -179,12 +223,11 @@ function Explorer({
   const [picked, setPicked] = useState<string | null>(null); // a dot in this chapter
   const [found, setFound] = useState<string | null>(null); // a place from search, a background dot or an era dot
   const [page, setPage] = useState<string | null>(null); // the place page shown (OpenBible id)
-  const pushed = useRef(false); // (this session opened the page, so Back may close it)
 
   useEffect(() => {
     const sync = () => {
       const id = placeFromHash();
-      if (!id) pushed.current = false;
+      if (!id) setPlacePushed(false);
       setPage(id);
     };
     sync();
@@ -192,12 +235,12 @@ function Explorer({
     return () => window.removeEventListener("hashchange", sync);
   }, []);
   const openPage = (id: string) => {
-    pushed.current = true;
+    setPlacePushed(true);
     location.hash = `place=${id.split("/")[0]}`;
   };
   const closePage = () => {
-    if (pushed.current) {
-      pushed.current = false;
+    if (placePushed()) {
+      setPlacePushed(false);
       history.back();
     } else {
       // (a direct link: stay on the site, just drop the address's #place)
@@ -775,12 +818,6 @@ function IndexCard({
 
 /* ---------------- when they were written ---------------- */
 
-const T0 = -2200;
-const T1 = 2000;
-const pct = (y: number) => ((y - T0) / (T1 - T0)) * 100;
-const TICKS = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
-const tickLabel = (y: number) => (y === 0 ? "1 CE" : y < 0 ? `${-y} BCE` : `${y}`);
-
 /** Tradition filters (a work can be in more than one: "Jewish and Christian"). */
 const FAMILIES: [string, RegExp][] = [
   ["Ancient Near East", /mesopotamia|egypt/i],
@@ -797,9 +834,6 @@ const FAMILIES: [string, RegExp][] = [
   ["Sikh", /sikh/i],
   ["Zoroastrian", /zoroastrian/i],
 ];
-
-/** For the filter: folded, with spaces (and so apostrophes) gone: "bahai" finds Bahá’í, "kiche" K’iche’. */
-const squash = (s: string) => fold(s).replace(/ /g, "");
 
 function Timeline() {
   const [open, setOpen] = useState<string | null>(null);
