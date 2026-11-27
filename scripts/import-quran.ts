@@ -382,6 +382,8 @@ const SCAN_HAND: [number, number, string, string][] = [
   [37, 129, "(the salutation:", "(the salutation):"],
   [30, 26, "heavens and o in the earth", "heavens and in the earth"],
   [38, 8, "Hath, the reminder", "Hath the reminder"],
+  [21, 5, "dreams; nay he hath", "dreams; nay, he hath"], // the scan has "nay*"
+  [28, 76, "Moses ' folk", "Moses' folk"],
   [41, 31, "for which ye.", "for which ye pray."], // the scan has only "." on the line: word from the reference
 ];
 function lev(a: string, b: string) {
@@ -690,14 +692,35 @@ function sweep(s: number, v: number, t: string, ref: string): string {
     if (/^[.,;:]+[A-Za-z]/.test(w[i])) put("punctuation glued before a word", i, w[i].replace(/^[.,;:]+/, ""));
     // Doubled punctuation ("me..", "said:.", "Worlds,.").
     if (/[A-Za-z)][.,;:!?][.,;:]+$/.test(w[i])) put("doubled punctuation", i, w[i].replace(/([.,;:!?])[.,;:]+$/, "$1"));
+    // "(with.)": a period or comma before the closing bracket that the reference's word doesn't have.
+    const shut = /^(\(?[A-Za-z]+)[.,](\)[.,;:!?]?)$/.exec(w[i]);
+    if (shut && R.some((x) => x.k === key(w[i])) && R.filter((x) => x.k === key(w[i])).every((x) => !/[A-Za-z][.,]\)/.test(x.w)))
+      put("punctuation inside brackets the reference doesn't have", i, shut[1] + shut[2]);
+    // A quote mark standing alone ("water, ' introduce") where the reference has none.
+    if (/^["'‘’“”]+$/.test(w[i]) && !R.some((x) => /["'‘’“”]/.test(x.w))) put("stray quote mark", i, "");
   }
+  w = w.filter(Boolean);
   for (let i = 0; i + 1 < w.length; i++) {
     const a = key(w[i]), b = key(w[i + 1]);
     const here = pairs.get(`${a} ${b}`);
     // "that. which", "from. the", "from, sending": punctuation before a lowercase word where the reference
     // has the same two words with none.
-    if (here && /[a-z]/.test(w[i + 1][0]) && (/[a-z)]\.$/.test(w[i]) || /^(?:from|of|the|a|an|to|unto|in|on|by|with|for|its|their|his|her|our|your|my|thy),$/i.test(w[i])) && !/^i\.e\.$/.test(w[i]) && here.every((p) => !/[.,;:!?]$/.test(p.a)))
+    if (here && /[a-z]/.test(w[i + 1][0]) && (/[a-z)]\.$/.test(w[i]) || /^(?:from|of|the|a|an|to|unto|in|on|by|with|for|its|their|his|her|our|your|my|thy|each),$/i.test(w[i])) && !/^i\.e\.$/.test(w[i]) && here.every((p) => !/[.,;:!?]$/.test(p.a)))
       put("punctuation between words the reference runs on", i, w[i].slice(0, -1));
+    // Inside brackets, a period or comma the reference doesn't have: "(though. We sent", "(from, them)".
+    const open = w.slice(0, i + 1).join(" ").split("(").length - w.slice(0, i + 1).join(" ").split(")").length;
+    if (here && open > 0 && /[a-z][.,]$/.test(w[i]) && here.every((p) => !/[.,;:!?]$/.test(p.a)))
+      put("punctuation inside brackets the reference doesn't have", i, w[i].slice(0, -1));
+    // "guests, Affront", "Ra, These": a comma where the reference ends the sentence, before a capital.
+    if (here && /[a-z],$/.test(w[i]) && /^[A-Z]/.test(w[i + 1]) && w[i + 1] !== "I" && here.every((p) => /[.!?]$/.test(p.a)))
+      put("comma for the end of a sentence", i, w[i].slice(0, -1) + here[0].a.slice(-1));
+    // "aloof- O my son": a dash the scan printed as a hyphen, where the reference has " - ".
+    if (/[a-z]-$/.test(w[i]) && /^[A-Z]/.test(w[i + 1]) && R.some((x, j) => x.k === key(w[i]) && R[j + 1]?.w === "-" && R[j + 2]?.k === b)) {
+      log("dash the scan read as a hyphen", `${w[i]} ${w[i + 1]}`, `${w[i].slice(0, -1)}—${w[i + 1]}`);
+      w[i] = `${w[i].slice(0, -1)}—${w[i + 1]}`;
+      w[i + 1] = "";
+      continue;
+    }
     // Divine pronouns the reference capitalises in the same place ("unto him" → "unto Him").
     const pron = /^(he|his|him|we|us|our|me|my)$/;
     if (pron.test(b) && /^[a-z]/.test(w[i + 1]) && here?.length && here.every((p) => /^[A-Z]/.test(p.b)) && i > 0)
@@ -742,6 +765,12 @@ function sweep(s: number, v: number, t: string, ref: string): string {
   }
   w = w.filter(Boolean);
   let out = w.join(" ");
+  // "( and say)", "(O mankind! )": a space inside brackets.
+  const tight = out.replace(/\(\s+/g, "(").replace(/\s+\)/g, ")");
+  if (tight !== out) {
+    log("space inside brackets", out, tight);
+    out = tight;
+  }
   if (/^[a-z]/.test(out) && /^[A-Z("']/.test(ref)) {
     const to = out[0].toUpperCase() + out.slice(1);
     log("verse starts with a capital", out.split(" ")[0], to.split(" ")[0]);
@@ -967,6 +996,15 @@ async function main() {
           fixLog.push([`${s}:${v}`, "by hand (checked against the scan)", from, to]);
         }
         x.t = sweep(s, v, x.t, ref.get(s)!.get(v) ?? "");
+        // A verse ending in a comma or nothing where the reference ends the sentence (. ! ?) and the next
+        // verse starts with a capital: the scan lost or misread the mark.
+        const rEnd = (ref.get(s)!.get(v) ?? "").match(/[.!?]["”’)]?$/)?.[0];
+        const next = aligned.get(v + 1)?.t ?? "";
+        if (rEnd && (!next || /^["'‘“(]?[A-Z]/.test(next)) && /(?:[A-Za-z)],?|,["”’])$/.test(x.t) && !/[.!?;:]["”’)]?$/.test(x.t)) {
+          const to = x.t.replace(/,(?=["”’]?$)/, "").replace(/(["”’]?)$/, `${rEnd[0]}$1`);
+          fixLog.push([`${s}:${v}`, "verse end: the reference's mark (scan had a comma or none)", x.t.slice(-30), to.slice(-30)]);
+          x.t = to;
+        }
         // Hand fixes whose text only appears once the sweep has tidied the verse.
         for (const [hs, hv, from, to] of SCAN_HAND) {
           if (hs !== s || hv !== v || !x.t.includes(from)) continue;
