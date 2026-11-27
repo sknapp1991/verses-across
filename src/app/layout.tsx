@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Naskh_Arabic, Noto_Serif, Noto_Serif_Hebrew, Source_Serif_4 } from "next/font/google";
-import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
+import { STORAGE_KEY, THEME_INIT_SCRIPT } from "@/lib/theme-script";
+import { catalog } from "@/lib/catalog";
+import { LIBRARY_SHELVES } from "@/lib/site";
 import { SITE_NAME, SITE_ORIGIN, SITE_SIDE, SITE_TAGLINE } from "@/lib/site";
 import { DomainMove } from "@/components/domain-move";
 import { OfflineSupport } from "@/components/offline";
@@ -53,11 +55,32 @@ export const viewport: Viewport = {
   ],
 };
 
+/**
+ * The works on Verses Across' shelves (~110 ids, ~1.3 KB; the Library's ~1,100 would be ~29 KB): the tab-bar script
+ * below counts only this site's books, as tabs.tsx does with sideOfWork (a work not on the Library's shelves).
+ */
+const LIBRARY_WORKS = new Set(catalog.religions.filter((r) => LIBRARY_SHELVES.has(r.id)).flatMap((r) => r.collections.flatMap((c) => c.items.map((i) => i.work))));
+const SCRIPTURE_WORK_IDS = [
+  ...new Set(
+    catalog.religions
+      .filter((r) => !LIBRARY_SHELVES.has(r.id))
+      .flatMap((r) => r.collections.flatMap((c) => c.items.map((i) => i.work).filter((w): w is string => !!w && !LIBRARY_WORKS.has(w)))),
+  ),
+];
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${reading.variable} ${greek.variable} ${hebrew.variable} ${arabic.variable} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* The open-books tab bar (tabs.tsx) shows only once the saved settings are read, after the first paint, and
+            pushed the whole page down as it appeared (layout shift). Same test as tabs.tsx, before the first paint:
+            two or more of this site's books open (of the first 60, MAX_TABS in settings.ts) → <html data-tabs>, and its space is kept (globals.css). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=JSON.parse(localStorage.getItem(${JSON.stringify(STORAGE_KEY)})||"{}");var t=Array.isArray(s.tabs)?s.tabs.filter(function(x){return typeof x==="string"}).slice(0,60):[];var S=${JSON.stringify(SCRIPTURE_WORK_IDS)},lib=${JSON.stringify(SITE_SIDE === "library")},n=0;for(var i=0;i<t.length;i++)if((S.indexOf(t[i].split("/")[0])<0)===lib)n++;if(n>1)document.documentElement.setAttribute("data-tabs","")}catch(e){}})();`,
+          }}
+        />
         {/* Desktop Safari (older versions) keeps 100dvh at the size the window had when the page loaded, so after
             leaving full screen or resizing, the top bar and the bottom (Read aloud button) end up off screen. There
             the page height follows the real window height instead (--app-h, used by .h-app). Ticket 637f3496. */}

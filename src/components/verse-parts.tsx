@@ -16,8 +16,12 @@ import { useTapGestures, type TapPoint } from "./use-gestures";
 
 export type Marks = Partial<Record<StudyKind, StudyItem>>;
 
+/**
+ * The verse handlers. The reader keeps this object the same from render to render (its handlers read the latest
+ * state), so a tap that changes one verse doesn't re-render every verse of a long chapter; each verse's marks come
+ * in as a prop (`m`) instead.
+ */
 export type VerseActions = {
-  marks: Map<string, Marks>;
   boxTap: (v: string, rect: DOMRect | undefined) => void;
   boxDouble: (v: string) => void;
   openMenu: (v: string, focus?: "note") => void;
@@ -28,9 +32,8 @@ export type VerseActions = {
 export const VerseCtx = createContext<VerseActions | null>(null);
 const useVerse = () => useContext(VerseCtx)!;
 
-export function VerseBox({ v, label, size = "md" }: { v: string; label: string; size?: "sm" | "md" }) {
+export function VerseBox({ v, label, size = "md", m }: { v: string; label: string; size?: "sm" | "md"; m?: Marks }) {
   const a = useVerse();
-  const m = a.marks.get(v);
   const el = useRef<HTMLButtonElement>(null);
   const g = useTapGestures({
     onTap: () => a.boxTap(v, el.current?.getBoundingClientRect()),
@@ -120,9 +123,9 @@ export function VerseText({
  * Note preview under a verse: tap to edit; long notes show "… more" to read them in full; the bin
  * deletes it right here (asks once, so a stray tap can't lose a note).
  */
-export function NoteLine({ v }: { v: string }) {
+export function NoteLine({ v, m }: { v: string; m?: Marks }) {
   const a = useVerse();
-  const item = a.marks.get(v)?.note;
+  const item = m?.note;
   const note = item?.text;
   const [open, setOpen] = useState(false);
   const [long, setLong] = useState(false);

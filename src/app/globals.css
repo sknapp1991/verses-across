@@ -316,6 +316,12 @@ html {
   height: var(--app-h, 100dvh);
 }
 
+/* The tab bar's room, kept from the first paint while it waits for the saved settings (layout.tsx, tabs.tsx):
+   its row is h-11 plus a 1px border. Only while the slot is still empty. */
+html[data-tabs] .tabbar-slot:empty {
+  height: calc(2.75rem + 1px);
+}
+
 /* The level-up card (progress-panel.tsx): pops in, then fades by itself. */
 @keyframes levelup-in {
   from { opacity: 0; transform: scale(0.85); }

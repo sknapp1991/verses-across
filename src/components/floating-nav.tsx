@@ -174,7 +174,9 @@ export function FloatingNav({ prev, next, versions, faint, raised }: { prev?: Bo
     <div
       data-no-swipe
       data-note-avoid
-      style={{ left, top }}
+      // Placed by a transform, not left / top: a fixed element whose left / top changes (the phone's address bar
+      // showing or hiding changes the window height it's measured from) counts as a layout shift; a transform doesn't.
+      style={{ left: 0, top: 0, transform: `translate(${Math.round(left)}px, ${Math.round(top)}px)` }}
       className={`fixed z-40 flex items-center gap-0.5 rounded-full border border-line/70 bg-panel/55 p-0.5 shadow-lg backdrop-blur-sm transition-opacity duration-300 ${
         aside ? "pointer-events-none opacity-0" : dragging ? "opacity-100" : faint ? "opacity-40 hover:opacity-100" : "opacity-90"
       }`}

@@ -7,7 +7,7 @@
  * Art and puzzle, built on the real traditions (gematria, isopsephy, abjad): never offered as hidden prophecy.
  */
 import Link from "next/link";
-import { createContext, Suspense, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, memo, Suspense, useDeferredValue, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AiWindow } from "./ai-window";
 import { askAboutVerse, openAi } from "@/lib/ai-chat";
 import { updateSettings } from "@/lib/settings";
@@ -97,7 +97,7 @@ function Tempo({ speed, onChange }: { speed: number; onChange: (s: number) => vo
  * A verse exactly as written, each word its own span so the word sounding can be lit (the spaces, maqaf and marks
  * between them are kept as they are). `lit`: the word's number as lettersOf counts them, or -1.
  */
-function VerseText({ text, script, lit }: { text: string; script: Script; lit: number }) {
+const VerseText = memo(function VerseText({ text, script, lit }: { text: string; script: Script; lit: number }) {
   const counted = new Set(tokensOf(text, script));
   let n = -1;
   return (
@@ -113,7 +113,7 @@ function VerseText({ text, script, lit }: { text: string; script: Script; lit: n
       })}
     </>
   );
-}
+});
 
 /* ---------------- views: helix, circle, score (my brother's asks) ---------------- */
 
@@ -147,10 +147,14 @@ function ViewSwitch() {
 
 type ViewProps = { letters: Letter[]; rtl: boolean; lit: number; word: number | null; marks?: { at: number; label: string }[] };
 
-function LetterView(p: ViewProps) {
+/**
+ * Memoised: a whole chapter is ~1,700 beads (several SVG nodes each), so it re-renders only when its own props
+ * change, not on every state change of the card around it.
+ */
+const LetterView = memo(function LetterView(p: ViewProps) {
   const { view } = useContext(ViewCtx);
   return view === "circle" ? <Ring {...p} /> : view === "score" ? <Score {...p} /> : <Strand {...p} />;
-}
+});
 
 const beadOpacity = (i: number, l: Letter, lit: number, word: number | null) => (lit >= 0 ? (lit === i ? 1 : 0.45) : word === null || word === l.word ? 1 : 0.25);
 
@@ -372,7 +376,10 @@ function ChapterCard() {
   const stop = useRef<(() => void) | null>(null);
   const list = useRef<HTMLOListElement>(null);
   useEffect(() => () => stop.current?.(), []);
-  const verses = useMemo(() => GENESIS_1.filter((v) => chosen.includes(v.v)), [chosen]);
+  // The picks show at once (pressed buttons, heading); the strand they feed (for the whole chapter ~1,700 beads)
+  // follows as a deferred render, so a tap is answered before it's drawn.
+  const shownChosen = useDeferredValue(chosen);
+  const verses = useMemo(() => GENESIS_1.filter((v) => shownChosen.includes(v.v)), [shownChosen]);
   // all chosen letters in one strand: the word numbers run on across verses; where each verse starts
   const { letters, marks, starts } = useMemo(() => {
     const letters: (Letter & { verse: number })[] = [];
@@ -391,7 +398,7 @@ function ChapterCard() {
   const total = letters.reduce((n, l) => n + l.value, 0);
   const focusVerse = GENESIS_1.find((v) => v.v === focus) ?? GENESIS_1[0];
   const focusWords = useMemo(() => wordsOf(focusVerse.text, "hebrew"), [focusVerse]);
-  const strandWord = word !== null && chosen.includes(focus) ? (starts[focus] ?? 0) + word : null;
+  const strandWord = word !== null && shownChosen.includes(focus) ? (starts[focus] ?? 0) + word : null;
   const playing = strandWord === null ? letters : letters.filter((l) => l.word === strandWord);
   const now = lit >= 0 ? (playing[lit] as (typeof letters)[number] | undefined) : undefined;
   const sounding = now?.verse;
@@ -402,10 +409,14 @@ function ChapterCard() {
     const row = sounding ? (box?.querySelector(`[data-v="${sounding}"]`) as HTMLElement | null) : null;
     if (box && row && box.scrollHeight > box.clientHeight) box.scrollTop = row.offsetTop - box.offsetTop - box.clientHeight / 2 + row.clientHeight / 2;
   }, [sounding]);
-  const pick = (list: number[]) => {
+  const pick = (to: (prev: number[]) => number[]) => {
     stop.current?.();
-    const next = [...new Set(list)].sort((a, b) => a - b);
-    setChosen(next.length ? next : [1]);
+    const tidy = (list: number[]) => {
+      const next = [...new Set(list)].sort((a, b) => a - b);
+      return next.length ? next : [1];
+    };
+    const next = tidy(to(chosen));
+    setChosen((prev) => tidy(to(prev)));
     if (!next.includes(focus)) setFocus(next[0] ?? 1);
     setWord(null);
   };
@@ -426,7 +437,7 @@ function ChapterCard() {
               key={v.v}
               type="button"
               aria-pressed={chosen.includes(v.v)}
-              onClick={() => pick(chosen.includes(v.v) ? chosen.filter((x) => x !== v.v) : [...chosen, v.v])}
+              onClick={() => pick((c) => (c.includes(v.v) ? c.filter((x) => x !== v.v) : [...c, v.v]))}
               className={`h-8 min-w-8 rounded-md border px-1 text-xs tabular-nums ${chosen.includes(v.v) ? "border-accent bg-accent text-accent-ink" : "border-line text-muted hover:bg-raised"}`}
             >
               {v.v}
@@ -434,10 +445,10 @@ function ChapterCard() {
           ))}
         </div>
         <div className="flex flex-wrap gap-3 text-xs">
-          <button type="button" onClick={() => pick(GENESIS_1.map((v) => v.v))} className="font-medium text-accent hover:underline">
+          <button type="button" onClick={() => pick(() => GENESIS_1.map((v) => v.v))} className="font-medium text-accent hover:underline">
             Whole chapter
           </button>
-          <button type="button" onClick={() => pick([1])} className="font-medium text-accent hover:underline">
+          <button type="button" onClick={() => pick(() => [1])} className="font-medium text-accent hover:underline">
             Just verse 1
           </button>
           <span className="text-faint">Tap numbers to add or take away verses.</span>

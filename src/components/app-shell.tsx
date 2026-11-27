@@ -77,7 +77,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex h-app flex-col">
       <BackupNudge />
       <TopBar onOpenLibrary={() => setDrawerOpen(true)} menuOnDesk={listFolded} />
-      <TabBar />
+      {/* (the slot keeps the bar's room until it shows: globals.css, .tabbar-slot) */}
+      <div className="tabbar-slot shrink-0">
+        <TabBar />
+      </div>
       <ModeBanner />
       <div className="flex min-h-0 flex-1">
         <aside className={`hidden w-72 shrink-0 border-r border-line bg-panel lg:w-80 ${listFolded ? "" : "desk:block"}`}>

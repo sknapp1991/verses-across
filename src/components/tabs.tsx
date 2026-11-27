@@ -10,7 +10,7 @@
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { chapterTitle, findBook, readHref, sideOfWork, type BookRef } from "@/lib/catalog";
 import { SITE_SIDE } from "@/lib/site";
 import { getSettings, MAX_TABS, updateSettings, useSettings } from "@/lib/settings";
@@ -56,9 +56,17 @@ export function useTabsSync() {
   }, [current, entry, home]);
 }
 
+const noSubscribe = () => () => {};
+
 export function TabBar() {
   const { ref, versions, home } = useReaderState();
   const { tabs: saved, tabsRecent } = useSettings();
+  // The room kept for this bar before the saved settings were read (layout.tsx, data-tabs): from here on the bar
+  // itself (or its absence) is right, so the reserved room goes.
+  const client = useSyncExternalStore(noSubscribe, () => true, () => false);
+  useEffect(() => {
+    if (client) document.documentElement.removeAttribute("data-tabs");
+  }, [client]);
   // This site's books only (Verses Across / Library Across); the other site's tabs live there.
   const tabs = saved.filter((t) => sideOfWork(t.split("/")[0]) === SITE_SIDE);
   const router = useRouter();

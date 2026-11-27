@@ -6,7 +6,7 @@
  * Every question includes what is on screen (chapter + visible versions), and optionally a verse.
  */
 import { SITE_NAME } from "@/lib/site";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { AiWord, looksForeign } from "./ai-word";
 import {
   clearAiChat,
@@ -126,9 +126,27 @@ export function AiWindow() {
     seen.current = count;
   }, [count]);
   const sized = !wide || !!box; // desktop: wait until the window has its size, or there's nothing to scroll yet
+  // Opening: the window itself first (the tap answered at once), the saved conversation a frame later (up to 40
+  // answers, each scanned for verse references and words, used to hold up the tap by seconds on slow phones).
+  const [filled, setFilled] = useState(false);
+  useEffect(() => {
+    if (!showing) {
+      const t = setTimeout(() => setFilled(false), 0);
+      return () => clearTimeout(t);
+    }
+    let t = 0;
+    const id = requestAnimationFrame(() => {
+      t = window.setTimeout(() => setFilled(true), 0);
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      clearTimeout(t);
+    };
+  }, [showing]);
+  const listed = filled || chat.messages.length <= 2;
   useEffect(() => {
     const el = scroller.current;
-    if (!showing || !sized || !el) return;
+    if (!showing || !sized || !listed || !el) return;
     const id = requestAnimationFrame(() => {
       // Back where you were; first time: the start of the latest answer.
       if (savedScroll !== null) el.scrollTop = savedScroll;
@@ -139,7 +157,7 @@ export function AiWindow() {
     });
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the window (re)appears
-  }, [showing, sized]);
+  }, [showing, sized, listed]);
 
   useEffect(() => {
     if (showing && chat.attached) inputRef.current?.focus();
@@ -267,7 +285,8 @@ export function AiWindow() {
             </div>
           </div>
         )}
-        {chat.messages.map((m, i) =>
+        {!listed && <p className="animate-pulse text-muted">…</p>}
+        {listed && chat.messages.map((m, i) =>
           m.role === "user" ? (
             <div key={i} data-msg={i} className="ml-8 rounded-xl rounded-br-sm bg-accent-soft px-3 py-2 text-ink">
               {m.ref && <div className="mb-0.5 text-xs font-semibold text-accent">{m.ref}</div>}
@@ -492,8 +511,12 @@ export function AiWindow() {
   );
 }
 
-/** Light formatting for answers: paragraphs, "-"/"*"/"1." lists, ### headings and **bold**. */
-function Rich({ text: raw, preferWork }: { text: string; preferWork?: string }) {
+/**
+ * Light formatting for answers: paragraphs, "-"/"*"/"1." lists, ### headings and **bold**. Memoised: every answer
+ * is scanned for verse references and Hebrew / Greek words, so typing a question (or one answer streaming in)
+ * re-renders only what changed, not every saved answer.
+ */
+const Rich = memo(function Rich({ text: raw, preferWork }: { text: string; preferWork?: string }) {
   // A person / place mark still being written ("[[Mount Sinai|Si") stays hidden until it closes.
   const text = raw.replace(/\[\[[^\]\n]*\]?$/, "");
   const inline = (t: string) => inlineRich(t, preferWork);
@@ -537,7 +560,7 @@ function Rich({ text: raw, preferWork }: { text: string; preferWork?: string }) 
   }
   flush();
   return <div className="space-y-2">{blocks}</div>;
-}
+});
 
 /** **bold**, *emphasis* in italics, Hebrew / Greek words tappable (a word card), and scripture references as links. */
 function inlineRich(s: string, preferWork?: string): ReactNode {

@@ -4,7 +4,7 @@ import { TextMenuButton, TextSettingsButton, ViewToggle, WidthButton } from "./c
 import { SkipFrontMatter } from "./skip-front-matter";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { alignVerses, type AlignedRow } from "@/lib/align";
 import { adjacentChapters, catalog, chapterTitle, findBook, getVersion, readHref, WORK_NOTES, type BookRef } from "@/lib/catalog";
 import { chapterKey, loadChapter, useChapters, type ChapterEntry } from "@/lib/chapter-store";
@@ -368,12 +368,18 @@ export function ReaderView() {
 
   const valid = !!book && Number.isInteger(ref.chapter) && ref.chapter >= 1 && ref.chapter <= (book.chapters ?? 0);
   const keys = valid ? versions.map((v) => chapterKey(ref.work, v, ref.book, ref.chapter)) : [];
-  const entries = useChapters(keys);
-  const cols: Col[] = versions.map((id, i) => ({
-    version: getVersion(id)!,
-    entry: entries[i] ?? { status: "loading" },
-    retry: () => loadChapter(keys[i], { retry: true }),
-  }));
+  // The same array while every entry is the same (loading the next chapter in the background makes a new one),
+  // so the verse rows below keep their identity and their memoised rows don't re-render.
+  const entries = useSameItems(useChapters(keys));
+  const keysJoined = keys.join("|");
+  const cols: Col[] = useMemo(() => {
+    const ks = keysJoined ? keysJoined.split("|") : [];
+    return (versionsKey ? versionsKey.split(",") : []).map((id, i) => ({
+      version: getVersion(id)!,
+      entry: entries[i] ?? { status: "loading" },
+      retry: () => loadChapter(ks[i], { retry: true }),
+    }));
+  }, [versionsKey, keysJoined, entries]);
   const rows = useMemo(() => alignVerses(entries.map((e) => (e.status === "ok" ? e.data : undefined))), [entries]);
   const { prev, next } = valid ? adjacentChapters(ref) : {};
   const allLoaded = entries.length > 0 && entries.every((e) => e.status === "ok");
@@ -412,10 +418,12 @@ export function ReaderView() {
   const red = useRedLetter(ref.work, ref.book, versions);
   useLevelMarks(scroller, `${rows.length}|${red.size}|${ref.book}|${ref.chapter}|${versions.join(",")}`);
   const study = useStudy();
-  const marks = useMemo(() => chapterMarks(study.items, ref.work, ref.book, ref.chapter), [study.items, ref.work, ref.book, ref.chapter]);
+  // Each verse keeps its marks object while its own marks are unchanged: highlighting one verse re-renders that verse.
+  const marks = useSameMarks(useMemo(() => chapterMarks(study.items, ref.work, ref.book, ref.chapter), [study.items, ref.work, ref.book, ref.chapter]));
 
-  const actions: VerseActions = {
-    marks,
+  // The handlers change every render (they read the latest state); the context gets one object that stays the
+  // same and calls the latest ones, so the verses don't all re-render on every render of the reader.
+  const latest: VerseActions = {
     boxTap(v, rect) {
       if (!rect) return openVerseMenu({ ...ref, verse: v });
       setQuick((q) => (q?.verse === v ? null : { verse: v, rect: { left: rect.left, top: rect.top, bottom: rect.bottom, width: rect.width } }));
@@ -441,6 +449,17 @@ export function ReaderView() {
       if (w) openSearch(w, [version]);
     },
   };
+  const handlers = useRef(latest);
+  useEffect(() => {
+    handlers.current = latest;
+  });
+  const [actions] = useState<VerseActions>(() => ({
+    boxTap: (v, rect) => handlers.current.boxTap(v, rect),
+    boxDouble: (v) => handlers.current.boxDouble(v),
+    openMenu: (v, focus) => handlers.current.openMenu(v, focus),
+    textTap: (v, version, p) => handlers.current.textTap(v, version, p),
+    textDouble: (p, version) => handlers.current.textDouble(p, version),
+  }));
   /** Text of one verse in every loaded column (for copy and Ask in…). */
   const textsFor = (v: string): VerseTextInfo[] => {
     const row = rows.find((r) => r.v === v);
@@ -1093,40 +1112,38 @@ function ColumnView({
               <Skeleton />
             </div>
           ))
-        : rows.map((row) => {
-            const bg = highlightBg(marks.get(row.v)?.highlight?.color);
-            return (
-              <div role="row" key={row.v} className="contents">
-                {row.cells.map((verse, i) => (
-                  <div
-                    role="cell"
-                    key={cols[i].version.id}
-                    // display:contents rows have no box, so the anchor lives on the first cell
-                    id={i === 0 ? `v${row.v}` : undefined}
-                    data-v={row.v}
-                    style={bg ? { background: bg } : undefined}
-                    className="verse-flash snap-start scroll-mt-12 border-b border-line/60 px-3 py-[var(--verse-pad,0.625rem)] md:px-4"
-                  >
-                    {cols[i].entry.status === "loading" ? (
-                      <SkeletonLine />
-                    ) : cols[i].entry.status === "error" ? null : (
-                      <Cell
-                        verse={verse}
-                        version={cols[i].version}
-                        chapter={chNum}
-                        box={<VerseBox v={row.v} label={row.v} size="sm" />}
-                      />
-                    )}
-                    {i === 0 && <NoteLine v={row.v} />}
-                    {i === 0 && <DiffMark v={row.v} />}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+        : rows.map((row) => <ColumnRow key={row.v} row={row} cols={cols} m={marks.get(row.v)} chNum={chNum} />)}
     </div>
   );
 }
+
+/** One verse across the columns. Memoised: a tap on one verse (a highlight, a note) re-renders that row only. */
+const ColumnRow = memo(function ColumnRow({ row, cols, m, chNum }: { row: AlignedRow; cols: Col[]; m: Marks | undefined; chNum: number }) {
+  const bg = highlightBg(m?.highlight?.color);
+  return (
+    <div role="row" className="contents">
+      {row.cells.map((verse, i) => (
+        <div
+          role="cell"
+          key={cols[i].version.id}
+          // display:contents rows have no box, so the anchor lives on the first cell
+          id={i === 0 ? `v${row.v}` : undefined}
+          data-v={row.v}
+          style={bg ? { background: bg } : undefined}
+          className="verse-flash snap-start scroll-mt-12 border-b border-line/60 px-3 py-[var(--verse-pad,0.625rem)] md:px-4"
+        >
+          {cols[i].entry.status === "loading" ? (
+            <SkeletonLine />
+          ) : cols[i].entry.status === "error" ? null : (
+            <Cell verse={verse} version={cols[i].version} chapter={chNum} box={<VerseBox v={row.v} label={row.v} size="sm" m={m} />} />
+          )}
+          {i === 0 && <NoteLine v={row.v} m={m} />}
+          {i === 0 && <DiffMark v={row.v} />}
+        </div>
+      ))}
+    </div>
+  );
+});
 
 function StackedView({ cols, rows, marks }: { cols: Col[]; rows: AlignedRow[]; marks: Map<string, Marks> }) {
   const multi = cols.length > 1;
@@ -1153,52 +1170,90 @@ function StackedView({ cols, rows, marks }: { cols: Col[]; rows: AlignedRow[]; m
         <Skeleton />
       ) : (
         <ol className="divide-y divide-line/70">
-          {rows.map((row) => {
-            const bg = highlightBg(marks.get(row.v)?.highlight?.color);
-            return (
-              <li
-                key={row.v}
-                id={`v${row.v}`}
-                data-v={row.v}
-                style={bg ? { background: bg } : undefined}
-                className="verse-flash scroll-mt-4 rounded-sm px-1 py-[var(--verse-pad-s,0.75rem)]"
-              >
-                <div className="min-w-0 space-y-2">
-                  {row.cells.map((verse, i) => {
-                    const c = cols[i];
-                    if (c.entry.status === "error") return null;
-                    return (
-                      <div key={c.version.id} className={i > 0 ? "text-ink/85" : ""}>
-                        {multi && (
-                          <div className="mb-0.5 flex items-center text-[11px] uppercase tracking-wide">
-                            <VersionLabel version={c.version} compact />
-                            {verse && !verse.cont && <VersionPlay id={c.version.id} verse={row.v} label={c.version.abbr} />}
-                          </div>
-                        )}
-                        {c.entry.status === "loading" ? (
-                          <SkeletonLine />
-                        ) : (
-                          <Cell
-                            verse={verse}
-                            version={c.version}
-                            chapter={chNum}
-                            // Small verse number inline at the start of the first text (more room for words).
-                            box={i === firstOk ? <VerseBox v={row.v} label={row.v} size="sm" /> : undefined}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                  <NoteLine v={row.v} />
-                  <DiffMark v={row.v} />
-                </div>
-              </li>
-            );
-          })}
+          {rows.map((row) => (
+            <StackedRow key={row.v} row={row} cols={cols} m={marks.get(row.v)} chNum={chNum} firstOk={firstOk} multi={multi} />
+          ))}
         </ol>
       )}
     </div>
   );
+}
+
+/** One verse in every version, one under another. Memoised like ColumnRow. */
+const StackedRow = memo(function StackedRow({
+  row,
+  cols,
+  m,
+  chNum,
+  firstOk,
+  multi,
+}: {
+  row: AlignedRow;
+  cols: Col[];
+  m: Marks | undefined;
+  chNum: number;
+  firstOk: number;
+  multi: boolean;
+}) {
+  const bg = highlightBg(m?.highlight?.color);
+  return (
+    <li id={`v${row.v}`} data-v={row.v} style={bg ? { background: bg } : undefined} className="verse-flash scroll-mt-4 rounded-sm px-1 py-[var(--verse-pad-s,0.75rem)]">
+      <div className="min-w-0 space-y-2">
+        {row.cells.map((verse, i) => {
+          const c = cols[i];
+          if (c.entry.status === "error") return null;
+          return (
+            <div key={c.version.id} className={i > 0 ? "text-ink/85" : ""}>
+              {multi && (
+                <div className="mb-0.5 flex items-center text-[11px] uppercase tracking-wide">
+                  <VersionLabel version={c.version} compact />
+                  {verse && !verse.cont && <VersionPlay id={c.version.id} verse={row.v} label={c.version.abbr} />}
+                </div>
+              )}
+              {c.entry.status === "loading" ? (
+                <SkeletonLine />
+              ) : (
+                <Cell
+                  verse={verse}
+                  version={c.version}
+                  chapter={chNum}
+                  // Small verse number inline at the start of the first text (more room for words).
+                  box={i === firstOk ? <VerseBox v={row.v} label={row.v} size="sm" m={m} /> : undefined}
+                />
+              )}
+            </div>
+          );
+        })}
+        <NoteLine v={row.v} m={m} />
+        <DiffMark v={row.v} />
+      </div>
+    </li>
+  );
+});
+
+/** `items` itself, or the array from the last render when every item is the same one. */
+function useSameItems<T>(items: T[]): T[] {
+  const [held, setHeld] = useState(items);
+  if (held !== items && !(held.length === items.length && held.every((x, i) => x === items[i]))) {
+    setHeld(items);
+    return items;
+  }
+  return held;
+}
+
+/** A chapter's marks, each verse keeping its object from the last render while its own items are unchanged. */
+function useSameMarks(fresh: Map<string, Marks>): Map<string, Marks> {
+  const [held, setHeld] = useState({ src: fresh, out: fresh });
+  if (held.src === fresh) return held.out;
+  const out = new Map<string, Marks>();
+  fresh.forEach((m, v) => {
+    const old = held.out.get(v);
+    const kinds = Object.keys(m) as (keyof Marks)[];
+    const same = !!old && Object.keys(old).length === kinds.length && kinds.every((k) => old[k] === m[k]);
+    out.set(v, same ? old : m);
+  });
+  setHeld({ src: fresh, out });
+  return out;
 }
 
 function ColumnError({ col, inline = false }: { col: Col; inline?: boolean }) {

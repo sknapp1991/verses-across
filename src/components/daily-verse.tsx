@@ -70,6 +70,8 @@ export function DailyVerse({ versionsFor, onNavigate }: { versionsFor: (work: st
   /** A shuffled pick (null = today's verse). */
   const [pick, setPick] = useState<{ d: Daily; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Today's text couldn't be read (offline, a missing verse): no card, never an empty one. */
+  const [failed, setFailed] = useState(false);
   const today = dailyVerse();
   const d = pick?.d ?? today;
   const versions = versionsFor(d.work);
@@ -79,8 +81,12 @@ export function DailyVerse({ versionsFor, onNavigate }: { versionsFor: (work: st
     const t = setTimeout(() => live && setMode(readFlag(KEY, todayKey()) ? "hidden" : readFlag(MIN_KEY, "1") ? "min" : "open"), 0);
     fetchBook(today.work, versionsFor(today.work)[0] ?? DEFAULT_VERSIONS[today.work]?.[0], today.book)
       .then((b) => b.chapters[String(today.chapter)]?.verses.find((v) => v.v === today.verse)?.t)
-      .then((t) => live && t && setText(t))
-      .catch(() => {});
+      .then((t) => {
+        if (!live) return;
+        setFailed(!t);
+        if (t) setText(t);
+      })
+      .catch(() => live && setFailed(true));
     return () => {
       live = false;
       clearTimeout(t);
@@ -88,9 +94,21 @@ export function DailyVerse({ versionsFor, onNavigate }: { versionsFor: (work: st
     // today's verse only changes with the date; versionsFor is recreated by the parent each render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [today.work, today.book, today.chapter, today.verse, version]);
-  if (!mode || text === null) return null;
   const book = findBook(d.work, d.book);
   const ref = `${chapterTitle(book, d.chapter, d.book)}:${d.verse}`;
+  // Open, still fetching the verse's text: the open card's room is kept (3 lines of text, as most
+  // verses fill), so the library list below doesn't jump down when the card arrives (layout shift).
+  if (!mode || (mode === "open" && failed)) return null;
+  if (mode === "open" && text === null)
+    return (
+      <div aria-hidden className="relative mx-3 mt-3 rounded-xl border border-accent/30 bg-accent-soft/60 p-3 pr-24">
+        <span className="block text-[11px] font-semibold uppercase tracking-wide text-accent">
+          Verse of the day · {book?.religion.name}
+        </span>
+        <span className="mt-1 block min-h-[4.125em] font-serif text-sm leading-snug" />
+        <span className="mt-1 block text-xs font-medium text-muted">{ref}</span>
+      </div>
+    );
   const shown = pick?.text ?? text;
   const shuffle = async () => {
     setBusy(true);
